@@ -1,0 +1,16 @@
+\chapter{Building and Installing}
+The \adevs\ package is organized into the following directory structure:
+\begin{verbatim}
+adevs-x.y.z
+           +->docs
+           +->examples
+           +->include
+           +->src
+           +->test
+           +->util
+\end{verbatim}
+Everything except the random number generators are implemented as template classes, and so are contained entirely in the header files that are located in the \filename{include} directory. If you do not want to use the random number generators, its sufficient to include \filename{adevs.h} in your source code, and to make sure that your compiler can find the \filename{include} directory. 
+
+If you do want to use the random number generators, then enter the the src directory and run `make'.  This will build the library \filename{libadevs.a} that can be linked with your executable. 
+
+If you want to run the test suite, then first you need to build the library file and install Tcl (the test scripts need Tcl to run; if you can run `tclsh' then you already have a working copy of Tcl). After that, go the the \filename{test} directory and run `make check'. This will automatically build and execute all of the test cases. If the test suite is run to completion, then everything works fine. If something goes wrong, then make will exit and report an error. Use 'make clean' to cleanup afterward.

@@ -1,0 +1,10 @@
+This directory contains the source code for the checkout line examples that
+appear in the tutorial.  The makefile has three targets.  
+
+The target c1 builds the last example in the tutorial section "Modeling and simulation with adevs".  Use 'make c1' to build this example. To use the input data that appears in the example, use 'a.out input output'.  The input file contains the schedule of arrivals.  The Observer output will be written to the file output.
+
+The target c2 builds the Clerk2 example that appears in the Atomic models section of the tutorial.  Use 'make c2' to build the example.  It can be run just like the c1 target.
+
+The target mc builds
+the multi-clerk model.  The target c1 builds the first clerk example.  The target
+c2 builds the second clerk example.
