@@ -1,0 +1,28 @@
+\chapter{The Simulator Class}
+The functionality of the \classname{Simulator} class is broken into three pieces: determining the model's next event time, extracting output from the model, injecting external input into the model, and advancing the simulation clock. The first piece of functionality is provided by the \methodname{nextEventTime} method with which we are already familiar. I'll address the three remaining pieces in turn. 
+
+There are two essential steps for extracting output from your model. The first step is to register an \classname{EventListener} with the simulator. The \classname{EventListener}'s \methodname{outputEvent} method is used to intercept output originating from \classname{Atomic} and \classname{Network} models; this first step is already familiar to us. The second step is to invoke the \classname{Simulator}'s \methodname{computeNextOutput} method, which performs the output calculations and provides the results to registered \classname{EventListener}s.
+
+The \methodname{computeNextOutput} method is probably not familiar; we have not had cause to discuss it until now. The method signature is
+\begin{verbatim}
+void computeNextOutput()
+\end{verbatim}
+and it computes the model output at the next event time given by the \methodname{nextEventTime} method. The \methodname{computeNextOutput} method invokes the \methodname{output\_func} method of every imminent \classname{Atomic} model, maps outputs to inputs by calling the \methodname{route} method of \classname{Network} models, and calls the \methodname{outputEvent} method of every \classname{EventListener} that has been registered with the \classname{Simulator}. This method anticipates the outcome of your model from its current state assuming that no input events will intervene between now and the \methodname{nextEventTime}.
+
+The \methodname{computeNextState} method is used to inject intervening events and advance the simulation clock. The method signature is
+\begin{verbatim}
+void computeNextState(Bag<Event<X> >& input, double t)
+\end{verbatim}
+where the \classname{Event} class is the same one that the \classname{EventListener} accepts to its \methodname{outputEvent} method. The \classname{Event} class has two fields: a pointer to a model of type \classname{Devs$<$X$>$} (i.e., a \classname{Network} or \classname{Atomic} model) and a value of type X. 
+
+The \methodname{computeNextState} method applies a bag of input \classname{Event}s to the model at time t. If the input bag is empty and t is equal to the next event time, then this method has the same effect as \methodname{execNextEvent}: it calculates the output values at time t using the \methodname{computeNextOutput} method, computes the next state of all models undergoing internal and external events, computes structure changes, and advances the simulation clock. If the input bag is not empty then the value of each \classname{Event} is applied as an input to the model pointed to by that \classname{Event}. If, in this case, t is equal to the next event time then the method also follows the usual steps of invoking the \methodname{computeNextOutput} method and calculating state and structure changes; if t is less than the \classname{Simulator}'s next event time, then the procedure is nearly identical excepting that the \methodname{computeNextOutput} method is not invoked. In this case, the only input events for any model are those provided in the input bag.
+
+The \classname{Simulator}'s \methodname{execNextEvent} method, the workhorse of most simulation programs, actually defers its job to two these two methods which do the real work. The implementation takes only two lines; the \classname{Bag} bogus\_input is empty.
+\begin{verbatim}
+void execNextEvent() {
+    computeNextOutput();
+    computeNextState(bogus_input,nextEventTime());
+}
+\end{verbatim}
+
+The \classname{Simulator}'s \methodname{computeNextOutput}, \methodname{computeNextState}, and \methodname{execNextEvent} methods throw an exception if a model violates either of two constraints: the time advance is negative or the coupling constraints described in section \ref{section:parts_of_a_network_model} and illustrated in Figure \ref{fig:bad_coupling}, are violated. The \adevs\ \classname{exception} class is derived from the standard C++ \classname{exception} class; the method \methodname{what} returns a string that describes the exception condition and the method \methodname{who} returns a pointer to the model that caused the exception to be generated. The \adevs\ \classname{exception} class is intended to assist with model debugging. There isn't much you can do at run-time to fix a time advance method or reorganize a model's structure (or fix the structure change logic), but the simulator tries to be friendly by identifying a problem before it becomes an obscure and difficult to find bug.

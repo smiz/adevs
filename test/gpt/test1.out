@@ -1,0 +1,15 @@
+Genr period: Proc time: Observation time: Start job 0 @ t = 1
+Start job 1 @ t = 2
+Finish job 0 @ t = 2
+Start job 2 @ t = 3
+Finish job 1 @ t = 3
+Start job 3 @ t = 4
+Finish job 2 @ t = 4
+End time: 5
+jobs arrived : 4
+jobs solved : 3
+AVERAGE TA = 1
+THROUGHPUT = 0.6
+Start job 4 @ t = 5
+Finish job 3 @ t = 5
+Finish job 4 @ t = 6

@@ -1,0 +1,756 @@
+\chapter{Network Models}
+\label{chapter:network_models}
+
+A network model is a set of atomic models and other network models that are interconnected. Network models are used to model large systems that have many interacting parts. Because network models can be components of other network models, it is possible to build models of very large multi-level systems in an organized fashion.
+
+Unlike atomic models, network models do not directly define new dynamic behavior. The dynamics of a network model are determined by the dynamics of its component parts and their interactions. Atomic models define basic dynamic behavior and network models define structure. Separating a model into dynamic behavior and structure greatly aids the task of simulating large systems with many kinds of interacting parts.
+
+\section{Parts of a Network Model}
+\label{section:parts_of_a_network_model}
+\adevs\ network models are derived from the abstract \classname{Network} class. This class has two abstract methods: \methodname{route} and \methodname{getComponents}. The \methodname{route} method implements connections between the components of the \classname{Network} model and between the input/output interface of the \classname{Network} model and its components. The \methodname{getComponents} method provides a list of components that constitute the \classname{Network} model.
+
+The \methodname{route} method is the real workhorse of any \classname{Network} model. It describes three things. The first is how components of the \classname{Network} model are connected to each other. The second is how input to the \classname{Network} model is converted into input for the component models. The third is how output from the component models become output from the \classname{Network} model. 
+
+The signature of the \methodname{route} method is
+\begin{verbatim}
+void route(const X& value, Devs<X>* model, Bag<Event<X> >& r) 
+\end{verbatim}
+where the value argument is the event being routed, the model argument is the \classname{Network} or \classname{Atomic} model that originated the event, and the r argument is a bag to be filled with the event targets. Each target is described by an \classname{Event} object that has the target model and the value to be delivered to it.
+The simulator uses the \methodname{route} method to convert output events produced by \classname{Atomic} models to, ultimately, input events for other \classname{Atomic} models. This conversion is done by a somewhat indirect process in which the \methodname{route} method plays a central role.
+
+An example is the easiest way to understand how the simulator uses the \methodname{route} method. The simplest example is converting the output from one \classname{Atomic} component of the \classname{Network} into an input for another \classname{Atomic} component in the same \classname{Network}. Figure \ref{fig:atomic_to_atomic_coupling} illustrates this case. 
+\begin{figure}[ht]
+\centering
+\epsfig{file=network_models_figs/connected_atomic_models.eps}
+\caption{Two connected \classname{Atomic} components in a single \classname{Network}.}
+\label{fig:atomic_to_atomic_coupling}
+\end{figure} 
+
+The simulator begins by invoking the \classname{output\_func} method of \classname{Atomic} model $A$. Next, the simulator iterates through the elements of $A$'s output bag and calls the \classname{Network}'s \methodname{route} method for each one. The arguments passed to \methodname{route} at each call are
+\begin{enumerate}
+\item the output object itself, which becomes the value argument,
+\item a pointer to $A$, which is the model argument, and
+\item an empty \classname{Bag}.
+\end{enumerate} 
+Two things must be done by the \methodname{route} method for \classname{Atomic} model $B$ to receive the output object. An \classname{Event} object must be created that contains the output object and a pointer to $B$ and then the \classname{Event} object must be inserted into the \classname{Bag} r. If we suppose, for the sake of illustration, that input and output objects have type int, then the \methodname{route} method is
+\begin{verbatim}
+void route(const int& value, Devs<int>* model, Bag<Event<int> >& r) {
+   if (model == A) {
+      Event<int> e(B,value);
+      r.insert(e);
+   }
+}
+\end{verbatim}
+where $A$ and $B$ are pointers to the respective components. This \methodname{route} method implements the network shown in Fig. \ref{fig:atomic_to_atomic_coupling}.
+
+It is also possible for the \classname{Network} model itself to receive input. This can happen when the network is a component in another \classname{Network} model. Suppose that input to our example \classname{Network} model becomes input to \classname{Atomic} model $A$. Figure \ref{fig:eic_atomic_to_atomic_coupling} extends Fig. \ref{fig:atomic_to_atomic_coupling} to include this connection.
+\begin{figure}[ht]
+\centering
+\epsfig{file=network_models_figs/eic_atomic_atomic_coupling.eps}
+\caption{Two connected \classname{Atomic} components with external input coupling to component $A$.}
+\label{fig:eic_atomic_to_atomic_coupling}
+\end{figure} 
+
+When an event appears at the input of the network, the simulator calls the \classname{Network}'s \methodname{route} method with the following arguments:
+\begin{enumerate}
+\item the input object itself, which becomes the value argument,
+\item a pointer to the \classname{Network} that is receiving the event, and
+\item an empty \classname{Bag}.
+\end{enumerate} 
+As before, the \methodname{route} method must create an \classname{Event} object that indicates the receiving model and the event value. This \classname{Event} is put into the \classname{Bag} r. The code below implements the network shown in Fig. \ref{fig:eic_atomic_to_atomic_coupling}; the C++ this pointer points to the \classname{Network} itself.
+\begin{verbatim}
+void route(const int& value, Devs<int>* model, Bag<Event<int> >& r) {
+   if (model == A) {
+       Event<int> e(B,value);
+       r.insert(e);
+   }
+   else if (model == this) {
+       Event<int> e(A,value);
+       r.insert(e);
+   }
+}
+\end{verbatim}
+
+\begin{figure}[ht]
+\centering
+\epsfig{file=network_models_figs/big_coupled.eps}
+\caption{A two component network model with external input, external output, and internal coupling.}
+\label{fig:big_coupling}
+\end{figure} 
+To complete the example, let's extend the network shown in Fig. \ref{fig:eic_atomic_to_atomic_coupling} to include two more connections: a connection from the output of model $B$ to the output of the network and a feedback connection from $B$ to $A$. This configuration is shown in Fig. \ref{fig:big_coupling}. The only new part of the \methodname{route} method is that output from model $B$ requires creating an \classname{Event} whose target is the \classname{Network} itself. This event will become output from the \classname{Network} itself.
+Here is the implementation.
+\begin{verbatim}
+void route(const int& value, Devs<int>* model, Bag<Event<int> >& r) {
+   if (model == A) {
+        Event<int> e(B,value);
+        r.insert(e);
+    }
+    else if (model == this) {
+        Event<int> e(A,value);
+        r.insert(e);
+    }
+    else if (model == B) {
+        Event<int> e1(this,value);
+        Event<int> e2(A,value);
+        r.insert(e1);
+        r.insert(e2);
+    }
+}
+\end{verbatim}
+
+The \methodname{getComponents} method is the only other method that must be implemented by a \classname{Network} subclass. The simulator passes to this method an empty \classname{Set} of model pointers which must be filled with pointers to the network's components. The \methodname{getComponents} method signature is
+\begin{verbatim}
+void getComponents(Set<Devs<X>*>& c) 
+\end{verbatim}
+where c is the set to be filled.
+There isn't much else to say about this method. The code below shows how it is implemented for the two component network shown in Fig. \ref{fig:big_coupling}; this code, of course, also works for the networks shown in Figs. \ref{fig:eic_atomic_to_atomic_coupling} and \ref{fig:atomic_to_atomic_coupling}.
+\begin{verbatim}
+void getComponents(Set<Devs<int>*>& c) { 
+   c.insert(A);
+   c.insert(B);
+}
+\end{verbatim}
+
+There are just three other items to mention in relation to \classname{Network} models. First, components should not be connected to themselves. This means that direct feedback loops and direct throughs in a network model must be avoided. These two cases are illustrated in Fig. \ref{fig:bad_coupling}. Second, direct coupling can only occur between components belonging to the same network, and every component must belong to, at most, one network. Third, you'll notice that it is possible for the \methodname{route} method to modify the value of an output before sending it along. This is permitted and can be useful in some cases.
+\begin{figure}[ht]
+\centering
+\epsfig{file=network_models_figs/bad_couplings.eps}
+\caption{Illegal coupling in a \classname{Network} model.}
+\label{fig:bad_coupling}
+\end{figure}
+
+\section{Simulating a Network Model}
+Each iteration of a network model simulation has four phases: advance the simulation clock to the next event time, compute model output events and convert the output events to input events, calculate the next state of each model with events to process, and cleanup garbage events. These four phase are repeated until the next event time is at infinity (i.e., DBL\_MAX) or you decide to stop the simulation. 
+
+Conveniently, there are no special rules for simulating networks of network models. The simulator considers the entire collection of atomic models when determining the next event time, output events from atomic models are recursively routed to atomic destinations, and state transitions and garbage collection are performed over the complete set of active atomic components. Hierarchies of network models are a convenient organizing tool for the modeler, but the simulator ultimately treats a multi-level network as a flat structure.
+
+Algorithm \ref{alg:coupled_model} is a sketch of the network model simulation procedure. The atomic model simulation algorithm from section \ref{section:atomic_models} is embedded in the network simulation algorithm. The rules for atomic models do not change in any way; each atomic model sees a sequence of input events and produces a sequence of output events just as before. The only difference here is that the input events are created by other atomic models, and so the input sequence for each atomic model is constructed as the simulation progresses.
+\begin{algorithm}
+\begin{algorithmic}
+\STATE Initialize the state of every \classname{Atomic} model 
+\STATE Set the last event time $t_{l,i}$ of every \classname{Atomic} model $i$ to $0$
+\STATE Set the simulation time $t$ to $0$
+\WHILE {The smallest \classname{Atomic} model next event time $<$ DBL\_MAX}
+   \STATE Set $t$ to the smallest \classname{Atomic} model next event time
+   \STATE Find the set of \classname{Atomic} models whose next event time is equal to $t$. These are the imminent models.
+   \STATE Get the output of each imminent model by calling its \methodname{output\_func}
+   \
+   \STATE Convert imminent model output to input using the \classname{Network} model \methodname{route} method (do this recursively if the model has more than one level)
+   \FOR{each \classname{Atomic} model $i$ that is imminent or has input}
+      \IF {$i$ is an imminent model and it does not have input}
+         \STATE Compute the next model state with delta\_int()
+      \ELSIF {$i$ is an imminent and it has input}
+         \STATE Compute the next model state with delta\_conf(xb), where xb is the model input
+      \ELSIF {$i$ is not an imminent model and it has input}
+         \STATE Compute the next model state with delta\_ext($t-t_{l,i}$,xb), where xb is the model input
+      \ENDIF
+      \STATE Set $t_{l,i}$ to $t$
+   \ENDFOR
+\ENDWHILE
+\end{algorithmic}
+\caption{The simulation procedure for a network model.}
+\label{alg:coupled_model}
+\end{algorithm}
+
+\section{Building a Network Model}
+Network models are derived from the abstract \classname{Network} class. Every network model must implement the two methods described above: \methodname{getComponents} and \methodname{route}. Usually, member variables for storing the network structure and methods for initializing the structure are also needed.
+
+I'll use the \adevs\ \classname{SimpleDigraph} class to illustrate the construction process. The \classname{SimpleDigraph} models a network of components whose connections are represented with a directed graph. If, for example, component $A$ is connected to component $B$, then all output events generated by $A$ become input events to $B$. The \classname{SimpleDigraph} has two methods for building a network. The \methodname{add} method takes an \classname{Atomic} or \classname{Network} model and adds it to the component set. The \methodname{couple} method accepts a pair of component models and connects the output of the first to the input of the second. Below is the class definition for the model; note that is has a template parameter for setting the input/output type. The \classname{Network}, \classname{Devs}, \classname{Bag}, and \classname{Set} are in the adevs namespace, and \mbox{adevs::} must precede them unless the \classname{SimpleDigraph} is in the adevs namespace (which it is). 
+\begin{verbatim}
+template <class VALUE> class SimpleDigraph: public Network<VALUE> { 
+   public:
+      /// A component of the SimpleDigraph model
+      typedef Devs<VALUE> Component;
+
+      /// Construct a network with no components
+      SimpleDigraph():Network<VALUE>(){}
+      /// Add a model to the network.
+      void add(Component* model);
+      /// Couple the source model to the destination model  
+      void couple(Component* src, Component* dst);
+      /// Assigns the model component set to c
+      void getComponents(Set<Component*>& c);
+      /// Use the coupling information to route an event
+      void route(const VALUE& x, Component* model, Bag<Event<VALUE> >& r);
+      /// The destructor destroys all of the component models
+      ~SimpleDigraph();
+
+   private:   
+      // Component model set
+      Set<Component*> models;
+      // Coupling information
+      std::map<Component*,Bag<Component*> > graph;
+};
+\end{verbatim}
+The \classname{SimpleDigraph} has two member variables. Pointers to components of the network are stored in the \classname{Set} models. The components can be \classname{Atomic} objects, \classname{Network} objects, or both. The \classname{SimpleDigraph} components are the nodes of the directed graph. The links, or edges, are stored in the \classname{map} graph.
+
+The \methodname{add} method does three things. First, it checks that the network is not being added to itself; this is illegal and would cause no end of trouble for the simulator. Next, it adds the component to its component set. Last, the \classname{SimpleNetwork} sets the component's parent. The last step is needed so that the simulator can climb up and down the model tree. If it is omitted then event routing is likely fail. Here is the implementation of the \methodname{add} method.
+\begin{verbatim}
+template <class VALUE> 
+void SimpleDigraph<VALUE>::add(Component* model) {
+   assert(model != this);
+   models.insert(model);
+   model->setParent(this);
+}
+\end{verbatim}
+
+The \methodname{couple} method does two things, but one of them is somewhat superfluous. First, it adds the source (src) and destination (dst) models to the component set. We could simply have required that the user call the \classname{add} method before using the \methodname{couple} method, but adding the components here doesn't hurt and might prevent a few headaches. The second step is essential; the method adds the \mbox{src $\rightarrow$ dst} link to the graph. Notice that the \methodname{SimpleDigraph} itself is a node in the network (but it is not in the component set!). Components that are connected to the network create network outputs. A network connection to a component means that the component will receive network inputs. Here is the \methodname{couple} method implementation.
+\begin{verbatim}
+template <class VALUE>
+void SimpleDigraph<VALUE>::couple(Component* src, Component* dst) { 
+   if (src != this) add(src);
+   if (dst != this) add(dst);
+   graph[src].insert(dst);
+}
+\end{verbatim}
+
+Of the two required methods, \methodname{route} is the more complicated. The arguments to the method are an input event, the network element (i.e., either the \classname{SimpleDigraph} or one of its components) that is the event source, and the \classname{Bag} that must be filled with \classname{Event} objects that indicate the event receivers. The method begins by finding the collection of components that are connected to the event source. Next we iterate through this collection and for each receiver add an \classname{Event} to the event receiver \classname{Bag}. When this is done the method returns. The implementation is below.
+\begin{verbatim}
+template <class VALUE>
+void SimpleDigraph<VALUE>::route(const VALUE& x, Component* model,Bag<Event<VALUE> >& r) {
+   // Find the list of target models and ports
+   typename std::map<Component*,Bag<Component*> >::iterator graph_iter;
+   graph_iter = graph.find(model);
+   // If no target, just return
+   if (graph_iter == graph.end()) return;
+   // Otherwise, add the targets to the event bag
+   Event<VALUE> event;
+   typename Bag<Component*>::iterator node_iter;
+   for (node_iter = (*graph_iter).second.begin();
+      node_iter != (*graph_iter).second.end(); node_iter++) {
+      event.model = *node_iter;
+      event.value = x;
+      r.insert(event);
+   }
+}
+\end{verbatim}
+
+The second required method, \methodname{getComponents}, is trivial. If we had used some collection other than an \adevs\ \classname{Set} to store the components, then the method would have needed to explicitly insert every component model into the \classname{Set} c. But because models and c are both \classname{Set} objects, and the \classname{Set} has an assignment operator, a simple call to that operator is sufficient.
+\begin{verbatim}
+template <class VALUE>
+void SimpleDigraph<VALUE>::getComponents(Set<Component*>& c) {
+   c = models;
+}
+\end{verbatim}
+
+The constructor and the destructor complete the class. The constructor implementation appears in the class definition; it only calls the superclass constructor. The destructor deletes the component models. Its implementation is shown below.
+\begin{verbatim}
+template <class VALUE>
+SimpleDigraph<VALUE>::~SimpleDigraph() {
+   typename Set<Component*>::iterator i;
+   for (i = models.begin(); i != models.end(); i++) {
+      delete *i;
+   }
+}
+\end{verbatim}
+ 
+\section{Digraph Models}
+\label{section:digraph_models}
+This
+section introduces \classname{Digraph} model as a tool for building block diagram, or directed graph, multi-component
+models. The model of the convenience store, developed in section \ref{chapter:intro}
+, is our first example of a \classname{Digraph} model.
+The code used to construct the convenience store model (without the \classname{Observer}) is shown
+below. The block diagram that corresponds to this code snippet is shown in Fig. \ref{fig:two_component_diagram}.
+\begin{verbatim}
+// Create a digraph model whose components use PortValue<Customer*>
+// objects as input and output objects.
+adevs::Digraph<Customer*> store;
+// Create and add the component models
+Clerk* clrk = new Clerk();
+Generator* genr = new Generator(argv[1]);
+store.add(clrk);
+store.add(genr);
+// Couple the components
+store.couple(genr,genr->arrive,clrk,clrk->arrive);
+\end{verbatim}
+\begin{figure}[ht]
+\centering
+\epsfig{file=network_models_figs/two_component_model.eps}
+\caption{A \classname{Digraph} model with two components.}
+\label{fig:two_component_diagram}
+\end{figure}
+
+The \classname{Digraph} model is part of the \adevs\ simulation library. 
+Models that are part of a \classname{Digraph} must use the \classname{adevs::PortValue} objects as their input and output type.  The \classname{Digraph} class is a template class with two template parameters. The first is the type of object that will be used as a value in a \classname{PortValue} object.  The second parameter is the type of object that will be used as a port in the \classname{PortValue} object.  The port parameter is of type 'int' by default.
+
+The \classname{Digraph} class has two primary methods. The \methodname{add()} method is used
+to add component models to the block diagram model. The \methodname{couple()}
+method is used to connect components of the \classname{Digraph} model. The
+first two arguments to the \methodname{couple} method are the source model and
+source port. The second two arguments are the destination model and
+the destination port. 
+
+The effect of coupling a source model to a destination model is that
+output produced by the source model on the source port appear
+as input to the destination model on the destination port. To
+illustrate this, consider the output function of the \classname{Generator} model
+shown in Fig. \ref{fig:two_component_diagram}.
+\begin{verbatim}
+void Generator::output_func(Bag<IO_Type>& yb)
+{
+    // First customer in the list is produced as output
+    IO_Type output(arrive,arrivals.front());
+    yb.insert(output);
+}
+\end{verbatim}
+
+This places an output value of type \classname<Customer*> on the ``arrive" output port of the \classname{Generator}.  A corresponding \classname{PortValue} object appears in the input bag of the \classname{Clerk}. The value of this \classname{PortValue} object points to the \classname{Customer*} object created by the \classname{Generator} and the port is the \classname{Clerk}'s ``arrive" port.
+
+In addition to coupling \classname{Atomic} models, the \classname{Digraph} class can also have other \classname{Network} models as its components. Suppose that we want to model a convenience store
+that has two checkout clerks. When customers are ready to pay their
+bill, they look for the line with the smallest number of people and
+enter that line. We can reuse the \classname{Clerk}, \classname{Generator}, and \classname{Observer}
+models that were introduced in section \ref{chapter:intro} to build this new model. 
+
+The header and source code for the model of the customer's line-selection process is shown below. The model has two output
+ports, one for each line. There are three input ports. One of these
+accepts new customers. The others are used to keep track of the
+number of customers in the each line. The state transition and output
+functions are self explanatory. Here is the class definition
+\begin{verbatim}
+#include "adevs.h"
+#include "Customer.h"
+#include <list>
+
+// Number of lines to consider.
+#define NUM_LINES 2
+
+class Decision: public adevs::Atomic<IO_Type>
+{
+    public:
+        /// Constructor.
+        Decision();
+        /// Internal transition function.
+        void delta_int();
+        /// External transition function.
+        void delta_ext(double e, const adevs::Bag<IO_Type>& x);
+        /// Confluent transition function.
+        void delta_conf(const adevs::Bag<IO_Type>& x);
+        /// Output function.  
+        void output_func(adevs::Bag<IO_Type>& y);
+        /// Time advance function.
+        double ta();
+        /// Output value garbage collection.
+        void gc_output(adevs::Bag<IO_Type>& g);
+        /// Destructor.
+        ~Decision();
+        /// Input port that receives new customers
+        static const int decide;
+        /// Input ports that receive customers leaving the two lines
+        static const int departures[NUM_LINES];
+        /// Output ports that produce customers for the two lines
+        static const int arrive[NUM_LINES];
+
+    private:
+        /// Lengths of the two lines
+        int line_length[NUM_LINES];
+        /// List of deciding customers and their decision.
+        std::list<std::pair<int,Customer*> > deciding;
+        /// Delete all waiting customers and clear the list.
+        void clear_deciders();
+        /// Returns the arrive port associated with the shortest line
+        int find_shortest_line();
+};
+\end{verbatim}
+and here is the implementation
+\begin{verbatim}
+#include "Decision.h"
+#include <iostream>
+using namespace std;
+using namespace adevs;
+
+// Assign identifiers to ports.  Assumes NUM_LINES = 2.
+// The numbers are selected to allow indexing into the
+// line length and port number arrays.
+const int Decision::departures[NUM_LINES] = { 0, 1 };
+const int Decision::arrive[NUM_LINES] = { 0, 1 };
+// Inport port for arriving customer that need to make a decision
+const int Decision::decide = NUM_LINES;
+
+Decision::Decision():
+Atomic<IO_Type>()
+{
+    // Set the initial line lengths to zero
+    for (int i = 0; i < NUM_LINES; i++)
+    {
+        line_length[i] = 0;
+    }
+}
+
+void Decision::delta_int()
+{
+    // Move out all of the deciders
+    deciding.clear();
+}
+
+void Decision::delta_ext(double e, const Bag<IO_Type>& x)
+{
+    // Assign new arrivals to a line and update the line length
+    Bag<IO_Type>::const_iterator iter = x.begin();
+    for (; iter != x.end(); iter++)
+    {
+        if ((*iter).port == decide)
+        {
+            int line_choice = find_shortest_line();
+            Customer* customer = new Customer(*((*iter).value));
+            pair<int,Customer*> p(line_choice,customer);
+            deciding.push_back(p);
+            line_length[p.first]++;
+        }
+    }
+    // Decrement the length of lines that had customers leave
+    for (int i = 0; i < NUM_LINES; i++)
+    {
+        iter = x.begin();
+        for (; iter != x.end(); iter++)
+        {
+            if ((*iter).port < NUM_LINES)
+            {
+                line_length[(*iter).port]--;
+            }
+        }
+    }
+}
+
+void Decision::delta_conf(const Bag<IO_Type>& x)
+{
+    delta_int();
+    delta_ext(0.0,x);
+}
+
+double Decision::ta()
+{
+    // If there are customers getting into line, then produce output
+    // immediately.
+    if (!deciding.empty())
+    {
+        return 0.0;
+    }
+    // Otherwise, wait for another customer
+    else
+    {
+        return DBL_MAX;
+    }
+}
+        
+void Decision::output_func(Bag<IO_Type>& y)
+{
+    // Send all customers to their lines
+    list<pair<int,Customer*> >::iterator i = deciding.begin();
+    for (; i != deciding.end(); i++)
+    {
+        IO_Type event((*i).first,(*i).second);
+        y.insert(event);
+    }
+}
+
+void Decision::gc_output(Bag<IO_Type>& g)
+{
+    Bag<IO_Type>::iterator iter = g.begin();
+    for (; iter != g.end(); iter++)
+    {
+        delete (*iter).value;
+    }
+}
+
+Decision::~Decision()
+{
+    clear_deciders();
+}
+
+void Decision::clear_deciders()
+{
+    list<pair<int,Customer*> >::iterator i = deciding.begin();
+    for (; i != deciding.end(); i++)
+    {
+        delete (*i).second;
+    }
+    deciding.clear();
+}
+
+int Decision::find_shortest_line()
+{
+    int shortest = 0;
+    for (int i = 0; i < NUM_LINES; i++)
+    {
+        if (line_length[shortest] > line_length[i])
+        {
+            shortest = i;
+        }
+    }
+    return shortest;
+}
+\end{verbatim}
+
+The block diagram model of the store with multiple clerks is shown in Fig. \ref{fig:multi_clerk_diagram}. The
+external interface for this block diagram model is identical to the
+previous clerk models (i.e., the \classname{Clerk} and \classname{Clerk2} models), and we can
+use the generator and observer models to conduct the same experiments
+as before. The external ``arrive" input of the
+multi-clerk model is connected to the ``decide" input of
+the \classname{Decision} model.  The ``depart" output ports of each of
+the \classname{Clerk} models is connected to the external ``arrive"
+output port of the multi-clerk model.  The \classname{Decision} model has two
+output ports, each one producing customers for a distinct clerk.  These
+output ports are coupled to the ``arrive" port of the
+appropriate clerk model.  The \classname{Clerk}'s ``depart" output ports are
+then coupled to the appropriate ``departure" port of the
+decision model.
+\begin{figure}[ht]
+\centering
+\epsfig{file=network_models_figs/multi_clerk_diagram.eps}
+\caption{Component models and their interconnections in the multi-clerk convenience store model.}
+\label{fig:multi_clerk_diagram}
+\end{figure}    
+
+The multi-clerk model is implemented by deriving a new class from
+the \classname{Digraph} class. The constructor of the new class creates
+and adds the component models and establishes their interconnections.
+Here is the header file for the new
+multi-clerk model.
+\begin{verbatim}
+#include "adevs.h"
+#include "Clerk.h"
+#include "Decision.h"
+
+/**
+A model of a store with multiple clerks and a "shortest line"
+decision process for customers.
+*/
+class MultiClerk: public adevs::Digraph<Customer*>
+{
+    public:
+        // Model input port
+        static const int arrive;
+        // Model output port
+        static const int depart;
+        // Constructor.
+        MultiClerk();
+        // Destructor.
+        ~MultiClerk();
+};
+\end{verbatim}
+And here is the source file
+\begin{verbatim}
+#include "MultiClerk.h"
+using namespace std;
+using namespace adevs;
+
+// Assign identifiers to I/O ports
+const int MultiClerk::arrive = 0;
+const int MultiClerk::depart = 1;
+
+MultiClerk::MultiClerk():
+Digraph<Customer*>()
+{
+    // Create and add component models
+    Decision* d = new Decision();
+    add(d);
+    Clerk* c[NUM_LINES];
+    for (int i = 0; i < NUM_LINES; i++)
+    {
+        c[i] = new Clerk();
+        add(c[i]);
+    }
+    // Create model connections
+    couple(this,this->arrive,d,d->decide);
+    for (int i = 0; i < NUM_LINES; i++)
+    {
+        couple(d,d->arrive[i],c[i],c[i]->arrive);
+        couple(c[i],c[i]->depart,d,d->departures[i]);
+        couple(c[i],c[i]->depart,this,this->depart);
+    }
+}
+
+MultiClerk::~MultiClerk()
+{
+}
+\end{verbatim}
+Notice that the \classname{MultiClerk} destructor does not delete the component
+models.  This is because the component models are adopted by the base
+class when they are added to the \classname{Digraph}. 
+Consequently, the component models are deleted by the base class
+destructor, rather than the destructor of the derived class.
+
+\section{Cell Space Models}
+A cell space model is a collection of atomic and network models arrange in a regular grid and each model communicates with some arrangement of its neighboring models. Conway's Game of Life is a classic example of a cell space model, and that model can be described very nicely as a discrete event system. The game is played on a flat board that is divided into regular cells. Each cell has a neighborhood that consists of the eight adjacent cells: above, below, left, right, and the four corners. A cell can be dead or alive, and the switch from dead to alive and vice versa occurs according to two rules:
+\begin{enumerate}
+\item If a cell is alive and it has less than two or more than three living neighbors then the cell dies.
+\item If a cell is dead and it has three three living neighbors then the cell is reborn.
+\end{enumerate}
+
+Our implementation of the Game of Life has two parts: the atomic models that implement the individual cells and the \classname{CellSpace} model that contains the cells and routes their output events. The \classname{CellSpace} is a type of \classname{Network}. The components of a \classname{CellSpace} exchange \classname{CellEvent} objects that have four fields: the x, y, and z coordinates of the target cell and a value to deliver. The \classname{CellEvent} class is a template class whose template argument sets the value type. The size of the \classname{CellSpace} is determined when the \classname{CellSpace} object is created, and it has methods for adding and retrieving cells by their location. 
+
+The \classname{Atomic} components in our Game of Life implementation have two state variables: the dead or alive status of the cell and the number of living neighbors. Two methods are implemented to test the death and rebirth rules, and the cell sets its time advance to 1 whenever a rule is satisfied. The cell output is its new dead or alive state. External events update the cell's living neighbor count. In order to produce properly targeted \classname{CellEvent}s, each cell also keeps track of its own location in the cell space. In the example code, the cell space is rendered graphically using OpenGL, but I'll omit that part. Here is the header file for our Game of Life cell.
+\begin{verbatim}
+/// Possible cell phases
+typedef enum { Dead, Alive } Phase;
+/// IO type for a cell
+typedef adevs::CellEvent<Phase> CellEvent;
+
+/// A cell in the Game of Life.  
+class Cell: public adevs::Atomic<CellEvent> {
+   public:
+      /**
+      Create a cell and set the initial state.
+      The width and height fields are used to determine if a
+      cell is an edge cell.  The last phase pointer is used to
+      visualize the cell space.
+      */
+      Cell(long int x, long int y, long int width, long int height, 
+      Phase phase, short int nalive, Phase* vis_phase = NULL);
+
+      ... Required Adevs methods and destructor ...
+
+   private:   
+      // location of the cell in the 2D space
+      long int x, y;
+      // dimensions of the 2D space
+      static long int w, h;
+      // Current cell phase
+      Phase phase;
+      // number of living neighbors.
+      short int nalive;
+      // Output variable for visualization
+      Phase* vis_phase;
+
+      // Returns true if the cell will be born
+      bool check_born_rule() const {
+         return (phase == Dead && nalive == 3);
+      }
+      // Return true if the cell will die
+      bool check_death_rule() const {
+         return (phase == Alive && (nalive < 2 || nalive > 3));
+      }
+};
+\end{verbatim}
+
+The template argument supplied to the base \classname{Atomic} class is a \classname{CellEvent} whose value field has the type \classname{Phase}. The \methodname{check\_born\_rule} method tests the rebirth condition and \methodname{check\_death\_rule} method tests the death condition. The appropriate rule, as determined by the cell's dead or alive status, is used in the time advance, output, and internal transition methods. The number of living cells is updated by the cell's \methodname{delta\_ext} method whenever neighboring cells report a change in their health. Here are the \methodname{Cell}'s method implementations.
+\begin{verbatim}
+Cell::Cell(long int x, long int y, long int w, long int h, 
+Phase phase, short int nalive, Phase* vis_phase):
+adevs::Atomic<CellEvent>(),x(x),y(y),phase(phase),nalive(nalive),vis_phase(vis_phase) {
+   // Set the global cellspace dimensions
+   Cell::w = w; Cell::h = h;
+   // Set the initial visualization value
+   if (vis_phase != NULL) *vis_phase = phase;
+}
+
+double Cell::ta() {
+   // If a phase change should occur then change state 
+   if (check_death_rule() || check_born_rule()) return 1.0;
+   // Otherwise, do nothing
+   return DBL_MAX;
+}
+
+void Cell::delta_int() { 
+   // Change the cell state if necessary
+   if (check_death_rule()) phase = Dead;
+   else if (check_born_rule()) phase = Alive;
+}
+
+void Cell::delta_ext(double e, const adevs::Bag<CellEvent>& xb) {
+   // Update the living neighbor count 
+   adevs::Bag<CellEvent>::const_iterator iter;
+   for (iter = xb.begin(); iter != xb.end(); iter++) {
+      if ((*iter).value == Dead) nalive--;
+      else nalive++;
+   }
+}
+
+void Cell::delta_conf(const adevs::Bag<CellEvent>& xb) { 
+   delta_int();
+   delta_ext(0.0,xb);
+}
+
+void Cell::output_func(adevs::Bag<CellEvent>& yb) { 
+   CellEvent e;
+   // Assume we are dying
+   e.value = Dead;
+   // Check in case this in not true
+   if (check_born_rule()) e.value = Alive;
+   // Set the visualization value
+   if (vis_phase != NULL) *vis_phase = e.value;
+   // Generate an event for each neighbor
+   for (long int dx = -1; dx <= 1; dx++) {
+      for (long int dy = -1; dy <= 1; dy++) {
+         e.x = (x+dx)%w;
+         e.y = (y+dy)%h;
+         if (e.x < 0) e.x = w-1;
+         if (e.y < 0) e.y = h-1;
+         // Don't send to self
+         if (e.x != x || e.y != y)
+            yb.insert(e);
+      }
+   }
+}
+\end{verbatim}
+The \methodname{output\_func} method shows how a cell sends messages to its neighbors. The double for loop creates a \classname{CellEvent} targeted at each adjacent cell. The location of the target cell is written to the x, y, and z fields of the \classname{CellEvent} object. Just like arrays, the location values can range from zero to the cell space size minus one. The \classname{CellSpace} will do the actual routing of the \classname{CellEvent}s to their targets. Note however that if the target of the \classname{CellEvent} is outside of the cell space, then the \classname{CellSpace} itself will produce the \classname{CellEvent} as an output.
+
+The remainder of the simulation program looks very much like the other simulation programs that we've seen so far (except for some OpenGL specific code, omitted here, that is used to display the cell space). A \classname{CellSpace} object is created and we add each cell to it. Then a \classname{Simulator} object is create and a pointer to the \classname{CellSpace} is passed to the \classname{Simulator}'s constructor. Last, we execute events until our stopping criteria is met. The execution part is already familiar, so let's just focus on creating the \classname{CellSpace}. Here is the code snippet that performs the construction.
+\begin{verbatim}
+      // Create the cellspace model
+      cell_space = new adevs::CellSpace<Phase>(WIDTH,HEIGHT);
+      for (int x = 0; x < WIDTH; x++) {
+         for (int y = 0; y < HEIGHT; y++) {
+            // Count the living neighbors
+            short int nalive = count_living_cells(x,y);
+            // The 2D phase array contains the initial Dead/Alive state of each cell
+            cell_space->add(
+               new Cell(x,y,WIDTH,HEIGHT,phase[x][y],nalive,&(phase[x][y])),x,y);
+         }
+      }
+\end{verbatim}
+Just as with the \classname{Digraph} class, the \classname{CellSpace} template argument determines the value type for the \classname{CellEvent}s that are used as input and output by the \classname{CellSpace} components. The \classname{CellSpace} constructor sets the dimensions of the space. Every \classname{CellSpace} is three dimensional, and the constructor accepts three arguments that set the x, y, and z dimensions; omitted arguments default to 1. The constructor signature is
+\begin{verbatim}
+CellSpace(long int width, long int height = 1, long int depth = 1)
+\end{verbatim}
+
+Components are added to the cellspace with the \methodname{add} method. This method places a component at a specific (x,y,z) location. Its signature is
+\begin{verbatim}
+void add(Cell* model, long int x, long int y = 0, long int z = 0)
+\end{verbatim}
+where \classname{Cell} is a \classname{Devs} (atomic or network) by the type definition
+\begin{verbatim}
+typedef Devs<CellEvent<X> > Cell;
+\end{verbatim}
+The \classname{CellSpace} deletes its components when it is deleted.
+The \classname{CellSpace} class has five other methods for retrieving cells and getting the dimensionality of the cell space. These are more or less self-explanatory; the signatures are shown below.
+\begin{verbatim}
+const Cell* getModel(long int x, long int y = 0, long int z = 0) const;
+Cell* getModel(long int x, long int y = 0, long int z = 0);
+long int getWidth() const;
+long int getHeight() const;
+long int getDepth() const;
+\end{verbatim}
+
+The Game of Life produces a surprising number of clearly recognizable patterns. Some of these patterns are fixed and unchanging; others oscillate, cycling through a set of patterns that always repeats itself; others seem to crawl or fly. One familiar static pattern is the Block shown in Fig. \ref{fig:gol_block}.
+Our discrete event implementation of the Game of Life doesn't do any work when simulating a Block. None of the cells in a Block change in any way; their phases are constant and so are their neighbor counts. 
+\begin{figure}[ht]
+\centering
+\epsfig{file=network_models_figs/block_pattern.eps}
+\caption{The Block.}
+\label{fig:gol_block}
+\end{figure}
+\begin{figure}[ht]
+\centering
+\epsfig{file=network_models_figs/blinker.eps}
+\caption{The Blinker. The input, output, and state transitions for the cell marked with a * are shown in Table \ref{tab:blinker_cell_activity}. The address of each cell is shown in its upper left corner. Living cells are indicated with a \$.}
+\label{fig:gol_blinker}
+\end{figure}
+The Blinker shown in Fig. \ref{fig:gol_blinker} is more interesting. This oscillating pattern has just two stages: a vertical and a horizontal. 
+Table \ref{tab:blinker_cell_activity} shows the input, output, and state transitions that are computed for the cell marked with * in Fig. \ref{fig:gol_blinker}. Just like the pattern it is a part of, the cell oscillates between two different states.
+\begin{table}[ht]
+\centering
+\begin{tabular}{|l|l|l|l|}
+\hline Time & State      & Input & Output to all neighbors\\ \hline
+0 & (dead,3) & No input & No Output \\ \hline 
+1 & (alive,1) & (dead,2,1,0) \ (dead,2,3,0) & alive \\ \hline 
+2 & (dead,1) & (alive,2,1,0) \ (alive,2,3,0) & dead \\ \hline
+\end{tabular}
+\caption{State, input, and output trajectory for the cell marked with * in Fig. \ref{fig:gol_blinker}.}
+\label{tab:blinker_cell_activity}
+\end{table}
+
+The confluent transition function plays a major role in the Blinker simulation. Most of the rows in Table \ref{tab:blinker_cell_activity} (all but the first row, in fact) have both an input and an output, which means that an internal and external event coincide and so the next state is determined by the \methodname{delta\_conf} method. It is also important that the input and output bags carry multiple values. The external transition function (which is used in defining the confluent transition function) must be able to compute the number of living neighbors before determining its next state. If input events were provided one at a time (e.g., if the input bag were replaced by a single input event), then our discrete event Game of Life would be much more difficult to implement.

@@ -1,0 +1,40 @@
+Car 0 left cell 0 @ t = 0.5
+0.500000: car 0 left 0!
+0.500000: car 0 is at 1!
+Car 0 left cell 1 @ t = 1
+1.000000: car 0 left 1!
+1.000000: car 0 is at 2!
+Car 5 left cell 5 @ t = 1
+1.000000: car 5 left 5!
+1.000000: car 5 is at 6!
+Car 0 left cell 2 @ t = 1.5
+1.500000: car 0 left 2!
+1.500000: car 0 is at 3!
+Car 0 left cell 3 @ t = 2
+2.000000: car 0 left 3!
+2.000000: car 0 is at 4!
+Car 5 left cell 6 @ t = 2
+2.000000: car 5 left 6!
+2.000000: car 5 is at 7!
+Car 0 left cell 4 @ t = 2.5
+2.500000: car 0 left 4!
+2.500000: car 0 is at 5!
+Car 0 left cell 5 @ t = 3
+3.000000: car 0 left 5!
+3.000000: car 0 is at 6!
+Car 5 left cell 7 @ t = 3
+3.000000: car 5 left 7!
+3.000000: car 5 is at 8!
+Car 0 left cell 6 @ t = 3.5
+3.500000: car 0 left 6!
+3.500000: car 0 is at 7!
+Car 0 left cell 7 @ t = 4
+4.000000: car 0 left 7!
+Car 5 left cell 8 @ t = 4
+4.000000: car 0 is at 8!
+4.000000: car 5 left 8!
+4.000000: car 5 is at 9!
+Car 0 left cell 8 @ t = 4.5
+4.500000: car 0 left 8!
+4.500000: car 0 is at 9!
+4.500000: collision @ 9!

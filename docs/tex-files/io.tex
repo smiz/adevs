@@ -1,0 +1,74 @@
+\chapter{Models with Many Input/Output Types}
+\label{section:models_with_many_io_types}
+It would be surprising if every component in a large model (or even a small one) had the same input and output requirements. Some models can be satisfactorily constructed with a single type of input/output object and, if this is the case, it will simplify the design of your simulator. If not, you'll need to address this problem when you design your simulation program.
+ 
+One solution to this problem is to establish a base class for all input and output types and derive specific types from the common base. The simulator and all of its components exchange pointers to the base class and down cast specific objects as needed. The C++ dynamic\_cast operator is particularly useful for this purpose. Although it is not without its problems, I have used this solution in many designs and it works well.
+
+It is not always possible for every component in a model to share a common base class for its input and output type. This can happen if different sub-model have very different input and output needs or when models from earlier projects are reused. For example, to use a \classname{CellSpace} model as a component of a \classname{Digraph} model requires some means of converting the \classname{CellSpace}'s \classname{CellEvent} objects into the \classname{PortValue} objects required by the \classname{Digraph}. Happily, there is a simple solution to this problem that makes clever use of the \classname{Simulator} and \classname{EventListener} classes to wrap a model with one input and output type inside of an atomic model with a different input and output type.
+
+The \adevs\ \classname{ModelWrapper} class is an \classname{Atomic} model that encapsulates another model. The encapsulated model can be a \classname{Network} or \classname{Atomic} model. The \classname{ModelWrapper} uses input/output objects of type ExternalType, but the encapsulated class uses input/output objects of type InternalType. Two abstract methods are provided for converting objects with one type into objects with the other type; these methods are
+\begin{verbatim}
+void translateInput(const Bag<ExternalType>& external_input, Bag<Event<InternalType> >& internal_input)
+void translateOutput(const Bag<Event<InternalType> >& internal_output, Bag<ExternalType>& external_output) 
+\end{verbatim}
+Clean up of converted objects are managed with the \methodname{gc\_output} method, which is inherited from the \classname{ModelWrapper}'s \classname{Atomic} base class, and a new \methodname{gc\_input} method for cleaning up objects created by the \methodname{translateInput} method; its signature is
+\begin{verbatim}
+void gc_input(Bag<Event<InternalType> >& g)
+\end{verbatim}
+
+The model to encapsulate is passed to the \classname{ModelWrapper} constructor. The \classname{ModelWrapper} creates a \classname{Simulator} for the model that is used to control its evolution; the \classname{ModelWrapper} is a simulator inside of a model inside of a simulator! The \classname{ModelWrapper} keeps track of the wrapped model's last event time, and it uses this information and the \classname{Simulator}'s \methodname{nextEventTime} method to compute its time advance. Internal, external, and confluent events cause the \classname{WrappedModel} to invoke its \classname{Simulator}'s \methodname{computeNextState} method and thereby advance the state of the wrapped model. Internal events are simplest; the \methodname{computeNextState} method is invoked with the wrapped model's next event time and an empty input bag. 
+
+The \methodname{delta\_conf} and \methodname{delta\_ext}, however, must convert the incoming input events, which have the type ExternalType, into input events for the wrapped model, which have the type InternalEvent. This is accomplished with the \methodname{translateInput} method. The first argument to the method is the input bag passed to the \classname{ModelWrapper}'s \methodname{delta\_ext} or \methodname{delta\_conf} method. The second argument is an empty bag that the method implementation must fill. When the \methodname{translateInput} method returns this bag will be passed to the \methodname{computeNextState} method of the \classname{ModelWrapper}'s simulator. Notice that the internal\_input argument is a \classname{Bag} filled with \classname{Event} objects; if the wrapped model is a \classname{Network} then the translated events can be targeted at any of the \classname{Network}'s components. The \classname{ModelWrapper} invokes the \methodname{gc\_input} method when it is done with the events in the internal\_input bag. This gives you the opportunity to delete objects that you created when \methodname{translateInput} was called.
+
+A similar process occurs when the \classname{ModelWrapper}'s \methodname{output\_func} is invoked, but in this case it is necessary to convert output objects from the wrapped model, which have type InternalType, to output objects from the \classname{ModelWrapper}, which have type ExternalType. This is accomplished by invoking the \methodname{translateOutput} method. The method's first argument is the bag of output events produced collectively by all of the wrapped model's components; notice that the contents of the internal\_output bag are \classname{Event} objects. The model field points to the component of the wrapped model (or the wrapped model itself) that produced the event and the value field contains an output object produced by that model. These \classname{Event}s must be converted to objects of type ExternalType and stored in the external\_output bag. The external\_output bag is, in fact, the bag passed to the wrapper's \methodname{output\_func}, and so its contents become the output objects produced by the wrapper. The \methodname{gc\_output} method is used in the usual way to clean up any objects created by this process.
+
+The \classname{Wrapper} class shown below illustrates how to use the \adevs\ \classname{WrapperModel} class. The \classname{Wrapper} is derived from the \classname{WrapperModel} and implements its four abstract methods: \methodname{translateInput}, \methodname{translateOutput}, \methodname{gc\_input}, and \methodname{gc\_output}. This class wraps an \classname{Atomic} model that uses int* objects as its input/output. The \classname{Wrapper} uses C strings as its input and output type. The translation methods merely convert integers to strings and vice versa. The \classname{Wrapper} can be used just like any \classname{Atomic} model; it can be a component in a network model or simulated by itself. The behavior of the \classname{Wrapper} is identical to the model it wraps; the only change is in the interface.
+\begin{verbatim}
+// This class converts between char* and int* event types.
+class Wrapper: public adevs::ModelWrapper<char*,int*> {
+    public:
+        Wrapper(adevs::Atomic<int*>* model):
+            // Pass the model to the base class constructor
+            adevs::ModelWrapper<char*,int*>(model){}
+        void translateInput(const adevs::Bag<char*>& external,
+                adevs::Bag<adevs::Event<int*> >& internal) {
+            // Iterate through the incoming events
+            adevs::Bag<char*>::const_iterator iter;
+            for (iter = external.begin(); iter != external.end(); iter++) {
+                // Convert each one into an int* and send it to the
+                // wrapped model
+                adevs::Event<int*> event;
+                // Set the event value
+                event.value = new int(atoi(*iter));
+                // Set the event target
+                event.model = getWrappedModel();
+                // Put it into the bag of translated objects
+                internal.insert(event);
+            }
+        }
+        void translateOutput(const adevs::Bag<adevs::Event<int*> >& internal,
+                adevs::Bag<char*>& external) {
+            // Iterate through the incoming events
+            adevs::Bag<adevs::Event<int*> >::const_iterator iter;
+            for (iter = internal.begin(); iter != internal.end(); iter++) {
+                // Convert the incoming event value to a string
+                char* str = new char[100];
+                sprintf(str,"%d",*((*iter).value));
+                // Put it into the bag of translated objects
+                external.insert(str);
+            }
+        }
+        void gc_output(adevs::Bag<char*>& g) {
+            // Delete strings allocated in the translateOutput method
+            adevs::Bag<char*>::iterator iter;
+            for (iter = g.begin(); iter != g.end(); iter++)
+                delete [] *iter;
+        }
+        void gc_input(adevs::Bag<adevs::Event<int*> >& g) {
+            // Delete integers allocated in the translateInput method
+            adevs::Bag<adevs::Event<int*> >::iterator iter;;
+            for (iter = g.begin(); iter != g.end(); iter++)
+                delete (*iter).value;
+        }
+};
+\end{verbatim}
