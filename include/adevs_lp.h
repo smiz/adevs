@@ -22,6 +22,9 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #include "adevs.h"
 #include "adevs_time.h"
 #include <list>
+#include <iostream>
+#include <string>
+#include <omp.h>
 
 /**
  * This is an implementation of the time warp simulation algorithm described in
@@ -80,9 +83,13 @@ template <class X> class LogicalProcess
 		 */
 		LogicalProcess(Atomic<X>* model, std::vector<LogicalProcess*>* active_list);
 		/**
-		 * Optimistically execute the next event at the lp.
+		 * Optimistically execute the next state transition at the lp.
 		 */
-		void execNextEvent();
+		void execDeltfunc();
+		/** 
+		 * Optimistically execute the output function.
+		 */
+		void execOutput();
 		/**
 		 * Do fossil collection.
 		 */
@@ -107,7 +114,7 @@ template <class X> class LogicalProcess
 		 * Send a message to the logical process. This will put the message into the
 		 * back of the input queue.
 		 */
-		void insertMessage(Message<X> m);
+		void insertMessage(Message<X> m); 
 		/**
 		 * Get the smallest of the local time of next event and first input message
 		 */
@@ -141,6 +148,10 @@ template <class X> class LogicalProcess
 		Time lr;	
 		// List of input messages
 		std::list<Message<X> > input;
+		// Lock for controlling access to the input list
+		omp_lock_t mtx;
+		// flag for execute output function
+		bool out_f;
 		/**
 		 * All of these lists are sorted by time stamp
 		 * with the earliest time stamp at the front.
@@ -185,6 +196,9 @@ LogicalProcess<X>::LogicalProcess(Atomic<X>* model, std::vector<LogicalProcess<X
 	lvt += Time(model->ta(),1);
 	// The model is intially inactive
 	model->active = false;
+	out_f = false;	
+	// Create the lock
+	omp_init_lock(&mtx);
 }
 
 template <class X>
@@ -229,32 +243,38 @@ void LogicalProcess<X>::fossilCollect(Time gvt)
 		output.pop_front();
 	}
 	if (!io_bag.empty())
-		model->gc_output(io_bag);
+		model->gc_output(io_bag);	
 }
 
 template <class X>
-void LogicalProcess<X>::execNextEvent()
+void LogicalProcess<X>::execOutput()
 {
+	if (avail.empty() && !(lvt.t < DBL_MAX)) return;
+	// Send an output event if the next event is a self event or confluent event
+	if ((avail.empty() || avail.front().t >= lvt) && lvt >= lr)
+	{
+		send_output();
+		out_f = true;
+	}	
+}
+
+template <class X>
+void LogicalProcess<X>::execDeltfunc()
+{	
 	// Message list iterator
 	typename std::list<Message<X> >::iterator msg_iter;
+	Message<X> msg;
 	/*
 	 * Process the next message.
 	 */
-	if (num_input_msgs > 0)
+	while (num_input_msgs > 0) // to process concurrent message
 	{
-		// Get the message at the front of the list
-		Message<X> msg;
-		/**
-		 * There is, in effect, only one communication channel
-		 * that all of the threads must share. See injectMessage
-		 * for the other point where the input list is manipulated.
-		 */
-		#pragma omp critical
-		{
-			msg = input.front();
-			input.pop_front();
-			num_input_msgs--;
-		} // end of critical section
+		// Get an input message from the input list
+		omp_set_lock(&mtx);
+		msg = input.front();
+		input.pop_front();
+		num_input_msgs--;
+		omp_unset_lock(&mtx);
 		// If this is a roll back message then discard messages from the sender
 		if (msg.type == ROLLBACK)
 		{
@@ -274,67 +294,93 @@ void LogicalProcess<X>::execNextEvent()
 				else
 					msg_iter++;
 			}
+			
 		}
 		// Is a local rollback required?
-		if (msg.t <= tL)
+		if ((msg.t <= tL) || (msg.t < lvt && out_f == true))
 		{
 			// Save the rollback time
 			lr = msg.t;
-			// Look for a checkpoint following the message time
-			typename std::list<CheckPoint>::iterator c_iter = chk_pt.begin();
-			for (; c_iter != chk_pt.end(); c_iter++)
+			// If the timestamp is in the local past
+			if (msg.t <= tL)
 			{
-				// Send a rollback message when the earliest one is found
-				if ((*c_iter).t > msg.t)
+				// Look for a checkpoint following the message time
+				typename std::list<CheckPoint>::iterator c_iter = chk_pt.begin();
+				for (; c_iter != chk_pt.end(); c_iter++)
 				{
-					// Send the rollback
-					Message<X> rb_msg;
-					rb_msg.src = this;
-					rb_msg.type = ROLLBACK;
-					rb_msg.t = (*c_iter).t;
-					typename std::list<LogicalProcess<X>*>::iterator lp_iter = recipients.begin();
-					for (; lp_iter != recipients.end(); lp_iter++)
-						(*lp_iter)->insertMessage(rb_msg);
-					// Discard incorrect output
-					while (!output.empty() && output.back().t >= rb_msg.t)
+					// Send a rollback message when the earliest one is found
+					if ((*c_iter).t > msg.t)
 					{
-						// Keep the discard list in sorted order
-						for (msg_iter = discard.begin(); msg_iter != discard.end(); msg_iter++)
+						// Send the rollback
+						Message<X> rb_msg;
+						rb_msg.src = this;
+						rb_msg.type = ROLLBACK;
+						rb_msg.t = (*c_iter).t;
+						typename std::list<LogicalProcess<X>*>::iterator lp_iter = recipients.begin();
+						for (; lp_iter != recipients.end(); lp_iter++)
+							(*lp_iter)->insertMessage(rb_msg);
+						// Discard incorrect output
+						while (!output.empty() && output.back().t >= rb_msg.t)
 						{
-							if ((*msg_iter).t > output.back().t) break;
-						}
-						discard.insert(msg_iter,output.back());
-						output.pop_back();
-					} 
-					break;
+							// Keep the discard list in sorted order
+							for (msg_iter = discard.begin(); msg_iter != discard.end(); msg_iter++)
+							{
+								if ((*msg_iter).t > output.back().t) break;
+							}
+							discard.insert(msg_iter,output.back());
+							output.pop_back();
+						} 
+						break;
+					}
+				}
+				// Discard incorrect checkpoints
+				while (chk_pt.back().t >= msg.t)
+				{
+					model->gc_state(chk_pt.back().data);
+					chk_pt.pop_back();
+					assert(chk_pt.empty() == false); 
+				}
+				// Restore the model state 
+				tL = chk_pt.back().t;
+				model->tL = tL.t; 
+				model->restore_state(chk_pt.back().data);
+				double model_ta = model->ta();
+				if (model_ta < 0.0)
+				{
+					exception err("Atomic model has a negative time advance",model);
+					throw err;
+				}
+				lvt = tL + Time(model->ta(),1);
+				while (!used.empty() && used.back().t > tL)
+				{
+					avail.push_front(used.back());
+					used.pop_back();
 				}
 			}
-			// Discard incorrect checkpoints
-			while (chk_pt.back().t >= msg.t)
+			else 
 			{
-				model->gc_state(chk_pt.back().data);
-				chk_pt.pop_back();
-				assert(chk_pt.empty() == false);
-			}
-			// Restore the model state 
-			tL = chk_pt.back().t;
-			model->tL = tL.t; 
-			model->restore_state(chk_pt.back().data);
-			double model_ta = model->ta();
-			if (model_ta < 0.0)
-			{
-				exception err("Atomic model has a negative time advance",model);
-				throw err;
-			}
-			lvt = tL + Time(model->ta(),1);
-			// Move messages from the used bag to the available bag
-			while (!used.empty() && used.back().t > tL)
-			{
-				if (!avail.empty()) assert(avail.front().t >= used.back().t);
-				avail.push_front(used.back());
-				used.pop_back();
-			}
-		} // Done with the rollback
+				Message<X> rb_msg;
+				rb_msg.src = this;
+				rb_msg.type = ROLLBACK;
+				rb_msg.t = msg.t;
+				typename std::list<LogicalProcess<X>*>::iterator lp_iter = recipients.begin();
+				for (; lp_iter != recipients.end(); lp_iter++)
+					(*lp_iter)->insertMessage(rb_msg);
+				// Discard incorrect output
+				while (!output.empty() && output.back().t >= rb_msg.t)
+				{
+					// Keep the discard list in sorted order
+					for (msg_iter = discard.begin(); msg_iter != discard.end(); msg_iter++)
+					{
+						if ((*msg_iter).t > output.back().t) break;
+					}
+					discard.insert(msg_iter,output.back());
+					output.pop_back();
+					recipients.pop_back();
+				} 
+			} // end of else
+		} 
+		// Done with the rollback
 		// If this wasn't a rollback message then add it to the available list
 		if (msg.type != ROLLBACK)
 		{
@@ -345,18 +391,12 @@ void LogicalProcess<X>::execNextEvent()
 			avail.insert(msg_iter,msg);
 		}
 	} // Done receiving the message
-	// If there are not available messagens and lvt is at infinity, then we're done
-	if (avail.empty() && !(lvt.t < DBL_MAX))
-		return;
-	// Send an output event if the next event is a self event or confluent event
-	if ((avail.empty() || avail.front().t >= lvt) && lvt > lr)
-		send_output();
-	// Construct the input bag for the next state transition
+	if (avail.empty() && !(lvt.t < DBL_MAX)) return;
 	io_bag.clear();
 	Time t_input(DBL_MAX,0);
 	if (!avail.empty())
 	{
-		t_input = avail.front().t;
+		t_input = avail.front().t;		
 		if (t_input <= lvt)
 		{
 			while (!avail.empty() && avail.front().t == t_input)
@@ -367,7 +407,7 @@ void LogicalProcess<X>::execNextEvent()
 			}
 		}
 	}
-	// Compute the next state of the model
+	// Compute lvt, tL, and save the model state
 	if (t_input > lvt) model->delta_int();
 	else if (t_input == lvt) model->delta_conf(io_bag);
 	else model->delta_ext(t_input.t-tL.t,io_bag);
@@ -378,11 +418,12 @@ void LogicalProcess<X>::execNextEvent()
 	tL = c.t;
 	model->tL = tL.t;
 	c.data = model->save_state();
-	chk_pt.push_back(c);
+	chk_pt.push_back(c);	
 	if (model->ta() < DBL_MAX)
 		lvt = tL + Time(model->ta(),1);
 	else
 		lvt = Time(DBL_MAX,0);
+	out_f = false;
 }
 
 template <class X>
@@ -454,20 +495,26 @@ void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 template <class X>
 void LogicalProcess<X>::insertMessage(Message<X> m)
 {
-	/**
-	 * Thread communication can not occur in parallel. There is, in effect,
-	 * one communication channel that is shared by all of the threads.
-	 */
-	#pragma omp critical
+	// Add the message to the input list
+	omp_set_lock(&mtx);
+	typename std::list<Message<X> >::iterator iter = input.begin();
+	for (;	iter != input.end(); iter++){
+		if (m.t < (*iter).t) {						
+			break;
+		}						
+	}
+	input.insert(iter,m);			
+	num_input_msgs++;
+	omp_unset_lock(&mtx);
+	// If the model is not in the global active list, then put it there
+	if (!(model->active))
 	{
-		input.push_back(m);
-		if (!(model->active))
+		#pragma omp critical
 		{
 			active_list->push_back(this);
-			model->active = true;
 		}
-		num_input_msgs++;
-	} // end of critical section
+		model->active = true;
+	}
 }
 
 template <class X>
@@ -487,6 +534,8 @@ LogicalProcess<X>::~LogicalProcess()
 		io_bag.insert((*iter).value);
 	if (!io_bag.empty())
 		model->gc_output(io_bag); 
+	// Destroy the lock
+	omp_destroy_lock(&mtx);
 }
 
 } // end of namespace 
