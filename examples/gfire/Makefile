@@ -1,6 +1,6 @@
 CFLAGS = -Wall -fopenmp
 OPTFLAG = -O3
-CC = g++
+CC = g++4
 
 # Adjust these as needed to find the X11 and adevs libs and headers
 PREFIX = ../..

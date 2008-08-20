@@ -4,16 +4,15 @@
 using namespace std;
 
 // Movement rate of the fire
-double fireCell::move_rate = 1.0;
+const double fireCell::move_rate = 1.0;
 
 fireCell::fireCell(double fuel, bool on_fire, 
-long int x, long int y, Phase* vis_phase):
+long int x, long int y):
 adevs::Atomic<CellEvent>(),
 fuel(fuel),
 heat(0),
 x(x),
-y(y),
-vis_phase(vis_phase)
+y(y)
 {
 	assert(fuel >= 0.0);
 	// If it is on fire and has enough fuel to spread
@@ -22,11 +21,6 @@ vis_phase(vis_phase)
 	else if (on_fire) phase = BURN_FAST;
 	// If it is not burning at all
 	else phase = UNBURNED;
-	// Set the visualization output
-	if (vis_phase != NULL)
-	{
-		*vis_phase = phase;
-	}
 }
 
 double fireCell::ta()
@@ -59,11 +53,6 @@ void fireCell::delta_int()
 	{
 		assert(false);
 	}
-	// Set the visualization output
-	if (vis_phase != NULL)
-	{
-		*vis_phase = phase;
-	}
 }
 
 void fireCell::delta_ext(double e, const adevs::Bag<CellEvent>& xb)
@@ -86,11 +75,6 @@ void fireCell::delta_ext(double e, const adevs::Bag<CellEvent>& xb)
 		if (fuel >= move_rate) phase = IGNITE;
 		// Otherwise, burns to fast to affect anybody else
 		else phase = BURN_FAST;
-	}
-	// Set the visualization output
-	if (vis_phase != NULL)
-	{
-		*vis_phase = phase;
 	}
 }
 
@@ -132,4 +116,9 @@ void fireCell::output_func(adevs::Bag<CellEvent>& yb)
 			}
 		}
 	}
+}
+
+Phase fireCell::getPhase(const void* state_data)
+{
+	return phase;
 }

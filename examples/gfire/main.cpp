@@ -15,6 +15,20 @@ double max_init_fuel = 0.0;
 // Window and cell dimensions. 
 const GLint cell_size = 6;
 GLint win_height, win_width;
+// Read to run?
+static bool phase_data_ready = false;
+
+class PhaseListener:
+	public adevs::EventListener<CellEvent>
+{
+	public:
+		void stateChange(adevs::Atomic<CellEvent>* model, double t, void* state)
+		{
+			fireCell* cell = dynamic_cast<fireCell*>(model);
+			phase[cell->xpos()][cell->ypos()] = cell->getPhase(state);
+		}
+		void outputEvent(adevs::Event<CellEvent>,double){}
+};
 
 // Create a random configuration
 void random_config()
@@ -74,6 +88,8 @@ void drawSpace()
 	}
 	// Clear the background
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// Is there anything to draw?
+	if (!phase_data_ready) return;
 	// Draw all of the cells
 	for (int x = 0; x < config->get_width(); x++)
 	{
@@ -87,7 +103,7 @@ void drawSpace()
 			{
 				glColor3f(0.0,0.0,0.0);
 			}
-			else if (phase[x][y] == UNBURNED)
+			else
 			{
 				float intensity = config->get_fuel(x,y)/max_init_fuel;
 				glColor3f(0.0,intensity,0.0);
@@ -106,6 +122,7 @@ void simulateSpace()
 	// Dynamic cellspace model and simulator
 	static adevs::CellSpace<int>* cell_space = NULL;
 	static adevs::Simulator<CellEvent>* sim = NULL;
+	static PhaseListener* listener = NULL;
 	// If the visualization array is needed
 	if (phase == NULL)
 	{
@@ -126,21 +143,29 @@ void simulateSpace()
 			for (int y = 0; y < config->get_height(); y++)
 			{
 				fireCell* cell = new fireCell(config->get_fuel(x,y),
-					config->get_fire(x,y),x,y,&(phase[x][y]));
+					config->get_fire(x,y),x,y);
 				max_init_fuel = max(max_init_fuel,config->get_fuel(x,y));
 				cell_space->add(cell,x,y);
 			}
 		}
 		// Create a simulator for the model
 		sim = new adevs::Simulator<CellEvent>(cell_space);
+		// Add an event listener
+		listener = new PhaseListener();
+		sim->addEventListener(listener);
+		// Ready to go
+		phase_data_ready = true;
 	}
 	// If everything has died, then restart on the next call
 	if (sim->nextEventTime() == DBL_MAX)
 	{
+		phase_data_ready = false;
 		delete cell_space;
 		delete sim;
+		delete listener;
 		sim = NULL;
 		cell_space = NULL;
+		listener = NULL;
 	}
 	// Run the next simulation step
 	else
