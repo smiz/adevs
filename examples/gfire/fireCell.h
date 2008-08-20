@@ -29,8 +29,7 @@ class fireCell: public adevs::Atomic<CellEvent>
 {
 	public:
 		// Create the cell and set the initial conditions
-		fireCell(double fuel, bool on_fire, long int x, long int y,
-		Phase* vis_phase = NULL);
+		fireCell(double fuel, bool on_fire, long int x, long int y);
 		// State initialization function
 		void init();
 		// Internal transition function
@@ -47,7 +46,12 @@ class fireCell: public adevs::Atomic<CellEvent>
 		void gc_output(adevs::Bag<CellEvent>& g){}
 		// Destructor
 		~fireCell(){}
-
+		// Cell phase of a the state
+		Phase getPhase(const void* state_data = NULL);
+		// Get the cell x location
+		long int xpos() const { return x; }
+		// get the cell y location
+		long int ypos() const { return y; }
 	protected:
 		// The phase of the cell
 		Phase phase;
@@ -56,11 +60,9 @@ class fireCell: public adevs::Atomic<CellEvent>
 		// Number of burning neighbor cells
 		int heat;
 		// Cell location
-		long int x, y;
-		// Visualization output
-		Phase* vis_phase;
+		const long int x, y;
 		// Time required for the fire to spread to a neighbor
-		static double move_rate;
+		static const double move_rate;
 };
 
 #endif

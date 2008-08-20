@@ -1,3 +1,22 @@
+/***************
+Copyright (C) 2008 by James Nutaro
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+Bugs, comments, and questions can be sent to nutaro@gmail.com
+***************/
 #ifndef __adevs_opt_simulator_h_
 #define __adevs_opt_simulator_h_
 #include "adevs.h"
@@ -33,7 +52,7 @@ template <class X> class OptSimulator
 		garbage collection events; it determines the serial portion of
 		the simulation and the memory overhead. 
 		*/
-		OptSimulator(Devs<X>* model, int max_batch_size = 8,
+		OptSimulator(Devs<X>* model, int max_batch_size = 500,
 				int fc_iterations = INT_MAX);
 		/**
 		Add an event listener that will be notified of output events 
@@ -125,7 +144,7 @@ OptSimulator<X>::OptSimulator(Devs<X>* model, int max_batch_size,
 
 template <class X>
 void OptSimulator<X>::initialize(Devs<X>* model)
-{	
+{
 	Atomic<X>* a = model->typeIsAtomic();
 	if (a != NULL)
 	{
@@ -166,7 +185,8 @@ void OptSimulator<X>::fossil_collect_and_commit(Devs<X>* model, Time effective_g
 				for (liter = listeners.begin(); liter != listeners.end(); liter++)
 					(*liter)->outputEvent(event,(*oiter).t.t);
 			}
-			else break;
+			else
+				break;
 		}
 		// Notify listeners of commited states
 		typename std::list<CheckPoint>::iterator siter =
@@ -228,6 +248,9 @@ void OptSimulator<X>::cleanup(Devs<X>* model)
 template <class X>
 void OptSimulator<X>::execUntil(Time stop_time)
 {
+	// Exception for handling errors inside of the parallel loop
+	exception caught_exception("",NULL);
+	bool err = false;
 	// Iteration counter for garbage collection
 	int iterations = 0;
 	// Keep track of the global virtual time
@@ -241,25 +264,41 @@ void OptSimulator<X>::execUntil(Time stop_time)
 			iterations = 0;
 		}
 		iterations++;
-		// prepare the list of ready models
-		int batch_size = sched.getSize();
-		if (batch_size > max_batch_size) batch_size = max_batch_size;
-		int i = 0;	
-		for (i = 0; i < batch_size; i++) batch[i] = sched.get(i+1);
-		// Execute their output functions in parallel
-		#pragma omp parallel for default(shared) private(i)
-		for (i = 0; i < batch_size; i++)
+		// Determine the batch size for this iteration
+		int batch_size = max_batch_size;
+		if (batch_size > (int)sched.getSize())
+			batch_size = (int)sched.getSize();
+		/**
+		 * Get a batch of models and execute an event for each
+		 * one. This loop tries to exploit parallelism in the model
+		 * by speculatively executing events for models whose
+		 * next event times are close to the global virtual time.
+		 */
+		#pragma omp parallel for
+		for (int i = 0; i < batch_size; i++)
 		{
-			batch[i]->lp->execOutput();	
+			/*
+			 * Note that a model could end up in the batch set AND in
+			 * the activated list. This will result in two attempts
+			 * to schedule the model, but that is ok because the second
+			 * attempt will just leave the model in place.
+			 */
+			batch[i] = sched.get(i+1);
+			batch[i]->lp->setActive(true);
+			try
+			{
+				batch[i]->lp->execNextEvent();
+			}
+			catch(exception except)
+			{
+				err = true;
+				caught_exception = except;
+			}
 		}
-		// Execute their state transition functions in parallel
-		#pragma omp parallel for default(shared) private(i)
-		for (i = 0; i < batch_size; i++)
-		{						
-			batch[i]->lp->execDeltfunc();			
-		}		
+		// Throw the last exception that was caught
+		if (err) throw caught_exception;
 		// Reschedule the models in the batch and reset their active flags
-		for (i = 0; i < batch_size; i++)
+		for (int i = 0; i < batch_size; i++)
 		{
 			sched.schedule(batch[i],batch[i]->lp->getNextEventTime());
 			batch[i]->lp->setActive(false);
@@ -272,10 +311,10 @@ void OptSimulator<X>::execUntil(Time stop_time)
 			sched.schedule((*iter)->getModel(),(*iter)->getNextEventTime());
 			(*iter)->setActive(false);
 		}
-		active_list.clear();		
+		active_list.clear();
 		// Get the global virtual time 
 		actual_gvt = totalNextEventTime();
-	}	
+	}
 	// Do fossil collection and send event notifications
 	if (actual_gvt > stop_time) actual_gvt = stop_time;
 	fossil_collect_and_commit(top_model,actual_gvt);
