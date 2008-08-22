@@ -52,6 +52,12 @@ class fireCell: public adevs::Atomic<CellEvent>
 		long int xpos() const { return x; }
 		// get the cell y location
 		long int ypos() const { return y; }
+		// Save the state of the cell
+		void* save_state();
+		// Restore the state of the cell
+		void restore_state(void* data);
+		// Delete an old state
+		void gc_state(void* data);
 	protected:
 		// The phase of the cell
 		Phase phase;
@@ -63,6 +69,16 @@ class fireCell: public adevs::Atomic<CellEvent>
 		const long int x, y;
 		// Time required for the fire to spread to a neighbor
 		static const double move_rate;
+
+		// Structure for saving and restoring the state of the model
+		struct state_t
+		{
+			const Phase phase;
+			const double fuel;
+			const int heat;
+			state_t(Phase phase, double fuel, int heat):
+				phase(phase),fuel(fuel),heat(heat){}
+		};
 };
 
 #endif

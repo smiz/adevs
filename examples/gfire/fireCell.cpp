@@ -122,3 +122,23 @@ Phase fireCell::getPhase(const void* state_data)
 {
 	return phase;
 }
+
+void* fireCell::save_state()
+{
+	return new state_t(phase,fuel,heat);
+}
+
+void fireCell::restore_state(void* data)
+{
+	state_t* state = static_cast<state_t*>(data);
+	phase = state->phase;
+	heat = state->heat;
+	fuel = state->fuel;
+}
+
+void fireCell::gc_state(void* data)
+{
+	state_t* state = static_cast<state_t*>(data);
+	delete state;
+}
+

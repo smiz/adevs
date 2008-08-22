@@ -37,15 +37,14 @@ void random_config()
 	int dim = 100;
 	// Create a temporary configuration file
 	char tmpname[100];
-	sprintf(tmpname,"tmp_fire_config_XXXXXX");
+	sprintf(tmpname,"fire_config_XXXXXX");
 	errno = 0;
-	int fd = mkstemp(tmpname);
-	if (fd == -1 || errno != 0)
+	FILE* fout = fopen(tmpname,"w");
+	if (errno != 0)
 	{
 		perror("Could create temporary config file");
 		exit(-1);
 	}
-	FILE* fout = fdopen(fd,"w+");
 	// Write the config file 
 	fprintf(fout,"width %d\nheight %d\nfuel\n",dim,dim);
 	// Assign random amounts of fuel
