@@ -455,7 +455,14 @@ template <class X>
 void LogicalProcess<X>::insertMessage(Message<X> m)
 {
 	omp_set_lock(&mtx);
-	input.push_back(m);
+	typename std::list<Message<X> >::iterator iter = input.begin();
+	for (; iter != input.end(); iter++)
+	{
+		if (m.t < (*iter).t) {						
+			break;
+		}						
+	}
+	input.insert(iter,m);
 	num_input_msgs++;
 	omp_unset_lock(&mtx);
 	if (!(model->active))
