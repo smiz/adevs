@@ -2,7 +2,7 @@
 COMPARE = tclsh $(PREFIX)/util/compare
 # GNU gcc compiler
 CFLAGS = -pedantic -g -fopenmp -Wall -I$(PREFIX)/include
-CC = g++4
+CC = g++
 TEST_EXEC=./a.out
 DEL = rm -f
 LIBS = -L$(PREFIX)/src -ladevs

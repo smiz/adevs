@@ -485,7 +485,6 @@ void Simulator<X>::unschedule_model(Devs<X>* model)
 	if (model->typeIsAtomic() != NULL)
 	{
 		sched.schedule(model->typeIsAtomic(),DBL_MAX);
-		if (sched.getMinimum() == model) sched.removeMinimum();
 		imm.erase(model->typeIsAtomic());
 		activated.erase(model->typeIsAtomic());
 	}
