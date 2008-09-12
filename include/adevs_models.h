@@ -151,7 +151,7 @@ template <class X> class Atomic: public Devs<X>
 		{
 			tL = 0.0;
 			x = y = NULL;
-			q_index = 0;	
+			q_index = 0; // The Schedule requires this to be zero
 			active = false;
 			lp = NULL; // This is created by the OptSimulator if it is needed
 		}
@@ -219,7 +219,7 @@ template <class X> class Atomic: public Devs<X>
 		// Time of last event
 		double tL; 
 		// Index in the priority queue
-		unsigned long int q_index;
+		unsigned int q_index;
 		// Input and output event bags
 		Bag<X>* x;
 		Bag<X>* y;
