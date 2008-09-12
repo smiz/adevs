@@ -27,21 +27,21 @@ namespace adevs
 {
 
 /**
-A binary heap that is used for scheduling atomic models in the
-simulation engine.  The atomic model q_index is used to store
-the position of the model in the heap. A zero value indicate
-that the model is not in the heap, and the initial value of any
-model should be q_index = 0.
-*/
+ * This is a binary heap for scheduling Atomic models. The Schedule uses 
+ * the q_index attribute of the Atomic model to keep track of the object's
+ * position in the heap and the active flag is set to indicate its 
+ * imminent status. Therefore, a model can be put into only one Schedule.
+ * Please observe that the q_index value for a model must be initialized
+ * to zero before it is placed into the heap for the first time.
+ */
 template <class X, class T=double> class Schedule
 {
 	public:
 		/// Creates a scheduler with the default or specified initial capacity.
 		Schedule(unsigned int capacity = 100):
-		capacity(capacity),
-		size(0)
+		capacity(capacity),size(0),heap(new heap_element[capacity])
 		{
-			heap = new heap_element[capacity];
+			heap[0].priority = -1.0; // This is a sentinel value
 		}
 		/// Get the model at the front of the queue.
 		Atomic<X>* getMinimum() const { return heap[1].item; }
@@ -49,18 +49,12 @@ template <class X, class T=double> class Schedule
 		T minPriority() const { return heap[1].priority; }
 		/// Get the imminent models and set their active flags to true.
 		void getImminent(Bag<Atomic<X>*>& imm) const { getImminent(imm,1); }
-		/**
-		Add a model to the schedule or change to position of a model already in
-		the schedule. If the tN is DBL_MAX, then the item is removed
-		(if it is already in the queue) or not inserted.  Because this method
-		uses the model's q_index field, it is imperative that a model be 
-		entered into one, and only one, schedule at any time.
-		*/
-		void schedule(Atomic<X>* model, T priority);
 		/// Remove the model at the front of the queue.
 		void removeMinimum();
 		/// Remove the imminent models from the queue.
 		void removeImminent();
+		/// Add, remove, or move a model as required by its priority.
+		void schedule(Atomic<X>* model, T priority);
 		/// Returns true if the queue is empty, and false otherwise.
 		bool empty() const { return size == 0; }
 		/**
@@ -82,135 +76,55 @@ template <class X, class T=double> class Schedule
 			heap_element():
 				item(NULL),priority(DBL_MAX){}
 		};
-		heap_element* heap;
 		unsigned int capacity, size;
-
+		heap_element* heap;
 		/// Double the schedule capacity
 		void enlarge();
-		/**
-		 * Heap percolation functions.  Returns the empty slot that emerges for
-		 * a new item with the provided priority.
-		 */
+		/// Move the item at index down and return its new position
 		unsigned int percolate_down(unsigned int index, T priority);
+		/// Move the item at index up and return its new position
 		unsigned int percolate_up(unsigned int index, T priority);
 		/// Construct the imminent set recursively
 		void getImminent(Bag<Atomic<X>*>& imm, unsigned int root) const;
 };
 
-template <class X,class T>
-void Schedule<X,T>::schedule(Atomic<X>* model, T priority)
+template <class X, class T>
+void Schedule<X,T>::getImminent(Bag<Atomic<X>*>& imm, unsigned int root) const
 {
-	// Check for existance in the queue. 
-	bool enqueued = false;
-	if (model->q_index != 0)
-		enqueued = (heap[model->q_index].item == model); 
-	// If the item must be added to the schedule
-	if (!enqueued && priority < DBL_MAX)
-	{
-		// Increment the size of the heap and make sure there is space
-		size++;
-		if (size == capacity) enlarge();
-		// Find the right slot and put the item into it
-		unsigned int to_move = percolate_up(size,priority);
-		heap[to_move].priority = priority;
-		heap[to_move].item = model;
-		model->q_index = to_move;
-	}
-	// If the model is already enqueued and needs to be rescheduled
-	else if (enqueued && priority < DBL_MAX)
-	{
-		unsigned int to_move = model->q_index;
-		// Decrease the time to next event
-		if (heap[to_move].priority > priority)
-			to_move = percolate_up(to_move,priority);
-		// Increase the time to next event
-		else if (heap[to_move].priority < priority)
-			to_move = percolate_down(to_move,priority);
-		// Don't do anything if the priority hasn't changed
-		else return;
-		heap[to_move].priority = priority;
-		heap[to_move].item = model;
-		model->q_index = to_move;
-	}
-	// If the model is enqueued and it must be removed
-	else if (enqueued)
-	{
-		unsigned int to_move = model->q_index;
-		// Move the item to the top of the heap
-		T min_priority = minPriority();
-		to_move = percolate_up(to_move,min_priority);
-		heap[to_move].priority = min_priority;
-		heap[to_move].item = model;
-		model->q_index = to_move;
-		// Remove it
-		removeMinimum();
-	}
-	// Otherwise, the model is not enqueued and has no next event
+	// Stop if the bottom is reached or the next priority is not equal to the minimum
+	if (root > size || heap[root].priority > heap[1].priority)
+		return;
+	// Put the model into the imminent set
+	heap[root].item->active = true;
+	imm.insert(heap[root].item);
+	// Look for more imminent models in the left subtree
+	getImminent(imm,root*2);
+	// Look in the right subtree
+	getImminent(imm,root*2+1);
 }
 
 template <class X, class T>
 void Schedule<X,T>::removeMinimum()
 {
-	// Don't do anything if the heap is already empty
+	// Don't do anything if the heap is empty
 	if (size == 0) return;
 	size--;
-	// Set index to 0 to indicate that this model is no longer in the schedule
+	// Set index to 0 to show that this model is not in the schedule
 	heap[1].item->q_index = 0;
-	heap[1].item = NULL;
-	heap[1].priority = DBL_MAX;
-	if (size > 0)
+	// If the schedule is empty, set the priority of the last element to DBL_MAX
+	if (size == 0)
 	{
-		heap[1] = heap[size+1];
+		heap[1].priority = DBL_MAX;
+		heap[1].item = NULL;
+	}
+	// Otherwise fill the hole left by the deleted model
+	else
+	{
 		unsigned int i = percolate_down(1,heap[size+1].priority);
 		heap[i] = heap[size+1];
 		heap[i].item->q_index = i;
 		heap[size+1].item = NULL;
 	}
-}
-
-template <class X, class T>
-void Schedule<X,T>::enlarge()
-{
-	heap_element* rheap = new heap_element[capacity*2];
-	for (unsigned int i = 0; i < capacity; i++)
-		rheap[i] = heap[i];
-	capacity *= 2;
-	delete [] heap;
-	heap = rheap;
-}
-
-template <class X, class T>
-unsigned int Schedule<X,T>::percolate_down(unsigned int index, T priority)
-{
-	unsigned int child, i = index;
-	for (; i*2 <= size; i = child) 
-	{
-		child = i*2;
-		if (child != size && heap[child+1].priority < heap[child].priority) 
-		{
-			child++;
-		}
-		if (priority > heap[child].priority) 
-		{
-			heap[i] = heap[child];
-			heap[i].item->q_index = i;
-		}
-		else break;
-	}
-	return i;
-}
-
-template <class X, class T>
-unsigned int Schedule<X,T>::percolate_up(unsigned int index, T priority)
-{
-	unsigned int i = index;
-	while (i/2 != 0 && heap[i/2].priority >= priority) 
-	{
-		heap[i] = heap[i/2];
-		heap[i].item->q_index = i;
-		i = i/2;
-	}
-	return i;
 }
 
 template <class X, class T>
@@ -222,15 +136,94 @@ void Schedule<X,T>::removeImminent()
 		removeMinimum();
 }
 
-template <class X, class T>
-void Schedule<X,T>::getImminent(Bag<Atomic<X>*>& imm, unsigned int root) const
+template <class X,class T>
+void Schedule<X,T>::schedule(Atomic<X>* model, T priority)
 {
-	if (root > size || heap[root].priority > heap[1].priority)
-		return;
-	heap[root].item->active = true;
-	imm.insert(heap[root].item);
-	getImminent(imm,root*2);
-	getImminent(imm,root*2+1);
+	// If the model is in the schedule
+	if (model->q_index != 0)
+	{
+		// Remove the model if the next event time is infinite
+		if (priority >= DBL_MAX) 
+		{
+			// Move the item to the top of the heap
+			T min_priority = minPriority();
+			model->q_index = percolate_up(model->q_index,min_priority);
+			heap[model->q_index].priority = min_priority;
+			heap[model->q_index].item = model;
+			// Remove it and return
+			removeMinimum();
+			return;
+		}
+		// Decrease the time to next event
+		else if (heap[model->q_index].priority > priority)
+			model->q_index = percolate_up(model->q_index,priority);
+		// Increase the time to next event
+		else if (heap[model->q_index].priority < priority)
+			model->q_index = percolate_down(model->q_index,priority);
+		// Don't do anything if the priority is unchanged
+		else return;
+		heap[model->q_index].priority = priority;
+		heap[model->q_index].item = model;
+	}
+	// If it is not in the schedule and the next event time is
+	// not at infinity, then add it to the schedule
+	else if (priority < DBL_MAX)
+	{
+		// Enlarge the heap to hold the new model
+		size++;
+		if (size == capacity) enlarge();
+		// Find a slot and put the item into it
+		model->q_index = percolate_up(size,priority);
+		heap[model->q_index].priority = priority;
+		heap[model->q_index].item = model;
+	}
+	// Otherwise, the model is not enqueued and has no next event
+}
+
+template <class X, class T>
+unsigned int Schedule<X,T>::percolate_down(unsigned int index, T priority)
+{
+	unsigned int child;
+	for (; index*2 <= size; index = child) 
+	{
+		child = index*2;
+		if (child != size && heap[child+1].priority < heap[child].priority) 
+		{
+			child++;
+		}
+		if (priority > heap[child].priority) 
+		{
+			heap[index] = heap[child];
+			heap[index].item->q_index = index;
+		}
+		else break;
+	}
+	return index;
+}
+
+template <class X, class T>
+unsigned int Schedule<X,T>::percolate_up(unsigned int index, T priority)
+{
+	// Position 0 has priority -1 and this method is always called
+	// with priority >= 0 and index > 0. 
+	while (heap[index/2].priority >= priority) 
+	{
+		heap[index] = heap[index/2];
+		heap[index].item->q_index = index;
+		index /= 2;
+	}
+	return index;
+}
+
+template <class X, class T>
+void Schedule<X,T>::enlarge()
+{
+	heap_element* rheap = new heap_element[capacity*2];
+	for (unsigned int i = 0; i < capacity; i++)
+		rheap[i] = heap[i];
+	capacity *= 2;
+	delete [] heap;
+	heap = rheap;
 }
 
 } // end of namespace
