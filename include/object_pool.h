@@ -17,7 +17,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 Bugs, comments, and questions can be sent to nutaro@gmail.com
 ***************/
-
 #ifndef __adevs_object_pool_h_
 #define __adevs_object_pool_h_
 #include "adevs_bag.h"
@@ -26,29 +25,24 @@ namespace adevs
 {
 
 /**
-A utility class for managing pools of objects that are stored on the heap.
-Uses the new and delete operators to create and destroy objects.
-*/
+ * A utility class for managing pools of objects that are stored on the heap.
+ * Uses the new and delete operators to create and destroy objects.
+ */
 template <class T> class object_pool
 {
 	public:
-		// Construct a pool with a specific initial population
-		object_pool(unsigned long int pop = 0):
+		/// Construct a pool with a specific initial population
+		object_pool(unsigned int pop = 0):
 		pool()
 		{
-			for (unsigned long int i = 0; i < pop; i++)
-			{
+			for (unsigned int i = 0; i < pop; i++)
 				pool.insert(new T());
-			}
 		}
-		// Create an object 
+		/// Create an object 
 		T* make_obj()
 		{
 			T* obj;
-			if (pool.empty())
-			{
-				obj = new T;
-			}
+			if (pool.empty()) obj = new T;
 			else
 			{
 				obj = *((pool.end())--);
@@ -56,19 +50,13 @@ template <class T> class object_pool
 			}
 			return obj;
 		}
-		// Return an object to the pool
-		void destroy_obj(T* obj)
-		{
-			pool.insert(obj);
-		}
+		/// Return an object to the pool
+		void destroy_obj(T* obj) { pool.insert(obj); }
 		// Delete all objects in the pool
 		~object_pool()
 		{
 			typename Bag<T*>::iterator iter = pool.begin();
-			for (; iter != pool.end(); iter++)
-			{
-				delete *iter;
-			}
+			for (; iter != pool.end(); iter++) delete *iter;
 		}
 	private:
 		Bag<T*> pool;
