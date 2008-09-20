@@ -248,16 +248,12 @@ void Simulator<X>::computeNextOutput()
 {
 	// Clear the imminent set
 	imm.clear();
-	/**
-	Get the imminent models from the schedule. This sets the active flags.
-	*/
+	// Get the imminent models from the schedule. This sets the active flags.
 	sched.getImminent(imm);
-	/**
-	Compute I/O functions and route events for the imminent models.  Save bags of output
-	values for garbage collection at the end of the cycle.
-	*/
+	// Compute output functions and route the events. The bags of output
+	// are held for garbage collection at a later time.
 	for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
-	imm_iter != imm.end(); imm_iter++)
+		imm_iter != imm.end(); imm_iter++)
 	{
 		Atomic<X>* model = *imm_iter;
 		// If the output for this model has already been computed, then skip it
@@ -265,10 +261,7 @@ void Simulator<X>::computeNextOutput()
 		{
 			model->y = io_pool.make_obj();
 			model->output_func(*(model->y));
-			/**
-			Send model outputs to their proper destination via the recursive routing
-			function.
-			*/
+			// Route each event in y
 			for (typename Bag<X>::iterator y_iter = model->y->begin(); 
 			y_iter != model->y->end(); y_iter++)
 			{
@@ -331,104 +324,94 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 	{
 		exec_event(*iter,false,t); // External transitions
 	}
-	/*
-	Compute model transitions and build up the prev (pre-transition)
-	and next (post-transition) componenent sets. These sets are built
-	up from only the models that have the model_transition function
-	evalauted.
-	*/
-	while (!model_func_eval_set.empty())
+	/**
+	 * Compute model transitions and build up the prev (pre-transition)
+	 * and next (post-transition) componenent sets. These sets are built
+	 * up from only the models that have the model_transition function
+	 * evalauted.
+	 */
+	if (model_func_eval_set.empty() == false)
 	{
-		Network<X>* network_model = *(model_func_eval_set.begin());
-		getAllChildren(network_model,prev);
-		if (network_model->model_transition() && network_model->getParent() != NULL)
+		while (!model_func_eval_set.empty())
 		{
-			model_func_eval_set.insert(network_model->getParent());
-		}
-		getAllChildren(network_model,next);
-		model_func_eval_set.erase(network_model);
-	}
-	// Find the set of models that were added.
-	set_assign_union(added,set_difference(next,prev));
-	// Find the set of models that were removed
-	set_assign_union(removed,set_difference(prev,next));
-	next.clear();
-	prev.clear();
-	// Any models that moved from one network to another should be left alone.
-	Set<Devs<X>*> moved(set_intersect(removed,added));
-	for (typename Set<Devs<X>*>::iterator iter = moved.begin();
-	iter != moved.end(); iter++)
-	{
-		typename Set<Devs<X>*>::iterator iter_tmp = added.find(*iter);
-		if (iter_tmp != added.end()) added.erase(iter_tmp);
-		iter_tmp = removed.find(*iter);
-		if (iter_tmp != removed.end()) removed.erase(iter_tmp);
-	}
-	/*
-	The model adds are processed first.  This is done so that, if any
-	of the added models are components something that was removed at
-	a higher level, then the models will not have been deleted when
-	trying to schedule them.
-	*/
-	for (typename Set<Devs<X>*>::iterator iter = added.begin(); 
-	iter != added.end(); iter++)
-	{
-		schedule(*iter,t);
-	}
-	// Done with the additions
-	added.clear();
-	// Remove the models that are in the removed set.
-	for (typename Set<Devs<X>*>::iterator iter = removed.begin(); 
-	iter != removed.end(); iter++)
-	{
-		clean_up(*iter);
-		unschedule_model(*iter);
-		sorted_removed.insert(*iter); // Add to a sorted remove set for deletion
-	}
-	// Done with the unsorted remove set
-	removed.clear();
-	// Delete the sorted removed models
-	while (!sorted_removed.empty())
-	{
-		// Get the model to erase
-		Devs<X>* model_to_remove = *(sorted_removed.begin());
-		/**
-		If this model has children, then remove them from the deletion set.
-		This will avoid double delete problems.
-		*/
-		if (model_to_remove->typeIsNetwork() != NULL)
-		{
-			getAllChildren(model_to_remove->typeIsNetwork(),removed);
-			for (typename Set<Devs<X>*>::iterator iter = removed.begin(); 
-			iter != removed.end(); iter++)
+			Network<X>* network_model = *(model_func_eval_set.begin());
+			getAllChildren(network_model,prev);
+			if (network_model->model_transition() && network_model->getParent() != NULL)
 			{
-				sorted_removed.erase(*iter);
+				model_func_eval_set.insert(network_model->getParent());
 			}
-			removed.clear();
+			getAllChildren(network_model,next);
+			model_func_eval_set.erase(network_model);
 		}
-		// Remove the model
-		sorted_removed.erase(sorted_removed.begin());
-		// Delete the model and its children
-		delete model_to_remove;
-	}
-	// Removed sets should be empty now
-	assert(removed.empty());
-	assert(sorted_removed.empty());
-	/*
-	If there are any imminent models, then remove them from the
-	schedule.  This could fail to be the case if t is smaller
-	than the next scheduled event time (i.e., if input is
-	being injected into the simulator prior to the next
-	event time).
-	*/
-	if (!imm.empty()) 
-	{
-		sched.removeImminent();
-	}
-	/*
-	Cleanup and reschedule any models that changed state in this iteration
-	and survived the structure change phase.
-	*/
+		// Find the set of models that were added.
+		set_assign_union(added,set_difference(next,prev));
+		// Find the set of models that were removed
+		set_assign_union(removed,set_difference(prev,next));
+		next.clear();
+		prev.clear();
+		// Any models that moved from one network to another should be left alone.
+		Set<Devs<X>*> moved(set_intersect(removed,added));
+		for (typename Set<Devs<X>*>::iterator iter = moved.begin();
+		iter != moved.end(); iter++)
+		{
+			typename Set<Devs<X>*>::iterator iter_tmp = added.find(*iter);
+			if (iter_tmp != added.end()) added.erase(iter_tmp);
+			iter_tmp = removed.find(*iter);
+			if (iter_tmp != removed.end()) removed.erase(iter_tmp);
+		}
+		/** 
+		 * The model adds are processed first.  This is done so that, if any
+		 * of the added models are components something that was removed at
+		 * a higher level, then the models will not have been deleted when
+		 * trying to schedule them.
+		 */
+		for (typename Set<Devs<X>*>::iterator iter = added.begin(); 
+			iter != added.end(); iter++)
+		{
+			schedule(*iter,t);
+		}
+		// Done with the additions
+		added.clear();
+		// Remove the models that are in the removed set.
+		for (typename Set<Devs<X>*>::iterator iter = removed.begin(); 
+			iter != removed.end(); iter++)
+		{
+			clean_up(*iter);
+			unschedule_model(*iter);
+			sorted_removed.insert(*iter); // Add to a sorted remove set for deletion
+		}
+		// Done with the unsorted remove set
+		removed.clear();
+		// Delete the sorted removed models
+		while (!sorted_removed.empty())
+		{
+			// Get the model to erase
+			Devs<X>* model_to_remove = *(sorted_removed.begin());
+			/**
+			 * If this model has children, then remove them from the deletion set.
+			 * This will avoid double delete problems.
+			 */
+			if (model_to_remove->typeIsNetwork() != NULL)
+			{
+				getAllChildren(model_to_remove->typeIsNetwork(),removed);
+				for (typename Set<Devs<X>*>::iterator iter = removed.begin(); 
+					iter != removed.end(); iter++)
+				{
+					sorted_removed.erase(*iter);
+				}
+				removed.clear();
+			}
+			// Remove the model
+			sorted_removed.erase(sorted_removed.begin());
+			// Delete the model and its children
+			delete model_to_remove;
+		}
+		// Removed sets should be empty now
+		assert(removed.empty());
+		assert(sorted_removed.empty());
+	} // End of the structure change
+	// Cleanup and reschedule models that changed state in this iteration
+	// and survived the structure change phase.
 	for (typename Bag<Atomic<X>*>::iterator iter = imm.begin(); // Schedule the imminents
 	iter != imm.end(); iter++)
 	{
