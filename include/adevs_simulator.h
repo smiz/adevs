@@ -20,6 +20,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #ifndef __adevs_simulator_h_
 #define __adevs_simulator_h_
 #include "adevs_models.h"
+#include "adevs_event_listener.h"
 #include "adevs_sched.h"
 #include "adevs_bag.h"
 #include "adevs_set.h"
@@ -33,49 +34,11 @@ namespace adevs
 {
 
 /**
- * <p>The EventListener class is used to receive output events produced
- * by models in the simulation and to be notified of state changes by
- * Atomic models.</p> 
- *
- * <p>Callbacks occur at slightly different times for the
- * Simulator and OptSimulator. The Simulator class calls the outputEvent()
- * method while it is computing output events (i.e., during the call to
- * compute computeNextOutput or execNextEvent) and state change notifications
- * are sent immediately following a model's change of state. Callbacks
- * occur as soon as the output event or state change occurs in the simulation.
- * An output event notification is sent when an Atomic model creates the
- * output and when a Network model is induced to produce an output.
- * </p>
- *
- * The OptSimulator class makes the callbacks just before its execUntil()
- * method returns. It only guarantees that the calls will be made in time stamp
- * order for each Atomic model; callbacks for different Atomic models may be
- * mixed up in any way. Unlike with the Simulator, there are outputEvent callbacks
- * for Network models; only for Atomic models.
+ * This Simulator class implements the DEVS simulation algorithm.
+ * Its methods can throw adevs::exception objects if any of the DEVS model
+ * constraints are violated (i.e., a negative time advance of a model
+ * attempting to send an input directly to itself).
  */
-template <class X> class EventListener
-{
-	public:
-		/// Output event callback. The default implementation is empty.
-		virtual void outputEvent(Event<X> x, double t){};
-		/**
-		 * This call back is made by the simulator after an Atomic
-		 * model changes its state. The state parameter is NULL  
-		 * when the Simulator makes this callback, and it contains
-		 * the model's saved state at time t when the OptSimulator
-		 * makes this call back. This method has an empty default
-		 * implementation.
-		 */
-		virtual void stateChange(Atomic<X>* model, double t, void* state){}
-		virtual ~EventListener(){}
-};
-
-/**
-This Simulator class implements the DEVS simulation algorithm.
-Its methods can throw adevs::exception objects if any of the DEVS model
-constraints are violated (i.e., a negative time advance of a model
-attempting to send an input directly to itself).
-*/
 template <class X> class Simulator 
 {
 	public:
