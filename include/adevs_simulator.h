@@ -76,7 +76,8 @@ template <class X> class Simulator
 			computeNextState(bogus_input,sched.minPriority());
 		}
 		/**
-		Compute the output values of the imminent models.  This will
+		Compute the output values of the imminent models if these values
+		have not already been computed.  This will
 		notify the EventListener objects as the outputs are found. This,
 		in effect, implements the output function of the resultant
 		model.
@@ -209,8 +210,8 @@ template <class X> class Simulator
 template <class X>
 void Simulator<X>::computeNextOutput()
 {
-	// Clear the imminent set
-	imm.clear();
+	// If the imminent set is up to date, then just return
+	if (imm.empty() == false) return;
 	// Get the imminent models from the schedule. This sets the active flags.
 	sched.getImminent(imm);
 	// Compute output functions and route the events. The bags of output
