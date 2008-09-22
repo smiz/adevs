@@ -89,9 +89,6 @@ template <class X> class Devs
 		virtual bool model_transition() { return false; }
 		
 	private:
-
-//		friend class Simulator<X>;
-
 		Network<X>* parent;
 };
 
@@ -221,8 +218,7 @@ template <class X> class Atomic: public Devs<X>
 		// Index in the priority queue
 		unsigned int q_index;
 		// Input and output event bags
-		Bag<X>* x;
-		Bag<X>* y;
+		Bag<X> *x, *y;
 		// The logical process that this model is assigned to
 		LogicalProcess<X>* lp;
 };
