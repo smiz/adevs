@@ -7,7 +7,7 @@ PREFIX = ..
 # Compiler flags
 CFLAGS = -fopenmp -pedantic -Wall -I${PREFIX}/include
 # Best bet for GNU compiler
- CC = g++4
+ CC = g++
  OPTFLAG = -O3
 
 #
