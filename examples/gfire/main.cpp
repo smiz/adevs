@@ -68,7 +68,6 @@ void random_config()
 	config = new Configuration(tmpname);
 	// Close and delete the temporary file
 	fclose(fout);
-	unlink(tmpname);
 }
 
 void drawSpace()
