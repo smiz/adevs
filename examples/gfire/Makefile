@@ -22,5 +22,5 @@ gfire: ${OBJS}
 	${CC} ${CFLAGS} ${OPTFLAG} ${OBJS} ${LIBS} ${LIBPATH} ${INCLUDE}
 
 clean:
-	rm -f *.o core a.out
+	rm -f *.o core a.out fire_config_*
 
