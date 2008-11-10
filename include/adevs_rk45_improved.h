@@ -22,6 +22,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #include "adevs_dess.h"
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 
 namespace adevs
 {
@@ -140,6 +141,8 @@ template <class X> class rk45_improved: public DESS<X>
 		bool* event_indicator;
 		// Current time step selection
 		double h_cur;
+		// Does q_tmp hold the ODE solution at h_cur?
+		bool keep_q_tmp;
 		// Indicates that the next discrete action is an internal event
 		bool internal_event;
 		// Number of state variables and level crossing functions
@@ -159,6 +162,7 @@ h_max(h_max),
 err_tol(err_tol),
 event_tol(event_tol),
 h_cur(h_max),
+keep_q_tmp(false),
 internal_event(false),
 num_state_vars(num_state_vars),
 zero_funcs(zero_funcs)
@@ -191,24 +195,38 @@ rk45_improved<X>::~rk45_improved()
 template <class X>
 void rk45_improved<X>::evolve_func(double h)
 {
-	ode_step(q,h);
+	// If q_tmp is ok, then just copy q_tmp to q
+	if (keep_q_tmp && h == h_cur)
+	{
+		for (int i = 0; i < num_state_vars; i++) q[i] = q_tmp[i];
+	}
+	// Otherwise advance the solution
+	ode_step(q,h); 
+	// Invalidate q_tmp	
+	keep_q_tmp = false;
 }
 
 template <class X>
 double rk45_improved<X>::next_event_func(bool& is_event)
 {
+	// q_tmp will hold the solution at h_cur when this method returns
+	keep_q_tmp = true;
 	// Get the next time event
 	double time_event = time_event_func(q);
 	/* Look for the largest allowable integration step */
-	h_cur *= 1.1; // Try to increase the step size
+	h_cur *= 1.2; // Try a larger step size this time through
 	if (h_cur > h_max) h_cur = h_max; // Limit to h_max
 	if (h_cur > time_event) h_cur = time_event; // Limit to the next event time
-	// Reduce the step size until the error tolerance is satisfied
-	for (int i = 0; i < num_state_vars; i++) q_tmp[i] = q[i];
-	while (ode_step(q_tmp,h_cur) > err_tol)
+	for ( ; ; )
 	{
-		h_cur *= 0.5;
-		for (int i = 0; i < num_state_vars; i++) q_tmp[i] = q[i];
+		// Advance the solution by h_cur
+		for (int i = 0; i < num_state_vars; i++) q_tmp[i] = q[i]; 
+		double err = ode_step(q_tmp,h_cur); 
+		if (err <= err_tol) break; // Check the error, exit if ok
+		// Reduce the step size otherwise
+		double h_next = 0.8*pow(err_tol*h_cur*h_cur*h_cur*h_cur*h_cur,0.2)/fabs(err);
+		if (h_next > h_cur) h_next = 0.8*h_cur;
+		h_cur = h_next;
 	}
 	// q_tmp now stores the state variables at the end of the time step
 	// and q has the variables at the start of the time step. Now we
@@ -221,12 +239,13 @@ double rk45_improved<X>::next_event_func(bool& is_event)
 		// Compute the state event values at the end of the interval
 		state_event_func(q_tmp,en);
 		// Look for a zero-crossing 
+		bool found_state_event = false;
 		double h_next = h_cur;
 		for (int i = 0; i < zero_funcs; i++)
 		{
-			bool sign_change = es[i]*en[i] < 0.0;
-			bool tolerance_met = fabs(en[i]) <= event_tol;
-			event_indicator[i] = sign_change && tolerance_met; 
+			bool sign_change = (es[i]*en[i] < 0.0);
+			bool tolerance_met = event_indicator[i] = fabs(en[i]) <= event_tol;
+			if (event_indicator[i]) found_state_event = true;
 			// Estimate the time to cross zero and remember the
 			// smallest such time (if we actual found an event, then h_cur
 			// is the crossing time).
@@ -242,12 +261,9 @@ double rk45_improved<X>::next_event_func(bool& is_event)
 		if (h_next == h_cur)
 		{
 			// Is this a time event?
-			is_event = event_indicator[zero_funcs] = (h_next >= time_event); 
-			// Are there any state events?
-			for (int i = 0; i < zero_funcs && !is_event; i++)
-			{
-				is_event = event_indicator[i];
-			}
+			event_indicator[zero_funcs] = (h_next >= time_event); 
+			// Are there any state or time events?
+			is_event = found_state_event || event_indicator[zero_funcs];
 			// Done, return the next event time
 			return h_cur;
 		}
@@ -271,8 +287,9 @@ void rk45_improved<X>::discrete_action_func(const Bag<X>& xb)
 		}
 	} 
 	internal_event = false;
-	// Reset the integrator step size
+	// Reset the integrator step size and invalidate q_tmp
 	h_cur = h_max;
+	keep_q_tmp = false;
 	// Compute the discrete action
 	discrete_action(q,xb,event_indicator);
 }

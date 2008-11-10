@@ -17,13 +17,14 @@ class bouncing_ball: public rk45_improved<PortValue<double> >
 {
 	public:
 		bouncing_ball():
-		rk45_improved<PortValue<double> >(3,0.01,1E-5,1)
+		rk45_improved<PortValue<double> >(3,0.01,1E-6,1)
 		{
 			init(0,1.0); // height
 			init(1,0.0); // velocity
 			init(2,0.0); // time
 			sample = false;
 			state_change_count = 0;
+			bounceOk = true;
 		}
 		void der_func(const double* q, double *dq)
 		{
@@ -33,7 +34,14 @@ class bouncing_ball: public rk45_improved<PortValue<double> >
 		}
 		void state_event_func(const double *q, double* z)
 		{
-			z[0] = q[0];
+			if (bounceOk)
+			{
+				z[0] = q[0]; // Hit the ground at x = 0
+			}
+			else
+			{
+				z[0] = q[1]; // Reset bounce when v < 0 again
+			}
 		}
 		double time_event_func(const double* q)
 		{
@@ -45,8 +53,16 @@ class bouncing_ball: public rk45_improved<PortValue<double> >
 		{
 			if (event_flag[0]) 
 			{
-				q[0] = 0.0;
-				q[1] = -q[1];
+				if (bounceOk)
+				{
+					bounceOk = false;
+					q[0] = 0.0;
+					if (q[1] < 0.0) q[1] = -q[1];
+				}
+				else
+				{
+					bounceOk = true;
+				}
 			}
 			sample = xb.size() > 0;
 		}
@@ -68,7 +84,7 @@ class bouncing_ball: public rk45_improved<PortValue<double> >
 		int getStateChangeCount() const { return state_change_count; }
 
 	private:
-		bool sample;
+		bool sample, bounceOk;
 		int state_change_count;
 };
 
