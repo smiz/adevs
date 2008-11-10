@@ -143,8 +143,6 @@ template <class X> class rk45_improved: public DESS<X>
 		double h_cur;
 		// Does q_tmp hold the ODE solution at h_cur?
 		bool keep_q_tmp;
-		// Indicates that the next discrete action is an internal event
-		bool internal_event;
 		// Number of state variables and level crossing functions
 		const int num_state_vars, zero_funcs;
 		/*
@@ -163,7 +161,6 @@ err_tol(err_tol),
 event_tol(event_tol),
 h_cur(h_max),
 keep_q_tmp(false),
-internal_event(false),
 num_state_vars(num_state_vars),
 zero_funcs(zero_funcs)
 {
@@ -195,13 +192,36 @@ rk45_improved<X>::~rk45_improved()
 template <class X>
 void rk45_improved<X>::evolve_func(double h)
 {
-	// If q_tmp is ok, then just copy q_tmp to q
-	if (keep_q_tmp && h == h_cur)
+	// If this is an internal event 
+	if (h == h_cur)
 	{
-		for (int i = 0; i < num_state_vars; i++) q[i] = q_tmp[i];
+		// if q_tmp is ok, then just copy q_tmp to q
+		if (keep_q_tmp)
+		{
+			for (int i = 0; i < num_state_vars; i++)
+				q[i] = q_tmp[i];
+		} 
+		// otherwise advance the solution
+		else ode_step(q,h);
 	}
-	// Otherwise advance the solution
-	ode_step(q,h); 
+	// If this is an external event, then check for state events and
+	// advance the solution
+	else
+	{
+		// This is not a time event
+		event_indicator[zero_funcs] = false;
+		// Calculate the state event function at q
+		state_event_func(q,es);
+		// Advance the solution
+		ode_step(q,h); 
+		// Calculate the state event function now
+		state_event_func(q,en);
+		// Look for zero crossings in the internval
+		for (int i = 0; i < zero_funcs; i++)
+		{
+			event_indicator[i] = (es[i]*en[i] < 0.0) || (fabs(en[i]) <= event_tol);
+		}
+	}
 	// Invalidate q_tmp	
 	keep_q_tmp = false;
 }
@@ -244,8 +264,8 @@ double rk45_improved<X>::next_event_func(bool& is_event)
 		for (int i = 0; i < zero_funcs; i++)
 		{
 			bool sign_change = (es[i]*en[i] < 0.0);
-			bool tolerance_met = event_indicator[i] = fabs(en[i]) <= event_tol;
-			if (event_indicator[i]) found_state_event = true;
+			bool tolerance_met = event_indicator[i] = (fabs(en[i]) <= event_tol);
+			if (tolerance_met) found_state_event = true;
 			// Estimate the time to cross zero and remember the
 			// smallest such time (if we actual found an event, then h_cur
 			// is the crossing time).
@@ -253,6 +273,7 @@ double rk45_improved<X>::next_event_func(bool& is_event)
 			{
 				double t_cross = h_cur*es[i]/(es[i]-en[i]);
 				assert(t_cross < h_cur);
+				assert(t_cross > 0.0);
 				if (t_cross < h_next) h_next = t_cross;
 			}
 		}
@@ -278,15 +299,6 @@ double rk45_improved<X>::next_event_func(bool& is_event)
 template <class X>	
 void rk45_improved<X>::discrete_action_func(const Bag<X>& xb)
 {
-	// If this is not an internal event then clear the event flags
-	if (!internal_event)
-	{
-		for (int i = 0; i <= zero_funcs; i++)
-		{
-			event_indicator[i] = false;
-		}
-	} 
-	internal_event = false;
 	// Reset the integrator step size and invalidate q_tmp
 	h_cur = h_max;
 	keep_q_tmp = false;
@@ -297,8 +309,6 @@ void rk45_improved<X>::discrete_action_func(const Bag<X>& xb)
 template <class X>	
 void rk45_improved<X>::discrete_output_func(Bag<X>& yb)
 {
-	// Output always precedes a discrete state change
-	internal_event = true;
 	discrete_output(q,yb,event_indicator);
 }
 
