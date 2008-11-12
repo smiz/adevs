@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <list>
 #include <cassert>
+#include <iostream>
 
 typedef std::list<std::pair<double,object*> > delay_q;
 

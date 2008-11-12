@@ -65,6 +65,11 @@ struct Time
 	{
 		return (t == t2.t && c == t2.c);
 	}
+	/// Not equal
+	bool operator!=(const Time& t2) const
+	{
+		return !(*this == t2);
+	}
 	/// Order by t then by c
 	bool operator<(const Time& t2) const
 	{
