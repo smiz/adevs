@@ -49,6 +49,8 @@ class node: public adevs::Atomic<PortValue>
 			sprintf(msg,"%d sent %d @ t = %.0f\n",ID,out_token->value,t);
 			// Copy the internal token if we are going to reuse it
 			if (out_token == token) token = new token_t(*token);
+			// Delete the expelled token
+			if (out_token != NULL) delete out_token;
 			out_token = token;
 			sigma = DBL_MAX;
 		}
@@ -70,6 +72,8 @@ class node: public adevs::Atomic<PortValue>
 			sprintf(msg,"%d sent %d @ t = %.0f\n",ID,token->value,t);
 			// Make a copy of the input
 			token_t* tmp = static_cast<token_t*>((*(x.begin())).value);
+			// Delete the expelled token
+			if (out_token != NULL) delete out_token;
 			out_token = token = new token_t(*tmp);
 			sigma = holdtime;
 			char tmp_msg[100];
@@ -78,7 +82,7 @@ class node: public adevs::Atomic<PortValue>
 		}
 		void output_func(adevs::Bag<PortValue>& y)
 		{
-			PortValue pv(out,out_token);
+			PortValue pv(out,new token_t(*out_token));
 			y.insert(pv);
 		}
 		void gc_output(adevs::Bag<PortValue>& gb)

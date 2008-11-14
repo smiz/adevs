@@ -59,7 +59,7 @@ template <class X> class OptSimulator
 		/// Get the complete next event time
 		Time totalNextEventTime()
 		{
-			if (sched.empty()) return Time(DBL_MAX);
+			if (sched.empty()) return Time::Inf();
 			else return sched.minPriority();
 		}
 		/**
@@ -265,17 +265,17 @@ void OptSimulator<X>::execUntil(Time stop_time)
 			batch[i] = sched.get(i+1);
 			batch[i]->lp->setActive(true);
 		}
-		// Execute their output functions in parallel
+		// Process the input lists in parallel
 		#pragma omp parallel for default(shared) private(i)
 		for (i = 0; i < batch_size; i++)
 		{
-			batch[i]->lp->execOutput();	
+			batch[i]->lp->processInput();	
 		}
-		// Execute their state transition functions in parallel
+		// Speculative execution of state transition and output functions
 		#pragma omp parallel for default(shared) private(i)
 		for (i = 0; i < batch_size; i++)
 		{						
-			batch[i]->lp->execDeltfunc();			
+			batch[i]->lp->execEvents(10);			
 		}		
 		// Reschedule the models in the batch and reset their active flags
 		for (i = 0; i < batch_size; i++)
@@ -292,6 +292,7 @@ void OptSimulator<X>::execUntil(Time stop_time)
 		}
 		// Get the global virtual time 
 		actual_gvt = totalNextEventTime();
+		std::cout << actual_gvt.t << " " << actual_gvt.c << std::endl;
 	}	
 	// Do fossil collection and send event notifications
 	if (actual_gvt > stop_time) actual_gvt = stop_time;

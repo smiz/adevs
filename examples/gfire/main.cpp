@@ -8,6 +8,8 @@
 #include <GL/glut.h>
 using namespace std;
 
+// Use the parallel simulator?
+static bool par_sim = false;
 // Phase space to visualize
 Phase** phase = NULL;
 Configuration* config = NULL;
@@ -120,7 +122,9 @@ void simulateSpace()
 	// Dynamic cellspace model and simulator
 	static adevs::CellSpace<int>* cell_space = NULL;
 	static adevs::Simulator<CellEvent>* sim = NULL;
+	static adevs::OptSimulator<CellEvent>* opt_sim = NULL;
 	static PhaseListener* listener = NULL;
+	static double tN = DBL_MAX;
 	// If the visualization array is needed
 	if (phase == NULL)
 	{
@@ -146,22 +150,36 @@ void simulateSpace()
 				cell_space->add(cell,x,y);
 			}
 		}
-		// Create a simulator for the model
-		sim = new adevs::Simulator<CellEvent>(cell_space);
-		// Add an event listener
+		// Create a listener for the model
 		listener = new PhaseListener();
-		sim->addEventListener(listener);
+		// Create a simulator for the model
+		if (!par_sim)
+		{
+			sim = new adevs::Simulator<CellEvent>(cell_space);
+			// Add an event listener
+			sim->addEventListener(listener);
+		}
+		else
+		{
+			opt_sim = new adevs::OptSimulator<CellEvent>(cell_space,100);
+			// Add an event listener
+			opt_sim->addEventListener(listener);
+		}
 		// Ready to go
 		phase_data_ready = true;
 	}
 	// If everything has died, then restart on the next call
-	if (sim->nextEventTime() == DBL_MAX)
+	if (par_sim) tN = opt_sim->nextEventTime();
+	else tN = sim->nextEventTime();
+	if (tN == DBL_MAX)
 	{
 		phase_data_ready = false;
+		if (sim != NULL) delete sim;
+		if (opt_sim != NULL) delete opt_sim;
 		delete cell_space;
-		delete sim;
 		delete listener;
 		sim = NULL;
+		opt_sim = NULL;
 		cell_space = NULL;
 		listener = NULL;
 	}
@@ -170,7 +188,12 @@ void simulateSpace()
 	{
 		try
 		{
-			sim->execNextEvent();
+			if (par_sim) opt_sim->execUntil(tN+10.0);
+			else while (sim->nextEventTime() <= tN+10.0)
+			{
+				cout << sim->nextEventTime() << endl;
+				sim->execNextEvent();
+			}
 		} 
 		catch(adevs::exception err)
 		{
@@ -185,14 +208,21 @@ void simulateSpace()
 int main(int argc, char** argv)
 {
 	// Load the initial fire model data
-	if (argc >= 2)
+	for (int i = 1; i < argc; i++)
 	{
-		config = new Configuration(argv[1]);
+		if (strcmp(argv[i],"--config") == 0 && i+1 < argc)
+		{
+			config = new Configuration(argv[++i]);
+		}
+		else if (strcmp(argv[i],"-p") == 0)
+		{
+			par_sim = true;
+			int procs = omp_get_num_procs();
+			int thrds = omp_get_max_threads();
+			cout << "Using " << thrds << " threads on " << procs << " processors" << endl;
+		}
 	}
-	else
-	{
-		random_config();
-	}
+	if (config == NULL) random_config();
 	// Setup the display
 	win_height = config->get_height()*cell_size;
 	win_width = config->get_width()*cell_size;

@@ -82,13 +82,13 @@ template <class X> class LogicalProcess
 		 */
 		LogicalProcess(Atomic<X>* model, std::vector<LogicalProcess*>* active_list);
 		/** 
-		 * Optimistically execute the output function
+		 * Process all of the events in the input list.
 		 */
-		void execOutput();
+		void processInput();
 		/**
-		 * Optimistically execute the state transition function
+		 * Optimistically execute the output and state transition functions.
 		 */
-		void execDeltfunc();
+		void execEvents(int num_events);
 		/**
 		 * Do fossil collection.
 		 */
@@ -119,14 +119,14 @@ template <class X> class LogicalProcess
 		 */
 		Time getNextEventTime() const
 		{
-			Time result(DBL_MAX,INT_MAX);
+			Time result = Time::Inf();
 			if (time_advance < DBL_MAX)
 				result = tL + Time(time_advance,0);
 			if (!avail.empty() && avail.front().t < result)
 				result = avail.front().t;
 			if (!input.empty() && tMinInput < result)
 				result = tMinInput;
-			if (rb_pending && rb_time < result)
+			if (rb_time < result)
 				result = rb_time;
 			return result;
 		}
@@ -181,8 +181,7 @@ template <class X> class LogicalProcess
 		std::list<CheckPoint> chk_pt;
 		// Set of lps that I have sent a message to
 		std::set<LogicalProcess<X>*> recipients;
-		// Is there a pending rollback and what is its timestamp
-		bool rb_pending;
+		// What is the timestamp of the pending rollback 
 		Time rb_time;
 		// Smallest input timestamp
 		Time tMinInput;
@@ -200,8 +199,7 @@ template <class X> class LogicalProcess
 
 template <class X>
 LogicalProcess<X>::LogicalProcess(Atomic<X>* model, std::vector<LogicalProcess<X>*>* active_list):
-	rb_pending(false),
-	rb_time(DBL_MAX,INT_MAX),
+	rb_time(Time::Inf()),
 	active_list(active_list),
 	model(model)
 {
@@ -251,63 +249,21 @@ void LogicalProcess<X>::fossilCollect(Time gvt)
 }
 
 template <class X>
-void LogicalProcess<X>::execOutput()
+void LogicalProcess<X>::processInput()
 {
-	// Setup the message
-	Message<X> msg;
-	msg.src = this;
-	// Send the pending rollback
-	if (rb_pending)
-	{
-		// Create the rollback message
-		msg.t = rb_time;
-		msg.type = RB;
-		// Send it to all of the lp's that we've sent a message to
-		typename std::set<LogicalProcess<X>*>::iterator lp_iter;
-		lp_iter = recipients.begin(); 
-		for (; lp_iter != recipients.end(); lp_iter++)
-			(*lp_iter)->sendMessage(msg);
-		// Cancel the pending rollback
-		rb_pending = false;
-		rb_time = Time(DBL_MAX,INT_MAX);
-	}
-	// Compute and send our next output assuming that
-	// an internal event will happen next
-	if (time_advance < DBL_MAX)
-	{
-		// Create the message
-		msg.t = tL + Time(time_advance,0);
-		msg.type = IO;
-		// Compute the model's output
-		io_bag.clear();
-		model->output_func(io_bag);
-		// Send the the output values
-		for (typename Bag<X>::iterator iter = io_bag.begin(); 
-			iter != io_bag.end(); iter++)
-		{
-			assert(output.empty() || output.back().t <= msg.t);
-			msg.value = *iter;
-			output.push_back(msg);
-			route(model->getParent(),model,*iter);
-		}
-	}
-}
-
-template <class X>
-void LogicalProcess<X>::execDeltfunc()
-{
-	// Process the input messages
+	// Process all of the input messages
 	while (!input.empty())
 	{
-		// Was a used message actual canceled?
+		// Was a used message actually canceled?
 		bool used_msg_cancelled = false;
 		// Get the message at the front of the list
 		Message<X> msg = input.front();
 		input.pop_front();
-		// If this is a rollback message then discard later messages from the sender
+		// If this is a rollback message then discard messages from the sender.
+		// Remember if one of these is a used message in the past.
 		if (msg.type == RB)
 		{
-			// Discard unprocessed messages
+			// Discard unprocessed messages that are in the future
 			typename std::list<Message<X> >::iterator msg_iter = avail.begin();
 			while (msg_iter != avail.end())
 			{
@@ -316,7 +272,7 @@ void LogicalProcess<X>::execDeltfunc()
 				else 
 					msg_iter++;
 			}
-			// Discard processed messages
+			// Discard processed messages that are in the past
 			msg_iter = used.begin();
 			while (msg_iter != used.end())
 			{
@@ -329,21 +285,27 @@ void LogicalProcess<X>::execDeltfunc()
 					msg_iter++;
 			}
 		}
-		// Otherwise add it to the list of available messages
-		else
+		// Discard the incorrect outputs. Find the first message after msg.t
+		// because that will be the timestamp of our rollback message.
+		if (used_msg_cancelled /* in the past or */ ||
+				msg.type != RB /* might cancel a speculative output */)
 		{
-			insert_message(avail,msg);
+			Time t_bad = Time::Inf();
+			while (!output.empty() && output.back().t > msg.t)
+			{
+				t_bad = output.back().t;
+				insert_message(discard,output.back());
+				output.pop_back();
+				assert(output.empty() || t_bad >= output.back().t);
+			} 
+			// Schedule a rollback message
+			if (t_bad < rb_time) rb_time = t_bad;
 		}
 		// If this message is in the past, then perform a rollback
 		if ((msg.type != RB && msg.t < tL) || used_msg_cancelled)
 		{
+			assert(msg.t < tL);
 			assert(!chk_pt.empty());
-			// Discard the incorrect outputs
-			while (!output.empty() && output.back().t > msg.t)
-			{
-				insert_message(discard,output.back());
-				output.pop_back();
-			} 
 			// Discard incorrect checkpoints
 			while (chk_pt.back().t > msg.t)
 			{
@@ -372,68 +334,113 @@ void LogicalProcess<X>::execDeltfunc()
 				avail.push_front(used.back());
 				used.pop_back();
 			}
-			// Schedule a rollback message
-			Time t_bad = msg.t + Time(0.0,1);
-			if (!rb_pending || (t_bad < rb_time)) rb_time = t_bad;
-			rb_pending = true;
 		}
-	}
-	// This is the time of the next internal event
-	Time tSelf(DBL_MAX,INT_MAX);
-	if (time_advance < DBL_MAX)
-		tSelf = tL + Time(time_advance,0);
-	Time tN(tSelf);
-	io_bag.clear();
-	// Look for input
-	if (!avail.empty())
-	{
-		if (avail.front().t < tN)
+		// Add it to the list of available messages
+		if (msg.type != RB)	
 		{
-			tN = avail.front().t; 
+			insert_message(avail,msg);
 		}
+	} 
+	// Done with the input messages. 
+}
+
+template <class X>
+void LogicalProcess<X>::execEvents(int num_events)
+{
+	// Send a pending rollback
+	if (rb_time < Time::Inf())
+	{
+		// Create the rollback message
+		Message<X> msg;
+		msg.src = this;
+		msg.t = rb_time;
+		msg.type = RB;
+		// Send it to all of the lp's that we've sent a message to
+		typename std::set<LogicalProcess<X>*>::iterator lp_iter;
+		lp_iter = recipients.begin(); 
+		for (; lp_iter != recipients.end(); lp_iter++)
+			(*lp_iter)->sendMessage(msg);
+		// Cancel the pending rollback
+		rb_time = Time::Inf();
+	}
+	// Process the some number of events
+	while (num_events-- >= 0)
+	{
+		// This is the time of the next internal event
+		Time tSelf = Time::Inf();
+		if (time_advance < DBL_MAX)
+		{
+			assert(time_advance >= 0.0);
+			tSelf = tL + Time(time_advance,0);
+			// This is a pathological case caused by time_advance being very small
+			if (tSelf < tL) tSelf = tL;
+		}
+		Time tN(tSelf);
+		// Is there an external input prior to tSelf?
+		if (!avail.empty() && avail.front().t < tN)
+			tN = avail.front().t;
+		// If the next event is at infinity, then there is nothing to do
+		if (tN == Time::Inf()) return;
+		if (tL > tN)
+		{
+			std::cout << tL.t << " " << tL.c << " : " << tN.t << " " << tN.c  << std::endl;
+			std::cout << tL.t - tN.t << std::endl;
+			std::cout << num_events << " " << time_advance << std::endl;
+			if (!used.empty()) std::cout << used.back().t.t << " " << used.back().t.c << std::endl;
+			std::cout << avail.front().t.t << " " << avail.front().t.c << std::endl;
+		}
+		assert(tL <= tN);
+		// If this is an internal event and we haven't already sent this output,
+		// then send it
+		if (tN == tSelf && (output.empty() || output.back().t < tSelf))
+		{
+			// Send our output
+			Message<X> msg;
+			msg.src = this;
+			msg.t = tSelf;
+			msg.type = IO;
+			// Compute the model's output
+			io_bag.clear();
+			model->output_func(io_bag);
+			// Send the the output values
+			for (typename Bag<X>::iterator iter = io_bag.begin(); 
+				iter != io_bag.end(); iter++)
+			{
+				assert(output.empty() || output.back().t <= msg.t);
+				msg.value = *iter;
+				output.push_back(msg);
+				route(model->getParent(),model,*iter);
+			}
+		}
+		// Save the current state and compute the next state.
+		CheckPoint c;
+		c.t = tL;
+		c.data = model->save_state();
+		chk_pt.push_back(c);
+		// Get the inputs
+		io_bag.clear();
 		while (!avail.empty() && avail.front().t == tN)
 		{
 			io_bag.insert(avail.front().value);
 			assert(used.empty() || avail.front().t >= used.back().t);
 			used.push_back(avail.front());
 			avail.pop_front();
+			assert(avail.empty() || avail.front().t >= used.back().t);
 		}
+		// Compute the next state
+		if (tN == tSelf)
+		{
+			if (io_bag.empty()) model->delta_int();
+			else model->delta_conf(io_bag);
+		}
+		// If this is an external event
+		else model->delta_ext(tN.t-tL.t,io_bag);
+		// Get the new value of the time advance
+		time_advance = model->ta();
+		// Actual time for this state
+		tL = tN + Time(0.0,1);
+		model->tL = tL.t;
 	}
-	// Did we produce a bad output that must be retracted?
-	assert(tN <= tSelf);
-	if (!rb_pending && time_advance < DBL_MAX && tN < tSelf)
-	{
-		rb_pending = true;
-		rb_time = tSelf;
-		insert_message(discard,output.back());
-		output.pop_back();
-	}
-	// If the next event is at infinite, then there is nothing to do
-	if (tN.t == DBL_MAX) return;
-	assert(tL <= tN);
-	// Save the current state
-	CheckPoint c;
-	c.t = tL;
-	c.data = model->save_state();
-	chk_pt.push_back(c);
-	// Compute the next state
-	if (io_bag.empty())
-	{
-		model->delta_int();
-	}
-	else if (tN == tSelf)
-	{
-		model->delta_conf(io_bag);
-	}
-	else
-	{
-		model->delta_ext(tN.t-tL.t,io_bag);
-	}
-	// Get the new value of the time advance
-	time_advance = model->ta();
-	// Actual time for this state
-	tL = tN + Time(0.0,1);
-	model->tL = tL.t;
 }
 
 template <class X>
