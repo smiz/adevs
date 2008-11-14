@@ -19,6 +19,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 ***************/
 #ifndef __adevs_time_h_
 #define __adevs_time_h_
+#include <cfloat>
 
 namespace adevs
 {
@@ -28,6 +29,8 @@ struct Time
 {
 	double t;
 	unsigned int c;
+	/// Value for infinity
+	static adevs::Time Inf() { return Time(DBL_MAX,UINT_MAX); }
 	/// Constructor. Default time is (0,0).
 	Time(double t = 0.0, unsigned int c = 0):t(t),c(c){}
 	/// Copy constructor

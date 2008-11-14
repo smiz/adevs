@@ -107,9 +107,10 @@ class delay: public adevs::Atomic<PortValue>
 				s->q.back().second = new object(*obj);
 				assert(obj != s->q.back().second);
 			}
+			assert(s->q.size() == q.size());
 			return s;
 		}
-		void restore_state(double *data)
+		void restore_state(void *data)
 		{
 			state_t* s = (state_t*)data;
 			dt = s->dt;
@@ -126,6 +127,7 @@ class delay: public adevs::Atomic<PortValue>
 				object* obj = (*i).second;
 				q.back().second = new object(*obj);
 			}
+			assert(s->q.size() == q.size());
 		}
 		void gc_state(void* data)
 		{

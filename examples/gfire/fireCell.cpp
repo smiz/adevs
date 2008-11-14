@@ -120,7 +120,15 @@ void fireCell::output_func(adevs::Bag<CellEvent>& yb)
 
 Phase fireCell::getPhase(const void* state_data)
 {
-	return phase;
+	if (state_data == NULL)
+	{
+		return phase;
+	}
+	else
+	{
+		const state_t* state = static_cast<const state_t*>(state_data);
+		return state->phase;
+	}
 }
 
 void* fireCell::save_state()
