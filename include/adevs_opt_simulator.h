@@ -30,13 +30,9 @@ template <class X> class OptSimulator
 		time advance of any component atomic model is less than zero.
 		The batch size parameter controls the potential degree of parallelism
 		and parallel overhead; it is the number of models that will process
-		an event in every iteration of the optimistic simulator. The 
-		fc_iterations flag is the maximum number of iterations between
-		garbage collection events; it determines the serial portion of
-		the simulation and the memory overhead. 
+		an event in every iteration of the optimistic simulator.  
 		*/
-		OptSimulator(Devs<X>* model, int max_batch_size = 8,
-				int fc_iterations = INT_MAX);
+		OptSimulator(Devs<X>* model, int max_batch_size = 1000, bool thread_safe_listeners = false);
 		/**
 		Add an event listener that will be notified of output events 
 		produced by the model.
@@ -96,8 +92,9 @@ template <class X> class OptSimulator
 		Atomic<X>** batch;
 		/// Number of models in the list
 		const int max_batch_size;
-		/// Number of simulation iterations between fossil collection rounds
-		const int fc_iterations;
+		/// Are event listeners thread safe?
+		const bool thrd_safe_listeners;
+		omp_lock_t listener_lock;
 		/**
 		 * Recursively initialize the model by assigning an lp to each atomic
 		 * model and putting active models into the schedule.
@@ -115,12 +112,12 @@ template <class X> class OptSimulator
 };
 
 template <class X>
-OptSimulator<X>::OptSimulator(Devs<X>* model, int max_batch_size, 
-		int fc_iterations):
+OptSimulator<X>::OptSimulator(Devs<X>* model, int max_batch_size, bool thread_safe_listeners):
 	top_model(model),
 	max_batch_size(max_batch_size),
-	fc_iterations(fc_iterations)
+	thrd_safe_listeners(thrd_safe_listeners)
 {
+	omp_init_lock(&listener_lock);
 	batch = new Atomic<X>*[max_batch_size];
 	initialize(model);
 }
@@ -164,8 +161,10 @@ void OptSimulator<X>::fossil_collect_and_commit(Devs<X>* model, Time effective_g
 			if ((*oiter).t < effective_gvt)
 			{
 				Event<X> event(a,(*oiter).value);
+				if (!thrd_safe_listeners) omp_set_lock(&listener_lock);
 				for (liter = listeners.begin(); liter != listeners.end(); liter++)
 					(*liter)->outputEvent(event,(*oiter).t.t);
+				if (!thrd_safe_listeners) omp_unset_lock(&listener_lock);
 			}
 			else
 				break;
@@ -184,10 +183,10 @@ void OptSimulator<X>::fossil_collect_and_commit(Devs<X>* model, Time effective_g
 			else if ((*siter).t > a->lp->getLastCommit())
 			{
 				a->lp->setLastCommit((*siter).t);
+				if (!thrd_safe_listeners) omp_set_lock(&listener_lock);
 				for (liter = listeners.begin(); liter != listeners.end(); liter++)
-				{
 					(*liter)->stateChange(a,(*siter).t.t,(*siter).data);
-				}
+				if (!thrd_safe_listeners) omp_unset_lock(&listener_lock);
 			}
 		}
 		// Report the last state if it is prior to gvt
@@ -195,10 +194,10 @@ void OptSimulator<X>::fossil_collect_and_commit(Devs<X>* model, Time effective_g
 				a->lp->getLocalStateTime() > a->lp->getLastCommit())
 		{
 			void* tmp_state = a->save_state();
+			if (!thrd_safe_listeners) omp_set_lock(&listener_lock);
 			for (liter = listeners.begin(); liter != listeners.end(); liter++)
-			{
 				(*liter)->stateChange(a,a->lp->getLocalStateTime().t,tmp_state);
-			}
+			if (!thrd_safe_listeners) omp_unset_lock(&listener_lock);
 			a->gc_state(tmp_state);
 			a->lp->setLastCommit(a->lp->getLocalStateTime());
 		}
@@ -242,19 +241,11 @@ void OptSimulator<X>::cleanup(Devs<X>* model)
 template <class X>
 void OptSimulator<X>::execUntil(Time stop_time)
 {
-	// Iteration counter for garbage collection
-	int iterations = 0;
 	// Keep track of the global virtual time
 	Time actual_gvt = totalNextEventTime();
 	// Run until global virtual time meets or exceeds gvt
 	while (actual_gvt <= stop_time && actual_gvt < DBL_MAX)
 	{
-		if (iterations == fc_iterations)
-		{
-			fossil_collect_and_commit(top_model,actual_gvt);
-			iterations = 0;
-		}
-		iterations++;
 		// prepare the list of ready models
 		int batch_size = sched.getSize();
 		if (batch_size > max_batch_size) batch_size = max_batch_size;
@@ -264,17 +255,18 @@ void OptSimulator<X>::execUntil(Time stop_time)
 			batch[i] = sched.get(i+1);
 			batch[i]->lp->setActive(true);
 		}
-		// Process the input lists in parallel
+		// Clean up a bit if we can, then process the input lists 
 		#pragma omp parallel for default(shared) private(i)
 		for (i = 0; i < batch_size; i++)
 		{
+			fossil_collect_and_commit(batch[i],actual_gvt);
 			batch[i]->lp->processInput();	
 		}
 		// Speculative execution of state transition and output functions
 		#pragma omp parallel for default(shared) private(i)
 		for (i = 0; i < batch_size; i++)
 		{						
-			batch[i]->lp->execEvents(10);			
+			batch[i]->lp->execEvents(10);
 		}		
 		// Reschedule the models in the batch and reset their active flags
 		for (i = 0; i < batch_size; i++)
@@ -302,6 +294,7 @@ OptSimulator<X>::~OptSimulator()
 {
 	cleanup(top_model);
 	delete [] batch;
+	omp_destroy_lock(&listener_lock);
 }
 
 } // End of namespace
