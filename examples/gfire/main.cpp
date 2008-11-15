@@ -15,7 +15,7 @@ Phase** phase = NULL;
 Configuration* config = NULL;
 double max_init_fuel = 0.0;
 // Window and cell dimensions. 
-const GLint cell_size = 6;
+const GLint cell_size = 2;
 GLint win_height, win_width;
 // Read to run?
 static bool phase_data_ready = false;
@@ -36,7 +36,7 @@ class PhaseListener:
 void random_config()
 {
 	// Dimensions of the random space
-	int dim = 100;
+	int dim = 300;
 	// Create a temporary configuration file
 	char tmpname[100];
 	sprintf(tmpname,"fire_config_XXXXXX");
@@ -148,6 +148,7 @@ void simulateSpace()
 					config->get_fire(x,y),x,y);
 				max_init_fuel = max(max_init_fuel,config->get_fuel(x,y));
 				cell_space->add(cell,x,y);
+				phase[x][y] = cell->getPhase();
 			}
 		}
 		// Create a listener for the model
@@ -190,10 +191,7 @@ void simulateSpace()
 		{
 			if (par_sim) opt_sim->execUntil(tN+10.0);
 			else while (sim->nextEventTime() <= tN+10.0)
-			{
-				cout << sim->nextEventTime() << endl;
 				sim->execNextEvent();
-			}
 		} 
 		catch(adevs::exception err)
 		{

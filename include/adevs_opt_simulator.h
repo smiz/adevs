@@ -149,7 +149,6 @@ void OptSimulator<X>::initialize(Devs<X>* model)
 template <class X>
 void OptSimulator<X>::fossil_collect_and_commit(Devs<X>* model, Time effective_gvt)
 {
-	static const Time ZERO(0.0,0);
 	// Process an atomic model
 	Atomic<X>* a = model->typeIsAtomic();
 	if (a != NULL)
@@ -292,7 +291,6 @@ void OptSimulator<X>::execUntil(Time stop_time)
 		}
 		// Get the global virtual time 
 		actual_gvt = totalNextEventTime();
-		std::cout << actual_gvt.t << " " << actual_gvt.c << std::endl;
 	}	
 	// Do fossil collection and send event notifications
 	if (actual_gvt > stop_time) actual_gvt = stop_time;
