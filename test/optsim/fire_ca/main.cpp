@@ -87,7 +87,7 @@ void simulateSpace()
 	}
 	else
 	{
-		opt_sim = new adevs::OptSimulator<CellEvent>(cell_space,100,5);
+		opt_sim = new adevs::OptSimulator<CellEvent>(cell_space,100,true);
 		// Add an event listener
 		opt_sim->addEventListener(listener);
 	}
