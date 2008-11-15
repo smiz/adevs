@@ -267,7 +267,7 @@ void LogicalProcess<X>::processInput()
 			typename std::list<Message<X> >::iterator msg_iter = avail.begin();
 			while (msg_iter != avail.end())
 			{
-				if ((*msg_iter).src == msg.src && (*msg_iter).t >= msg.t)
+				if ((*msg_iter).src == msg.src && msg.t <= (*msg_iter).t)
 					msg_iter = avail.erase(msg_iter);
 				else 
 					msg_iter++;
@@ -276,7 +276,7 @@ void LogicalProcess<X>::processInput()
 			msg_iter = used.begin();
 			while (msg_iter != used.end())
 			{
-				if ((*msg_iter).src == msg.src && (*msg_iter).t >= msg.t)
+				if ((*msg_iter).src == msg.src && msg.t <= (*msg_iter).t)
 				{
 					msg_iter = used.erase(msg_iter);
 					used_msg_cancelled = true;
@@ -285,19 +285,17 @@ void LogicalProcess<X>::processInput()
 					msg_iter++;
 			}
 		}
-		// Discard the incorrect outputs. Find the first message after msg.t
+		// Discard the incorrect outputs. Find the first output after msg.t
 		// because that will be the timestamp of our rollback message.
-		if (used_msg_cancelled /* in the past or */ ||
-				msg.type != RB /* might cancel a speculative output */)
+		if (used_msg_cancelled || msg.type != RB)
 		{
 			Time t_bad = Time::Inf();
-			while (!output.empty() && output.back().t > msg.t)
+			while (!output.empty() && msg.t < output.back().t)
 			{
 				t_bad = output.back().t;
 				insert_message(discard,output.back());
 				output.pop_back();
-				assert(output.empty() || t_bad >= output.back().t);
-			} 
+			}
 			// Schedule a rollback message
 			if (t_bad < rb_time) rb_time = t_bad;
 		}
@@ -307,7 +305,7 @@ void LogicalProcess<X>::processInput()
 			assert(msg.t < tL);
 			assert(!chk_pt.empty());
 			// Discard incorrect checkpoints
-			while (chk_pt.back().t > msg.t)
+			while (msg.t < chk_pt.back().t)
 			{
 				model->gc_state(chk_pt.back().data);
 				chk_pt.pop_back();
@@ -328,7 +326,7 @@ void LogicalProcess<X>::processInput()
 				throw err;
 			}
 			// Copy used messages back to the available list
-			while (!used.empty() && used.back().t >= tL)
+			while (!used.empty() && tL <= used.back().t)
 			{
 				assert(avail.empty() || used.back().t <= avail.front().t);
 				avail.push_front(used.back());
@@ -381,18 +379,10 @@ void LogicalProcess<X>::execEvents(int num_events)
 			tN = avail.front().t;
 		// If the next event is at infinity, then there is nothing to do
 		if (tN == Time::Inf()) return;
-		if (tL > tN)
-		{
-			std::cout << tL.t << " " << tL.c << " : " << tN.t << " " << tN.c  << std::endl;
-			std::cout << tL.t - tN.t << std::endl;
-			std::cout << num_events << " " << time_advance << std::endl;
-			if (!used.empty()) std::cout << used.back().t.t << " " << used.back().t.c << std::endl;
-			std::cout << avail.front().t.t << " " << avail.front().t.c << std::endl;
-		}
 		assert(tL <= tN);
 		// If this is an internal event and we haven't already sent this output,
 		// then send it
-		if (tN == tSelf && (output.empty() || output.back().t < tSelf))
+		if (!(tN < tSelf) && (output.empty() || output.back().t < tSelf))
 		{
 			// Send our output
 			Message<X> msg;
@@ -428,7 +418,7 @@ void LogicalProcess<X>::execEvents(int num_events)
 			assert(avail.empty() || avail.front().t >= used.back().t);
 		}
 		// Compute the next state
-		if (tN == tSelf)
+		if (!(tN < tSelf))
 		{
 			if (io_bag.empty()) model->delta_int();
 			else model->delta_conf(io_bag);
@@ -440,6 +430,7 @@ void LogicalProcess<X>::execEvents(int num_events)
 		// Actual time for this state
 		tL = tN + Time(0.0,1);
 		model->tL = tL.t;
+		assert(output.empty() || output.back().t <= tL);
 	}
 }
 
