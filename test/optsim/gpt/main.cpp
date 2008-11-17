@@ -52,6 +52,7 @@ int main()
 	cin >> p;
 	cout << "Observation time: ";
 	cin >> t;
+	cout << endl;
 	/// Create and connect the atomic components using a digraph model.
 	adevs::Digraph<job> model;
 	gnr = new genr(g);
