@@ -92,13 +92,15 @@ class Cell:
 		{
 			delete (state_t*)data;
 		}
-		static const char* getMsg(void* data)
+		const char* getMsg(void* data)
 		{
-			return ((state_t*)data)->msg;
+			if (data != NULL) return ((state_t*)data)->msg;
+			else return msg;
 		}
-		static double getTime(void* data)
+		double getTime(void* data)
 		{
-			return ((state_t*)data)->t;
+			if (data != NULL) return ((state_t*)data)->t;
+			else return t;
 		}
 	private:
 		car_t* car;

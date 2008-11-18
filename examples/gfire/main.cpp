@@ -33,10 +33,8 @@ class PhaseListener:
 };
 
 // Create a random configuration
-void random_config()
+void random_config(int dim)
 {
-	// Dimensions of the random space
-	int dim = 300;
 	// Create a temporary configuration file
 	char tmpname[100];
 	sprintf(tmpname,"fire_config_XXXXXX");
@@ -162,7 +160,7 @@ void simulateSpace()
 		}
 		else
 		{
-			opt_sim = new adevs::OptSimulator<CellEvent>(cell_space,100,true);
+			opt_sim = new adevs::OptSimulator<CellEvent>(cell_space);
 			// Add an event listener
 			opt_sim->addEventListener(listener);
 		}
@@ -219,8 +217,16 @@ int main(int argc, char** argv)
 			int thrds = omp_get_max_threads();
 			cout << "Using " << thrds << " threads on " << procs << " processors" << endl;
 		}
+		else if (strcmp(argv[i],"--config-only") == 0)
+		{
+			int dim = 300;
+			if (i+1 < argc) dim = atoi(argv[i+1]);
+			random_config(dim);
+			if (config != NULL) delete config;
+			return 0;
+		}
 	}
-	if (config == NULL) random_config();
+	if (config == NULL) random_config(300);
 	// Setup the display
 	win_height = config->get_height()*cell_size;
 	win_width = config->get_width()*cell_size;

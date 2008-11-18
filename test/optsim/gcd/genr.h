@@ -98,9 +98,14 @@ class genr: public adevs::Atomic<PortValue>
 		~genr(){}
 		void printState(void* data)
 		{
-			state_t* state = (state_t*)data;
-			if (state->num_stop_inputs > 0)
-				printf("Got %d genr.stop inputs\n",state->num_stop_inputs);
+			int num_stops_in = num_stop_inputs;
+			if (data != NULL)
+			{
+				state_t* state = (state_t*)data;
+				num_stops_in = state->num_stop_inputs;
+			}
+			if (num_stops_in > 0)
+				printf("Got %d genr.stop inputs\n",num_stops_in);
 		}
 		void* save_state()
 		{

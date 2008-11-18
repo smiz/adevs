@@ -9,6 +9,8 @@ using namespace std;
 
 // Use the parallel simulator?
 static bool par_sim = false;
+// Produce output? Turn off for performance analysis
+static bool no_output = false;
 // Phase space to visualize
 fireCell::state_t** snap_shot = NULL;
 Configuration* config = NULL;
@@ -87,14 +89,20 @@ void simulateSpace()
 	}
 	else
 	{
-		opt_sim = new adevs::OptSimulator<CellEvent>(cell_space,100,true);
+		opt_sim = new adevs::OptSimulator<CellEvent>(cell_space);
 		// Add an event listener
 		opt_sim->addEventListener(listener);
 	}
 	// Run the next simulation step
 	try
 	{
-		for (int i = 0; i < 10; i++)
+		if (no_output)
+		{
+			if (par_sim) opt_sim->execUntil(500.0);
+			else while (sim->nextEventTime() <= 500.0)
+				sim->execNextEvent();
+		}
+		else for (int i = 0; i < 10; i++)
 		{
 			cout << "computing snapshot " << i << endl;
 			if (par_sim) opt_sim->execUntil(i*50.0);
@@ -136,13 +144,19 @@ int main(int argc, char** argv)
 			int thrds = omp_get_max_threads();
 			cout << "Using " << thrds << " threads on " << procs << " processors" << endl;
 		}
+		else if (strcmp(argv[i],"--no-output") == 0)
+		{
+			no_output = true;
+		}
 	}
 	if (config == NULL)
 	{
 		cout << "No data" << endl; 
 		return 0;
 	}
+	double t_start = omp_get_wtime(); 
 	simulateSpace();
 	// Done
+	cout << "Took " << omp_get_wtime()-t_start << " seconds" << endl;
 	return 0;
 }

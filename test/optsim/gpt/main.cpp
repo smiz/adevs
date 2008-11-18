@@ -15,9 +15,18 @@ class Listener:
 	public adevs::EventListener<adevs::PortValue<job> >
 {
 	public:
-		Listener():adevs::EventListener<adevs::PortValue<job> >(){}
+		Listener():
+			adevs::EventListener<adevs::PortValue<job> >()
+		{
+			omp_init_lock(&lock);
+		}
+		~Listener()
+		{
+			omp_destroy_lock(&lock);
+		}
 		void outputEvent(adevs::Event<adevs::PortValue<job> > x, double t)
 		{
+			omp_set_lock(&lock);
 			if (x.model == gnr && x.value.port == gnr->out)
 				cout << t << " genr!out" << endl;
 			else if (x.model == trnsd && x.value.port == trnsd->out)
@@ -26,9 +35,11 @@ class Listener:
 				cout << t << " proc!out" << endl;
 			else
 				assert(false);
+			omp_unset_lock(&lock);
 		}
 		void stateChange(adevs::Atomic<adevs::PortValue<job> >* model, double t, void* state)
 		{
+			omp_set_lock(&lock);
 			cout << "State change @ t = " << t;
 			if (model == prc) cout << " : proc" << endl;
 			else if (model == gnr) cout << " : genr" << endl;
@@ -39,7 +50,10 @@ class Listener:
 			}
 			else
 				assert(false);
+			omp_unset_lock(&lock);
 		}
+	private:
+		omp_lock_t lock;
 };
 
 int main() 
