@@ -94,7 +94,9 @@ class transd: public adevs::Atomic<PortValue>
 		/// Print summary data using the saved state
 		void printSummary(void* state)
 		{
-			state_t* s = (state_t*)state;
+			state_t* s;
+			if (state == NULL) s = (state_t*)save_state();
+			else s = (state_t*)state;
 			/// Print the number of jobs if we are not done
 			if (!s->finished)
 			{
@@ -128,6 +130,7 @@ class transd: public adevs::Atomic<PortValue>
 			std::cout << "jobs solved : " << s->jobs_solved.size() << std::endl;
 			std::cout << "AVERAGE TA = " << avg_ta_time << std::endl;
 			std::cout << "THROUGHPUT = " << throughput << std::endl;
+			if (state == NULL) gc_state(s);
 		}
 		/// Destructor
 		~transd()

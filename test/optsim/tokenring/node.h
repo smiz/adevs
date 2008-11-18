@@ -93,15 +93,23 @@ class node: public adevs::Atomic<PortValue>
 		~node()
 		{
 		}
-		static const char* getMessage(void* state)
+		const char* getMessage(void* state)
 		{
-			state_t* s = (state_t*)state;
-			return s->msg;
+			if (state != NULL)
+			{
+				state_t* s = (state_t*)state;
+				return s->msg;
+			}
+			else return msg;
 		}
-		static double getTime(void* state)
+		double getTime(void* state)
 		{
-			state_t* s = (state_t*)state;
-			return s->t;
+			if (state != NULL)
+			{
+				state_t* s = (state_t*)state;
+				return s->t;
+			}
+			else return t;
 		}
 	private:	
 		const int ID;

@@ -2,7 +2,7 @@ PREFIX=../../..
 include ../../make.common
 
 check:
-	$(CC) $(CFLAGS) fireCell.cpp Configuration.cpp main.cpp
+	$(CC) $(CFLAGS) fireCell.cpp Configuration.cpp main.cpp $(LIBS)
 	$(TEST_EXEC) --config test.dat 
 	$(TEST_EXEC) --config test.dat -p
 	diff soln_0 soln_0_p

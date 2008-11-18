@@ -46,7 +46,8 @@ class counter: public adevs::Atomic<PortValue>
 		}
 		void printState(void *data)
 		{
-			state_t* state = (state_t*)data;
+			state_t* state = &s;
+			if (data != NULL) state = (state_t*)data;
 			printf("Count is %d @ %d\n",state->count,(int)(state->t));
 		}
 		void* save_state()

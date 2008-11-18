@@ -5,7 +5,7 @@ CFLAGS = -pedantic -g -fopenmp -Wall -I$(PREFIX)/include
 CC = g++
 TEST_EXEC=./a.out
 DEL = rm -f
-LIBS = -L$(PREFIX)/src -ladevs
+LIBS = -L$(PREFIX)/src -ladevs -lrt
 CMD_SEP = ;
 # Microsoft cl compiler
 #CFLAGS = /W4 /GR /EHsc /I$(PREFIX)/include /Fe$(TEST_EXEC)
