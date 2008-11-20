@@ -52,8 +52,7 @@ void simulateSpace()
 {
 	// Cellspace model and simulator
 	adevs::CellSpace<int>* cell_space = NULL;
-	adevs::Simulator<CellEvent>* sim = NULL;
-	adevs::OptSimulator<CellEvent>* opt_sim = NULL;
+	adevs::AbstractSimulator<CellEvent>* sim = NULL;
 	CellListener* listener = NULL;
 	// snap shot data
 	if (snap_shot == NULL)
@@ -78,36 +77,29 @@ void simulateSpace()
 			snap_shot[x][y] = cell->getState();
 		}
 	}
-	// Create a listener for the model
-	listener = new CellListener();
 	// Create a simulator for the model
 	if (!par_sim)
 	{
 		sim = new adevs::Simulator<CellEvent>(cell_space);
-		// Add an event listener
-		sim->addEventListener(listener);
 	}
 	else
 	{
-		opt_sim = new adevs::OptSimulator<CellEvent>(cell_space);
-		// Add an event listener
-		opt_sim->addEventListener(listener);
+		sim = new adevs::OptSimulator<CellEvent>(cell_space);
 	}
+	// Create a listener for the model
+	listener = new CellListener();
+	sim->addEventListener(listener);
 	// Run the next simulation step
 	try
 	{
 		if (no_output)
 		{
-			if (par_sim) opt_sim->execUntil(500.0);
-			else while (sim->nextEventTime() <= 500.0)
-				sim->execNextEvent();
+			sim->execUntil(500.0);
 		}
 		else for (int i = 0; i < 10; i++)
 		{
 			cout << "computing snapshot " << i << endl;
-			if (par_sim) opt_sim->execUntil(i*50.0);
-			else while (sim->nextEventTime() <= i*50.0)
-				sim->execNextEvent();
+			sim->execUntil(i*50.0);
 			cout << "writing snapshot " << i << endl;
 			dumpState(i);
 		}
@@ -118,7 +110,6 @@ void simulateSpace()
 		exit(-1);
 	}
 	if (sim != NULL) delete sim;
-	if (opt_sim != NULL) delete opt_sim;
 	delete cell_space;
 	delete listener;
 	for (int x = 0; x < config->get_width(); x++)

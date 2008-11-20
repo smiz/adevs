@@ -1,6 +1,7 @@
 #ifndef __adevs_opt_simulator_h_
 #define __adevs_opt_simulator_h_
 #include "adevs.h"
+#include "adevs_abstract_simulator.h"
 #include "adevs_lp.h"
 #include <cassert>
 #include <cstdlib>
@@ -21,7 +22,8 @@ namespace adevs
  * or write), (3) the route methods of all of the Network models must
  * be re-entrant, and (4) there are no structure changes. 
 */
-template <class X> class OptSimulator 
+template <class X> class OptSimulator:
+   public AbstractSimulator<X>	
 {
 	public:
 		/**
@@ -33,19 +35,6 @@ template <class X> class OptSimulator
 		an event in every iteration of the optimistic simulator.  
 		*/
 		OptSimulator(Devs<X>* model, int max_batch_size = 1000);
-		/**
-		Add an event listener that will be notified of output events 
-		produced by the model.
-		*/
-		void addEventListener(EventListener<X>* l)
-		{
-			listeners.insert(l);
-		}
-		/// Remove an event listener
-		void removeEventListener(EventListener<X>* l)
-		{
-			listeners.erase(l);
-		}
 		/// Get the model's next event time
 		double nextEventTime()
 		{
@@ -82,8 +71,6 @@ template <class X> class OptSimulator
 	private:
 		/// Top of the model tree
 		Devs<X>* top_model;
-		/// Eternal event listeners
-		Bag<EventListener<X>*> listeners;
 		/// The event schedule
 		Schedule<X,Time> sched;
 		/// List of imminent models
@@ -110,6 +97,7 @@ template <class X> class OptSimulator
 
 template <class X>
 OptSimulator<X>::OptSimulator(Devs<X>* model, int max_batch_size):
+	AbstractSimulator<X>(),
 	top_model(model),
 	max_batch_size(max_batch_size)
 {
@@ -145,7 +133,7 @@ void OptSimulator<X>::fossil_collect_and_commit(Devs<X>* model, Time effective_g
 	Atomic<X>* a = model->typeIsAtomic();
 	if (a != NULL)
 	{
-		a->lp->fossilCollect(effective_gvt,listeners);
+		a->lp->fossilCollect(effective_gvt,this);
 	}
 	// Otherwise continue traversing the model tree
 	else
@@ -202,7 +190,7 @@ void OptSimulator<X>::execUntil(Time stop_time)
 		#pragma omp parallel for default(shared) private(i)
 		for (i = 0; i < batch_size; i++)
 		{
-			batch[i]->lp->fossilCollect(actual_gvt,listeners);
+			batch[i]->lp->fossilCollect(actual_gvt,this);
 			batch[i]->lp->processInput();	
 			batch[i]->lp->execEvents();
 		}

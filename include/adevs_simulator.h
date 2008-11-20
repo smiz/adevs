@@ -19,6 +19,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 ***************/
 #ifndef __adevs_simulator_h_
 #define __adevs_simulator_h_
+#include "adevs_abstract_simulator.h"
 #include "adevs_models.h"
 #include "adevs_event_listener.h"
 #include "adevs_sched.h"
@@ -39,7 +40,8 @@ namespace adevs
  * constraints are violated (i.e., a negative time advance of a model
  * attempting to send an input directly to itself).
  */
-template <class X> class Simulator 
+template <class X> class Simulator:
+	public AbstractSimulator<X>
 {
 	public:
 		/**
@@ -47,22 +49,10 @@ template <class X> class Simulator
 		constructor will fail and throw an adevs::exception if the
 		time advance of any component atomic model is less than zero.
 		*/
-		Simulator(Devs<X>* model)
+		Simulator(Devs<X>* model):
+			AbstractSimulator<X>()
 		{
 			schedule(model,0.0);
-		}
-		/**
-		Add an event listener that will be notified of output events 
-		produced by the model.
-		*/
-		void addEventListener(EventListener<X>* l)
-		{
-			listeners.insert(l);
-		}
-		/// Remove an event listener
-		void removeEventListener(EventListener<X>* l)
-		{
-			listeners.erase(l);
 		}
 		/// Get the model's next event time
 		double nextEventTime()
@@ -74,6 +64,12 @@ template <class X> class Simulator
 		{
 			computeNextOutput();
 			computeNextState(bogus_input,sched.minPriority());
+		}
+		/// Execute until nextEventTime() > tend
+		void execUntil(double tend)
+		{
+			while (nextEventTime() <= tend && nextEventTime() < DBL_MAX)
+				execNextEvent();
 		}
 		/**
 		Compute the output values of the imminent models if these values
@@ -99,8 +95,6 @@ template <class X> class Simulator
 	private:
 		/// Bogus input bag for execNextEvent() method
 		Bag<Event<X> > bogus_input;
-		/// Eternal event listeners
-		Bag<EventListener<X>*> listeners;
 		/// The event schedule
 		Schedule<X> sched;
 		/// List of imminent models
@@ -197,10 +191,6 @@ template <class X> class Simulator
 		and removed sets. 
 		*/
 		void exec_event(Atomic<X>* model, bool internal, double t);
-		/// Notify listeners of an output event.
-		void notify_output_listeners(Devs<X>* model, const X& value, double t);
-		/// Notify listeners of a state change.
-		void notify_state_listeners(Atomic<X>* model, double t);
 		/**
 		Construct the complete descendent set of a network model and store it in s.
 		*/
@@ -561,27 +551,6 @@ void Simulator<X>::exec_event(Atomic<X>* model, bool internal, double t)
 	if (model->model_transition() && model->getParent() != NULL)
 	{
 		model_func_eval_set.insert(model->getParent());
-	}
-}
-
-template <class X>
-void Simulator<X>::notify_output_listeners(Devs<X>* model, const X& value, double t)
-{
-	Event<X> event(model,value);
-	typename Bag<EventListener<X>*>::iterator iter;
-	for (iter = listeners.begin(); iter != listeners.end(); iter++)
-	{
-		(*iter)->outputEvent(event,t);
-	}
-}
-
-template <class X>
-void Simulator<X>::notify_state_listeners(Atomic<X>* model, double t)
-{
-	typename Bag<EventListener<X>*>::iterator iter;
-	for (iter = listeners.begin(); iter != listeners.end(); iter++)
-	{
-		(*iter)->stateChange(model,t,NULL);
 	}
 }
 

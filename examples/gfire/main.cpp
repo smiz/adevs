@@ -119,8 +119,7 @@ void simulateSpace()
 {
 	// Dynamic cellspace model and simulator
 	static adevs::CellSpace<int>* cell_space = NULL;
-	static adevs::Simulator<CellEvent>* sim = NULL;
-	static adevs::OptSimulator<CellEvent>* opt_sim = NULL;
+	static adevs::AbstractSimulator<CellEvent>* sim = NULL;
 	static PhaseListener* listener = NULL;
 	static double tN = DBL_MAX;
 	// If the visualization array is needed
@@ -149,36 +148,30 @@ void simulateSpace()
 				phase[x][y] = cell->getPhase();
 			}
 		}
-		// Create a listener for the model
-		listener = new PhaseListener();
 		// Create a simulator for the model
 		if (!par_sim)
 		{
 			sim = new adevs::Simulator<CellEvent>(cell_space);
-			// Add an event listener
-			sim->addEventListener(listener);
 		}
 		else
 		{
-			opt_sim = new adevs::OptSimulator<CellEvent>(cell_space);
-			// Add an event listener
-			opt_sim->addEventListener(listener);
+			sim = new adevs::OptSimulator<CellEvent>(cell_space);
 		}
+		// Create a listener for the model
+		listener = new PhaseListener();
+		sim->addEventListener(listener);
 		// Ready to go
 		phase_data_ready = true;
 	}
 	// If everything has died, then restart on the next call
-	if (par_sim) tN = opt_sim->nextEventTime();
-	else tN = sim->nextEventTime();
+	tN = sim->nextEventTime();
 	if (tN == DBL_MAX)
 	{
 		phase_data_ready = false;
 		if (sim != NULL) delete sim;
-		if (opt_sim != NULL) delete opt_sim;
 		delete cell_space;
 		delete listener;
 		sim = NULL;
-		opt_sim = NULL;
 		cell_space = NULL;
 		listener = NULL;
 	}
@@ -187,9 +180,7 @@ void simulateSpace()
 	{
 		try
 		{
-			if (par_sim) opt_sim->execUntil(tN+10.0);
-			else while (sim->nextEventTime() <= tN+10.0)
-				sim->execNextEvent();
+			sim->execUntil(tN+10.0);
 		} 
 		catch(adevs::exception err)
 		{
