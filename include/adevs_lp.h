@@ -20,6 +20,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #ifndef __adevs_lp_h_
 #define __adevs_lp_h_
 #include "adevs.h"
+#include "adevs_abstract_simulator.h"
 #include "adevs_time.h"
 #include <list>
 #include <typeinfo>
@@ -92,7 +93,7 @@ template <class X> class LogicalProcess
 		/**
 		 * Do fossil collection and report correct states and outputs.
 		 */
-		void fossilCollect(Time gvt, const Bag<EventListener<X>*>& listeners);
+		void fossilCollect(Time gvt, AbstractSimulator<X>* sim);
 		/**
 		 * Get the model assigned to this lp.
 		 */
@@ -179,10 +180,6 @@ template <class X> class LogicalProcess
 		void insert_message(std::list<Message<X> >& l, Message<X>& msg, bool back_to_front = false);
 		// Route events using the Network models' route methods
 		void route(Network<X>* parent, Devs<X>* src, X& x);
-		// Report correct states
-		void listenerCallback(const Bag<EventListener<X>*>& listeners, Time t, void* state);
-		// Report correct output
-		void listenerCallback(const Bag<EventListener<X>*>& listeners, Message<X>& msg);
 };
 
 template <class X>
@@ -200,24 +197,7 @@ LogicalProcess<X>::LogicalProcess(Atomic<X>* model, std::vector<LogicalProcess<X
 }
 
 template <class X>
-void LogicalProcess<X>::listenerCallback(const Bag<EventListener<X>*>& listeners, Time t, void* state)
-{
-	typename Bag<EventListener<X>*>::const_iterator iter = listeners.begin();
-	for (; iter != listeners.end(); iter++)
-		(*iter)->stateChange(model,t.t,state);
-}
-
-template <class X>
-void LogicalProcess<X>::listenerCallback(const Bag<EventListener<X>*>& listeners, Message<X>& msg)
-{
-	Event<X> event(model,msg.value);
-	typename Bag<EventListener<X>*>::const_iterator iter = listeners.begin();
-	for (; iter != listeners.end(); iter++)
-		(*iter)->outputEvent(event,msg.t.t);
-}
-
-template <class X>
-void LogicalProcess<X>::fossilCollect(Time gvt, const Bag<EventListener<X>*>& listeners)
+void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 {
 	// Delete old states, but keep one that is less than gvt
 	std::list<CheckPoint>::iterator citer = chk_pt.begin(), cnext;
@@ -227,7 +207,7 @@ void LogicalProcess<X>::fossilCollect(Time gvt, const Bag<EventListener<X>*>& li
 		if ((*citer).t < gvt && (*citer).t > lastCommit)
 		{
 			lastCommit = (*citer).t;
-			listenerCallback(listeners,lastCommit,(*citer).data);
+			sim->notify_state_listeners(model,lastCommit.t,(*citer).data);
 		}
 		// Do we have another saved state smaller than gvt?
 		cnext = citer;
@@ -245,7 +225,7 @@ void LogicalProcess<X>::fossilCollect(Time gvt, const Bag<EventListener<X>*>& li
 	if (tL < gvt && tL > lastCommit)
 	{
 		lastCommit = tL;
-		listenerCallback(listeners,lastCommit,NULL);
+		sim->notify_state_listeners(model,lastCommit.t);
 	}
 	// Delete old used messages
 	while (!used.empty() && used.back().t < gvt)
@@ -261,7 +241,7 @@ void LogicalProcess<X>::fossilCollect(Time gvt, const Bag<EventListener<X>*>& li
 	}
 	while (!output.empty() && output.front().t < gvt) 
 	{
-		listenerCallback(listeners,output.front());
+		sim->notify_output_listeners(model,output.front().value,output.front().t.t);
 		io_bag.insert(output.front().value);
 		output.pop_front();
 	}
