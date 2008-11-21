@@ -199,7 +199,7 @@ LogicalProcess<X>::LogicalProcess(Atomic<X>* model, std::vector<LogicalProcess<X
 template <class X>
 void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 {
-	// Delete old states, but keep one that is less than gvt
+	// Delete old states
 	std::list<CheckPoint>::iterator citer = chk_pt.begin(), cnext;
 	while (citer != chk_pt.end())
 	{
@@ -209,11 +209,11 @@ void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 			lastCommit = (*citer).t;
 			sim->notify_state_listeners(model,lastCommit.t,(*citer).data);
 		}
-		// Do we have another saved state smaller than gvt?
+		// Do we have another saved state smaller than gvt or is tL < gvt?
 		cnext = citer;
 		cnext++;
 		// If so, delete citer
-		if (cnext != chk_pt.end() && (*cnext).t < gvt)
+		if (tL < gvt || (cnext != chk_pt.end() && (*cnext).t < gvt))
 		{
 			model->gc_state((*citer).data);
 			citer = chk_pt.erase(citer);
@@ -221,7 +221,7 @@ void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 		// Otherwise we are done cleaning up
 		else break;
 	}
-	// Report the current state if that is appropriate
+	// Report the current state if that is appropriate.
 	if (tL < gvt && tL > lastCommit)
 	{
 		lastCommit = tL;
