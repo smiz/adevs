@@ -183,7 +183,8 @@ void OptSimulator<X>::execUntil(Time stop_time)
 		int i = 0;	
 		for (i = 0; i < batch_size; i++)
 		{
-			batch[i] = sched.get(i+1);
+			batch[i] = sched.getMinimum();
+			sched.removeMinimum(); 
 			batch[i]->lp->setActive(true);
 		}
 		// Clean up a bit if we can, then process the input lists 
