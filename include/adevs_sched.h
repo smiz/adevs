@@ -92,7 +92,7 @@ template <class X, class T>
 void Schedule<X,T>::getImminent(Bag<Atomic<X>*>& imm, unsigned int root) const
 {
 	// Stop if the bottom is reached or the next priority is not equal to the minimum
-	if (root > size || heap[root].priority > heap[1].priority)
+	if (root > size || heap[1].priority < heap[root].priority)
 		return;
 	// Put the model into the imminent set
 	heap[root].item->active = true;
@@ -155,7 +155,7 @@ void Schedule<X,T>::schedule(Atomic<X>* model, T priority)
 			return;
 		}
 		// Decrease the time to next event
-		else if (heap[model->q_index].priority > priority)
+		else if (priority < heap[model->q_index].priority)
 			model->q_index = percolate_up(model->q_index,priority);
 		// Increase the time to next event
 		else if (heap[model->q_index].priority < priority)
@@ -191,7 +191,7 @@ unsigned int Schedule<X,T>::percolate_down(unsigned int index, T priority)
 		{
 			child++;
 		}
-		if (priority > heap[child].priority) 
+		if (heap[child].priority < priority) 
 		{
 			heap[index] = heap[child];
 			heap[index].item->q_index = index;
@@ -206,7 +206,7 @@ unsigned int Schedule<X,T>::percolate_up(unsigned int index, T priority)
 {
 	// Position 0 has priority -1 and this method is always called
 	// with priority >= 0 and index > 0. 
-	while (heap[index/2].priority >= priority) 
+	while (priority <= heap[index/2].priority) 
 	{
 		heap[index] = heap[index/2];
 		heap[index].item->q_index = index;
