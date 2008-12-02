@@ -14,7 +14,7 @@ CFLAGS = -fopenmp -pedantic -Wall -I${PREFIX}/include
 # SHOULD NOT NEED TO EDIT BELOW THIS LINE
 #
 
-OBJS = rv.o mtrand.o poly.o
+OBJS = rv.o mtrand.o poly.o time.o
 
 .SUFFIXES: .cpp
 .cpp.o:

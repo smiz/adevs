@@ -34,27 +34,23 @@ template <class X> class OptSimulator:
 		and parallel overhead; it is the number of models that will process
 		an event in every iteration of the optimistic simulator.  
 		*/
-		OptSimulator(Devs<X>* model, int max_batch_size = 1000);
+		OptSimulator(Devs<X>* model, int batch_size = 20);
 		/// Get the model's next event time
 		double nextEventTime()
 		{
-			if (sched.empty()) return DBL_MAX;
-			return sched.minPriority().t;
+			Time tN = totalNextEventTime();
+			return tN.t;
 		}
 		/// Get the complete next event time
-		Time totalNextEventTime()
-		{
-			if (sched.empty()) return Time::Inf();
-			else return sched.minPriority();
-		}
+		Time totalNextEventTime();
 		/**
 		 * Execute the simulation until the next event time is greater
 		 * than the specified value.
 		 */
 		void execUntil(double gvt)
 		{
-			Time t_stop(gvt,UINT_MAX);
-			if (gvt == DBL_MAX) t_stop.c = 0;
+			Time t_stop(gvt,UINT_MAX-1);
+			if (gvt == DBL_MAX) t_stop = Time::Inf();
 			execUntil(t_stop);
 		}
 		/**
@@ -69,50 +65,38 @@ template <class X> class OptSimulator:
 		*/
 		~OptSimulator();
 	private:
-		/// Top of the model tree
-		Devs<X>* top_model;
-		/// The event schedule
-		Schedule<X,Time> sched;
-		/// List of imminent models
-		std::vector<LogicalProcess<X>*> active_list;
-		/// List of models with events to execute in the current round
-		Atomic<X>** batch;
-		/// Number of models in the list
-		const int max_batch_size;
+		// Logical processes that are run in parallel
+		LogicalProcess<X>* lp;
+		/// Number of lps
+		const int lp_count;
+		/// Number of events to execute in each iteration
+		const int batch_size;
 		/**
 		 * Recursively initialize the model by assigning an lp to each atomic
 		 * model and putting active models into the schedule.
 		*/
-		void initialize(Devs<X>* model);
-		/**
-		 * Recursively delete all of the logical process objects.
-		 */
-		void cleanup(Devs<X>* model);
-		/**
-		 * Recursively do fossil collection and commit events. Return the largest timestamp
-		 * of the committed events.
-		 */
-		void fossil_collect_and_commit(Devs<X>* model, Time effective_gvt);
+		void initialize(Devs<X>* model, int& assign_to);
 };
 
 template <class X>
-OptSimulator<X>::OptSimulator(Devs<X>* model, int max_batch_size):
+OptSimulator<X>::OptSimulator(Devs<X>* model, int batch_size):
 	AbstractSimulator<X>(),
-	top_model(model),
-	max_batch_size(max_batch_size)
+	lp_count(omp_get_max_threads()),
+	batch_size(batch_size)
 {
-	batch = new Atomic<X>*[max_batch_size];
-	initialize(model);
+	lp = new LogicalProcess<X>[lp_count];
+	int assign_to = 0;
+	initialize(model,assign_to);
 }
 
 template <class X>
-void OptSimulator<X>::initialize(Devs<X>* model)
-{	
+void OptSimulator<X>::initialize(Devs<X>* model, int& assign_to)
+{
 	Atomic<X>* a = model->typeIsAtomic();
 	if (a != NULL)
 	{
-		a->lp = new LogicalProcess<X>(a,&active_list);
-		sched.schedule(a,a->lp->getNextEventTime());
+		lp[assign_to].addModel(a);
+		assign_to = (assign_to+1)%lp_count;
 	}
 	else
 	{
@@ -121,50 +105,7 @@ void OptSimulator<X>::initialize(Devs<X>* model)
 		typename Set<Devs<X>*>::iterator iter = components.begin();
 		for (; iter != components.end(); iter++)
 		{
-			initialize(*iter);
-		}
-	}
-}
-
-template <class X>
-void OptSimulator<X>::fossil_collect_and_commit(Devs<X>* model, Time effective_gvt)
-{
-	// Process an atomic model
-	Atomic<X>* a = model->typeIsAtomic();
-	if (a != NULL)
-	{
-		a->lp->fossilCollect(effective_gvt,this);
-	}
-	// Otherwise continue traversing the model tree
-	else
-	{
-		Set<Devs<X>*> components;
-		model->typeIsNetwork()->getComponents(components);
-		typename Set<Devs<X>*>::iterator iter = components.begin();
-		for (; iter != components.end(); iter++)
-		{
-			fossil_collect_and_commit(*iter,effective_gvt);
-		}
-	}
-}
-
-template <class X>
-void OptSimulator<X>::cleanup(Devs<X>* model)
-{
-	Atomic<X>* a = model->typeIsAtomic();
-	if (a != NULL)
-	{
-		delete a->lp;
-		a->lp = NULL;
-	}
-	else
-	{
-		Set<Devs<X>*> components;
-		model->typeIsNetwork()->getComponents(components);
-		typename Set<Devs<X>*>::iterator iter = components.begin();
-		for (; iter != components.end(); iter++)
-		{
-			cleanup(*iter);
+			initialize(*iter,assign_to);
 		}
 	}
 }
@@ -172,55 +113,60 @@ void OptSimulator<X>::cleanup(Devs<X>* model)
 template <class X>
 void OptSimulator<X>::execUntil(Time stop_time)
 {
-	// Keep track of the global virtual time
-	Time actual_gvt = totalNextEventTime();
-	// Run until global virtual time meets or exceeds gvt
-	while (actual_gvt <= stop_time && actual_gvt < DBL_MAX)
+	for (;;)
 	{
-		// prepare the list of ready models
-		int batch_size = sched.getSize();
-		if (batch_size > max_batch_size) batch_size = max_batch_size;
-		int i = 0;	
-		for (i = 0; i < batch_size; i++)
-		{
-			batch[i] = sched.getMinimum();
-			sched.removeMinimum(); 
-			batch[i]->lp->setActive(true);
-		}
-		// Clean up a bit if we can, then process the input lists 
+		int i;
+		// Execute in parallel for a little while
 		#pragma omp parallel for default(shared) private(i)
-		for (i = 0; i < batch_size; i++)
+		for (i = 0; i < lp_count; i++)
 		{
-			batch[i]->lp->fossilCollect(actual_gvt,this);
-			batch[i]->lp->processInput();	
-			batch[i]->lp->execEvents();
+			for (int k = 0; k < batch_size; k++)
+			{
+				lp[i].processInput();
+				lp[i].execEvents();
+			}
 		}
-		// Reschedule the models in the batch and reset their active flags
-		for (i = 0; i < batch_size; i++)
+		// Flush the message buffers
+		int cleared = 0;
+		while (cleared != lp_count)
 		{
-			sched.schedule(batch[i],batch[i]->lp->getNextEventTime());
-			batch[i]->lp->setActive(false);
+			cleared = 0;
+			for (i = 0; i < lp_count; i++)
+				lp[i].processInput();
+			for (i = 0; i < lp_count; i++)
+			{
+				if (!lp[i].pendingInput())
+					cleared++;
+			}
 		}
-		// Schedule the activated models
-		while (!active_list.empty())
+		// Commit events and do fossil collection
+		Time actual_gvt = totalNextEventTime();
+		if (stop_time < Time::Inf() && stop_time < actual_gvt)
+			actual_gvt = stop_time+Time(0.0,1);
+		#pragma omp parallel for default(shared) private(i)
+		for (i = 0; i < lp_count; i++)
 		{
-			sched.schedule(active_list.back()->getModel(),active_list.back()->getNextEventTime());
-			active_list.back()->setActive(false);
-			active_list.pop_back();
-		}
-		// Get the global virtual time 
-		actual_gvt = totalNextEventTime();
+			lp[i].fossilCollect(actual_gvt,this);
+		} 
+		if (actual_gvt == Time::Inf() || stop_time < actual_gvt) break;
 	}	
 	// Do fossil collection and send event notifications
-	if (actual_gvt > stop_time) actual_gvt = stop_time;
-	fossil_collect_and_commit(top_model,actual_gvt);
+}
+
+template <class X>
+Time OptSimulator<X>::totalNextEventTime()
+{
+	Time gvt = Time::Inf();
+	for (int i = 0; i < lp_count; i++)
+		if (lp[i].getNextEventTime() <= gvt)
+			gvt = lp[i].getNextEventTime();
+	return gvt;
 }
 
 template <class X>
 OptSimulator<X>::~OptSimulator()
 {
-	cleanup(top_model);
-	delete [] batch;
+	delete [] lp;
 }
 
 } // End of namespace

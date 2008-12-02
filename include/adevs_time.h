@@ -20,6 +20,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #ifndef __adevs_time_h_
 #define __adevs_time_h_
 #include <cfloat>
+#include <iostream>
 
 namespace adevs
 {
@@ -30,7 +31,7 @@ struct Time
 	double t;
 	unsigned int c;
 	/// Value for infinity
-	static adevs::Time Inf() { return Time(DBL_MAX,UINT_MAX); }
+	static adevs::Time Inf() { return Time(DBL_MAX,0); }
 	/// Constructor. Default time is (0,0).
 	Time(double t = 0.0, unsigned int c = 0):t(t),c(c){}
 	/// Copy constructor
@@ -93,5 +94,7 @@ struct Time
 };
 
 } // end namespace
+
+std::ostream& operator<<(std::ostream& strm, const adevs::Time& t);
 
 #endif

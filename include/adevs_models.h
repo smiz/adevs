@@ -37,7 +37,6 @@ template <class X, class T> class Schedule;
 template <class X> class Simulator;
 // These predeclerations are needed to support the optimistic simulator
 template <class X> class LogicalProcess;
-template <class X> class OptSimulator;
 
 /**
 The Devs class provides basic operations for all devs models.
@@ -201,7 +200,7 @@ template <class X> class Atomic: public Devs<X>
 		functions and should not be relied on. It is likely to be
 		removed in later versions of the code.
 		*/
-		double getLastEventTime() const { return tL; }
+		double getLastEventTime() const { return tL.t; }
 
 	private:
 
@@ -209,12 +208,11 @@ template <class X> class Atomic: public Devs<X>
 		friend class Schedule<X,double>;
 		friend class Schedule<X,Time>;
 		friend class LogicalProcess<X>;
-		friend class OptSimulator<X>;
 
 		// Has this model been actived?
 		bool active;
 		// Time of last event
-		double tL; 
+		Time tL;
 		// Index in the priority queue
 		unsigned int q_index;
 		// Input and output event bags
