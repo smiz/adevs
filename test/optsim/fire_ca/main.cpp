@@ -53,6 +53,7 @@ void simulateSpace()
 	// Cellspace model and simulator
 	adevs::CellSpace<int>* cell_space = NULL;
 	adevs::AbstractSimulator<CellEvent>* sim = NULL;
+	adevs::OptSimulator<CellEvent>* opt_sim = NULL;
 	CellListener* listener = NULL;
 	// snap shot data
 	if (snap_shot == NULL)
@@ -74,6 +75,7 @@ void simulateSpace()
 			fireCell* cell = new fireCell(config->get_fuel(x,y),
 				config->get_fire(x,y),x,y);
 			cell_space->add(cell,x,y);
+			cell->setPrefLP(x/(config->get_width()/omp_get_max_threads()));
 			snap_shot[x][y] = cell->getState();
 		}
 	}
@@ -81,10 +83,11 @@ void simulateSpace()
 	if (!par_sim)
 	{
 		sim = new adevs::Simulator<CellEvent>(cell_space);
+		opt_sim = NULL;
 	}
 	else
 	{
-		sim = new adevs::OptSimulator<CellEvent>(cell_space);
+		sim = opt_sim = new adevs::OptSimulator<CellEvent>(cell_space,2);
 	}
 	// Create a listener for the model
 	listener = new CellListener();
@@ -108,6 +111,17 @@ void simulateSpace()
 	{
 		cout << err.what() << endl;
 		exit(-1);
+	}
+	if (opt_sim != NULL)
+	{
+		for (int i = 0; i < opt_sim->getNumLPs(); i++)
+		{
+			adevs::LP_perf_t pdata = opt_sim->getPerfData(i);
+			cout << "LP " << i << ": cancelled output = " << pdata.canceled_output 
+				<<  " , rollbacks = " << pdata.rollbacks 
+				<<  " , intra LP messages canceled = " << pdata.canceled_intra_lp_output
+				<< endl;
+		}
 	}
 	if (sim != NULL) delete sim;
 	delete cell_space;
