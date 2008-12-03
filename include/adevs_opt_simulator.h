@@ -64,6 +64,13 @@ template <class X> class OptSimulator:
 		the simulator is deleted.
 		*/
 		~OptSimulator();
+		/// Get the number of logical processes
+		int getNumLPs() const { return lp_count; }
+		/// Get the performance data for an LP
+		LP_perf_t getPerfData(int i) const
+		{
+			return lp[i].getPerfData();
+		} 
 	private:
 		// Logical processes that are run in parallel
 		LogicalProcess<X>* lp;
@@ -95,6 +102,8 @@ void OptSimulator<X>::initialize(Devs<X>* model, int& assign_to)
 	Atomic<X>* a = model->typeIsAtomic();
 	if (a != NULL)
 	{
+		char pick = a->getPrefLP();
+		if (pick < lp_count && pick >= 0) assign_to = pick;
 		lp[assign_to].addModel(a);
 		assign_to = (assign_to+1)%lp_count;
 	}

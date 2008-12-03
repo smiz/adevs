@@ -54,6 +54,13 @@ template <class X> struct Message
 	long int ID;
 };
 
+struct LP_perf_t
+{
+	unsigned rollbacks;
+	unsigned canceled_output, canceled_intra_lp_output;
+	LP_perf_t():rollbacks(0),canceled_output(0),canceled_intra_lp_output(0){}
+};
+
 /*
  * A logical process is assigned to every atomic model and it simulates
  * that model optimistically. The atomic model must support state saving
@@ -62,6 +69,7 @@ template <class X> struct Message
 template <class X> class LogicalProcess
 {
 	public:
+
 		/**
 		 * Constructor builds a logical process without any models
 		 * assigned to it.
@@ -105,6 +113,10 @@ template <class X> class LogicalProcess
 		 */
 		bool pendingInput() { return !input.empty(); }
 		/**
+		 * Get performance information for the LP
+		 */
+		LP_perf_t getPerfData() const { return perf_data; }
+		/**
 		 * Destructor leaves the models intact.
 		 */
 		~LogicalProcess();
@@ -119,6 +131,8 @@ template <class X> class LogicalProcess
 			// Pointer to the saved state
 			void* data;
 		};
+		// Structure for tracking performance related data
+		LP_perf_t perf_data;
 		// Last commit timestamp
 		Time tCommit;
 		// List of input messages
@@ -172,7 +186,6 @@ LogicalProcess<X>::LogicalProcess()
 template <class X>
 void LogicalProcess<X>::addModel(Atomic<X>* model)
 {
-//	std::cerr << "assign " << this << " " << typeid(*model).name() << std::endl;
 	// Assign the model to this LP
 	model->lp = this;
 	// Put it into the schedule
@@ -183,7 +196,6 @@ void LogicalProcess<X>::addModel(Atomic<X>* model)
 template <class X>
 void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 {
-//	std::cerr << "fc " << gvt << " " << chk_pt.size() << std::endl;
 	// Models that need to report their current state
 	std::set<Atomic<X>*> active;
 	// Report and delete old states
@@ -194,7 +206,6 @@ void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 		void* data = (*chk_pt_iter).data;
 		Time ti = (*chk_pt_iter).ti;
 		Time tf = (*chk_pt_iter).tf;
-//		std::cerr << typeid(*model).name() << " fc state " << tf << " " << ti << " " << std::endl;
 		// Report states that are good
 		if (sim != NULL)
 		{
@@ -217,8 +228,8 @@ void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 		sim->notify_state_listeners(*active_iter,(*active_iter)->tL.t);
 	if (tCommit < gvt) tCommit = gvt;
 	// Delete old used messages
-	while (!used.empty() && used.back().t < gvt)
-		used.pop_back();
+	while (!used.empty() && used.front().t < gvt)
+		used.pop_front();
 	// Delete old output
 	Bag<X>* garbage = io_pool.make_obj();
 	while (!discard.empty() && discard.front().t < gvt) 	
@@ -228,9 +239,9 @@ void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 		garbage->clear();
 		discard.pop_front();
 	}
-	while (!output.empty() && output.front().t < gvt) 
+	while (!output.empty() && output.back().t < gvt) 
 	{
-		Message<X> msg = output.front();
+		Message<X> msg = output.back();
 		if (msg.ID == 0)
 		{
 			if (sim != NULL)
@@ -239,7 +250,7 @@ void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 			msg.src->gc_output(*garbage);
 			garbage->clear();
 		}
-		output.pop_front();
+		output.pop_back();
 	}
 	io_pool.destroy_obj(garbage);
 }
@@ -293,14 +304,18 @@ void LogicalProcess<X>::processInput()
 					(*msg_iter).ID *= -1;
 					(*msg_iter).dst->lp->sendMessage(*msg_iter);
 					msg_iter = output.erase(msg_iter);
+					perf_data.canceled_output++;
 				}
 				// Discard an intra-LP communication
 				else if (0 == (*msg_iter).ID && msg.t <= (*msg_iter).t)
 				{
 					insert_message(discard,*msg_iter);
 					msg_iter = output.erase(msg_iter);
+					perf_data.canceled_intra_lp_output++;
 				}
-				// Otherwise keep it
+				// If the message is in the past then we are done
+				else if ((*msg_iter).t < msg.t) break;
+				// Otherwise move to the next one
 				else msg_iter++;
 			}
 			// If it is a rollback message, then remove it from the used list
@@ -314,7 +329,6 @@ void LogicalProcess<X>::processInput()
 			// Restore to a checkpoint that is in the past
 			while (!chk_pt.empty() && msg.t <= chk_pt.back().tf)
 			{	
-//				std::cerr << typeid(*(chk_pt.back().model)).name() << " destroy state " << chk_pt.back().tf << " " << chk_pt.back().ti << " " << msg.t << std::endl;
 				Atomic<X>* model = chk_pt.back().model;
 				// Restore the state
 				void* data = chk_pt.back().data;
@@ -332,13 +346,13 @@ void LogicalProcess<X>::processInput()
 				// Delete the checkpoint
 				model->gc_state(data);
 				chk_pt.pop_back();
+				perf_data.rollbacks++;
 			}
 		}
 		// Otherwise if it is a rollback message in the future
 		// so just remove it from the available list
 		else if (msg.ID < 0) 
 		{
-//			std::cerr << "anti for avail" << std::endl;
 			anti_message(avail,msg);
 		}
 		// If it is not a rollback message, then put it into the available list
@@ -355,7 +369,6 @@ void LogicalProcess<X>::execEvents()
 	// If the next event is at infinity, then there is nothing to do
 	if (tN.t == DBL_MAX) return;
 	// Get the imminent models and route their output
-//	std::cerr << "execEvents & " << tN << std::endl;
 	if (sched.minPriority() <= tN)
 	{
 		// Get the imminent messages
@@ -364,7 +377,7 @@ void LogicalProcess<X>::execEvents()
 		Message<X> msg;
 		msg.t = tN;
 		// Is this message a replay of an earlier message?
-		inter_LP_ok = (output.empty() || output.back().t < tN);
+		inter_LP_ok = (output.empty() || output.front().t < tN);
 		for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
 			imm_iter != imm.end(); imm_iter++)
 		{
@@ -379,7 +392,7 @@ void LogicalProcess<X>::execEvents()
 			{
 				// Local copy of the output
 				msg.value = *y_iter;
-				output.push_back(msg);
+				output.push_front(msg);
 				// Send messages to local models and other LPs
 				route(model->getParent(),model,*y_iter);
 			}
@@ -486,14 +499,14 @@ void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 			// Atomic model at another LP
 			else if (inter_LP_ok)
 			{
-				Message<X> m = output.back();
+				Message<X> m = output.front();
 				m.ID = ID++;
 				assert(ID > 0);
 				m.dst = amodel;
 				assert(m.src != m.dst);
 				m.value = (*recv_iter).value;
 				amodel->lp->sendMessage(m); 
-				output.push_back(m);
+				output.push_front(m);
 			}
 		}
 		// if this is an external output from the parent model
