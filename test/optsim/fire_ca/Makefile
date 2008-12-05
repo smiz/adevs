@@ -2,8 +2,8 @@ PREFIX=../../..
 include ../../make.common
 
 check:
-	$(CC) $(CFLAGS) fireCell.cpp Configuration.cpp main.cpp $(LIBS)
-#	$(TEST_EXEC) --config test.dat 
+	$(CC) $(CFLAGS) -I/usr/local/tau/include fireCell.cpp Configuration.cpp main.cpp $(LIBS)
+	$(TEST_EXEC) --config test.dat 
 	$(TEST_EXEC) --config test.dat -p
 	diff soln_0 soln_0_p
 	diff soln_1 soln_1_p

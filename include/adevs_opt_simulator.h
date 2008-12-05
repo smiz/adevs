@@ -34,7 +34,7 @@ template <class X> class OptSimulator:
 		and parallel overhead; it is the number of models that will process
 		an event in every iteration of the optimistic simulator.  
 		*/
-		OptSimulator(Devs<X>* model, int batch_size = 20);
+		OptSimulator(Devs<X>* model, int batch_size = 1000);
 		/// Get the model's next event time
 		double nextEventTime()
 		{
@@ -76,7 +76,7 @@ template <class X> class OptSimulator:
 		LogicalProcess<X>* lp;
 		/// Number of lps
 		const int lp_count;
-		/// Number of events to execute in each iteration
+		/// Number of iterations before fossil collection
 		const int batch_size;
 		/**
 		 * Recursively initialize the model by assigning an lp to each atomic
@@ -140,8 +140,11 @@ void OptSimulator<X>::execUntil(Time stop_time)
 		while (cleared != lp_count)
 		{
 			cleared = 0;
+			#pragma omp parallel for default(shared) private(i)
 			for (i = 0; i < lp_count; i++)
+			{
 				lp[i].processInput();
+			}
 			for (i = 0; i < lp_count; i++)
 			{
 				if (!lp[i].pendingInput())
