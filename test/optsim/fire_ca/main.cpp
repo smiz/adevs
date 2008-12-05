@@ -87,7 +87,7 @@ void simulateSpace()
 	}
 	else
 	{
-		sim = opt_sim = new adevs::OptSimulator<CellEvent>(cell_space,2);
+		sim = opt_sim = new adevs::OptSimulator<CellEvent>(cell_space);
 	}
 	// Create a listener for the model
 	listener = new CellListener();
@@ -120,6 +120,9 @@ void simulateSpace()
 			cout << "LP " << i << ": cancelled output = " << pdata.canceled_output 
 				<<  " , rollbacks = " << pdata.rollbacks 
 				<<  " , intra LP messages canceled = " << pdata.canceled_intra_lp_output
+				<<  " , stragglers = " << pdata.stragglers
+				<<  " , patches = " << pdata.patches
+				<<  " , early cancels = " << pdata.destroyed_in_input
 				<< endl;
 		}
 	}

@@ -34,8 +34,15 @@ class fireCell: public adevs::Atomic<CellEvent>
 			Phase phase;
 			double fuel;
 			int heat;
+			state_t* next;
 			state_t(Phase phase, double fuel, int heat):
-				phase(phase),fuel(fuel),heat(heat){}
+				phase(phase),fuel(fuel),heat(heat),next(NULL){}
+			void setState(Phase phase, double fuel, int heat)
+			{
+				this->phase = phase;
+				this->fuel = fuel;
+				this->heat = heat;
+			}
 			state_t(){}
 		};
 
@@ -79,6 +86,8 @@ class fireCell: public adevs::Atomic<CellEvent>
 		int heat;
 		// Cell location
 		const long int x, y;
+		// Free list of structures for saving the model state
+		state_t* chk_pt_list;
 		// Time required for the fire to spread to a neighbor
 		static const double move_rate;
 };
