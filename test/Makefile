@@ -2,7 +2,7 @@ PREFIX=..
 include make.common
 
 # Everything else should work fine
-check: bag_test obj_pool sched atomic gcd_test gpt_test tokenring_test dyn_devs_test zero_time_test ode_test listener_test wrapper_test optsim_test
+check: list_test bag_test obj_pool sched atomic gcd_test gpt_test tokenring_test dyn_devs_test zero_time_test ode_test listener_test wrapper_test optsim_test
 
 optsim_test:
 	cd optsim $(CMD_SEP) $(MAKE) check
@@ -30,6 +30,10 @@ gcd_test:
 
 tokenring_test:
 	cd tokenring $(CMD_SEP) $(MAKE) check
+
+list_test:
+	$(CC) $(CFLAGS) listtst.cpp
+	$(TEST_EXEC)
 
 bag_test:
 	$(CC) $(CFLAGS) bagtst.cpp

@@ -25,7 +25,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #include "object_pool.h"
 #include "adevs_list.h"
 #include <omp.h>
-#include <TAU.h>
+//#include <TAU.h>
 /**
  * This is an implementation of the time warp simulation algorithm described in
  * J. Nutaro, "On Constructing Optimistic Simulation Algorithms for the Discrete
@@ -41,14 +41,17 @@ namespace adevs
 struct LP_perf_t
 {
 	unsigned rollbacks, canceled_output, canceled_intra_lp_output,
-			 stragglers, patches, destroyed_in_input;
+			 stragglers, patches, destroyed_in_input, msg_count,
+			 chk_pt_count;
 	LP_perf_t():
 		rollbacks(0),
 		canceled_output(0),
 		canceled_intra_lp_output(0),
 		stragglers(0),
 		patches(0),
-		destroyed_in_input(0)
+		destroyed_in_input(0),
+		msg_count(0),
+		chk_pt_count(0)
 	{
 	}
 };
@@ -63,7 +66,7 @@ template <class X> class LogicalProcess
 	public:
 		// A simulation message
 		struct Message:
-			public list<Message>::one_list
+			public ulist<Message>::one_list
 		{
 			public:
 				// The message timestamp
@@ -131,7 +134,7 @@ template <class X> class LogicalProcess
 	private:
 		// A state checkpoint
 		class CheckPoint:
-			public list<CheckPoint>::one_list
+			public ulist<CheckPoint>::one_list
 		{
 			public:
 				// Initial time and final time for the checkpoint state
@@ -146,25 +149,29 @@ template <class X> class LogicalProcess
 		// Last commit timestamp
 		Time tCommit;
 		// List of input messages
-		adevs::list<Message> input;
+		adevs::ulist<Message> input;
 		// lock variable for the input list
 		omp_lock_t lock;
 		// Time ordered list of messages that are available for processing
-		adevs::list<Message> avail;
+		adevs::ulist<Message> avail;
 		// Time ordered list of messages that have been processed
-		adevs::list<Message> used;
+		adevs::ulist<Message> used;
 		// Time ordered list of checkpoints
-		adevs::list<CheckPoint> chk_pt;
+		adevs::ulist<CheckPoint> chk_pt;
 		// Time ordered list of good output messages send to other LPs
-		adevs::list<Message> inter_lp_output;
+		adevs::ulist<Message> inter_lp_output;
 		// Time ordered list of good output generated in this LP
-		adevs::list<Message> intra_lp_output;
+		adevs::ulist<Message> intra_lp_output;
 		// Unordered list of discarded output messages
-		adevs::list<Message> discard;
+		adevs::ulist<Message> discard;
+		/// Counter for producing message identifiers
+		long int ID;
+		/// Can route send messages between LPs?
+		bool inter_LP_ok;
 		// Free list for messages
-		adevs::list<Message> free_msg_list;
+		adevs::ulist<Message> free_msg_list;
 		// Free list for checkpoints
-		adevs::list<CheckPoint> free_chk_pt_list;
+		adevs::ulist<CheckPoint> free_chk_pt_list;
 		// Bags of imminent and active models.
 		Bag<Atomic<X>*> imm, activated;
 		/// The event schedule
@@ -172,12 +179,9 @@ template <class X> class LogicalProcess
 		/// Pools of preallocated, commonly used objects
 		object_pool<Bag<X> > io_pool;
 		object_pool<Bag<Event<X> > > recv_pool;
-		/// Counter for producing message identifiers
-		long int ID;
-		/// Can route send messages between LPs?
-		bool inter_LP_ok;
+
 		// Insert a message into a timestamp ordered list
-		void insert_message(adevs::list<Message>& l, Message* msg);
+		void insert_message(adevs::ulist<Message>& l, Message* msg);
 		// Route events using the Network models' route methods
 		void route(Network<X>* parent, Devs<X>* src, X& x);
 		// Save state and compute state transition of an atomic model
@@ -186,7 +190,7 @@ template <class X> class LogicalProcess
 		void inject_event(Atomic<X>* model, X& value);
 		// Destroy a message in the list l with the antimessage msg. Returns true
 		// if the message was found and destroyed.
-		bool anti_message(adevs::list<Message>& l, Message* msg);
+		bool anti_message(adevs::ulist<Message>& l, Message* msg);
 		// Try to patch the LP without performing a rollback. Returns true if
 		// successful, false otherwise. Failure does not change the state of the
 		// LP.
@@ -195,14 +199,22 @@ template <class X> class LogicalProcess
 		Message* alloc_msg()
 		{
 			Message* m = free_msg_list.front();
-			if (m == NULL) m = new Message;
+			if (m == NULL)
+			{
+				perf_data.msg_count++;
+				m = new Message;
+			}
 			else free_msg_list.pop_front();
 			return m;
 		}
 		CheckPoint* alloc_chk_pt()
 		{
 			CheckPoint* c = free_chk_pt_list.front();
-			if (c == NULL) c = new CheckPoint;
+			if (c == NULL)
+			{
+				perf_data.chk_pt_count++;
+				c = new CheckPoint;
+			}
 			else free_chk_pt_list.pop_front();
 			return c;
 		}
@@ -232,9 +244,9 @@ void LogicalProcess<X>::addModel(Atomic<X>* model)
 template <class X>
 void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 {
-	TAU_PROFILE("fossilCollect","void (Time,AbstractSimulator<X>*)",TAU_DEFAULT);
+//	TAU_PROFILE("fossilCollect","void (Time,AbstractSimulator<X>*)",TAU_DEFAULT);
 	// Report and delete old states
-	typename adevs::list<CheckPoint>::iterator chk_pt_iter = chk_pt.begin();
+	typename adevs::ulist<CheckPoint>::iterator chk_pt_iter = chk_pt.begin();
 	while (chk_pt_iter != chk_pt.end())
 	{
 		Atomic<X>* model = (*chk_pt_iter)->model;
@@ -277,7 +289,7 @@ void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 	}
 	// Delete old output
 	Bag<X>* garbage = io_pool.make_obj();
-	typename adevs::list<Message>::iterator discard_iter = discard.begin();
+	typename adevs::ulist<Message>::iterator discard_iter = discard.begin();
 	while (discard_iter != discard.end())
 	{
 		if ((*discard_iter)->t < gvt)
@@ -307,10 +319,10 @@ void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 }
 
 template <class X>
-bool LogicalProcess<X>::anti_message(adevs::list<Message>& l, Message* msg)
+bool LogicalProcess<X>::anti_message(adevs::ulist<Message>& l, Message* msg)
 {
-	TAU_PROFILE("anti_message","void(list<Message<X> >&,Message<X>&)",TAU_DEFAULT);
-	typename adevs::list<Message>::iterator msg_iter = l.begin();
+//	TAU_PROFILE("anti_message","void(list<Message<X> >&,Message<X>&)",TAU_DEFAULT);
+	typename adevs::ulist<Message>::iterator msg_iter = l.begin();
 	while (msg_iter != l.end())
 	{
 		if (msg->ID == -(*msg_iter)->ID && msg->src->lp == (*msg_iter)->src->lp)
@@ -326,7 +338,7 @@ bool LogicalProcess<X>::anti_message(adevs::list<Message>& l, Message* msg)
 template <class X>
 void LogicalProcess<X>::processInput()
 {
-	TAU_PROFILE("processInput","void (void)",TAU_DEFAULT);
+//	TAU_PROFILE("processInput","void (void)",TAU_DEFAULT);
 	// Process all of the input messages. This method
 	// performs rollbacks and message cancellations as
 	// required.
@@ -415,7 +427,7 @@ void LogicalProcess<X>::processInput()
 template <class X>
 void LogicalProcess<X>::execEvents()
 {
-	TAU_PROFILE("execEvents","void (void)",TAU_DEFAULT);
+//	TAU_PROFILE("execEvents","void (void)",TAU_DEFAULT);
 	Time tN = getNextEventTime();
 	// If the next event is at infinity, then there is nothing to do
 	if (tN.t == DBL_MAX) return;
@@ -592,10 +604,10 @@ bool LogicalProcess<X>::sendMessage(Message* msg)
 }
 
 template <class X>
-void LogicalProcess<X>::insert_message(adevs::list<Message>& l, Message* msg)
+void LogicalProcess<X>::insert_message(adevs::ulist<Message>& l, Message* msg)
 {
-	TAU_PROFILE("insert_message","void(list<Message<X> >&,Message<X>&)",TAU_DEFAULT);
-	typename adevs::list<Message>::iterator msg_iter;
+//	TAU_PROFILE("insert_message","void(list<Message<X> >&,Message<X>&)",TAU_DEFAULT);
+	typename adevs::ulist<Message>::iterator msg_iter;
 	for (msg_iter = l.begin(); msg_iter != l.end(); msg_iter++)
 	{
 		if (msg->t <= (*msg_iter)->t) break;
@@ -641,7 +653,7 @@ bool LogicalProcess<X>::patch(Message* msg)
 			model->tL = tL;
 			c->model = model;
 			c->data = data;
-			typename adevs::list<CheckPoint>::iterator iter;
+			typename adevs::ulist<CheckPoint>::iterator iter;
 			for (iter = chk_pt.begin(); iter != chk_pt.end(); iter++)
 			{
 				if (c->tf <= (*iter)->tf) break;
