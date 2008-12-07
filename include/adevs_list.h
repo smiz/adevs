@@ -33,17 +33,15 @@ namespace adevs
  * the proper pointers. The actual type stored in the list must be
  * a pointer to the template type.
  */
-template <typename T> class list
+template <typename T> class ulist
 {
 	public:
 
 		class one_list
 		{
-			public:
-				virtual ~one_list(){}
 			private:
 				T *next, *prev;
-			friend class adevs::list<T>;
+			friend class adevs::ulist<T>;
 		};
 		/// A forward iterator for the list
 		class iterator
@@ -64,15 +62,15 @@ template <typename T> class list
 				iterator& operator++(int) { i = i->next; return *this; }
 			private:
 				T* i;
-			friend class adevs::list<T>;
+			friend class adevs::ulist<T>;
 		};
 		typedef iterator const_iterator;
-		list():head(NULL),tail(NULL){}
+		ulist():head(NULL),tail(NULL){}
 		bool empty() const { return head == NULL; }
 		iterator begin() const { return iterator(head); }
 		iterator end() const { return iterator(NULL); }
-		// If free_list is not NULL, the removed it is pushed onto its front
-		iterator erase(iterator pos, list<T>* free_list = NULL)
+		// If free_list is not NULL, the removed it is pushed onto its back 
+		iterator erase(iterator pos, ulist<T>* free_list = NULL)
 		{
 			iterator return_val(pos.i->next);
 			// Remove the only item in the list
@@ -99,7 +97,7 @@ template <typename T> class list
 				pos.i->next->prev = pos.i->prev;
 			}
 			if (free_list != NULL)
-				free_list->push_front(pos.i);
+				free_list->push_back(pos.i);
 			return return_val;
 		}
 		void insert(iterator pos, T* item)
@@ -141,15 +139,15 @@ template <typename T> class list
 		const T* back() const { return tail; }
 		void push_front(T* item) { insert(iterator(head),item); }
 		void push_back(T* item) { insert(iterator(NULL),item); }
-		void pop_front(list<T>* free_list = NULL) { erase(iterator(head),free_list); }
-		void pop_back(list<T>* free_list = NULL) { erase(iterator(tail),free_list); }
-		~list(){}
+		void pop_front(ulist<T>* free_list = NULL) { erase(iterator(head),free_list); }
+		void pop_back(ulist<T>* free_list = NULL) { erase(iterator(tail),free_list); }
+		~ulist(){}
 	private:	
 		T *head, *tail;
 		// No copy constructor
-		list(const list<T>& src){}
+		ulist(const ulist<T>& src){}
 		// No assignment operator
-		void operator=(const list<T>& src){}
+		void operator=(const ulist<T>& src){}
 };
 
 } // end of namespace

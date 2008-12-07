@@ -123,6 +123,8 @@ void simulateSpace()
 				<<  " , stragglers = " << pdata.stragglers
 				<<  " , patches = " << pdata.patches
 				<<  " , early cancels = " << pdata.destroyed_in_input
+				<<  " , msgs = " << pdata.msg_count 
+				<<  " , checkpoints = " << pdata.chk_pt_count 
 				<< endl;
 		}
 	}
