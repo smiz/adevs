@@ -56,6 +56,12 @@ struct LP_perf_t
 	}
 };
 
+struct gvt_t
+{
+	double msg_t;
+	double lv_t;
+};
+
 /*
  * A logical process is assigned to every atomic model and it simulates
  * that model optimistically. The atomic model must support state saving
@@ -90,6 +96,25 @@ template <class X> class LogicalProcess
 		 */
 		void addModel(Atomic<X>* model);
 		/**
+		 * Get the GVT data for this LP.
+		 */
+		double getLVT() 
+		{
+			double result = getNextEventTime().t;
+			omp_set_lock(&lock);
+			typename ulist<Message>::iterator iter = input.begin();
+			for (; iter != input.end(); iter++)
+				if ((*iter)->t.t < result) result = (*iter)->t.t;
+			omp_unset_lock(&lock);
+			return result;
+		}
+		/**
+		 * Get the smallest time stamp of any message sent in the last cell to execEvents()
+		 * or processInput() since the last call the clear min.
+		 */
+		double getSendMin() { return send_min; }
+		void clearSendMin() { send_min = DBL_MAX; }
+		/**
 		 * Do fossil collection and report correct states and outputs.
 		 */
 		void fossilCollect(Time gvt, AbstractSimulator<X>* sim);
@@ -104,12 +129,17 @@ template <class X> class LogicalProcess
 		 * the input lists need to be flushed by calling processInput for all LPs until they return
 		 * false for pendingInput()
 		 */
-		Time getNextEventTime() const
+		Time getNextEventTime() 
 		{
 			Time result = sched.minPriority();
 			if (!avail.empty() && avail.front()->t < result)
 				result = avail.front()->t;
 			return result;
+		}
+		/// Are there any events left to execute?
+		bool hasEvents()
+		{
+			return !(input.empty() && avail.empty() && sched.empty());
 		}
 		/** 
 		 * Process all of the events in the input list. 
@@ -123,6 +153,10 @@ template <class X> class LogicalProcess
 		 * Is there unprocessed input in the input list?
 		 */
 		bool pendingInput() { return !input.empty(); }
+		/**
+		 * How much garbage is lingering about?
+		 */
+		unsigned int getGarbageCount() const { return garbage_count; }
 		/**
 		 * Get performance information for the LP
 		 */
@@ -168,6 +202,9 @@ template <class X> class LogicalProcess
 		long int ID;
 		/// Can route send messages between LPs?
 		bool inter_LP_ok;
+		double send_min;
+		/// Amount of accumulated trash
+		unsigned int garbage_count;
 		// Free list for messages
 		adevs::ulist<Message> free_msg_list;
 		// Free list for checkpoints
@@ -179,11 +216,10 @@ template <class X> class LogicalProcess
 		/// Pools of preallocated, commonly used objects
 		object_pool<Bag<X> > io_pool;
 		object_pool<Bag<Event<X> > > recv_pool;
-
 		// Insert a message into a timestamp ordered list
 		void insert_message(adevs::ulist<Message>& l, Message* msg);
 		// Route events using the Network models' route methods
-		void route(Network<X>* parent, Devs<X>* src, X& x);
+		void route(Network<X>* parent, Devs<X>* src, X& x, bool* inter_lp_msg = NULL);
 		// Save state and compute state transition of an atomic model
 		void exec_event(Atomic<X>* model, bool internal, Time t);
 		// Inject an input into an atomic model
@@ -223,12 +259,14 @@ template <class X> class LogicalProcess
 template <class X>
 LogicalProcess<X>::LogicalProcess()
 {
+	send_min = DBL_MAX;
+	garbage_count = 0;
 	// Do not report initial states
 	tCommit = Time(0.0,1);
 	// Message ID counter starts at 1
 	ID = 1;
 	// Create the lock for the input list
-	omp_init_lock(&lock);	
+	omp_init_lock(&lock);
 }
 
 template <class X>
@@ -269,6 +307,7 @@ void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 		{
 			model->gc_state(data);
 			chk_pt_iter = chk_pt.erase(chk_pt_iter,&free_chk_pt_list);
+			garbage_count--;
 		}
 		else chk_pt_iter++;
 	}
@@ -349,7 +388,9 @@ void LogicalProcess<X>::processInput()
 		Message* msg;
 		omp_set_lock(&lock);
 		if ((msg = input.front()) != NULL)
+		{
 			input.pop_front();
+		}
 		omp_unset_lock(&lock);
 		if (msg == NULL) break;
 		// If this is a message in the past
@@ -368,6 +409,7 @@ void LogicalProcess<X>::processInput()
 					inter_lp_output.pop_back();
 					// Send an anti-message to cancel inter-LP communications
 					antimsg->ID *= -1;
+					if (antimsg->t.t < send_min) send_min = antimsg->t.t;
 					if (!antimsg->dst->lp->sendMessage(antimsg))
 						free_msg_list.push_back(antimsg);
 					perf_data.canceled_output++;
@@ -408,15 +450,22 @@ void LogicalProcess<X>::processInput()
 					// Delete the checkpoint
 					model->gc_state(data);
 					chk_pt.pop_back(&free_chk_pt_list);
+					garbage_count--;
 					perf_data.rollbacks++;
 				}
 			}
 		}
 		// Otherwise if it is a rollback message in the future
 		// so just remove it from the available list 
-		else if (msg->ID < 0) anti_message(avail,msg);
+		else if (msg->ID < 0)
+		{
+			anti_message(avail,msg);
+		}
 		// If it is not a rollback message and it is not in the used list
-		if (msg->ID > 0 && !patched) insert_message(avail,msg);
+		if (msg->ID > 0 && !patched)
+		{
+			insert_message(avail,msg);
+		}
 		// Otherwise if it is an antimessage then save it for later use
 		else if (msg->ID < 0) free_msg_list.push_back(msg);
 	}
@@ -484,13 +533,14 @@ void LogicalProcess<X>::execEvents()
 template <class X>
 void LogicalProcess<X>::exec_event(Atomic<X>* model, bool internal, Time t)
 {
-	// Save the current state 
+	// Save the current state
 	CheckPoint* c = alloc_chk_pt();
 	c->ti = model->tL;
 	c->tf = t;
 	c->model = model;
 	c->data = model->save_state();
 	chk_pt.push_back(c); 
+	garbage_count++;
 	// Compute the next state
 	if (model->x == NULL) model->delta_int();
 	else
@@ -529,7 +579,7 @@ void LogicalProcess<X>::inject_event(Atomic<X>* model, X& value)
 }
 
 template <class X>
-void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x)
+void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x, bool* inter_lp_msg)
 {
 	// No one to do the routing, so return
 	if (parent == NULL) return;
@@ -560,6 +610,7 @@ void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 			// Atomic model at another LP
 			else if (inter_LP_ok)
 			{
+				if (inter_lp_msg != NULL) *inter_lp_msg = true;
 				Message* to_copy = intra_lp_output.back();
 				Message* m_to_send = alloc_msg();
 				Message* m_to_keep = alloc_msg();
@@ -569,6 +620,7 @@ void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 				assert(ID > 0);
 				m_to_keep->dst = m_to_send->dst = amodel;
 				m_to_keep->value = m_to_send->value = (*recv_iter).value;
+				if (m_to_send->t.t < send_min) send_min = m_to_send->t.t;
 				amodel->lp->sendMessage(m_to_send);
 				inter_lp_output.push_back(m_to_keep);
 			}
@@ -576,13 +628,13 @@ void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 		// if this is an external output from the parent model
 		else if ((*recv_iter).model == parent)
 		{
-			route(parent->getParent(),parent,(*recv_iter).value);
+			route(parent->getParent(),parent,(*recv_iter).value,inter_lp_msg);
 		}
 		// otherwise it is an input to a coupled model
 		else
 		{
 			route((*recv_iter).model->typeIsNetwork(),
-				(*recv_iter).model,(*recv_iter).value);
+				(*recv_iter).model,(*recv_iter).value,inter_lp_msg);
 		}
 	}
 	// Free the bag of receivers
@@ -659,6 +711,7 @@ bool LogicalProcess<X>::patch(Message* msg)
 				if (c->tf <= (*iter)->tf) break;
 			}
 			chk_pt.insert(iter,c);
+			garbage_count++;
 			insert_message(used,msg);
 			return true;
 		}

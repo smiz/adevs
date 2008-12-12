@@ -34,30 +34,14 @@ template <class X> class OptSimulator:
 		and parallel overhead; it is the number of models that will process
 		an event in every iteration of the optimistic simulator.  
 		*/
-		OptSimulator(Devs<X>* model, int batch_size = 1000);
+		OptSimulator(Devs<X>* model);
 		/// Get the model's next event time
-		double nextEventTime()
-		{
-			Time tN = totalNextEventTime();
-			return tN.t;
-		}
-		/// Get the complete next event time
-		Time totalNextEventTime();
-		/**
-		 * Execute the simulation until the next event time is greater
-		 * than the specified value.
-		 */
-		void execUntil(double gvt)
-		{
-			Time t_stop(gvt,UINT_MAX-1);
-			if (gvt == DBL_MAX) t_stop = Time::Inf();
-			execUntil(t_stop);
-		}
+		double nextEventTime() { return gvt; }
 		/**
 		 * Execute the simulator until the next event time is greater
 		 * than the specified value.
 		 */
-		void execUntil(Time gvt);
+		void execUntil(double stop_time);
 		/**
 		Deletes the simulator, but leaves the model intact. The model must
 		exist when the simulator is deleted.  Delete the model only after
@@ -76,24 +60,42 @@ template <class X> class OptSimulator:
 		LogicalProcess<X>* lp;
 		/// Number of lps
 		const int lp_count;
-		/// Number of iterations before fossil collection
-		const int batch_size;
+		/// For gvt calculations
+		double gvt;
+		omp_lock_t* gvt_lock;
+		double** gvt_array;
+		int* run_gvt;
 		/**
 		 * Recursively initialize the model by assigning an lp to each atomic
 		 * model and putting active models into the schedule.
 		*/
 		void initialize(Devs<X>* model, int& assign_to);
+
+		void calc_gvt(int i);
+		void contrib_gvt(int i);
+
 };
 
 template <class X>
-OptSimulator<X>::OptSimulator(Devs<X>* model, int batch_size):
+OptSimulator<X>::OptSimulator(Devs<X>* model):
 	AbstractSimulator<X>(),
-	lp_count(omp_get_max_threads()),
-	batch_size(batch_size)
+	lp_count(omp_get_max_threads())
 {
+	gvt = 0.0;
+	gvt_lock = new omp_lock_t[lp_count];
+	run_gvt = new int[lp_count];
+	gvt_array = new double*[lp_count];
 	lp = new LogicalProcess<X>[lp_count];
 	int assign_to = 0;
 	initialize(model,assign_to);
+	for (int i = 0; i < lp_count; i++)
+	{
+		omp_init_lock(&(gvt_lock[i]));
+		run_gvt[i] = 0;
+		gvt_array[i] = new double[lp_count];
+		for (int k = 0; k < lp_count; k++)
+			gvt_array[i][k] = -1.0;
+	}
 }
 
 template <class X>
@@ -120,64 +122,98 @@ void OptSimulator<X>::initialize(Devs<X>* model, int& assign_to)
 }
 
 template <class X>
-void OptSimulator<X>::execUntil(Time stop_time)
+void OptSimulator<X>::execUntil(double stop_time)
 {
-	for (;;)
+	int i;
+	#pragma omp parallel for default(shared) private(i)
+	for (i = 0; i < lp_count; i++)
 	{
-		int i;
-		// Execute in parallel for a little while
-		#pragma omp parallel for default(shared) private(i)
-		for (i = 0; i < lp_count; i++)
+		for (;;)
 		{
-			for (int k = 0; k < batch_size; k++)
+			#pragma omp flush(gvt)
+			if (lp[i].getGarbageCount() > 10 || !lp[i].hasEvents())
 			{
+				calc_gvt(i);
+				lp[i].fossilCollect(Time(gvt,0),this);
+			}
+			if (gvt < DBL_MAX && gvt <= stop_time)
+			{
+				contrib_gvt(i);
 				lp[i].processInput();
 				lp[i].execEvents();
 			}
+			else break;
 		}
-		// Flush the message buffers
-		int cleared = 0;
-		while (cleared != lp_count)
-		{
-			cleared = 0;
-			#pragma omp parallel for default(shared) private(i)
-			for (i = 0; i < lp_count; i++)
-			{
-				lp[i].processInput();
-			}
-			for (i = 0; i < lp_count; i++)
-			{
-				if (!lp[i].pendingInput())
-					cleared++;
-			}
-		}
-		// Commit events and do fossil collection
-		Time actual_gvt = totalNextEventTime();
-		if (stop_time < Time::Inf() && stop_time < actual_gvt)
-			actual_gvt = stop_time+Time(0.0,1);
-		#pragma omp parallel for default(shared) private(i)
-		for (i = 0; i < lp_count; i++)
-		{
-			lp[i].fossilCollect(actual_gvt,this);
-		} 
-		if (actual_gvt == Time::Inf() || stop_time < actual_gvt) break;
-	}	
-	// Do fossil collection and send event notifications
+	}
+	#pragma omp parallel for default(shared) private(i)
+	for (i = 0; i < lp_count; i++)
+	{
+		lp[i].fossilCollect(Time(stop_time,UINT_MAX),this);
+	}
 }
 
 template <class X>
-Time OptSimulator<X>::totalNextEventTime()
+void OptSimulator<X>::contrib_gvt(int i)
 {
-	Time gvt = Time::Inf();
-	for (int i = 0; i < lp_count; i++)
-		if (lp[i].getNextEventTime() <= gvt)
-			gvt = lp[i].getNextEventTime();
-	return gvt;
+	for (int k = 0; k < lp_count; k++)
+	{
+		omp_set_lock(&(gvt_lock[k]));
+		if (run_gvt[k] > 0)
+		{
+			double lvt = lp[i].getLVT();
+			if (gvt_array[k][i] < 0.0)
+			{
+				gvt_array[k][i] = lvt;
+				run_gvt[k]--;
+			}
+			else
+			{
+				if (lp[i].getSendMin() < gvt_array[k][i])
+					gvt_array[k][i] = lp[i].getSendMin();
+				if (lvt < gvt_array[k][i])
+					gvt_array[k][i] = lvt;
+			}
+			if (run_gvt[k] == 0)
+			{
+				double gvt_tmp = DBL_MAX;
+				for (int j = 0; j < lp_count; j++)
+				{
+					gvt_tmp = std::min(gvt_tmp,gvt_array[k][j]);
+					gvt_array[k][j] = -1.0;
+				}
+				#pragma omp critical
+				{
+					std::cerr << "gvt update " <<  gvt << " " << gvt_tmp << std::endl;
+					assert(gvt_tmp >= gvt);
+					gvt = gvt_tmp;
+				}
+			}
+			lp[i].clearSendMin();
+		}
+		omp_unset_lock(&(gvt_lock[k]));
+	}
+}
+
+template <class X>
+void OptSimulator<X>::calc_gvt(int i)
+{
+	omp_set_lock(&(gvt_lock[i]));
+	if (run_gvt[i] == 0)
+		run_gvt[i] = lp_count;
+	omp_unset_lock(&(gvt_lock[i]));
 }
 
 template <class X>
 OptSimulator<X>::~OptSimulator()
 {
+	delete [] run_gvt;
+	for (int i = 0; i < lp_count; i++)
+	{
+		omp_destroy_lock(&(gvt_lock[i]));
+		delete [] gvt_array[i];
+	}
+	delete [] gvt_lock;
+	delete [] gvt_array;
 	delete [] lp;
 }
 

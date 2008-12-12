@@ -57,7 +57,7 @@ int main()
 	{
 		model->couple(road[i],road[i+1]);
 	}
-	OptSimulator<car_t*>* sim = new OptSimulator<car_t*>(model,2);
+	OptSimulator<car_t*>* sim = new OptSimulator<car_t*>(model);
 	sim->addEventListener(new Listener());
 	sim->execUntil(2.0);
 	sim->execUntil(DBL_MAX);
