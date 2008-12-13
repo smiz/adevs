@@ -25,7 +25,6 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #include "object_pool.h"
 #include "adevs_list.h"
 #include <omp.h>
-//#include <TAU.h>
 /**
  * This is an implementation of the time warp simulation algorithm described in
  * J. Nutaro, "On Constructing Optimistic Simulation Algorithms for the Discrete
@@ -282,7 +281,6 @@ void LogicalProcess<X>::addModel(Atomic<X>* model)
 template <class X>
 void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 {
-//	TAU_PROFILE("fossilCollect","void (Time,AbstractSimulator<X>*)",TAU_DEFAULT);
 	// Report and delete old states
 	typename adevs::ulist<CheckPoint>::iterator chk_pt_iter = chk_pt.begin();
 	while (chk_pt_iter != chk_pt.end())
@@ -360,7 +358,6 @@ void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 template <class X>
 bool LogicalProcess<X>::anti_message(adevs::ulist<Message>& l, Message* msg)
 {
-//	TAU_PROFILE("anti_message","void(list<Message<X> >&,Message<X>&)",TAU_DEFAULT);
 	typename adevs::ulist<Message>::iterator msg_iter = l.begin();
 	while (msg_iter != l.end())
 	{
@@ -377,7 +374,6 @@ bool LogicalProcess<X>::anti_message(adevs::ulist<Message>& l, Message* msg)
 template <class X>
 void LogicalProcess<X>::processInput()
 {
-//	TAU_PROFILE("processInput","void (void)",TAU_DEFAULT);
 	// Process all of the input messages. This method
 	// performs rollbacks and message cancellations as
 	// required.
@@ -476,7 +472,6 @@ void LogicalProcess<X>::processInput()
 template <class X>
 void LogicalProcess<X>::execEvents()
 {
-//	TAU_PROFILE("execEvents","void (void)",TAU_DEFAULT);
 	Time tN = getNextEventTime();
 	// If the next event is at infinity, then there is nothing to do
 	if (tN.t == DBL_MAX) return;
@@ -658,7 +653,6 @@ bool LogicalProcess<X>::sendMessage(Message* msg)
 template <class X>
 void LogicalProcess<X>::insert_message(adevs::ulist<Message>& l, Message* msg)
 {
-//	TAU_PROFILE("insert_message","void(list<Message<X> >&,Message<X>&)",TAU_DEFAULT);
 	typename adevs::ulist<Message>::iterator msg_iter;
 	for (msg_iter = l.begin(); msg_iter != l.end(); msg_iter++)
 	{
@@ -732,6 +726,36 @@ LogicalProcess<X>::~LogicalProcess()
 	fossilCollect(Time::Inf(),NULL);
 	// destroy lock
 	omp_destroy_lock(&lock);
+	// cleanup lists of messages and checkpoints
+	assert(used.empty());
+	assert(chk_pt.empty());
+	assert(discard.empty());
+	assert(inter_lp_output.empty());
+	assert(intra_lp_output.empty());
+	while (!avail.empty())
+	{
+		Message* msg = avail.front();
+		avail.pop_front();
+		delete msg;
+	}
+	while (!free_msg_list.empty())
+	{
+		Message* msg = free_msg_list.front();
+		free_msg_list.pop_front();
+		delete msg;
+	}
+	while (!free_chk_pt_list.empty())
+	{
+		CheckPoint* c = free_chk_pt_list.front();
+		free_chk_pt_list.pop_front();
+		delete c;
+	}
+	while (!input.empty())
+	{
+		Message* msg = input.front();
+		input.pop_front();
+		delete msg;
+	}
 }
 
 } // end of namespace 
