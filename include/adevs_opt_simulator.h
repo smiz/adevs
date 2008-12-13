@@ -61,10 +61,9 @@ template <class X> class OptSimulator:
 		/// Number of lps
 		const int lp_count;
 		/// For gvt calculations
-		double gvt;
-		omp_lock_t* gvt_lock;
-		double** gvt_array;
-		int* run_gvt;
+		double gvt, *gvt_array;
+		int run_gvt;
+		omp_lock_t gvt_lock;
 		/**
 		 * Recursively initialize the model by assigning an lp to each atomic
 		 * model and putting active models into the schedule.
@@ -81,20 +80,16 @@ OptSimulator<X>::OptSimulator(Devs<X>* model):
 	AbstractSimulator<X>(),
 	lp_count(omp_get_max_threads())
 {
+	omp_init_lock(&gvt_lock);
 	gvt = 0.0;
-	gvt_lock = new omp_lock_t[lp_count];
-	run_gvt = new int[lp_count];
-	gvt_array = new double*[lp_count];
+	run_gvt = 0;
+	gvt_array = new double[lp_count];
 	lp = new LogicalProcess<X>[lp_count];
 	int assign_to = 0;
 	initialize(model,assign_to);
 	for (int i = 0; i < lp_count; i++)
 	{
-		omp_init_lock(&(gvt_lock[i]));
-		run_gvt[i] = 0;
-		gvt_array[i] = new double[lp_count];
-		for (int k = 0; k < lp_count; k++)
-			gvt_array[i][k] = -1.0;
+		gvt_array[i] = -1.0;
 	}
 }
 
@@ -131,10 +126,11 @@ void OptSimulator<X>::execUntil(double stop_time)
 		for (;;)
 		{
 			#pragma omp flush(gvt)
-			if (lp[i].getGarbageCount() > 10 || !lp[i].hasEvents())
+			if (lp[i].getGarbageCount() > 100 || !lp[i].hasEvents())
 			{
 				calc_gvt(i);
-				lp[i].fossilCollect(Time(gvt,0),this);
+				if (gvt <= stop_time)
+					lp[i].fossilCollect(Time(gvt,0),this);
 			}
 			if (gvt < DBL_MAX && gvt <= stop_time)
 			{
@@ -155,64 +151,53 @@ void OptSimulator<X>::execUntil(double stop_time)
 template <class X>
 void OptSimulator<X>::contrib_gvt(int i)
 {
-	for (int k = 0; k < lp_count; k++)
+	omp_set_lock(&gvt_lock);
+	if (run_gvt > 0)
 	{
-		omp_set_lock(&(gvt_lock[k]));
-		if (run_gvt[k] > 0)
+		double lvt = lp[i].getLVT();
+		if (gvt_array[i] < 0.0)
 		{
-			double lvt = lp[i].getLVT();
-			if (gvt_array[k][i] < 0.0)
-			{
-				gvt_array[k][i] = lvt;
-				run_gvt[k]--;
-			}
-			else
-			{
-				if (lp[i].getSendMin() < gvt_array[k][i])
-					gvt_array[k][i] = lp[i].getSendMin();
-				if (lvt < gvt_array[k][i])
-					gvt_array[k][i] = lvt;
-			}
-			if (run_gvt[k] == 0)
-			{
-				double gvt_tmp = DBL_MAX;
-				for (int j = 0; j < lp_count; j++)
-				{
-					gvt_tmp = std::min(gvt_tmp,gvt_array[k][j]);
-					gvt_array[k][j] = -1.0;
-				}
-				#pragma omp critical
-				{
-					std::cerr << "gvt update " <<  gvt << " " << gvt_tmp << std::endl;
-					assert(gvt_tmp >= gvt);
-					gvt = gvt_tmp;
-				}
-			}
-			lp[i].clearSendMin();
+			gvt_array[i] = lvt;
+			run_gvt--;
 		}
-		omp_unset_lock(&(gvt_lock[k]));
+		else if (lvt < gvt_array[i])
+		{
+			gvt_array[i] = lvt;
+		}
+		if (lp[i].getSendMin() < gvt_array[i])
+			gvt_array[i] = lp[i].getSendMin();
+		if (run_gvt == 0)
+		{
+			double gvt_tmp = DBL_MAX;
+			for (int j = 0; j < lp_count; j++)
+			{
+				gvt_tmp = std::min(gvt_tmp,gvt_array[j]);
+				gvt_array[j] = -1.0;
+			}
+			assert(gvt_tmp >= gvt);
+			gvt = gvt_tmp;
+		}
 	}
+	if (run_gvt == 0) lp[i].clearSendMin();
+	omp_unset_lock(&gvt_lock);
 }
 
 template <class X>
 void OptSimulator<X>::calc_gvt(int i)
 {
-	omp_set_lock(&(gvt_lock[i]));
-	if (run_gvt[i] == 0)
-		run_gvt[i] = lp_count;
-	omp_unset_lock(&(gvt_lock[i]));
+	omp_set_lock(&gvt_lock);
+	if (run_gvt == 0)
+	{
+		run_gvt = lp_count;
+		lp[i].clearSendMin();
+	}
+	omp_unset_lock(&gvt_lock);
 }
 
 template <class X>
 OptSimulator<X>::~OptSimulator()
 {
-	delete [] run_gvt;
-	for (int i = 0; i < lp_count; i++)
-	{
-		omp_destroy_lock(&(gvt_lock[i]));
-		delete [] gvt_array[i];
-	}
-	delete [] gvt_lock;
+	omp_destroy_lock(&gvt_lock);
 	delete [] gvt_array;
 	delete [] lp;
 }
