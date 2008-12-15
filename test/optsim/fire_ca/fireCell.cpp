@@ -3,6 +3,33 @@
 #include <iostream>
 using namespace std;
 
+fireCell::state_t** fireCell::chk_pt_list = NULL;
+int fireCell::num_lps = 0;
+
+void fireCell::set_checkpoints(int lp_count)
+{
+	num_lps = lp_count;
+	chk_pt_list = new state_t*[lp_count];
+	for (int i = 0; i < num_lps; i++)
+	{
+		chk_pt_list[i] = NULL;
+	}
+}
+
+void fireCell::cleanup_checkpoints()
+{
+	for (int i = 0; i < num_lps; i++)
+	{
+		while (chk_pt_list[i] != NULL)
+		{
+			state_t* tmp = chk_pt_list[i];
+			chk_pt_list[i] = chk_pt_list[i]->next;
+			delete tmp;
+		}
+	}
+	delete [] chk_pt_list;
+}
+
 // Movement rate of the fire
 const double fireCell::move_rate = 1.0;
 
@@ -12,8 +39,7 @@ adevs::Atomic<CellEvent>(),
 fuel(fuel),
 heat(0),
 x(x),
-y(y),
-chk_pt_list(NULL)
+y(y)
 {
 	assert(fuel >= 0.0);
 	// If it is on fire and has enough fuel to spread
@@ -135,10 +161,10 @@ fireCell::state_t fireCell::getState(const void* state_data)
 
 void* fireCell::save_state()
 {
-	if (chk_pt_list != NULL)
+	if (chk_pt_list[getPrefLP()] != NULL)
 	{
-		state_t* s = chk_pt_list;
-		chk_pt_list = chk_pt_list->next;
+		state_t* s = chk_pt_list[getPrefLP()];
+		chk_pt_list[getPrefLP()] = chk_pt_list[getPrefLP()]->next;
 		s->next = NULL;
 		s->setState(phase,fuel,heat);
 		return s;
@@ -157,7 +183,7 @@ void fireCell::restore_state(void* data)
 void fireCell::gc_state(void* data)
 {
 	state_t* state = static_cast<state_t*>(data);
-	state->next = chk_pt_list;
-	chk_pt_list = state;
+	state->next = chk_pt_list[getPrefLP()];
+	chk_pt_list[getPrefLP()] = state;
 }
 
