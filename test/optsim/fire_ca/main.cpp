@@ -88,6 +88,7 @@ void simulateSpace()
 	else
 	{
 		sim = opt_sim = new adevs::OptSimulator<CellEvent>(cell_space);
+		fireCell::set_checkpoints(omp_get_max_threads());
 	}
 	// Create a listener for the model
 	listener = new CellListener();
@@ -136,6 +137,7 @@ void simulateSpace()
 		delete [] snap_shot[x];
 	}
 	delete [] snap_shot;
+	fireCell::cleanup_checkpoints();
 }
 
 int main(int argc, char** argv)
