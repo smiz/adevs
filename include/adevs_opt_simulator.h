@@ -2,16 +2,50 @@
 #define __adevs_opt_simulator_h_
 #include "adevs.h"
 #include "adevs_abstract_simulator.h"
-#include "adevs_lp.h"
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
 #include <omp.h>
 #include "adevs_sched.h"
+#include "adevs_list.h"
 
 namespace adevs
 {
+
+class CheckPoint
+{
+	public:
+		CheckPoint(Time tL, void* data):
+			tL(tL),data(data){}
+		Time getTime() { return tL; }
+		void* getData() { return data; }
+	private:
+		Time tL;
+		void* data;
+};
+
+template <typename X> class LogicalProcess:
+	public ulist<LogicalProcess<X> >::one_list
+{
+	public:
+		LogicalProcess():
+			ulist<LogicalProcess<X> >::one_list()
+		{
+			omp_init_lock(&lock);
+			checkpoint = NULL;
+			is_pending = false;
+		}
+		CheckPoint* checkpoint;
+		bool is_pending;
+		Atomic<X>* model;
+		void Lock() { omp_set_lock(&lock); }
+		void Unlock() { omp_unset_lock(&lock); }
+		bool TryLock() { return omp_test_lock(&lock); }
+		~LogicalProcess() { omp_destroy_lock(&lock); }
+	private:
+		omp_lock_t lock;
+};
 
 /**
  * This class implements an optimistic simulation algorithm that uses
@@ -36,7 +70,7 @@ template <class X> class OptSimulator:
 		*/
 		OptSimulator(Devs<X>* model);
 		/// Get the model's next event time
-		double nextEventTime() { return gvt; }
+		double nextEventTime() { return sched.minPriority().t; }
 		/**
 		 * Execute the simulator until the next event time is greater
 		 * than the specified value.
@@ -48,61 +82,243 @@ template <class X> class OptSimulator:
 		the simulator is deleted.
 		*/
 		~OptSimulator();
-		/// Get the number of logical processes
-		int getNumLPs() const { return lp_count; }
-		/// Get the performance data for an LP
-		LP_perf_t getPerfData(int i) const
-		{
-			return lp[i].getPerfData();
-		} 
+		/// Get the number of early outputs
+		unsigned getEarlyOutputCount() const { return early_output; }
 	private:
-		// Logical processes that are run in parallel
-		LogicalProcess<X>* lp;
-		/// Number of lps
-		const int lp_count;
-		/// For gvt calculations
-		double gvt, *gvt_array;
-		int run_gvt;
-		omp_lock_t gvt_lock;
-		/**
-		 * Recursively initialize the model by assigning an lp to each atomic
-		 * model and putting active models into the schedule.
-		*/
-		void initialize(Devs<X>* model, int& assign_to);
+		/// The event schedule
+		Schedule<X,Time> sched;
+		/// List of imminent models
+		Bag<Atomic<X>*> imm;
+		/// List of models activated by input
+		Bag<Atomic<X>*> activated;
+		bool halt;
+		omp_lock_t pending_lock, bag_lock;
+		unsigned early_output, pending_size;
+		ulist<LogicalProcess<X> > pending;
+		/// Pools of preallocated, commonly used objects
+		object_pool<Bag<X> > input_pool, output_pool;
+		object_pool<Bag<Event<X> > > recv_pool;
 
-		void calc_gvt(int i);
-		void contrib_gvt(int i);
+		void inject_event(Atomic<X>* model, X& value);	
+		void exec_event(Atomic<X>* model, bool internal, Time t);
+		void schedule(Atomic<X>* model, Time t);
+		void init(Devs<X>* model);
+		void route(Network<X>* parent, Devs<X>* src, X& x);
+		void speculate(int thread_num);
+		void simSafe(double tend);
+		void cleanup(Atomic<X>* model);
+		Bag<X>* make_io_bag(bool input_bag = false);
+		void destroy_io_bag(Bag<X>* b, bool input_bag = false);
+}; 
 
-};
+template <class X>
+Bag<X>* OptSimulator<X>::make_io_bag(bool input_bag)
+{
+	if (input_bag)
+		return input_pool.make_obj();
+	Bag<X>* result;
+	omp_set_lock(&bag_lock);
+	result = output_pool.make_obj();
+	omp_unset_lock(&bag_lock);
+	return result;
+}
+
+template <class X>
+void OptSimulator<X>::destroy_io_bag(Bag<X>* b, bool input_bag)
+{
+	if (input_bag)
+	{
+		input_pool.destroy_obj(b);
+		return;
+	}
+	omp_set_lock(&bag_lock);
+	output_pool.destroy_obj(b);
+	omp_unset_lock(&bag_lock);
+}
 
 template <class X>
 OptSimulator<X>::OptSimulator(Devs<X>* model):
-	AbstractSimulator<X>(),
-	lp_count(omp_get_max_threads())
+	AbstractSimulator<X>()
 {
-	omp_init_lock(&gvt_lock);
-	gvt = 0.0;
-	run_gvt = 0;
-	gvt_array = new double[lp_count];
-	lp = new LogicalProcess<X>[lp_count];
-	int assign_to = 0;
-	initialize(model,assign_to);
-	for (int i = 0; i < lp_count; i++)
+	pending_size = early_output = 0;
+	omp_init_lock(&pending_lock);
+	omp_init_lock(&bag_lock);
+	init(model);
+}
+
+template <class X>
+OptSimulator<X>::~OptSimulator<X>()
+{
+	omp_destroy_lock(&pending_lock);
+	omp_destroy_lock(&bag_lock);
+}
+
+template <class X>
+void OptSimulator<X>::execUntil(double stop_time)
+{
+	int i;
+	halt = false;
+	int thread_count = omp_get_max_threads();
+	#pragma omp parallel for default(shared) private(i)
+	for (i = 0; i < thread_count; i++)
 	{
-		gvt_array[i] = -1.0;
+		if (i == 0) simSafe(stop_time);
+		else speculate(i);
 	}
 }
 
 template <class X>
-void OptSimulator<X>::initialize(Devs<X>* model, int& assign_to)
+void OptSimulator<X>::speculate(int thread_num)
+{
+	while (true)
+	{
+		#pragma omp flush(halt)
+		if (halt) return;
+		// Find a model in the schedule that does not have a checkpoint
+		Atomic<X>* model = NULL;
+		omp_set_lock(&pending_lock);
+	   	if (!pending.empty())
+		{
+			pending_size--;
+			LogicalProcess<X>* lp = pending.back();
+			pending.pop_back();
+			model = lp->model;
+			lp->is_pending = false;
+		}
+		omp_unset_lock(&pending_lock);
+		if (model != NULL && model->lp->TryLock())
+		{
+			double ta = model->ta();
+			// If it has not had an output computed yet
+			if (ta < DBL_MAX && model->x == NULL && model->y == NULL)
+			{
+				// Speculate on a value
+				model->y = make_io_bag();
+				model->output_func(*(model->y));
+/*				// Speculate on the state
+				void* data = model->save_state();
+				if (data != NULL)
+				{
+					Time tN = model->tL;
+					if (0.0 < ta)
+					{
+						tN.t += ta;
+						tN.c = 0;
+					}
+					else tN.c++;
+					model->lp->checkpoint = new CheckPoint(model->tL,data);
+					model->delta_int();
+					model->tL = tN;
+					if (model->y->empty())
+					{
+						schedule(model,tN);
+					}
+				} */
+			} 
+			model->lp->Unlock();
+		}
+	}
+}
+		
+template <class X>
+void OptSimulator<X>::simSafe(double tstop)
+{
+	Time t;
+	while (true)
+	{
+		// Find the imminent models and the next event time
+		t = sched.minPriority();
+		sched.getImminent(imm);
+// std::cerr << "sched/imm = " << sched.getSize() << " " << imm.size() << " " << pending_size << std::endl;
+		if (tstop < t.t || t.t == DBL_MAX)
+		{
+			imm.clear();
+			halt = true;
+			#pragma omp flush(halt)
+			return;
+		}
+		// Compute output and route events
+		for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
+			imm_iter != imm.end(); imm_iter++)
+		{
+			Atomic<X>* model = *imm_iter;
+			// If the output for this model has not already been computed,
+			// then get it
+			model->lp->Lock();
+			if (model->y == NULL)
+			{
+				model->y = make_io_bag();
+				model->output_func(*(model->y));
+			}
+			else early_output++;
+			model->lp->Unlock();
+			// Route each event in y
+			for (typename Bag<X>::iterator y_iter = model->y->begin(); 
+				y_iter != model->y->end(); y_iter++)
+			{
+				route(model->getParent(),model,*y_iter);
+			}
+		}
+		// Compute new states for the imminent and active models and put
+		// them back into the schedule
+		for (typename Bag<Atomic<X>*>::iterator iter = imm.begin(); 
+			iter != imm.end(); iter++)
+		{
+			(*iter)->lp->Lock();
+			exec_event(*iter,true,t); // Internal and confluent transitions
+			(*iter)->lp->Unlock();
+		}
+		for (typename Bag<Atomic<X>*>::iterator iter = activated.begin(); 
+			iter != activated.end(); iter++)
+		{
+			(*iter)->lp->Lock();
+			exec_event(*iter,false,t); // External transitions
+			cleanup(*iter);
+			schedule(*iter,t);
+			(*iter)->lp->Unlock();
+		}
+		// Clean up and reschedule the imminent models
+		for (typename Bag<Atomic<X>*>::iterator iter = imm.begin(); 
+			iter != imm.end(); iter++)
+		{
+			(*iter)->lp->Lock();
+			cleanup(*iter);
+			schedule(*iter,t);
+			(*iter)->lp->Unlock();
+		}
+		imm.clear();
+		activated.clear();
+	}
+}
+
+template <class X>
+void OptSimulator<X>::cleanup(Atomic<X>* model)
+{
+	if (model->x != NULL)
+	{
+		model->x->clear();
+		destroy_io_bag(model->x,true);
+		model->x = NULL;
+	}
+	if (model->y != NULL)
+	{
+		model->gc_output(*(model->y));
+		model->y->clear();
+		destroy_io_bag(model->y);
+		model->y = NULL;
+	}
+	model->active = false;
+}
+
+template <class X>
+void OptSimulator<X>::init(Devs<X>* model)
 {
 	Atomic<X>* a = model->typeIsAtomic();
 	if (a != NULL)
 	{
-		char pick = a->getPrefLP();
-		if (pick < lp_count && pick >= 0) assign_to = pick;
-		lp[assign_to].addModel(a);
-		assign_to = (assign_to+1)%lp_count;
+		a->lp = new LogicalProcess<X>();
+		a->lp->model = a;
+		schedule(a,Time(0.0,0));
 	}
 	else
 	{
@@ -111,95 +327,149 @@ void OptSimulator<X>::initialize(Devs<X>* model, int& assign_to)
 		typename Set<Devs<X>*>::iterator iter = components.begin();
 		for (; iter != components.end(); iter++)
 		{
-			initialize(*iter,assign_to);
+			init(*iter);
 		}
 	}
 }
 
 template <class X>
-void OptSimulator<X>::execUntil(double stop_time)
+void OptSimulator<X>::schedule(Atomic<X>* a, Time t)
 {
-	int i;
-	#pragma omp parallel for default(shared) private(i)
-	for (i = 0; i < lp_count; i++)
+	a->tL = t;
+	double dt = a->ta();
+	if (dt < 0.0)
 	{
-		for (;;)
+		exception err("Negative time advance",a);
+		throw err;
+	}
+	if (omp_test_lock(&pending_lock))
+	{
+		if (a->lp->is_pending && dt == DBL_MAX)
 		{
-			#pragma omp flush(gvt)
-			if (lp[i].getGarbageCount() > 100 || !lp[i].hasEvents())
-			{
-				calc_gvt(i);
-				if (gvt <= stop_time)
-					lp[i].fossilCollect(Time(gvt,0),this);
-			}
-			if (gvt < DBL_MAX && gvt <= stop_time)
-			{
-				contrib_gvt(i);
-				lp[i].processInput();
-				lp[i].execEvents();
-			}
-			else break;
+			pending_size--;
+			pending.erase(a->lp);
+			a->lp->is_pending = false;
 		}
+		else if (!a->lp->is_pending && dt < DBL_MAX)
+		{
+			pending_size++;
+			pending.push_back(a->lp);
+			a->lp->is_pending = true;
+		}
+		omp_unset_lock(&pending_lock);
 	}
-	#pragma omp parallel for default(shared) private(i)
-	for (i = 0; i < lp_count; i++)
-	{
-		lp[i].fossilCollect(Time(stop_time,UINT_MAX),this);
-	}
+	if (dt == DBL_MAX)
+		sched.schedule(a,DBL_MAX);
+	if (0.0 < dt)
+		sched.schedule(a,Time(t.t+dt,0));
+	else
+		sched.schedule(a,Time(t.t,t.c+1));
 }
 
 template <class X>
-void OptSimulator<X>::contrib_gvt(int i)
+void OptSimulator<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 {
-	omp_set_lock(&gvt_lock);
-	if (run_gvt > 0)
+	// Notify event listeners if this is an output event
+	if (parent != src)
+		notify_output_listeners(src,x,sched.minPriority().t);
+	// No one to do the routing, so return
+	if (parent == NULL) return;
+	// Compute the set of receivers for this value
+	Bag<Event<X> >* recvs = recv_pool.make_obj();
+	parent->route(x,src,*recvs);
+	// Deliver the event to each of its targets
+	Atomic<X>* amodel = NULL;
+	typename Bag<Event<X> >::iterator recv_iter = recvs->begin();
+	for (; recv_iter != recvs->end(); recv_iter++)
 	{
-		double lvt = lp[i].getLVT();
-		if (gvt_array[i] < 0.0)
+		// Check for self-influencing error condition
+		if (src == (*recv_iter).model)
 		{
-			gvt_array[i] = lvt;
-			run_gvt--;
+			exception err("Model tried to influence self",src);
+			throw err;
 		}
-		else if (lvt < gvt_array[i])
+		/**
+		if the destination is an atomic model, add the event to the IO bag for that model
+		and add model to the list of activated models
+		*/
+		amodel = (*recv_iter).model->typeIsAtomic();
+		if (amodel != NULL)
 		{
-			gvt_array[i] = lvt;
+			inject_event(amodel,(*recv_iter).value);
 		}
-		if (lp[i].getSendMin() < gvt_array[i])
-			gvt_array[i] = lp[i].getSendMin();
-		if (run_gvt == 0)
+		// if this is an external output from the parent model
+		else if ((*recv_iter).model == parent)
 		{
-			double gvt_tmp = DBL_MAX;
-			for (int j = 0; j < lp_count; j++)
-			{
-				gvt_tmp = std::min(gvt_tmp,gvt_array[j]);
-				gvt_array[j] = -1.0;
-			}
-			assert(gvt_tmp >= gvt);
-			gvt = gvt_tmp;
+			route(parent->getParent(),parent,(*recv_iter).value);
+		}
+		// otherwise it is an input to a coupled model
+		else
+		{
+			route((*recv_iter).model->typeIsNetwork(),
+			(*recv_iter).model,(*recv_iter).value);
 		}
 	}
-	if (run_gvt == 0) lp[i].clearSendMin();
-	omp_unset_lock(&gvt_lock);
+	recvs->clear();
+	recv_pool.destroy_obj(recvs);
 }
 
 template <class X>
-void OptSimulator<X>::calc_gvt(int i)
+void OptSimulator<X>::inject_event(Atomic<X>* model, X& value)
 {
-	omp_set_lock(&gvt_lock);
-	if (run_gvt == 0)
+	if (model->active == false)
 	{
-		run_gvt = lp_count;
-		lp[i].clearSendMin();
+		model->active = true;
+		activated.insert(model);
 	}
-	omp_unset_lock(&gvt_lock);
+	if (model->x == NULL)
+	{
+		model->x = make_io_bag(true);
+	}
+	model->x->insert(value);
 }
 
 template <class X>
-OptSimulator<X>::~OptSimulator()
+void OptSimulator<X>::exec_event(Atomic<X>* model, bool internal, Time t)
 {
-	omp_destroy_lock(&gvt_lock);
-	delete [] gvt_array;
-	delete [] lp;
+	// If we already have a state for this model
+	CheckPoint* c = model->lp->checkpoint;
+	if (c != NULL)
+	{
+		bool good = false;
+		// If the state is good, then we are done
+		if (model->x == NULL)
+		{
+			notify_state_listeners(model,t.t,c->getData());
+			good = true;
+		}
+		// Otherwise restore the state to the last event time
+		else
+		{
+			model->restore_state(c->getData());
+			model->tL = c->getTime();
+		}
+		// Remove the checkpoint
+		model->gc_state(c->getData());
+		delete c;
+		model->lp->checkpoint = NULL;
+		// If it was a good checkpoint, then we are done
+		if (good) return;
+	}
+	// Compute the state change
+	if (model->x == NULL)
+	{
+		model->delta_int();
+	}
+	else if (internal)
+	{
+		model->delta_conf(*(model->x));
+	}
+	else
+	{
+		model->delta_ext(t.t-model->tL.t,*(model->x));
+	}
+	// Notify any listeners
+	notify_state_listeners(model,t.t);
 }
 
 } // End of namespace
