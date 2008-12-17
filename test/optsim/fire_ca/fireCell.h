@@ -90,7 +90,7 @@ class fireCell: public adevs::Atomic<CellEvent>
 		// Cell location
 		const long int x, y;
 		// Free list of structures for saving the model state
-		static state_t **chk_pt_list;
+		static state_t *chk_pt_list;
 		static int num_lps;
 		// Time required for the fire to spread to a neighbor
 		static const double move_rate;

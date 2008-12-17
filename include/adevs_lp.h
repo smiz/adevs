@@ -25,6 +25,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #include "object_pool.h"
 #include "adevs_list.h"
 #include <omp.h>
+//#include <TAU.h>
 /**
  * This is an implementation of the time warp simulation algorithm described in
  * J. Nutaro, "On Constructing Optimistic Simulation Algorithms for the Discrete
@@ -176,11 +177,11 @@ template <class X> class LogicalProcess
 				Atomic<X>* model;
 				// Pointer to the saved state
 				void* data;
+				// Has this checkpoint been reported?
+				bool reported;
 		};
 		// Structure for tracking performance related data
 		LP_perf_t perf_data;
-		// Last commit timestamp
-		Time tCommit;
 		// List of input messages
 		adevs::ulist<Message> input;
 		// lock variable for the input list
@@ -260,8 +261,6 @@ LogicalProcess<X>::LogicalProcess()
 {
 	send_min = DBL_MAX;
 	garbage_count = 0;
-	// Do not report initial states
-	tCommit = Time(0.0,1);
 	// Message ID counter starts at 1
 	ID = 1;
 	// Create the lock for the input list
@@ -281,7 +280,13 @@ void LogicalProcess<X>::addModel(Atomic<X>* model)
 template <class X>
 void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 {
+//TAU_TYPE_STRING(taustr, CT(*this) + " void (void)" );
+//TAU_PROFILE("fossilCollect()", taustr, TAU_FIELD);
+//TAU_PROFILE_TIMER(statetimer, "fossilCollect-states", taustr, TAU_FIELD); 
+//TAU_PROFILE_TIMER(discardtimer, "fossilCollect-discard", taustr, TAU_FIELD); 
+	static const Time Zero = Time(0.0,0);
 	// Report and delete old states
+//TAU_PROFILE_START(statetimer);
 	typename adevs::ulist<CheckPoint>::iterator chk_pt_iter = chk_pt.begin();
 	while (chk_pt_iter != chk_pt.end())
 	{
@@ -289,16 +294,20 @@ void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 		void* data = (*chk_pt_iter)->data;
 		Time ti = (*chk_pt_iter)->ti;
 		Time tf = (*chk_pt_iter)->tf;
+		bool reported = (*chk_pt_iter)->reported;
 		// Report states that are good
 		if (sim != NULL)
 		{
-			if (model->tL < gvt && tCommit <= model->tL && model->active == false)
+			if (Zero < model->tL && model->tL < gvt && !(model->reported))
 			{
-				model->active = true;
+				model->reported = true;
 				activated.insert(model);
 			}
-			if (ti < gvt && tCommit <= ti)
+			if (Zero < ti && ti < gvt && !reported)
+			{
 				sim->notify_state_listeners(model,ti.t,data); 
+				(*chk_pt_iter)->reported = true;
+			}
 		} 
 		// Delete states that are no longer needed
 		if (tf < gvt)
@@ -314,17 +323,16 @@ void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 	for (; active_iter != activated.end(); active_iter++)
 	{
 		sim->notify_state_listeners(*active_iter,(*active_iter)->tL.t);
-		(*active_iter)->active = false;
 	} 
 	activated.clear();
-	// Remember the last timestamp that we reported
-	if (tCommit < gvt) tCommit = gvt;
+//TAU_PROFILE_STOP(statetimer);
 	// Delete old used messages
 	while (!used.empty() && used.front()->t < gvt)
 	{
 		used.pop_front(&free_msg_list);
 	}
 	// Delete old output
+//TAU_PROFILE_START(discardtimer);
 	Bag<X>* garbage = io_pool.make_obj();
 	typename adevs::ulist<Message>::iterator discard_iter = discard.begin();
 	while (discard_iter != discard.end())
@@ -338,6 +346,7 @@ void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
 		}
 		else discard_iter++;
 	}
+//TAU_PROFILE_STOP(discardtimer);
 	while (!intra_lp_output.empty() && intra_lp_output.front()->t < gvt) 
 	{
 		Message* msg = intra_lp_output.front();
@@ -434,6 +443,7 @@ void LogicalProcess<X>::processInput()
 					void* data = chk_pt.back()->data;
 					model->tL = chk_pt.back()->ti;
 					model->restore_state(data);
+					model->reported = chk_pt.back()->reported;
 					// Reposition the model in the schedule
 					double h = model->ta();
 					if (h < DBL_MAX)
@@ -534,6 +544,7 @@ void LogicalProcess<X>::exec_event(Atomic<X>* model, bool internal, Time t)
 	c->tf = t;
 	c->model = model;
 	c->data = model->save_state();
+	c->reported = model->reported;
 	chk_pt.push_back(c); 
 	garbage_count++;
 	// Compute the next state
@@ -555,7 +566,7 @@ void LogicalProcess<X>::exec_event(Atomic<X>* model, bool internal, Time t)
 		sched.schedule(model,tN);
 	}
 	else sched.schedule(model,Time::Inf());
-	model->active = false;
+	model->reported = model->active = false;
 }
 
 template <class X>
@@ -699,6 +710,8 @@ bool LogicalProcess<X>::patch(Message* msg)
 			model->tL = tL;
 			c->model = model;
 			c->data = data;
+			c->reported = model->reported;
+			model->reported = false;
 			typename adevs::ulist<CheckPoint>::iterator iter;
 			for (iter = chk_pt.begin(); iter != chk_pt.end(); iter++)
 			{

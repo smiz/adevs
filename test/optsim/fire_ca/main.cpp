@@ -75,7 +75,7 @@ void simulateSpace()
 			fireCell* cell = new fireCell(config->get_fuel(x,y),
 				config->get_fire(x,y),x,y);
 			cell_space->add(cell,x,y);
-			cell->setPrefLP(x/(config->get_width()/omp_get_max_threads()));
+//			cell->setPrefLP(x/(config->get_width()/omp_get_max_threads()));
 			snap_shot[x][y] = cell->getState();
 		}
 	}
@@ -115,19 +115,7 @@ void simulateSpace()
 	}
 	if (opt_sim != NULL)
 	{
-		for (int i = 0; i < opt_sim->getNumLPs(); i++)
-		{
-			adevs::LP_perf_t pdata = opt_sim->getPerfData(i);
-			cout << "LP " << i << ": cancelled output = " << pdata.canceled_output 
-				<<  " , rollbacks = " << pdata.rollbacks 
-				<<  " , intra LP messages canceled = " << pdata.canceled_intra_lp_output
-				<<  " , stragglers = " << pdata.stragglers
-				<<  " , patches = " << pdata.patches
-				<<  " , early cancels = " << pdata.destroyed_in_input
-				<<  " , msgs = " << pdata.msg_count 
-				<<  " , checkpoints = " << pdata.chk_pt_count 
-				<< endl;
-		}
+		cout << "early output = " << opt_sim->getEarlyOutputCount() << endl; 
 	}
 	if (sim != NULL) delete sim;
 	delete cell_space;

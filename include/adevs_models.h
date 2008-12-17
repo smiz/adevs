@@ -36,6 +36,7 @@ template <class X> class Atomic;
 template <class X, class T> class Schedule;
 template <class X> class Simulator;
 // These predeclerations are needed to support the optimistic simulator
+template <class X> class OptSimulator;
 template <class X> class LogicalProcess;
 
 /**
@@ -150,7 +151,6 @@ template <class X> class Atomic: public Devs<X>
 			q_index = 0; // The Schedule requires this to be zero
 			active = false;
 			lp = NULL; // This is created by the OptSimulator if it is needed
-			lp_pick = -1;
 		}
 		/// Internal transition function.
 		virtual void delta_int() = 0;
@@ -193,10 +193,6 @@ template <class X> class Atomic: public Devs<X>
 		}
 		/// Returns a pointer to this model.
 		Atomic<X>* typeIsAtomic() { return this; }
-		/// Assign this model to a particular logical process
-		void setPrefLP(char pick) { lp_pick = pick; }
-		/// Get the logical process that this model wants to be assigned to
-		char getPrefLP() const { return lp_pick; }
 
 	protected:
 		/**
@@ -210,9 +206,9 @@ template <class X> class Atomic: public Devs<X>
 	private:
 
 		friend class Simulator<X>;
+		friend class OptSimulator<X>;
 		friend class Schedule<X,double>;
 		friend class Schedule<X,Time>;
-		friend class LogicalProcess<X>;
 
 		// Time of last event
 		Time tL;
@@ -224,8 +220,6 @@ template <class X> class Atomic: public Devs<X>
 		LogicalProcess<X>* lp;
 		// Has this model been actived?
 		bool active;
-		// Prefered logical process
-		char lp_pick;
 };
 
 /**

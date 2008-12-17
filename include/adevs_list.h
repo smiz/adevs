@@ -69,6 +69,7 @@ template <typename T> class ulist
 		bool empty() const { return head == NULL; }
 		iterator begin() const { return iterator(head); }
 		iterator end() const { return iterator(NULL); }
+		void erase(T* item) { erase(iterator(item)); }
 		// If free_list is not NULL, the removed it is pushed onto its back 
 		iterator erase(iterator pos, ulist<T>* free_list = NULL)
 		{
