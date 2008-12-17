@@ -360,7 +360,7 @@ void OptSimulator<X>::schedule(Atomic<X>* a, Time t)
 	}
 	if (dt == DBL_MAX)
 		sched.schedule(a,DBL_MAX);
-	if (0.0 < dt)
+	else if (0.0 < dt)
 		sched.schedule(a,Time(t.t+dt,0));
 	else
 		sched.schedule(a,Time(t.t,t.c+1));
