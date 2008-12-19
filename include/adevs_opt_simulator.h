@@ -13,18 +13,6 @@
 namespace adevs
 {
 
-class CheckPoint
-{
-	public:
-		CheckPoint(Time tL, void* data):
-			tL(tL),data(data){}
-		Time getTime() { return tL; }
-		void* getData() { return data; }
-	private:
-		Time tL;
-		void* data;
-};
-
 template <typename X> class LogicalProcess:
 	public ulist<LogicalProcess<X> >::one_list
 {
@@ -37,12 +25,14 @@ template <typename X> class LogicalProcess:
 			is_pending = false;
 			spec = true;
 			ta = DBL_MAX;
+			targets = outputs = NULL;
 		}
 		double ta;
 		bool spec;
-		CheckPoint* checkpoint;
+		void* checkpoint;
 		bool is_pending;
 		Atomic<X>* model;
+		Bag<Event<X> > *targets, *outputs; 
 		void Lock() { omp_set_lock(&lock); }
 		void Unlock() { omp_unset_lock(&lock); }
 		bool TryLock() { return omp_test_lock(&lock); }
@@ -101,13 +91,14 @@ template <class X> class OptSimulator:
 		ulist<LogicalProcess<X> > pending;
 		/// Pools of preallocated, commonly used objects
 		object_pool<Bag<X> > io_pool;
-		object_pool<Bag<Event<X> > > recv_pool;
+		object_pool<Bag<Event<X> > >* recv_pool;
 
 		void inject_event(Atomic<X>* model, X& value);	
 		void exec_event(Atomic<X>* model, bool internal, Time t);
 		void schedule(Atomic<X>* model, Time t);
 		void init(Devs<X>* model);
-		void route(Network<X>* parent, Devs<X>* src, X& x);
+		void route(Network<X>* parent, Devs<X>* src, X& x, int thrd_id,
+				Bag<Event<X> >* targets = NULL, Bag<Event<X> >* outputs = NULL);
 		void speculate(int thread_num);
 		void simSafe(double tend);
 		void cleanup(Atomic<X>* model);
@@ -117,6 +108,8 @@ template <class X>
 OptSimulator<X>::OptSimulator(Devs<X>* model):
 	AbstractSimulator<X>()
 {
+	int thread_count = omp_get_max_threads();
+	recv_pool = new object_pool<Bag<Event<X> > >[thread_count];
 	pending_size = early_output = 0;
 	omp_init_lock(&pending_lock);
 	init(model);
@@ -147,7 +140,10 @@ void OptSimulator<X>::speculate(int thread_num)
 {
 	while (true)
 	{
-		#pragma omp flush(halt)
+		while (!halt && pending_size == 0)
+		{
+			#pragma omp flush(halt,pending_size)
+		}
 		if (halt) return;
 		// Find a model in the schedule that does not have a checkpoint
 		LogicalProcess<X>* lp = NULL;
@@ -165,28 +161,20 @@ void OptSimulator<X>::speculate(int thread_num)
 			// If it has not had an output computed yet
 			if (lp->ta < DBL_MAX && lp->model->x == NULL && lp->spec)
 			{
+				lp->spec = false;
 				// Speculate on a value
 				lp->model->output_func(*(lp->model->y));
-				lp->spec = false;
-/*				// Speculate on the state
-				void* data = model->save_state();
-				if (data != NULL)
+				// Route each event in y
+				for (typename Bag<X>::iterator y_iter = lp->model->y->begin(); 
+					y_iter != lp->model->y->end(); y_iter++)
 				{
-					Time tN = model->tL;
-					if (0.0 < ta)
-					{
-						tN.t += ta;
-						tN.c = 0;
-					}
-					else tN.c++;
-					model->lp->checkpoint = new CheckPoint(model->tL,data);
-					model->delta_int();
-					model->tL = tN;
-					if (model->y->empty())
-					{
-						schedule(model,tN);
-					}
-				} */
+					route(lp->model->getParent(),lp->model,*y_iter,thread_num,lp->targets,lp->outputs);
+				}
+				// Speculate on the state
+				if ((lp->checkpoint = lp->model->save_state()) != NULL)
+				{
+					lp->model->delta_int();
+				}
 			} 
 			lp->Unlock();
 		}
@@ -201,7 +189,6 @@ void OptSimulator<X>::simSafe(double tstop)
 	{
 		// Find the imminent models and the next event time
 		t = sched.minPriority();
-// std::cerr << "sched/imm = " << sched.getSize() << " " << imm.size() << " " << pending_size << std::endl;
 		if (tstop < t.t || t.t == DBL_MAX)
 		{
 			halt = true;
@@ -221,15 +208,28 @@ void OptSimulator<X>::simSafe(double tstop)
 			{
 				model->lp->spec = false;
 				model->output_func(*(model->y));
+				// Route each event in y
+				for (typename Bag<X>::iterator y_iter = model->y->begin(); 
+					y_iter != model->y->end(); y_iter++)
+				{
+					route(model->getParent(),model,*y_iter,0);
+				}
 			}
-			else early_output++;
-			model->lp->Unlock();
-			// Route each event in y
-			for (typename Bag<X>::iterator y_iter = model->y->begin(); 
-				y_iter != model->y->end(); y_iter++)
+			else
 			{
-				route(model->getParent(),model,*y_iter);
+				early_output++;
+				for (typename Bag<Event<X> >::iterator y_iter = model->lp->targets->begin();
+						y_iter != model->lp->targets->end(); y_iter++)
+				{
+					inject_event((*y_iter).model->typeIsAtomic(),(*y_iter).value);
+				}
+				for (typename Bag<Event<X> >::iterator y_iter = model->lp->outputs->begin();
+						y_iter != model->lp->outputs->end(); y_iter++)
+				{
+					notify_output_listeners((*y_iter).model,(*y_iter).value,sched.minPriority().t);
+				}
 			}
+			model->lp->Unlock();
 		}
 		// Compute new states for the imminent and active models and put
 		// them back into the schedule
@@ -283,6 +283,14 @@ void OptSimulator<X>::cleanup(Atomic<X>* model)
 		}
 		io_pool.destroy_obj(model->y);
 		model->y = NULL;
+	}
+	if (model->lp->targets != NULL)
+	{
+		model->lp->outputs->clear();
+		model->lp->targets->clear();
+		recv_pool[0].destroy_obj(model->lp->targets);
+		recv_pool[0].destroy_obj(model->lp->outputs);
+		model->lp->targets = NULL;
 	}
 	model->active = false;
 }
@@ -345,18 +353,23 @@ void OptSimulator<X>::schedule(Atomic<X>* a, Time t)
 	else
 		sched.schedule(a,Time(t.t,t.c+1));
 	a->y = io_pool.make_obj();
+	a->lp->targets = recv_pool[0].make_obj();
+	a->lp->outputs = recv_pool[0].make_obj();
 }
 
 template <class X>
-void OptSimulator<X>::route(Network<X>* parent, Devs<X>* src, X& x)
+void OptSimulator<X>::route(Network<X>* parent, Devs<X>* src, X& x, int thrd, Bag<Event<X> >* target, Bag<Event<X> >* output)
 {
 	// Notify event listeners if this is an output event
 	if (parent != src)
-		notify_output_listeners(src,x,sched.minPriority().t);
+	{
+		if (target == NULL) notify_output_listeners(src,x,sched.minPriority().t);
+		else output->insert(Event<X>(src,x));
+	}
 	// No one to do the routing, so return
 	if (parent == NULL) return;
 	// Compute the set of receivers for this value
-	Bag<Event<X> >* recvs = recv_pool.make_obj();
+	Bag<Event<X> >* recvs = recv_pool[thrd].make_obj();
 	parent->route(x,src,*recvs);
 	// Deliver the event to each of its targets
 	Atomic<X>* amodel = NULL;
@@ -376,22 +389,23 @@ void OptSimulator<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 		amodel = (*recv_iter).model->typeIsAtomic();
 		if (amodel != NULL)
 		{
-			inject_event(amodel,(*recv_iter).value);
+			if (target == NULL) inject_event(amodel,(*recv_iter).value);
+			else target->insert(*recv_iter);
 		}
 		// if this is an external output from the parent model
 		else if ((*recv_iter).model == parent)
 		{
-			route(parent->getParent(),parent,(*recv_iter).value);
+			route(parent->getParent(),parent,(*recv_iter).value,thrd,target,output);
 		}
 		// otherwise it is an input to a coupled model
 		else
 		{
 			route((*recv_iter).model->typeIsNetwork(),
-			(*recv_iter).model,(*recv_iter).value);
+			(*recv_iter).model,(*recv_iter).value,thrd,target,output);
 		}
 	}
 	recvs->clear();
-	recv_pool.destroy_obj(recvs);
+	recv_pool[thrd].destroy_obj(recvs);
 }
 
 template <class X>
@@ -413,25 +427,22 @@ template <class X>
 void OptSimulator<X>::exec_event(Atomic<X>* model, bool internal, Time t)
 {
 	// If we already have a state for this model
-	CheckPoint* c = model->lp->checkpoint;
-	if (c != NULL)
+	if (model->lp->checkpoint != NULL)
 	{
 		bool good = false;
 		// If the state is good, then we are done
 		if (model->x == NULL)
 		{
-			notify_state_listeners(model,t.t,c->getData());
+			notify_state_listeners(model,t.t);
 			good = true;
 		}
 		// Otherwise restore the state to the last event time
 		else
 		{
-			model->restore_state(c->getData());
-			model->tL = c->getTime();
+			model->restore_state(model->lp->checkpoint);
 		}
 		// Remove the checkpoint
-		model->gc_state(c->getData());
-		delete c;
+		model->gc_state(model->lp->checkpoint);
 		model->lp->checkpoint = NULL;
 		// If it was a good checkpoint, then we are done
 		if (good) return;
