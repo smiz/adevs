@@ -92,21 +92,22 @@ template <class X> class OptSimulator:
 		/// Pools of preallocated, commonly used objects
 		object_pool<Bag<X> > io_pool;
 		object_pool<Bag<Event<X> > >* recv_pool;
+		const int SAFE_THREAD;
 
 		void inject_event(Atomic<X>* model, X& value);	
 		void exec_event(Atomic<X>* model, bool internal, Time t);
-		void schedule(Atomic<X>* model, Time t);
+		void schedule(Atomic<X>* model, Time t, bool unlock_lp = false);
 		void init(Devs<X>* model);
 		void route(Network<X>* parent, Devs<X>* src, X& x, int thrd_id,
 				Bag<Event<X> >* targets = NULL, Bag<Event<X> >* outputs = NULL);
 		void speculate(int thread_num);
 		void simSafe(double tend);
-		void cleanup(Atomic<X>* model);
 }; 
 
 template <class X>
 OptSimulator<X>::OptSimulator(Devs<X>* model):
-	AbstractSimulator<X>()
+	AbstractSimulator<X>(),
+	SAFE_THREAD(0)
 {
 	int thread_count = omp_get_max_threads();
 	recv_pool = new object_pool<Bag<Event<X> > >[thread_count];
@@ -124,14 +125,12 @@ OptSimulator<X>::~OptSimulator<X>()
 template <class X>
 void OptSimulator<X>::execUntil(double stop_time)
 {
-	int i;
 	halt = false;
-	int thread_count = omp_get_max_threads();
-	#pragma omp parallel for default(shared) private(i)
-	for (i = 0; i < thread_count; i++)
+	#pragma omp parallel
 	{
-		if (i == 0) simSafe(stop_time);
-		else speculate(i);
+		int thread_num = omp_get_thread_num();
+		if (thread_num == SAFE_THREAD) simSafe(stop_time);
+		else speculate(thread_num);
 	}
 }
 
@@ -140,28 +139,28 @@ void OptSimulator<X>::speculate(int thread_num)
 {
 	while (true)
 	{
+		LogicalProcess<X>* lp = NULL;
 		while (!halt && pending_size == 0)
 		{
 			#pragma omp flush(halt,pending_size)
 		}
 		if (halt) return;
 		// Find a model in the schedule that does not have a checkpoint
-		LogicalProcess<X>* lp = NULL;
 		omp_set_lock(&pending_lock);
 	   	if (!pending.empty())
 		{
 			pending_size--;
-			lp = pending.back();
-			pending.pop_back();
+			lp = pending.front();
+			pending.pop_front();
 			lp->is_pending = false;
 		}
 		omp_unset_lock(&pending_lock);
-		if (lp != NULL && lp->TryLock())
+		if (lp != NULL)
 		{
+			lp->Lock();
 			// If it has not had an output computed yet
-			if (lp->ta < DBL_MAX && lp->model->x == NULL && lp->spec)
+			if (lp->ta < DBL_MAX && lp->spec)
 			{
-				lp->spec = false;
 				// Speculate on a value
 				lp->model->output_func(*(lp->model->y));
 				// Route each event in y
@@ -175,8 +174,10 @@ void OptSimulator<X>::speculate(int thread_num)
 				{
 					lp->model->delta_int();
 				}
+				#pragma omp flush
 			} 
-			lp->Unlock();
+			lp->spec = false;
+			lp->Unlock(); // This flushes the spec flag
 		}
 	}
 }
@@ -201,23 +202,30 @@ void OptSimulator<X>::simSafe(double tstop)
 			imm_iter != imm.end(); imm_iter++)
 		{
 			Atomic<X>* model = *imm_iter;
-			// If the output for this model has not already been computed,
-			// then get it
-			model->lp->Lock();
-			if (model->lp->spec)
+			// Wait for speculation on this model to finish
+			if (model->lp->spec && model->lp->TryLock())
 			{
-				model->lp->spec = false;
-				model->output_func(*(model->y));
-				// Route each event in y
-				for (typename Bag<X>::iterator y_iter = model->y->begin(); 
-					y_iter != model->y->end(); y_iter++)
+				// If it has not had an output computed yet
+				if (model->lp->spec)
 				{
-					route(model->getParent(),model,*y_iter,0);
+					model->output_func(*(model->y));
+					// Route each event in y
+					for (typename Bag<X>::iterator y_iter = model->y->begin(); 
+						y_iter != model->y->end(); y_iter++)
+					{
+						route(model->getParent(),model,*y_iter,SAFE_THREAD);
+					}
+					model->lp->spec = false;
 				}
+				model->lp->Unlock();
 			}
 			else
 			{
 				early_output++;
+				while (model->lp->spec)
+				{
+					#pragma omp flush
+				}
 				for (typename Bag<Event<X> >::iterator y_iter = model->lp->targets->begin();
 						y_iter != model->lp->targets->end(); y_iter++)
 				{
@@ -229,70 +237,29 @@ void OptSimulator<X>::simSafe(double tstop)
 					notify_output_listeners((*y_iter).model,(*y_iter).value,sched.minPriority().t);
 				}
 			}
-			model->lp->Unlock();
-		}
-		// Compute new states for the imminent and active models and put
-		// them back into the schedule
-		for (typename Bag<Atomic<X>*>::iterator iter = imm.begin(); 
-			iter != imm.end(); iter++)
-		{
-			(*iter)->lp->Lock();
-			exec_event(*iter,true,t); // Internal and confluent transitions
-			(*iter)->lp->Unlock();
 		}
 		for (typename Bag<Atomic<X>*>::iterator iter = activated.begin(); 
 			iter != activated.end(); iter++)
 		{
 			(*iter)->lp->Lock();
 			exec_event(*iter,false,t); // External transitions
-			cleanup(*iter);
-			schedule(*iter,t);
-			(*iter)->lp->spec = true;
-			(*iter)->lp->Unlock();
+			schedule(*iter,t,true); // Unlocks the lp as soon as it can
+//			(*iter)->lp->Unlock();
+		}
+		for (typename Bag<Atomic<X>*>::iterator iter = imm.begin(); 
+			iter != imm.end(); iter++)
+		{
+			exec_event(*iter,true,t); // Internal and confluent transitions
 		}
 		// Clean up and reschedule the imminent models
 		for (typename Bag<Atomic<X>*>::iterator iter = imm.begin(); 
 			iter != imm.end(); iter++)
 		{
-			(*iter)->lp->Lock();
-			cleanup(*iter);
 			schedule(*iter,t);
-			(*iter)->lp->spec = true;
-			(*iter)->lp->Unlock();
 		}
 		imm.clear();
 		activated.clear();
 	}
-}
-
-template <class X>
-void OptSimulator<X>::cleanup(Atomic<X>* model)
-{
-	if (model->x != NULL)
-	{
-		model->x->clear();
-		io_pool.destroy_obj(model->x);
-		model->x = NULL;
-	}
-	if (model->y != NULL)
-	{
-		if (!model->y->empty())
-		{
-			model->gc_output(*(model->y));
-			model->y->clear();
-		}
-		io_pool.destroy_obj(model->y);
-		model->y = NULL;
-	}
-	if (model->lp->targets != NULL)
-	{
-		model->lp->outputs->clear();
-		model->lp->targets->clear();
-		recv_pool[0].destroy_obj(model->lp->targets);
-		recv_pool[0].destroy_obj(model->lp->outputs);
-		model->lp->targets = NULL;
-	}
-	model->active = false;
 }
 
 template <class X>
@@ -318,53 +285,98 @@ void OptSimulator<X>::init(Devs<X>* model)
 }
 
 template <class X>
-void OptSimulator<X>::schedule(Atomic<X>* a, Time t)
+void OptSimulator<X>::schedule(Atomic<X>* model, Time t, bool unlock_lp)
 {
-	a->tL = t;
-	double dt = a->lp->ta = a->ta();
+	// Clean up its output if there is any
+	if (model->y != NULL)
+	{
+		if (!model->y->empty())
+		{
+			model->gc_output(*(model->y));
+			model->y->clear();
+		}
+		model->lp->outputs->clear();
+		model->lp->targets->clear();
+	}
+	// Compute the time of the next event
+	double dt = model->lp->ta = model->ta();
 	if (dt < 0.0)
 	{
-		exception err("Negative time advance",a);
+		exception err("Negative time advance",model);
 		throw err;
 	}
-	if (omp_test_lock(&pending_lock))
+	// If this model is passive, then remove it from the schedule
+	// and the pending list and take away its IO bags
+	if (dt == DBL_MAX)
 	{
-		if (a->lp->is_pending && dt == DBL_MAX)
+		omp_set_lock(&pending_lock);
+		if (model->lp->is_pending)
 		{
 			pending_size--;
-			pending.erase(a->lp);
-			a->lp->is_pending = false;
+			pending.erase(model->lp);
+			model->lp->is_pending = false;
 		}
-		else if (!a->lp->is_pending && dt < DBL_MAX)
+		model->lp->spec = false; // Make sure this flushes
+		omp_unset_lock(&pending_lock);
+		if (model->y != NULL)
 		{
-			pending_size++;
-			pending.push_back(a->lp);
-			a->lp->is_pending = true;
+			io_pool.destroy_obj(model->y);
+			model->y = NULL;
+			recv_pool[SAFE_THREAD].destroy_obj(model->lp->targets);
+			recv_pool[SAFE_THREAD].destroy_obj(model->lp->outputs);
+			model->lp->outputs = model->lp->targets = NULL;
 		}
+	}
+	// Otherwise put it back into the pending list and the schedule
+	else
+	{
+		if (model->y == NULL)
+		{
+			model->y = io_pool.make_obj();
+			model->lp->targets = recv_pool[SAFE_THREAD].make_obj();
+			model->lp->outputs = recv_pool[SAFE_THREAD].make_obj();
+		}
+		omp_set_lock(&pending_lock);
+		if (!model->lp->is_pending)
+		{
+			model->lp->is_pending = true;
+			pending_size++;
+			pending.push_back(model->lp);
+		}
+		model->lp->spec = true; // Make sure this flushes
 		omp_unset_lock(&pending_lock);
 	}
 	if (dt == DBL_MAX)
-	{
-		sched.schedule(a,DBL_MAX);
-		return;
-	}
-	if (0.0 < dt)
-		sched.schedule(a,Time(t.t+dt,0));
+		sched.schedule(model,DBL_MAX);
+	else if (0.0 < dt)
+		sched.schedule(model,Time(t.t+dt,0));
 	else
-		sched.schedule(a,Time(t.t,t.c+1));
-	a->y = io_pool.make_obj();
-	a->lp->targets = recv_pool[0].make_obj();
-	a->lp->outputs = recv_pool[0].make_obj();
+		sched.schedule(model,Time(t.t,t.c+1));
+	// Return the input bag to the pool
+	if (model->x != NULL)
+	{
+		model->x->clear();
+		io_pool.destroy_obj(model->x);
+		model->x = NULL;
+	}
+	// Remember the time of the last event
+	model->tL = t;
+	// Clear the active flag
+	model->active = false;
+	if (unlock_lp) model->lp->Unlock();
 }
 
 template <class X>
-void OptSimulator<X>::route(Network<X>* parent, Devs<X>* src, X& x, int thrd, Bag<Event<X> >* target, Bag<Event<X> >* output)
+void OptSimulator<X>::route(Network<X>* parent, Devs<X>* src, X& x, int thrd,
+		Bag<Event<X> >* target, Bag<Event<X> >* output)
 {
 	// Notify event listeners if this is an output event
 	if (parent != src)
 	{
-		if (target == NULL) notify_output_listeners(src,x,sched.minPriority().t);
-		else output->insert(Event<X>(src,x));
+		if (output == NULL)
+			notify_output_listeners(src,x,sched.minPriority().t);
+		else
+			output->insert(Event<X>(src,x));
 	}
 	// No one to do the routing, so return
 	if (parent == NULL) return;
