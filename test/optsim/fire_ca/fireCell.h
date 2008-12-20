@@ -34,9 +34,8 @@ class fireCell: public adevs::Atomic<CellEvent>
 			Phase phase;
 			double fuel;
 			int heat;
-			state_t* next;
 			state_t(Phase phase, double fuel, int heat):
-				phase(phase),fuel(fuel),heat(heat),next(NULL){}
+				phase(phase),fuel(fuel),heat(heat){}
 			void setState(Phase phase, double fuel, int heat)
 			{
 				this->phase = phase;
@@ -76,10 +75,6 @@ class fireCell: public adevs::Atomic<CellEvent>
 		void restore_state(void* data);
 		// Delete an old state
 		void gc_state(void* data);
-		// Initialize the checkpoint pools
-		static void set_checkpoints(int lp_count);
-		// Delete the checkpoint pool
-		static void cleanup_checkpoints();
 	protected:
 		// The phase of the cell
 		Phase phase;
@@ -89,9 +84,6 @@ class fireCell: public adevs::Atomic<CellEvent>
 		int heat;
 		// Cell location
 		const long int x, y;
-		// Free list of structures for saving the model state
-		static state_t *chk_pt_list;
-		static int num_lps;
 		// Time required for the fire to spread to a neighbor
 		static const double move_rate;
 };

@@ -174,7 +174,6 @@ void OptSimulator<X>::speculate(int thread_num)
 				{
 					lp->model->delta_int();
 				}
-				#pragma omp flush
 			} 
 			lp->spec = false;
 			lp->Unlock(); // This flushes the spec flag
@@ -201,31 +200,32 @@ void OptSimulator<X>::simSafe(double tstop)
 		for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
 			imm_iter != imm.end(); imm_iter++)
 		{
+			bool copy = false;
 			Atomic<X>* model = *imm_iter;
-			// Wait for speculation on this model to finish
-			if (model->lp->spec && model->lp->TryLock())
+			model->lp->Lock();
+			// If it has not had an output computed yet
+			if (model->lp->spec)
 			{
-				// If it has not had an output computed yet
-				if (model->lp->spec)
+				// Tell others not to speculate on this model
+				model->lp->spec = false;
+				// Compute its output
+				model->output_func(*(model->y));
+				// Route each event in y
+				for (typename Bag<X>::iterator y_iter = model->y->begin(); 
+					y_iter != model->y->end(); y_iter++)
 				{
-					model->output_func(*(model->y));
-					// Route each event in y
-					for (typename Bag<X>::iterator y_iter = model->y->begin(); 
-						y_iter != model->y->end(); y_iter++)
-					{
-						route(model->getParent(),model,*y_iter,SAFE_THREAD);
-					}
-					model->lp->spec = false;
+					route(model->getParent(),model,*y_iter,SAFE_THREAD);
 				}
-				model->lp->Unlock();
 			}
-			else
+			// Otherwise just copy the precomputed values when the lock
+			// is released
+			else copy = true;
+			// Release the lock
+			model->lp->Unlock();
+			// Copy the speculative output if it exists
+			if (copy)
 			{
 				early_output++;
-				while (model->lp->spec)
-				{
-					#pragma omp flush
-				}
 				for (typename Bag<Event<X> >::iterator y_iter = model->lp->targets->begin();
 						y_iter != model->lp->targets->end(); y_iter++)
 				{
@@ -244,7 +244,6 @@ void OptSimulator<X>::simSafe(double tstop)
 			(*iter)->lp->Lock();
 			exec_event(*iter,false,t); // External transitions
 			schedule(*iter,t,true); // Unlocks the lp as soon as it can
-//			(*iter)->lp->Unlock();
 		}
 		for (typename Bag<Atomic<X>*>::iterator iter = imm.begin(); 
 			iter != imm.end(); iter++)
@@ -346,6 +345,9 @@ void OptSimulator<X>::schedule(Atomic<X>* model, Time t, bool unlock_lp)
 		model->lp->spec = true; // Make sure this flushes
 		omp_unset_lock(&pending_lock);
 	}
+	// Done with the shared variables
+	if (unlock_lp) model->lp->Unlock();
+	// Put the model into the schedule
 	if (dt == DBL_MAX)
 		sched.schedule(model,DBL_MAX);
 	else if (0.0 < dt)
@@ -363,7 +365,6 @@ void OptSimulator<X>::schedule(Atomic<X>* model, Time t, bool unlock_lp)
 	model->tL = t;
 	// Clear the active flag
 	model->active = false;
-	if (unlock_lp) model->lp->Unlock();
 }
 
 template <class X>
