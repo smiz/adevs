@@ -3,25 +3,6 @@
 #include <iostream>
 using namespace std;
 
-fireCell::state_t* fireCell::chk_pt_list = NULL;
-int fireCell::num_lps = 0;
-
-void fireCell::set_checkpoints(int lp_count)
-{
-	num_lps = lp_count;
-	chk_pt_list = NULL; 
-}
-
-void fireCell::cleanup_checkpoints()
-{
-	while (chk_pt_list != NULL)
-	{
-		state_t* tmp = chk_pt_list;
-		chk_pt_list = chk_pt_list->next;
-		delete tmp;
-	}
-}
-
 // Movement rate of the fire
 const double fireCell::move_rate = 1.0;
 
@@ -153,14 +134,6 @@ fireCell::state_t fireCell::getState(const void* state_data)
 
 void* fireCell::save_state()
 {
-	if (chk_pt_list != NULL)
-	{
-		state_t* s = chk_pt_list;
-		chk_pt_list = chk_pt_list->next;
-		s->next = NULL;
-		s->setState(phase,fuel,heat);
-		return s;
-	}
 	return new state_t(phase,fuel,heat);
 }
 
@@ -174,8 +147,6 @@ void fireCell::restore_state(void* data)
 
 void fireCell::gc_state(void* data)
 {
-	state_t* state = static_cast<state_t*>(data);
-	state->next = chk_pt_list;
-	chk_pt_list = state;
+	delete static_cast<state_t*>(data);
 }
 
