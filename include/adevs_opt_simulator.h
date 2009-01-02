@@ -13,32 +13,36 @@
 namespace adevs
 {
 
-template <typename X> class LogicalProcess:
-	public ulist<LogicalProcess<X> >::one_list
+template <typename X> class LogicalProcess
 {
 	public:
-		LogicalProcess():
-			ulist<LogicalProcess<X> >::one_list()
+		LogicalProcess()
 		{
-			omp_init_lock(&lock);
 			checkpoint = NULL;
-			is_pending = false;
-			spec = true;
-			ta = DBL_MAX;
 			targets = outputs = NULL;
+			needs_update = false;
+			is_safe = true;
 		}
-		double ta;
-		bool spec;
+		bool needs_update;
+		bool is_safe;
 		void* checkpoint;
-		bool is_pending;
 		Atomic<X>* model;
 		Bag<Event<X> > *targets, *outputs; 
-		void Lock() { omp_set_lock(&lock); }
-		void Unlock() { omp_unset_lock(&lock); }
-		bool TryLock() { return omp_test_lock(&lock); }
-		~LogicalProcess() { omp_destroy_lock(&lock); }
-	private:
-		omp_lock_t lock;
+		int wait_for_safe()
+		{
+			int stalled = 0;
+			bool* is_safe_ptr = &is_safe;
+			while (!(*is_safe_ptr))
+			{
+				stalled = 1;
+				#pragma omp flush(is_safe_ptr)
+			}
+			if (!needs_update)
+			{
+				#pragma omp flush
+			} 
+			return stalled;
+		}
 };
 
 /**
@@ -78,6 +82,14 @@ template <class X> class OptSimulator:
 		~OptSimulator();
 		/// Get the number of early outputs
 		unsigned getEarlyOutputCount() const { return early_output; }
+		/// Get the number of stalls while waiting for speculation
+		unsigned getStallCount() const { return int_stalls+ext_stalls; }
+		/// Get the number of stalls on external events
+		unsigned getExtStallCount() const { return ext_stalls; }
+		/// Get the number of stalls on internal events
+		unsigned getIntStallCount() const { return int_stalls; }
+		/// Get the number of outputs computed just in time
+		unsigned getInTimeOutputCount() const { return jit_output; }
 	private:
 		/// The event schedule
 		Schedule<X,Time> sched;
@@ -86,40 +98,41 @@ template <class X> class OptSimulator:
 		/// List of models activated by input
 		Bag<Atomic<X>*> activated;
 		bool halt;
-		omp_lock_t pending_lock;
-		unsigned early_output, pending_size;
-		ulist<LogicalProcess<X> > pending;
+		unsigned early_output, jit_output, ext_stalls, int_stalls;
+		LogicalProcess<X>** pending;
 		/// Pools of preallocated, commonly used objects
 		object_pool<Bag<X> > io_pool;
 		object_pool<Bag<Event<X> > >* recv_pool;
 		const int SAFE_THREAD;
-
+		const int thread_count;
 		void inject_event(Atomic<X>* model, X& value);	
 		void exec_event(Atomic<X>* model, bool internal, Time t);
-		void schedule(Atomic<X>* model, Time t, bool unlock_lp = false);
+		void schedule(Atomic<X>* model, Time t);
 		void init(Devs<X>* model);
 		void route(Network<X>* parent, Devs<X>* src, X& x, int thrd_id,
 				Bag<Event<X> >* targets = NULL, Bag<Event<X> >* outputs = NULL);
 		void speculate(int thread_num);
 		void simSafe(double tend);
+		void prep_for_speculation(Atomic<X>* model);
+		void clean_up_output(Atomic<X>* model);
 }; 
 
 template <class X>
 OptSimulator<X>::OptSimulator(Devs<X>* model):
 	AbstractSimulator<X>(),
-	SAFE_THREAD(0)
+	SAFE_THREAD(0),
+	thread_count(omp_get_max_threads())
 {
-	int thread_count = omp_get_max_threads();
 	recv_pool = new object_pool<Bag<Event<X> > >[thread_count];
-	pending_size = early_output = 0;
-	omp_init_lock(&pending_lock);
+	pending = new LogicalProcess<X>*[thread_count];
+	for (int i = 0; i < thread_count; i++) pending[i] = NULL;
+	jit_output = ext_stalls = int_stalls = early_output = 0;
 	init(model);
 }
 
 template <class X>
 OptSimulator<X>::~OptSimulator<X>()
 {
-	omp_destroy_lock(&pending_lock);
 }
 
 template <class X>
@@ -137,50 +150,44 @@ void OptSimulator<X>::execUntil(double stop_time)
 template <class X>
 void OptSimulator<X>::speculate(int thread_num)
 {
+	LogicalProcess<X>** lp_ptr = &(pending[thread_num]);
 	while (true)
 	{
-		LogicalProcess<X>* lp = NULL;
-		while (!halt && pending_size == 0)
+		while (!halt && *lp_ptr == NULL)
 		{
-			#pragma omp flush(halt,pending_size)
+			#pragma omp flush(halt,lp_ptr)
 		}
 		if (halt) return;
-		// Find a model in the schedule that does not have a checkpoint
-		omp_set_lock(&pending_lock);
-	   	if (!pending.empty())
+		#pragma omp flush
+		LogicalProcess<X>* lp = *lp_ptr;
+		if (!lp->model->y->empty())
 		{
-			pending_size--;
-			lp = pending.front();
-			pending.pop_front();
-			lp->is_pending = false;
+			lp->model->gc_output(*(lp->model->y));
+			lp->model->y->clear();
 		}
-		omp_unset_lock(&pending_lock);
-		if (lp != NULL)
+		lp->outputs->clear();
+		lp->targets->clear();
+		// Speculate on a value
+		lp->model->output_func(*(lp->model->y));
+		// Route each event in y
+		for (typename Bag<X>::iterator y_iter = lp->model->y->begin(); 
+				y_iter != lp->model->y->end(); y_iter++)
 		{
-			lp->Lock();
-			// If it has not had an output computed yet
-			if (lp->ta < DBL_MAX && lp->spec)
-			{
-				// Speculate on a value
-				lp->model->output_func(*(lp->model->y));
-				// Route each event in y
-				for (typename Bag<X>::iterator y_iter = lp->model->y->begin(); 
-					y_iter != lp->model->y->end(); y_iter++)
-				{
-					route(lp->model->getParent(),lp->model,*y_iter,thread_num,lp->targets,lp->outputs);
-				}
-				// Speculate on the state
-				if ((lp->checkpoint = lp->model->save_state()) != NULL)
-				{
-					lp->model->delta_int();
-				}
-			} 
-			lp->spec = false;
-			lp->Unlock(); // This flushes the spec flag
+			route(lp->model->getParent(),lp->model,*y_iter,thread_num,lp->targets,lp->outputs);
 		}
+		// Speculate on the state
+		if ((lp->checkpoint = lp->model->save_state()) != NULL)
+		{
+			lp->model->delta_int();
+		}
+		#pragma omp flush
+		bool* safe_ptr = &(lp->is_safe);
+		*safe_ptr = true;
+		*lp_ptr = NULL;
+		#pragma omp flush(lp_ptr,safe_ptr)
 	}
 }
-		
+	
 template <class X>
 void OptSimulator<X>::simSafe(double tstop)
 {
@@ -200,14 +207,12 @@ void OptSimulator<X>::simSafe(double tstop)
 		for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
 			imm_iter != imm.end(); imm_iter++)
 		{
-			bool copy = false;
 			Atomic<X>* model = *imm_iter;
-			model->lp->Lock();
 			// If it has not had an output computed yet
-			if (model->lp->spec)
+			if (model->lp->needs_update)
 			{
-				// Tell others not to speculate on this model
-				model->lp->spec = false;
+				model->y = io_pool.make_obj();
+				jit_output++;
 				// Compute its output
 				model->output_func(*(model->y));
 				// Route each event in y
@@ -219,13 +224,12 @@ void OptSimulator<X>::simSafe(double tstop)
 			}
 			// Otherwise just copy the precomputed values when the lock
 			// is released
-			else copy = true;
-			// Release the lock
-			model->lp->Unlock();
-			// Copy the speculative output if it exists
-			if (copy)
+			else
 			{
 				early_output++;
+				// Make sure there are no outstanding parallel updates
+				int_stalls += model->lp->wait_for_safe();
+				// Copy the output values to their destinations
 				for (typename Bag<Event<X> >::iterator y_iter = model->lp->targets->begin();
 						y_iter != model->lp->targets->end(); y_iter++)
 				{
@@ -238,17 +242,18 @@ void OptSimulator<X>::simSafe(double tstop)
 				}
 			}
 		}
-		for (typename Bag<Atomic<X>*>::iterator iter = activated.begin(); 
-			iter != activated.end(); iter++)
-		{
-			(*iter)->lp->Lock();
-			exec_event(*iter,false,t); // External transitions
-			schedule(*iter,t,true); // Unlocks the lp as soon as it can
-		}
 		for (typename Bag<Atomic<X>*>::iterator iter = imm.begin(); 
 			iter != imm.end(); iter++)
 		{
+			assert((*iter)->lp->wait_for_safe() == 0);
 			exec_event(*iter,true,t); // Internal and confluent transitions
+		}
+		for (typename Bag<Atomic<X>*>::iterator iter = activated.begin(); 
+			iter != activated.end(); iter++)
+		{
+			ext_stalls += (*iter)->lp->wait_for_safe();
+			exec_event(*iter,false,t); // External transitions
+			schedule(*iter,t); 
 		}
 		// Clean up and reschedule the imminent models
 		for (typename Bag<Atomic<X>*>::iterator iter = imm.begin(); 
@@ -284,9 +289,19 @@ void OptSimulator<X>::init(Devs<X>* model)
 }
 
 template <class X>
-void OptSimulator<X>::schedule(Atomic<X>* model, Time t, bool unlock_lp)
+void OptSimulator<X>::prep_for_speculation(Atomic<X>* model)
 {
-	// Clean up its output if there is any
+	if (model->y == NULL) model->y = io_pool.make_obj();
+	if (model->lp->outputs == NULL)
+	{
+		model->lp->outputs = recv_pool[SAFE_THREAD].make_obj();
+		model->lp->targets = recv_pool[SAFE_THREAD].make_obj();
+	}
+}
+
+template <class X>
+void OptSimulator<X>::clean_up_output(Atomic<X>* model)
+{
 	if (model->y != NULL)
 	{
 		if (!model->y->empty())
@@ -294,66 +309,72 @@ void OptSimulator<X>::schedule(Atomic<X>* model, Time t, bool unlock_lp)
 			model->gc_output(*(model->y));
 			model->y->clear();
 		}
+		io_pool.destroy_obj(model->y);
+		model->y = NULL;
+	}
+	if (model->lp->outputs != NULL)
+	{
 		model->lp->outputs->clear();
 		model->lp->targets->clear();
-	}
+		recv_pool[SAFE_THREAD].destroy_obj(model->lp->targets);
+		recv_pool[SAFE_THREAD].destroy_obj(model->lp->outputs);
+		model->lp->outputs = model->lp->targets = NULL;
+	} 
+}
+
+template <class X>
+void OptSimulator<X>::schedule(Atomic<X>* model, Time t)
+{
 	// Compute the time of the next event
-	double dt = model->lp->ta = model->ta();
+	double dt = model->ta();
 	if (dt < 0.0)
 	{
 		exception err("Negative time advance",model);
 		throw err;
 	}
-	// If this model is passive, then remove it from the schedule
-	// and the pending list and take away its IO bags
+	// If there is no event, then clean its output objects and remove
+	// it from the schedule
 	if (dt == DBL_MAX)
 	{
-		omp_set_lock(&pending_lock);
-		if (model->lp->is_pending)
-		{
-			pending_size--;
-			pending.erase(model->lp);
-			model->lp->is_pending = false;
-		}
-		model->lp->spec = false; // Make sure this flushes
-		omp_unset_lock(&pending_lock);
-		if (model->y != NULL)
-		{
-			io_pool.destroy_obj(model->y);
-			model->y = NULL;
-			recv_pool[SAFE_THREAD].destroy_obj(model->lp->targets);
-			recv_pool[SAFE_THREAD].destroy_obj(model->lp->outputs);
-			model->lp->outputs = model->lp->targets = NULL;
-		}
-	}
-	// Otherwise put it back into the pending list and the schedule
-	else
-	{
-		if (model->y == NULL)
-		{
-			model->y = io_pool.make_obj();
-			model->lp->targets = recv_pool[SAFE_THREAD].make_obj();
-			model->lp->outputs = recv_pool[SAFE_THREAD].make_obj();
-		}
-		omp_set_lock(&pending_lock);
-		if (!model->lp->is_pending)
-		{
-			model->lp->is_pending = true;
-			pending_size++;
-			pending.push_back(model->lp);
-		}
-		model->lp->spec = true; // Make sure this flushes
-		omp_unset_lock(&pending_lock);
-	}
-	// Done with the shared variables
-	if (unlock_lp) model->lp->Unlock();
-	// Put the model into the schedule
-	if (dt == DBL_MAX)
+		// Clean up its output
+		clean_up_output(model);
+		// Remove it from the schedule
 		sched.schedule(model,DBL_MAX);
-	else if (0.0 < dt)
-		sched.schedule(model,Time(t.t+dt,0));
+	}
+	// Otherwise try to find a thread for it
 	else
-		sched.schedule(model,Time(t.t,t.c+1));
+	{
+		model->lp->needs_update = true; 
+		// Look for an available thread to do the calculation
+		for (int i = 0; i < thread_count && dt > 0.0; i++)
+		{
+			if (i != SAFE_THREAD)
+			{
+				LogicalProcess<X>** lp_ptr = &(pending[i]);
+				#pragma omp flush(lp_ptr)
+				if (*lp_ptr == NULL)
+				{
+					prep_for_speculation(model);
+					#pragma omp flush
+					bool* safe_ptr = &(model->lp->is_safe);
+					*safe_ptr = false;
+					*lp_ptr = model->lp;
+					#pragma omp flush(lp_ptr,safe_ptr)
+					model->lp->needs_update = false;
+					break;
+				}
+			}
+		}
+		if (model->lp->needs_update)
+			clean_up_output(model);
+	}
+	if (dt < DBL_MAX)
+	{
+		if (0.0 < dt)
+			sched.schedule(model,Time(t.t+dt,0));
+		else
+			sched.schedule(model,Time(t.t,t.c+1));
+	}
 	// Return the input bag to the pool
 	if (model->x != NULL)
 	{
