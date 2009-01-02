@@ -5,6 +5,7 @@
 #include <fstream>
 #include <cstdio>
 #include <ctime>
+#include <sys/time.h>
 using namespace std;
 
 // Use the parallel simulator?
@@ -75,7 +76,6 @@ void simulateSpace()
 			fireCell* cell = new fireCell(config->get_fuel(x,y),
 				config->get_fire(x,y),x,y);
 			cell_space->add(cell,x,y);
-//			cell->setPrefLP(x/(config->get_width()/omp_get_max_threads()));
 			snap_shot[x][y] = cell->getState();
 		}
 	}
@@ -115,6 +115,9 @@ void simulateSpace()
 	if (opt_sim != NULL)
 	{
 		cout << "early output = " << opt_sim->getEarlyOutputCount() << endl; 
+		cout << "in time output = " << opt_sim->getInTimeOutputCount() << endl; 
+		cout << "ext stalls = " << opt_sim->getExtStallCount() << endl; 
+		cout << "int stalls = " << opt_sim->getIntStallCount() << endl; 
 	}
 	if (sim != NULL) delete sim;
 	delete cell_space;
@@ -138,9 +141,6 @@ int main(int argc, char** argv)
 		else if (strcmp(argv[i],"-p") == 0)
 		{
 			par_sim = true;
-			int procs = omp_get_num_procs();
-			int thrds = omp_get_max_threads();
-			cout << "Using " << thrds << " threads on " << procs << " processors" << endl;
 		}
 		else if (strcmp(argv[i],"--no-output") == 0)
 		{
@@ -152,9 +152,14 @@ int main(int argc, char** argv)
 		cout << "No data" << endl; 
 		return 0;
 	}
-	double t_start = omp_get_wtime(); 
+	struct timeval tstart, tend;
+	gettimeofday(&tstart,NULL);
 	simulateSpace();
+	gettimeofday(&tend,NULL);
 	// Done
-	cout << "Took " << omp_get_wtime()-t_start << " seconds" << endl;
+	long secs = tend.tv_sec-tstart.tv_sec;
+	long usecs = tend.tv_usec-tstart.tv_usec;
+	if (usecs < 0) { secs--; usecs += 1000000; }
+	cout << secs << " " << usecs << endl;
 	return 0;
 }
