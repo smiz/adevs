@@ -37,6 +37,7 @@ template <class X, class T> class Schedule;
 template <class X> class Simulator;
 // These predeclerations are needed to support the optimistic simulator
 template <class X> class OptSimulator;
+template <class X> class SpecThread;
 template <class X> class LogicalProcess;
 
 /**
@@ -207,6 +208,7 @@ template <class X> class Atomic: public Devs<X>
 
 		friend class Simulator<X>;
 		friend class OptSimulator<X>;
+		friend class SpecThread<X>;
 		friend class Schedule<X,double>;
 		friend class Schedule<X,Time>;
 
