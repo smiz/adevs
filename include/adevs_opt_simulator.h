@@ -103,6 +103,22 @@ OptSimulator<X>::OptSimulator(Devs<X>* model):
 template <class X>
 OptSimulator<X>::~OptSimulator<X>()
 {
+	// Delete the speculating threads
+	for (int i = 0; i < thread_count; i++)
+		delete spec_thrd[i];
+	delete [] spec_thrd;
+	// Cleanup all of the models in the schedule
+	for (unsigned i = 1; i <= sched.getSize(); i++)
+	{
+		Atomic<X>* model = sched.get(i);
+		if (model->lp != NULL && model->lp->checkpoint != NULL)
+			model->gc_state(model->lp->checkpoint);
+		cleanup(sched.get(i));
+	}
+	// Clean up any lingering activated models
+	for (typename Bag<Atomic<X>*>::iterator iter = activated.begin();
+			iter != activated.end(); iter++)
+		cleanup(*iter);
 }
 
 template <class X>
