@@ -135,14 +135,13 @@ fireCell::state_t fireCell::getState(const void* state_data)
 
 void* fireCell::save_state()
 {
-	return NULL;
-/*	if (free_list == NULL)
+	if (free_list == NULL)
 		return new state_t(phase,fuel,heat);
 	else {
 		free_list->setState(phase,fuel,heat);
 		free_list = free_list->next;
 		return free_list;
-	} */
+	} 
 }
 
 void fireCell::restore_state(void* data)
