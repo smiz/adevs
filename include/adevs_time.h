@@ -101,9 +101,5 @@ struct Time
 } // end namespace
 
 std::ostream& operator<<(std::ostream& strm, const adevs::Time& t);
-double operator-(double t1, const adevs::Time& t2)
-{
-	return t1-t2.t;
-}
 
 #endif
