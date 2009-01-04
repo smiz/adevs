@@ -36,12 +36,15 @@ template <typename X> class LogicalProcess
 template <typename X> class SpecThread
 {
 	public:
-		SpecThread(){ model = NULL; }
-		void execute(bool* halt, SpecThread<X>** ready);
+		SpecThread()
+		{
+			pending = model = NULL;
+		}
+		void execute(bool* halt);
 		// The assigned model must have a valid LP
 		void startWork(Atomic<X>* work)
 		{
-			Atomic<X>** model_ptr = &model;
+			Atomic<X>** model_ptr = &pending;
 			bool* safe_ptr = &(work->lp->is_safe);
 			*safe_ptr = false;
 			*model_ptr = work;
@@ -49,29 +52,37 @@ template <typename X> class SpecThread
 		}
 		bool isIdle()
 		{
-			Atomic<X>** model_ptr = &model;
+			Atomic<X>** model_ptr = &pending;
 			#pragma omp flush(model_ptr)
 			return (*model_ptr == NULL);
 		}
 		~SpecThread(){}
 	private:
 		object_pool<Bag<Event<X> > > recv_pool;
-		Atomic<X>* model;
+		Atomic<X> *model, *pending;
 		void route(Network<X>* parent, Devs<X>* src, X& x);
 }; 
 
 template <class X>
-void SpecThread<X>::execute(bool* halt, SpecThread<X>** ready)
+void SpecThread<X>::execute(bool* halt)
 {
+	unsigned last_delay = 100;
 	for (;;)
 	{
-		Atomic<X>** model_ptr = &model;
-		while (!(*halt) && (*model_ptr) == NULL)
+		unsigned sample = 0, count = 0;
+		Atomic<X>** model_ptr = &pending;
+		while ((*model_ptr) == NULL && !(*halt))
 		{
-			*ready = this;
-			#pragma omp flush(halt,model_ptr,ready)
+			count++;
+			if ((sample++)%last_delay == 0)
+			{
+				#pragma omp flush(halt,model_ptr)
+			}
 		}
+		if (count > 0) last_delay = (last_delay+count)/2+1;
 		if (*halt) return;
+		model = pending;
+		pending = NULL;
 		#pragma omp flush
 		if (!model->y->empty())
 		{
@@ -97,8 +108,6 @@ void SpecThread<X>::execute(bool* halt, SpecThread<X>** ready)
 		bool* safe_ptr = &(model->lp->is_safe);
 		*safe_ptr = true;
 		#pragma omp flush(safe_ptr)
-		*model_ptr = NULL;
-		#pragma omp flush(model_ptr)
 	}
 }
 	

@@ -73,7 +73,7 @@ template <class X> class OptSimulator:
 		object_pool<LogicalProcess<X> > lp_pool;
 		/// Speculative threads
 		SpecThread<X>** spec_thrd;
-		SpecThread<X>* ready;
+		unsigned next_thrd;
 		const int thread_count;
 		void inject_event(Atomic<X>* model, X& value);	
 		void exec_event(Atomic<X>* model, bool internal, Time t);
@@ -89,7 +89,7 @@ OptSimulator<X>::OptSimulator(Devs<X>* model):
 	AbstractSimulator<X>(),
 	thread_count(omp_get_max_threads()-1)
 {
-	ready = NULL;
+	next_thrd = 0;
 	spec_thrd = new SpecThread<X>*[thread_count];
 	#pragma omp parallel
 	{
@@ -128,7 +128,7 @@ void OptSimulator<X>::execUntil(double stop_time)
 	#pragma omp parallel
 	{
 		if (omp_get_thread_num() == 0) simSafe(stop_time);
-		else spec_thrd[omp_get_thread_num()-1]->execute(&halt,&ready);
+		else spec_thrd[omp_get_thread_num()-1]->execute(&halt);
 	}
 }
 
@@ -155,7 +155,6 @@ void OptSimulator<X>::simSafe(double tstop)
 			// If it has not had an output computed yet
 			if (model->lp == NULL)
 			{
-				assert(model->y == NULL);
 				model->y = io_pool.make_obj();
 				jit_output++;
 				// Compute its output
@@ -275,10 +274,8 @@ void OptSimulator<X>::schedule(Atomic<X>* model, Time t)
 	else
 	{
 		// Look for an available thread to do the calculation
-		SpecThread<X>* to_use = NULL;
-		SpecThread<X>** rdy_ptr = &ready;
-		#pragma omp flush(rdy_ptr)
-		if ((to_use = *rdy_ptr) != NULL && to_use->isIdle())
+		SpecThread<X>* to_use;
+		if (thread_count != 0 && (to_use = spec_thrd[(++next_thrd)%thread_count])->isIdle())
 		{
 			if (model->y == NULL)
 				model->y = io_pool.make_obj();
