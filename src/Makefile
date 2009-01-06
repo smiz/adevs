@@ -5,7 +5,7 @@
 # Prefix is appended to the include search paths
 PREFIX = ..
 # Compiler flags
-CFLAGS = -fopenmp -pedantic -Wall -I${PREFIX}/include
+CFLAGS = -pthread -pedantic -Wall -I${PREFIX}/include
 # Best bet for GNU compiler
  CC = g++
  OPTFLAG = -O3

@@ -3,7 +3,7 @@
 #include "adevs_models.h"
 #include "object_pool.h"
 #include <cstdlib>
-#include <omp.h>
+#include <pthread.h>
 
 namespace adevs
 {
@@ -13,24 +13,48 @@ template <typename X> class LogicalProcess
 	public:
 		LogicalProcess()
 		{
+			pthread_mutex_init(&mtx,NULL);
+			pthread_cond_init(&cond,NULL);
 			checkpoint = NULL;
 			is_safe = true;
 		}
-		bool is_safe;
 		void* checkpoint;
 		Bag<Event<X> > targets, outputs; 
 		int wait_for_safe()
 		{
-			int stalled = 0;
-			bool* is_safe_ptr = &is_safe;
-			while (!(*is_safe_ptr))
+			int stalls = 0;
+			pthread_mutex_lock(&mtx);
+			while (!is_safe)
 			{
-				stalled = 1;
-				#pragma omp flush(is_safe_ptr)
+				stalls = 1;
+				pthread_cond_wait(&cond,&mtx);
 			}
-			#pragma omp flush
-			return stalled;
+			pthread_mutex_unlock(&mtx);
+			return stalls;
 		}
+		void set_safe_fast(bool safe)
+		{
+			is_safe = safe;
+		}
+		void set_safe(bool safe)
+		{
+			pthread_mutex_lock(&mtx);
+			is_safe = safe;
+			pthread_cond_signal(&cond);
+			pthread_mutex_unlock(&mtx);
+		}
+		~LogicalProcess()
+		{
+			pthread_mutex_destroy(&mtx);
+			pthread_cond_destroy(&cond);
+		}
+		void set_interrupt() { stop_work = true; }
+		void clear_interrupt() { stop_work = false; }
+		bool interrupt() const { return stop_work; }
+	private:
+		bool is_safe, stop_work;
+		pthread_cond_t cond;
+		pthread_mutex_t mtx;
 };
 
 template <typename X> class SpecThread
@@ -38,52 +62,66 @@ template <typename X> class SpecThread
 	public:
 		SpecThread()
 		{
+			pthread_mutex_init(&mtx,NULL);
+			pthread_cond_init(&cond,NULL);
 			pending = model = NULL;
+			run = true;
 		}
-		void execute(bool* halt);
+		void execute();
 		// The assigned model must have a valid LP
 		void startWork(Atomic<X>* work)
 		{
-			Atomic<X>** model_ptr = &pending;
-			bool* safe_ptr = &(work->lp->is_safe);
-			*safe_ptr = false;
-			*model_ptr = work;
-			#pragma omp flush(model_ptr,safe_ptr)
+			work->lp->set_safe_fast(false);
+			work->lp->clear_interrupt();
+			pthread_mutex_lock(&mtx);
+			pending = work;
+			pthread_cond_signal(&cond);
+			pthread_mutex_unlock(&mtx);
 		}
-		bool isIdle()
+		void stop()
 		{
-			Atomic<X>** model_ptr = &pending;
-			#pragma omp flush(model_ptr)
-			return (*model_ptr == NULL);
+			pthread_mutex_lock(&mtx);
+			run = false;
+			pthread_cond_signal(&cond);
+			pthread_mutex_unlock(&mtx);
 		}
-		~SpecThread(){}
+		bool isIdle() const
+		{
+			return (pending == NULL);
+		}
+		~SpecThread()
+		{
+			pthread_mutex_destroy(&mtx);
+			pthread_cond_destroy(&cond);
+		}
 	private:
 		object_pool<Bag<Event<X> > > recv_pool;
 		Atomic<X> *model, *pending;
+		pthread_cond_t cond;
+		pthread_mutex_t mtx;
+		bool run;
 		void route(Network<X>* parent, Devs<X>* src, X& x);
 }; 
 
 template <class X>
-void SpecThread<X>::execute(bool* halt)
+void SpecThread<X>::execute()
 {
-	unsigned last_delay = 100;
 	for (;;)
 	{
-		unsigned sample = 0, count = 0;
-		Atomic<X>** model_ptr = &pending;
-		while ((*model_ptr) == NULL && !(*halt))
+		pthread_mutex_lock(&mtx);
+		while (pending == NULL && run)
 		{
-			count++;
-			if ((sample++)%last_delay == 0)
-			{
-				#pragma omp flush(halt,model_ptr)
-			}
+			pthread_cond_wait(&cond,&mtx);
 		}
-		if (count > 0) last_delay = (last_delay+count)/2+1;
-		if (*halt) return;
+		if (!run)
+		{
+			run = true;
+			pthread_mutex_unlock(&mtx);
+			return;
+		}
 		model = pending;
 		pending = NULL;
-		#pragma omp flush
+		pthread_mutex_unlock(&mtx);
 		if (!model->y->empty())
 		{
 			model->gc_output(*(model->y));
@@ -95,19 +133,17 @@ void SpecThread<X>::execute(bool* halt)
 		model->output_func(*(model->y));
 		// Route each event in y
 		for (typename Bag<X>::iterator y_iter = model->y->begin(); 
-				y_iter != model->y->end(); y_iter++)
+				y_iter != model->y->end() && !model->lp->interrupt(); y_iter++)
 		{
 			route(model->getParent(),model,*y_iter);
 		}
 		// Speculate on the state
-		if ((model->lp->checkpoint = model->save_state()) != NULL)
+		if (!model->lp->interrupt())
 		{
-			model->delta_int();
+			if ((model->lp->checkpoint = model->save_state()) != NULL)
+				model->delta_int();
 		}
-		#pragma omp flush
-		bool* safe_ptr = &(model->lp->is_safe);
-		*safe_ptr = true;
-		#pragma omp flush(safe_ptr)
+		model->lp->set_safe(true);
 	}
 }
 	
