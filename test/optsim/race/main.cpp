@@ -10,30 +10,22 @@ class Listener:
 	public:
 		Listener()
 		{
-			omp_init_lock(&lock);
 		}
 		void outputEvent(Event<car_t*> x, double t)
 		{
-			omp_set_lock(&lock);
 			Cell* model = dynamic_cast<Cell*>(x.model);
 			cout << "Car " << x.value->ID << " left cell " 
 				<< model->getPos() << " @ t = " << t << endl;
-			omp_unset_lock(&lock);
 		}
 		void stateChange(Atomic<car_t*>* model, double t, void* data)
 		{
-			omp_set_lock(&lock);
 			Cell* cell = dynamic_cast<Cell*>(model);
 			assert(t == cell->getTime(data));
 			cout << cell->getMsg(data) << endl;
-			omp_unset_lock(&lock);
 		}
 		~Listener()
 		{
-			omp_destroy_lock(&lock);
 		}
-	private:
-		omp_lock_t lock;
 };
 
 int main()

@@ -1,11 +1,11 @@
 # Common macros
 COMPARE = tclsh $(PREFIX)/util/compare
 # GNU gcc compiler
-CFLAGS = -pedantic -g -fopenmp -Wall -I$(PREFIX)/include
+CFLAGS = -pedantic -g -pthread -Wall -I$(PREFIX)/include
 CC = g++
 TEST_EXEC=./a.out
 DEL = rm -f
-LIBS = -L$(PREFIX)/src -ladevs -lrt
+LIBS = -L$(PREFIX)/src -ladevs -lrt -lpthread
 CMD_SEP = ;
 # Microsoft cl compiler
 #CFLAGS = /W4 /GR /EHsc /I$(PREFIX)/include /Fe$(TEST_EXEC)
