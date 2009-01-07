@@ -39,7 +39,7 @@ template <typename X> class LogicalProcess
 		}
 		void set_interrupt() { stop_work = true; }
 		void clear_interrupt() { stop_work = false; }
-		bool interrupt() const { return stop_work; }
+		bool interrupt() { return stop_work; }
 	private:
 		volatile bool is_safe, stop_work;
 };
@@ -49,6 +49,7 @@ template <typename X> class SpecThread
 	public:
 		SpecThread()
 		{
+			model = NULL;
 			run = true;
 			has_model = false;
 		}
