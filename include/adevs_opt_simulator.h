@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
-#include <pthread.h>
+#include <omp.h>
 #include "adevs_sched.h"
 
 namespace adevs
@@ -34,7 +34,7 @@ template <class X> class OptSimulator:
 		and parallel overhead; it is the number of models that will process
 		an event in every iteration of the optimistic simulator.  
 		*/
-		OptSimulator(Devs<X>* model, int num_spec_threads = 1);
+		OptSimulator(Devs<X>* model);
 		/// Get the model's next event time
 		double nextEventTime() { return sched.minPriority().t; }
 		/**
@@ -76,7 +76,7 @@ template <class X> class OptSimulator:
 		object_pool<Bag<Event<X> > > recv_pool;
 		object_pool<LogicalProcess<X> > lp_pool;
 		/// Speculative threads
-		thread_data_t* spec_thrd;
+		SpecThread<X>* spec_thrd;
 		unsigned next_thrd;
 		const int thread_count;
 		void inject_event(Atomic<X>* model, X& value);	
@@ -85,27 +85,16 @@ template <class X> class OptSimulator:
 		void init(Devs<X>* model);
 		void route(Network<X>* parent, Devs<X>* src, X& x);
 		void cleanup(Atomic<X>* model);
-	
-		static void* start_thread(void* thread_data)
-		{
-			thread_data_t* data = static_cast<thread_data_t*>(thread_data);
-			data->spec->execute();
-			return NULL;
-		}
+		void execSafe(double stop_time);
 }; 
 
 template <class X>
-OptSimulator<X>::OptSimulator(Devs<X>* model, int num_spec_threads):
+OptSimulator<X>::OptSimulator(Devs<X>* model):
 	AbstractSimulator<X>(),
-	thread_count(num_spec_threads)
+	thread_count(omp_get_max_threads()-1)
 {
 	next_thrd = 0;
-	spec_thrd = new thread_data_t[thread_count];
-	for (int i = 0; i < thread_count; i++)
-	{
-		spec_thrd[i].spec = new SpecThread<X>();
-		pthread_create(&(spec_thrd[i].thrd),NULL,start_thread,&(spec_thrd[i]));
-	}
+	spec_thrd = new SpecThread<X>[thread_count];
 	jit_output = ext_stalls = int_stalls = early_output = 0;
 	init(model);
 }
@@ -113,13 +102,7 @@ OptSimulator<X>::OptSimulator(Devs<X>* model, int num_spec_threads):
 template <class X>
 OptSimulator<X>::~OptSimulator<X>()
 {
-	// Delete the speculating threads
-	for (int i = 0; i < thread_count; i++)
-	{
-		spec_thrd[i].spec->stop();
-		pthread_join(spec_thrd[i].thrd,NULL);
-		delete spec_thrd[i].spec;
-	}
+	// Delete the threads
 	delete [] spec_thrd;
 	// Cleanup all of the models in the schedule
 	for (unsigned i = 1; i <= sched.getSize(); i++)
@@ -137,6 +120,24 @@ OptSimulator<X>::~OptSimulator<X>()
 
 template <class X>
 void OptSimulator<X>::execUntil(double tstop)
+{
+	#pragma omp parallel
+	{
+		if (omp_get_thread_num() > 0)
+		{
+			spec_thrd[omp_get_thread_num()-1].execute();
+		}
+		else
+		{
+			execSafe(tstop);
+			for (int i = 0; i < thread_count; i++)
+				spec_thrd[i].stop();
+		}
+	}
+}
+
+template <class X>
+void OptSimulator<X>::execSafe(double tstop)
 {
 	Time t;
 	while (true)
@@ -278,7 +279,7 @@ void OptSimulator<X>::schedule(Atomic<X>* model, Time t)
 	{
 		SpecThread<X>* to_use = NULL;
 		if (thread_count > 0 && dt > 0.0)
-			to_use = spec_thrd[(++next_thrd)%thread_count].spec;
+			to_use = &(spec_thrd[(++next_thrd)%thread_count]);
 		// Look for an available thread to do the calculation
 		if (to_use != NULL && to_use->isIdle())
 		{
