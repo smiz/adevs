@@ -3,7 +3,7 @@
 #include "adevs_models.h"
 #include "object_pool.h"
 #include <cstdlib>
-#include <pthread.h>
+#include <omp.h>
 
 namespace adevs
 {
@@ -13,8 +13,6 @@ template <typename X> class LogicalProcess
 	public:
 		LogicalProcess()
 		{
-			pthread_mutex_init(&mtx,NULL);
-			pthread_cond_init(&cond,NULL);
 			checkpoint = NULL;
 			is_safe = true;
 		}
@@ -23,38 +21,27 @@ template <typename X> class LogicalProcess
 		int wait_for_safe()
 		{
 			int stalls = 0;
-			pthread_mutex_lock(&mtx);
 			while (!is_safe)
 			{
 				stalls = 1;
-				pthread_cond_wait(&cond,&mtx);
 			}
-			pthread_mutex_unlock(&mtx);
+			{
+				#pragma omp flush
+			}
 			return stalls;
-		}
-		void set_safe_fast(bool safe)
-		{
-			is_safe = safe;
 		}
 		void set_safe(bool safe)
 		{
-			pthread_mutex_lock(&mtx);
 			is_safe = safe;
-			pthread_cond_signal(&cond);
-			pthread_mutex_unlock(&mtx);
 		}
 		~LogicalProcess()
 		{
-			pthread_mutex_destroy(&mtx);
-			pthread_cond_destroy(&cond);
 		}
 		void set_interrupt() { stop_work = true; }
 		void clear_interrupt() { stop_work = false; }
 		bool interrupt() const { return stop_work; }
 	private:
-		bool is_safe, stop_work;
-		pthread_cond_t cond;
-		pthread_mutex_t mtx;
+		volatile bool is_safe, stop_work;
 };
 
 template <typename X> class SpecThread
@@ -62,44 +49,36 @@ template <typename X> class SpecThread
 	public:
 		SpecThread()
 		{
-			pthread_mutex_init(&mtx,NULL);
-			pthread_cond_init(&cond,NULL);
-			pending = model = NULL;
 			run = true;
+			has_model = false;
 		}
 		void execute();
 		// The assigned model must have a valid LP
 		void startWork(Atomic<X>* work)
 		{
-			work->lp->set_safe_fast(false);
+			model = work;
+			work->lp->set_safe(false);
 			work->lp->clear_interrupt();
-			pthread_mutex_lock(&mtx);
-			pending = work;
-			pthread_cond_signal(&cond);
-			pthread_mutex_unlock(&mtx);
+			{
+				#pragma omp flush
+			}
+			has_model = true;
 		}
 		void stop()
 		{
-			pthread_mutex_lock(&mtx);
 			run = false;
-			pthread_cond_signal(&cond);
-			pthread_mutex_unlock(&mtx);
 		}
-		bool isIdle() const
+		bool isIdle() 
 		{
-			return (pending == NULL);
+			return !has_model;
 		}
 		~SpecThread()
 		{
-			pthread_mutex_destroy(&mtx);
-			pthread_cond_destroy(&cond);
 		}
 	private:
 		object_pool<Bag<Event<X> > > recv_pool;
-		Atomic<X> *model, *pending;
-		pthread_cond_t cond;
-		pthread_mutex_t mtx;
-		bool run;
+		Atomic<X> *model;
+		volatile bool has_model, run;
 		void route(Network<X>* parent, Devs<X>* src, X& x);
 }; 
 
@@ -108,20 +87,15 @@ void SpecThread<X>::execute()
 {
 	for (;;)
 	{
-		pthread_mutex_lock(&mtx);
-		while (pending == NULL && run)
+		while (!has_model && run);
 		{
-			pthread_cond_wait(&cond,&mtx);
+			#pragma omp flush
 		}
-		if (!run)
+		if (model == NULL)
 		{
 			run = true;
-			pthread_mutex_unlock(&mtx);
 			return;
 		}
-		model = pending;
-		pending = NULL;
-		pthread_mutex_unlock(&mtx);
 		if (!model->y->empty())
 		{
 			model->gc_output(*(model->y));
@@ -143,7 +117,12 @@ void SpecThread<X>::execute()
 			if ((model->lp->checkpoint = model->save_state()) != NULL)
 				model->delta_int();
 		}
+		{
+			#pragma omp flush
+		}
 		model->lp->set_safe(true);
+		model = NULL;
+		has_model = false;
 	}
 }
 	
