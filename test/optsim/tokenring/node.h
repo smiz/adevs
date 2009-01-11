@@ -2,6 +2,7 @@
 #define __node_h_
 #include <iostream>
 #include <cassert>
+#include <cstring>
 #include "adevs.h"
 
 struct token_t
