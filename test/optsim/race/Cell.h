@@ -1,5 +1,6 @@
 #ifndef _Cell_h_
 #define _Cell_h_
+#include <cstring>
 
 struct car_t
 {
