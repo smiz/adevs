@@ -14,14 +14,20 @@ class Listener:
 		void outputEvent(Event<car_t*> x, double t)
 		{
 			Cell* model = dynamic_cast<Cell*>(x.model);
-			cout << "Car " << x.value->ID << " left cell " 
-				<< model->getPos() << " @ t = " << t << endl;
+			#pragma omp critical
+			{
+				cout << "Car " << x.value->ID << " left cell " 
+					<< model->getPos() << " @ t = " << t << endl;
+			}
 		}
-		void stateChange(Atomic<car_t*>* model, double t, void* data)
+		void stateChange(Atomic<car_t*>* model, double t)
 		{
 			Cell* cell = dynamic_cast<Cell*>(model);
-			assert(t == cell->getTime(data));
-			cout << cell->getMsg(data) << endl;
+			assert(t == cell->getTime());
+			#pragma omp critical
+			{
+				cout << cell->getMsg() << endl;
+			}
 		}
 		~Listener()
 		{
@@ -39,8 +45,8 @@ int main()
 		{
 			car = new car_t;
 			car->ID = i;
-			car->spd = 1.0;
-			if (i == 0) car->spd = 2.0;
+			car->spd = MAX_SPEED/2.0;
+			if (i == 0) car->spd = MAX_SPEED;
 		}
 		road.push_back(new Cell(i,car));
 		model->add(road[i]);
@@ -49,10 +55,10 @@ int main()
 	{
 		model->couple(road[i],road[i+1]);
 	}
-	OptSimulator<car_t*>* sim = new OptSimulator<car_t*>(model);
+	ParSimulator<car_t*>* sim = new ParSimulator<car_t*>(model);
 	sim->addEventListener(new Listener());
 	sim->execUntil(2.0);
-	sim->execUntil(DBL_MAX);
+	sim->execUntil(100.0);
 	delete sim;
 	delete model;
 	return 0;

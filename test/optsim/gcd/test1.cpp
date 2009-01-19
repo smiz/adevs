@@ -11,10 +11,10 @@ int main()
 	gcd* c = new gcd(10.0,2.0,1,false);
 	genr* g = new genr(10.0,1,true);
 	model->couple(g,g->signal,c,c->in);
-	adevs::OptSimulator<PortValue>* sim =
-		new adevs::OptSimulator<PortValue>(model);
+	adevs::ParSimulator<PortValue>* sim =
+		new adevs::ParSimulator<PortValue>(model);
 	sim->addEventListener(new Listener());
-	sim->execUntil(DBL_MAX);
+	sim->execUntil(100.0);
 	cout << "Test done" << endl;
 	delete sim;
 	delete model;

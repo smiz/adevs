@@ -16,5 +16,8 @@ check:
 	diff soln_8 soln_8_p
 	diff soln_9 soln_9_p
 
+perf:
+	g++ -fopenmp -Wall -I${HOME}/adevs/trunk/include -O3 fireCell.cpp Configuration.cpp main.cpp
+
 clean_all: clean
 	$(DEL) soln*

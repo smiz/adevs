@@ -59,7 +59,7 @@ template <class X> class EventListener
 		 * makes this call back. This method has an empty default
 		 * implementation.
 		 */
-		virtual void stateChange(Atomic<X>* model, double t, void* state){}
+		virtual void stateChange(Atomic<X>* model, double t){}
 		virtual ~EventListener(){}
 };
 

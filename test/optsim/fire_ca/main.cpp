@@ -21,10 +21,10 @@ class CellListener:
 	public adevs::EventListener<CellEvent>
 {
 	public:
-		void stateChange(adevs::Atomic<CellEvent>* model, double t, void* state)
+		void stateChange(adevs::Atomic<CellEvent>* model, double t)
 		{
 			fireCell* cell = dynamic_cast<fireCell*>(model);
-			snap_shot[cell->xpos()][cell->ypos()] = cell->getState(state);
+			snap_shot[cell->xpos()][cell->ypos()] = cell->getState();
 		}
 		void outputEvent(adevs::Event<CellEvent>,double){}
 };
@@ -55,7 +55,7 @@ void simulateSpace()
 	// Cellspace model and simulator
 	adevs::CellSpace<int>* cell_space = NULL;
 	adevs::AbstractSimulator<CellEvent>* sim = NULL;
-	adevs::OptSimulator<CellEvent>* opt_sim = NULL;
+	adevs::ParSimulator<CellEvent>* opt_sim = NULL;
 	CellListener* listener = NULL;
 	// snap shot data
 	if (snap_shot == NULL)
@@ -78,6 +78,8 @@ void simulateSpace()
 				config->get_fire(x,y),x,y);
 			cell_space->add(cell,x,y);
 			snap_shot[x][y] = cell->getState();
+			int lp = x/(config->get_width()/omp_get_max_threads());
+			cell->assignToLP(lp);
 		}
 	}
 	// Create a simulator for the model
@@ -88,7 +90,13 @@ void simulateSpace()
 	}
 	else
 	{
-		sim = opt_sim = new adevs::OptSimulator<CellEvent>(cell_space);
+		adevs::LpGraph g;
+		for (int i = 1; i < omp_get_max_threads(); i++)
+		{
+			g.addEdge(i-1,i);
+			g.addEdge(i,i-1);
+		}
+		sim = opt_sim = new adevs::ParSimulator<CellEvent>(cell_space,g);
 	}
 	// Create a listener for the model
 	listener = new CellListener();
@@ -112,13 +120,6 @@ void simulateSpace()
 	{
 		cout << err.what() << endl;
 		exit(-1);
-	}
-	if (opt_sim != NULL)
-	{
-		cout << "early output = " << opt_sim->getEarlyOutputCount() << endl; 
-		cout << "in time output = " << opt_sim->getInTimeOutputCount() << endl; 
-		cout << "ext stalls = " << opt_sim->getExtStallCount() << endl; 
-		cout << "int stalls = " << opt_sim->getIntStallCount() << endl; 
 	}
 	if (sim != NULL) delete sim;
 	delete cell_space;

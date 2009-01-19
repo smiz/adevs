@@ -24,7 +24,9 @@ class transd: public adevs::Atomic<PortValue>
 		t(0.0),
 		finished(false)
 		{
+			assignToLP(3);
 		}
+		double lookahead() { return observation_time; }
 		/// Internal transition function
 		void delta_int() 
 		{
@@ -92,11 +94,9 @@ class transd: public adevs::Atomic<PortValue>
 		/// Garbage collection. No heap allocation in output, so do nothing
 		void gc_output(adevs::Bag<PortValue>&){}
 		/// Print summary data using the saved state
-		void printSummary(void* state)
+		void printSummary()
 		{
-			state_t* s;
-			if (state == NULL) s = (state_t*)save_state();
-			else s = (state_t*)state;
+			state_t* s = (state_t*)save_state();
 			/// Print the number of jobs if we are not done
 			if (!s->finished)
 			{
@@ -130,7 +130,7 @@ class transd: public adevs::Atomic<PortValue>
 			std::cout << "jobs solved : " << s->jobs_solved.size() << std::endl;
 			std::cout << "AVERAGE TA = " << avg_ta_time << std::endl;
 			std::cout << "THROUGHPUT = " << throughput << std::endl;
-			if (state == NULL) gc_state(s);
+			gc_state(s);
 		}
 		/// Destructor
 		~transd()

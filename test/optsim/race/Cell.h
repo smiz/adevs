@@ -2,6 +2,7 @@
 #define _Cell_h_
 #include <cstring>
 
+#define MAX_SPEED 2.0
 struct car_t
 {
 	int ID;
@@ -19,6 +20,7 @@ class Cell:
 			t(0.0),
 			pos(pos)
 		{
+			assignToLP(pos);
 			msg[0] = '\0';
 		}
 		void delta_int()
@@ -56,6 +58,7 @@ class Cell:
 			sprintf(tmp,"\n%f: car %d left %d!",t,car_left_id,pos);
 			strcat(msg,tmp);
 		}
+		double lookahead() { return 1.0/MAX_SPEED; }
 		double ta()
 		{
 			if (car == NULL) return DBL_MAX;
@@ -93,15 +96,13 @@ class Cell:
 		{
 			delete (state_t*)data;
 		}
-		const char* getMsg(void* data)
+		const char* getMsg()
 		{
-			if (data != NULL) return ((state_t*)data)->msg;
-			else return msg;
+			return msg;
 		}
-		double getTime(void* data)
+		double getTime()
 		{
-			if (data != NULL) return ((state_t*)data)->t;
-			else return t;
+			return t;
 		}
 	private:
 		car_t* car;

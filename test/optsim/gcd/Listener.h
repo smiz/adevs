@@ -17,12 +17,24 @@ class Listener:
 		void outputEvent(adevs::Event<PortValue> x, double t)
 		{
 		}
-		void stateChange(adevs::Atomic<PortValue>* model, double t, void* state)
+		void stateChange(adevs::Atomic<PortValue>* model, double t)
 		{
 			counter* c = dynamic_cast<counter*>(model);
-			if (c != NULL) c->printState(state);
+			if (c != NULL)
+			{
+				#pragma omp critical
+				{
+					c->printState();
+				}
+			}
 			genr* g = dynamic_cast<genr*>(model);
-			if (g != NULL) g->printState(state);
+			if (g != NULL)
+			{
+				#pragma omp critical
+				{
+					g->printState();
+				}
+			}
 		}
 };
 

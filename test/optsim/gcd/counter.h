@@ -15,6 +15,7 @@ class counter: public adevs::Atomic<PortValue>
 		adevs::Atomic<PortValue>(),
 		s(0,0.0)
 		{
+			assignToLP(0);
 		}
 		void delta_int() 
 		{
@@ -44,12 +45,12 @@ class counter: public adevs::Atomic<PortValue>
 		~counter()
 		{
 		}
-		void printState(void *data)
+		void printState()
 		{
 			state_t* state = &s;
-			if (data != NULL) state = (state_t*)data;
 			printf("Count is %d @ %d\n",state->count,(int)(state->t));
 		}
+		double lookahead() { return DBL_MAX; }
 		void* save_state()
 		{
 			return new state_t(s);

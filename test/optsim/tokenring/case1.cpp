@@ -12,7 +12,7 @@ int main ()
 	model->add(n2);
 	model->couple(n1,n1->out,n2,n2->in);
 	model->couple(n2,n2->out,n1,n1->in);  
-	adevs::OptSimulator<PortValue>* sim = new adevs::OptSimulator<PortValue>(model);
+	adevs::ParSimulator<PortValue>* sim = new adevs::ParSimulator<PortValue>(model);
 	sim->addEventListener(new Listener());
 	sim->execUntil(10.0);
 	cout << "End of run!" << endl;
