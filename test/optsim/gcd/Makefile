@@ -1,7 +1,7 @@
 PREFIX = ../../..
 include ../../make.common
 
-check: t1 t2 t3 t4 t5 t6 t7 t8 
+check: t1 t3 t5 t7  
 
 t1:
 	$(CC) $(CFLAGS) test1.cpp $(LIBS)

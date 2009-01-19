@@ -19,7 +19,7 @@ int main ()
 	model->add(g);
 	model->couple(g,g->signal,c1,c1->in);
 	model->couple(c1,c1->out,c2,c2->in);
-	adevs::OptSimulator<PortValue>* sim = new adevs::OptSimulator<PortValue>(model);
+	adevs::ParSimulator<PortValue>* sim = new adevs::ParSimulator<PortValue>(model);
 	sim->addEventListener(new Listener());
 	sim->execUntil(DBL_MAX);
 	cout << "Test done" << endl;

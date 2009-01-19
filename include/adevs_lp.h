@@ -23,9 +23,12 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #include "adevs_abstract_simulator.h"
 #include "adevs_time.h"
 #include "object_pool.h"
-#include "adevs_list.h"
 #include <omp.h>
-//#include <TAU.h>
+#include <vector>
+#include <list>
+#include <map>
+#include <queue>
+#include <limits.h>
 /**
  * This is an implementation of the time warp simulation algorithm described in
  * J. Nutaro, "On Constructing Optimistic Simulation Algorithms for the Discrete
@@ -38,28 +41,54 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 namespace adevs
 {
 
-struct LP_perf_t
+template <typename X> struct Message
 {
-	unsigned rollbacks, canceled_output, canceled_intra_lp_output,
-			 stragglers, patches, destroyed_in_input, msg_count,
-			 chk_pt_count;
-	LP_perf_t():
-		rollbacks(0),
-		canceled_output(0),
-		canceled_intra_lp_output(0),
-		stragglers(0),
-		patches(0),
-		destroyed_in_input(0),
-		msg_count(0),
-		chk_pt_count(0)
+	Time t;
+	LogicalProcess<X> *src;
+	// Target's model is NULL if this is a null event
+	Atomic<X>* target;
+	X value;
+	// Sort by timestamp, smallest timestamp first in the STL priority_queue
+	bool operator<(const Message<X>& other) const
 	{
+		return other.t < t;
 	}
 };
 
-struct gvt_t
+template <class X> class MessageQ
 {
-	double msg_t;
-	double lv_t;
+	public:
+		MessageQ()
+		{
+			omp_init_lock(&lock);
+			qsize = 0;
+		}
+		void insert(const Message<X>& msg)
+		{
+			omp_set_lock(&lock);
+			q.push_back(msg);
+			qsize++;
+			omp_unset_lock(&lock);
+		}
+		Message<X> remove()
+		{
+			Message<X> msg;
+			while (qsize == 0);
+			omp_set_lock(&lock);
+			msg = q.front();
+			q.pop_front();
+			qsize--;
+			omp_unset_lock(&lock);
+			return msg;
+		}
+		~MessageQ()
+		{
+			omp_destroy_lock(&lock);
+		}
+	private:
+		omp_lock_t lock;
+		std::list<Message<X> > q;
+		volatile int qsize;
 };
 
 /*
@@ -70,145 +99,50 @@ struct gvt_t
 template <class X> class LogicalProcess
 {
 	public:
-		// A simulation message
-		struct Message:
-			public ulist<Message>::one_list
-		{
-			public:
-				// The message timestamp
-				Time t;
-				// The model produced and that will receive the message
-				Atomic<X> *src, *dst;
-				// The value of the message
-				X value;
-				// LP unique message ID. Negative numbers are anti-messages, positive
-				// numbers are inter-LP messages. Zero is reserved to indicate the
-				// actual output from the model.
-				long int ID;
-		};
 		/**
 		 * Constructor builds a logical process without any models
 		 * assigned to it.
 		 */
-		LogicalProcess();
+		LogicalProcess(int ID, const std::vector<int>& I, const std::vector<int>& E,
+				LogicalProcess<X>** all_lps, AbstractSimulator<X>* sim);
 		/**
 		 * Assign a model to this logical process.
 		 */
 		void addModel(Atomic<X>* model);
 		/**
-		 * Get the GVT data for this LP.
-		 */
-		double getLVT() 
-		{
-			double result = getNextEventTime().t;
-			omp_set_lock(&lock);
-			typename ulist<Message>::iterator iter = input.begin();
-			for (; iter != input.end(); iter++)
-				if ((*iter)->t.t < result) result = (*iter)->t.t;
-			omp_unset_lock(&lock);
-			return result;
-		}
-		/**
-		 * Get the smallest time stamp of any message sent in the last cell to execEvents()
-		 * or processInput() since the last call the clear min.
-		 */
-		double getSendMin() { return send_min; }
-		void clearSendMin() { send_min = DBL_MAX; }
-		/**
-		 * Do fossil collection and report correct states and outputs.
-		 */
-		void fossilCollect(Time gvt, AbstractSimulator<X>* sim);
-		/**
 		 * Send a message to the logical process. This will put the message into the
-		 * back of the input queue. Returns true if the receiver put the message into
-		 * its input list, false otherwise.
+		 * back of the input queue.
 		 */
-		bool sendMessage(Message* m);
+		void sendMessage(Message<X>& msg) { input_q.insert(msg); }
 		/**
-		 * Get the smallest of the local time of next event. For this to be used in a gvt calculation
-		 * the input lists need to be flushed by calling processInput for all LPs until they return
-		 * false for pendingInput()
+		 * Get the smallest of the local time of next event. 
 		 */
-		Time getNextEventTime() 
-		{
-			Time result = sched.minPriority();
-			if (!avail.empty() && avail.front()->t < result)
-				result = avail.front()->t;
-			return result;
-		}
-		/// Are there any events left to execute?
-		bool hasEvents()
-		{
-			return !(input.empty() && avail.empty() && sched.empty());
-		}
-		/** 
-		 * Process all of the events in the input list. 
-		 */
-		void processInput();
-		/**
-		 * Optimistically execute the output and state transition functions.
-		 */
-		void execEvents();
-		/**
-		 * Is there unprocessed input in the input list?
-		 */
-		bool pendingInput() { return !input.empty(); }
-		/**
-		 * How much garbage is lingering about?
-		 */
-		unsigned int getGarbageCount() const { return garbage_count; }
-		/**
-		 * Get performance information for the LP
-		 */
-		LP_perf_t getPerfData() const { return perf_data; }
+		Time getNextEventTime() { return sched.minPriority(); } 
+		// Get the process ID
+		int getID() const { return ID; }
 		/**
 		 * Destructor leaves the models intact.
 		 */
 		~LogicalProcess();
+		// Run the main simulation loop
+		void run(double t_stop);
 	private:
-		// A state checkpoint
-		class CheckPoint:
-			public ulist<CheckPoint>::one_list
-		{
-			public:
-				// Initial time and final time for the checkpoint state
-				Time ti, tf;
-				// Model that this is a checkpoint for
-				Atomic<X>* model;
-				// Pointer to the saved state
-				void* data;
-				// Has this checkpoint been reported?
-				bool reported;
-		};
-		// Structure for tracking performance related data
-		LP_perf_t perf_data;
-		// List of input messages
-		adevs::ulist<Message> input;
-		// lock variable for the input list
-		omp_lock_t lock;
-		// Time ordered list of messages that are available for processing
-		adevs::ulist<Message> avail;
-		// Time ordered list of messages that have been processed
-		adevs::ulist<Message> used;
-		// Time ordered list of checkpoints
-		adevs::ulist<CheckPoint> chk_pt;
-		// Time ordered list of good output messages send to other LPs
-		adevs::ulist<Message> inter_lp_output;
-		// Time ordered list of good output generated in this LP
-		adevs::ulist<Message> intra_lp_output;
-		// Unordered list of discarded output messages
-		adevs::ulist<Message> discard;
-		/// Counter for producing message identifiers
-		long int ID;
-		/// Can route send messages between LPs?
-		bool inter_LP_ok;
-		double send_min;
-		/// Amount of accumulated trash
-		unsigned int garbage_count;
-		// Free list for messages
-		adevs::ulist<Message> free_msg_list;
-		// Free list for checkpoints
-		adevs::ulist<CheckPoint> free_chk_pt_list;
+		/// ID of this LP
+		const int ID;
+		// List of influencees
+		const std::vector<int> E;
+		// All of the LPs
+		LogicalProcess<X>** all_lps;
+		// Lookahead for this LP
+		double lookahead;
+		// Earliest input times
+		std::map<int,Time> eit;
+		// Input messages to the LP
+		MessageQ<X> input_q;
+		// Priority queue of messages to process
+		std::priority_queue<Message<X> > xq;
+		// Smallest of the earliest input times
+		Time min_eit, prev_eot;
 		// Bags of imminent and active models.
 		Bag<Atomic<X>*> imm, activated;
 		/// The event schedule
@@ -216,339 +150,174 @@ template <class X> class LogicalProcess
 		/// Pools of preallocated, commonly used objects
 		object_pool<Bag<X> > io_pool;
 		object_pool<Bag<Event<X> > > recv_pool;
-		// Insert a message into a timestamp ordered list
-		void insert_message(adevs::ulist<Message>& l, Message* msg);
+		// Abstract simulator for notifying listeners
+		AbstractSimulator<X>* sim;
+		// Send the EOT
+		void sendEOT();
+		// Find the smallest of the EIT
+		void updateEIT();
 		// Route events using the Network models' route methods
-		void route(Network<X>* parent, Devs<X>* src, X& x, bool* inter_lp_msg = NULL);
-		// Save state and compute state transition of an atomic model
+		void route(Network<X>* parent, Devs<X>* src, X& x);
+		// Compute state transition of an atomic model and reschedule it
 		void exec_event(Atomic<X>* model, bool internal, Time t);
 		// Inject an input into an atomic model
 		void inject_event(Atomic<X>* model, X& value);
-		// Destroy a message in the list l with the antimessage msg. Returns true
-		// if the message was found and destroyed.
-		bool anti_message(adevs::ulist<Message>& l, Message* msg);
-		// Try to patch the LP without performing a rollback. Returns true if
-		// successful, false otherwise. Failure does not change the state of the
-		// LP.
-		bool patch(Message* msg);
-		// Get a message from the free list
-		Message* alloc_msg()
-		{
-			Message* m = free_msg_list.front();
-			if (m == NULL)
-			{
-				perf_data.msg_count++;
-				m = new Message;
-			}
-			else free_msg_list.pop_front();
-			return m;
-		}
-		CheckPoint* alloc_chk_pt()
-		{
-			CheckPoint* c = free_chk_pt_list.front();
-			if (c == NULL)
-			{
-				perf_data.chk_pt_count++;
-				c = new CheckPoint;
-			}
-			else free_chk_pt_list.pop_front();
-			return c;
-		}
+		// Build the imminent set and route the output
+		void computeOutput();
 };
 
-template <class X>
-LogicalProcess<X>::LogicalProcess()
+template <typename X>
+LogicalProcess<X>::LogicalProcess(int ID, const std::vector<int>& I, const std::vector<int>& E,
+		LogicalProcess<X>** all_lps, AbstractSimulator<X>* sim):
+	ID(ID),E(E),all_lps(all_lps),sim(sim)
 {
-	send_min = DBL_MAX;
-	garbage_count = 0;
-	// Message ID counter starts at 1
-	ID = 1;
-	// Create the lock for the input list
-	omp_init_lock(&lock);
+	prev_eot = Time(0.0,0);
+	all_lps[ID] = this;
+	lookahead = DBL_MAX;
+	for (typename std::vector<int>::const_iterator iter = I.begin();
+			iter != I.end(); iter++)
+		if (*iter != ID) eit[*iter] = Time(0.0,0);
 }
 
-template <class X>
+template <typename X>
 void LogicalProcess<X>::addModel(Atomic<X>* model)
 {
+	lookahead = std::min(model->lookahead(),lookahead);
+	assert(lookahead > 0.0);
 	// Assign the model to this LP
-	model->lp = this;
+	model->par_info.lp = this;
 	// Put it into the schedule
 	double dt = model->ta();
 	if (dt < DBL_MAX) sched.schedule(model,Time(dt,0));
 }
 
-template <class X>
-void LogicalProcess<X>::fossilCollect(Time gvt, AbstractSimulator<X>* sim)
+template <typename X>
+void LogicalProcess<X>::sendEOT()
 {
-//TAU_TYPE_STRING(taustr, CT(*this) + " void (void)" );
-//TAU_PROFILE("fossilCollect()", taustr, TAU_FIELD);
-//TAU_PROFILE_TIMER(statetimer, "fossilCollect-states", taustr, TAU_FIELD); 
-//TAU_PROFILE_TIMER(discardtimer, "fossilCollect-discard", taustr, TAU_FIELD); 
-	static const Time Zero = Time(0.0,0);
-	// Report and delete old states
-//TAU_PROFILE_START(statetimer);
-	typename adevs::ulist<CheckPoint>::iterator chk_pt_iter = chk_pt.begin();
-	while (chk_pt_iter != chk_pt.end())
+	Message<X> msg;
+	msg.target = NULL;
+	msg.src = this;
+	msg.t = min_eit;
+	msg.t.t += lookahead;
+	msg.t.c = 0;
+	if (sched.minPriority() <= msg.t)
 	{
-		Atomic<X>* model = (*chk_pt_iter)->model;
-		void* data = (*chk_pt_iter)->data;
-		Time ti = (*chk_pt_iter)->ti;
-		Time tf = (*chk_pt_iter)->tf;
-		bool reported = (*chk_pt_iter)->reported;
-		// Report states that are good
-		if (sim != NULL)
+		msg.t = sched.minPriority();
+		// If we have sent them, then advance the EOT by one discrete step
+		if (!imm.empty()) msg.t.c += 1;
+	}
+	if (prev_eot == msg.t) return;
+	else prev_eot = msg.t;
+	for (std::vector<int>::const_iterator iter = E.begin();
+			iter != E.end(); iter++)
+		if (*iter != ID) all_lps[(*iter)]->sendMessage(msg);
+}
+
+template <typename X>
+void LogicalProcess<X>::updateEIT()
+{
+	min_eit = Time::Inf();
+	for (std::map<int,Time>::iterator iter = eit.begin();
+			iter != eit.end(); iter++)	
+		min_eit = std::min((*iter).second,min_eit);
+}
+
+template <typename X>
+void LogicalProcess<X>::computeOutput()
+{
+	// Don't do anything if the output is up to date
+	if (!imm.empty()) return;
+	sched.getImminent(imm);
+	// Calculate and route the output for the imminent models
+	for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
+		imm_iter != imm.end(); imm_iter++)
+	{
+		Atomic<X>* model = *imm_iter;
+		model->y = io_pool.make_obj();
+		model->output_func(*(model->y));
+		// Route each event in y
+		for (typename Bag<X>::iterator y_iter = model->y->begin(); 
+			y_iter != model->y->end(); y_iter++)
 		{
-			if (Zero < model->tL && model->tL < gvt && !(model->reported))
-			{
-				model->reported = true;
-				activated.insert(model);
-			}
-			if (Zero < ti && ti < gvt && !reported)
-			{
-				sim->notify_state_listeners(model,ti.t,data); 
-				(*chk_pt_iter)->reported = true;
-			}
-		} 
-		// Delete states that are no longer needed
-		if (tf < gvt)
-		{
-			model->gc_state(data);
-			chk_pt_iter = chk_pt.erase(chk_pt_iter,&free_chk_pt_list);
-			garbage_count--;
+			// Send messages to local models and other LPs
+			route(model->getParent(),model,*y_iter);
 		}
-		else chk_pt_iter++;
-	}
-	// Report the active models
-	typename Bag<Atomic<X>*>::iterator active_iter = activated.begin();
-	for (; active_iter != activated.end(); active_iter++)
-	{
-		sim->notify_state_listeners(*active_iter,(*active_iter)->tL.t);
-	} 
-	activated.clear();
-//TAU_PROFILE_STOP(statetimer);
-	// Delete old used messages
-	while (!used.empty() && used.front()->t < gvt)
-	{
-		used.pop_front(&free_msg_list);
-	}
-	// Delete old output
-//TAU_PROFILE_START(discardtimer);
-	Bag<X>* garbage = io_pool.make_obj();
-	typename adevs::ulist<Message>::iterator discard_iter = discard.begin();
-	while (discard_iter != discard.end())
-	{
-		if ((*discard_iter)->t < gvt)
-		{
-			garbage->insert((*discard_iter)->value);
-			(*discard_iter)->src->gc_output(*garbage);
-			garbage->clear();
-			discard_iter = discard.erase(discard_iter,&free_msg_list);
-		}
-		else discard_iter++;
-	}
-//TAU_PROFILE_STOP(discardtimer);
-	while (!intra_lp_output.empty() && intra_lp_output.front()->t < gvt) 
-	{
-		Message* msg = intra_lp_output.front();
-		if (sim != NULL)
-			sim->notify_output_listeners(msg->src,msg->value,msg->t.t);
-		garbage->insert(msg->value);
-		msg->src->gc_output(*garbage);
-		garbage->clear();
-		intra_lp_output.pop_front(&free_msg_list);
-	}
-	io_pool.destroy_obj(garbage);
-	while (!inter_lp_output.empty() && inter_lp_output.front()->t < gvt) 
-	{
-		inter_lp_output.pop_front(&free_msg_list);
 	}
 }
 
-template <class X>
-bool LogicalProcess<X>::anti_message(adevs::ulist<Message>& l, Message* msg)
+template <typename X>
+void LogicalProcess<X>::run(double t_stop)
 {
-	typename adevs::ulist<Message>::iterator msg_iter = l.begin();
-	while (msg_iter != l.end())
+	bool tstop_reached = false;
+	while (true)
 	{
-		if (msg->ID == -(*msg_iter)->ID && msg->src->lp == (*msg_iter)->src->lp)
+		// Find the smallest EIT 
+		updateEIT();
+		// Make sure we stop at t_stop
+		Time tStop = min_eit;
+		if (tStop == Time::Inf() || tStop > Time(t_stop,UINT_MAX))
 		{
-			l.erase(msg_iter,&free_msg_list);
-			return true;
+			tStop = Time(t_stop,UINT_MAX);
+			tstop_reached = true;
 		}
-		else msg_iter++;
-	}
-	return false;
-}
-
-template <class X>
-void LogicalProcess<X>::processInput()
-{
-	// Process all of the input messages. This method
-	// performs rollbacks and message cancellations as
-	// required.
-	for (;;) // While there are input in the list
-	{
-		// Get the message at the front of the list or exit if no message is available
-		bool patched = false;
-		Message* msg;
-		omp_set_lock(&lock);
-		if ((msg = input.front()) != NULL)
+		// Simulate until that time
+		while ((!sched.empty() && sched.minPriority() <= tStop) ||
+				(!xq.empty() && xq.top().t <= tStop))
 		{
-			input.pop_front();
-		}
-		omp_unset_lock(&lock);
-		if (msg == NULL) break;
-		// If this is a message in the past
-		if (!chk_pt.empty() && msg->t <= chk_pt.back()->tf)
-		{
-			assert(avail.empty() || chk_pt.back()->tf <= avail.front()->t);
-			perf_data.stragglers++;
-			// If this is an input message then we can try to patch things up
-			// quickly
-			if (!(patched = patch(msg)))
+			// Find the time of the next event
+			Time tN = sched.minPriority();
+			if (!xq.empty() && xq.top().t < tN) tN = xq.top().t;
+			assert(imm.empty() || tN == sched.minPriority());
+			if (tN == sched.minPriority()) computeOutput();
+			// If this is at the EIT, the we don't have the input at tN
+			// yet and must wait to compute the next state of the model
+			if (tN == min_eit) break;
+			// Find and inject pending input
+			while (!xq.empty() && xq.top().t <= tN)
 			{
-				// Cancel inter-LP output that occurred after the message time
-				while (!inter_lp_output.empty() && msg->t < inter_lp_output.back()->t)
-				{
-					Message* antimsg = inter_lp_output.back();
-					inter_lp_output.pop_back();
-					// Send an anti-message to cancel inter-LP communications
-					antimsg->ID *= -1;
-					if (antimsg->t.t < send_min) send_min = antimsg->t.t;
-					if (!antimsg->dst->lp->sendMessage(antimsg))
-						free_msg_list.push_back(antimsg);
-					perf_data.canceled_output++;
-				}
-				// Cancel intra-LP output that occurred at or after the message time
-				while (!intra_lp_output.empty() && msg->t <= intra_lp_output.back()->t)
-				{
-					// Discard an intra-LP communication
-					intra_lp_output.pop_back(&discard);
-					perf_data.canceled_intra_lp_output++;
-				}
-				// If it is a rollback message, then remove it from the used list
-				if (msg->ID < 0) anti_message(used,msg);
-				// Move used messages at and after the event back to the available list
-				while (!used.empty() && msg->t <= used.back()->t)
-				{
-					Message* msg_to_move = used.back();
-					used.pop_back();
-					avail.push_front(msg_to_move);
-				}
-				// Restore to a checkpoint that is in the past
-				while (!chk_pt.empty() && msg->t <= chk_pt.back()->tf)
-				{	
-					Atomic<X>* model = chk_pt.back()->model;
-					// Restore the state
-					void* data = chk_pt.back()->data;
-					model->tL = chk_pt.back()->ti;
-					model->restore_state(data);
-					model->reported = chk_pt.back()->reported;
-					// Reposition the model in the schedule
-					double h = model->ta();
-					if (h < DBL_MAX)
-					{
-						Time tN = model->tL+Time(h,0);
-						if (tN < model->tL) tN = model->tL;
-						sched.schedule(model,tN);
-					}
-					else sched.schedule(model,Time::Inf());
-					// Delete the checkpoint
-					model->gc_state(data);
-					chk_pt.pop_back(&free_chk_pt_list);
-					garbage_count--;
-					perf_data.rollbacks++;
-				}
+				Message<X> msg = xq.top();
+				xq.pop();
+				inject_event(msg.target,msg.value);
 			}
-		}
-		// Otherwise if it is a rollback message in the future
-		// so just remove it from the available list 
-		else if (msg->ID < 0)
-		{
-			anti_message(avail,msg);
-		}
-		// If it is not a rollback message and it is not in the used list
-		if (msg->ID > 0 && !patched)
-		{
-			insert_message(avail,msg);
-		}
-		// Otherwise if it is an antimessage then save it for later use
-		else if (msg->ID < 0) free_msg_list.push_back(msg);
-	}
-	assert(avail.empty() || used.empty() || used.back()->t < avail.front()->t);
-	assert(!chk_pt.empty() || used.empty());
-}
-
-template <class X>
-void LogicalProcess<X>::execEvents()
-{
-	Time tN = getNextEventTime();
-	// If the next event is at infinity, then there is nothing to do
-	if (tN.t == DBL_MAX) return;
-	// Get the imminent models and route their output
-	if (sched.minPriority() <= tN)
-	{
-		// Get the imminent messages
-		sched.getImminent(imm);
-		// Is this message a replay of an earlier message?
-		inter_LP_ok = (inter_lp_output.empty() || inter_lp_output.back()->t < tN);
-		// Compute and send the output values
-		for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
-			imm_iter != imm.end(); imm_iter++)
-		{
-			Atomic<X>* model = *imm_iter;
-			model->y = io_pool.make_obj();
-			model->output_func(*(model->y));
-			// Route each event in y
-			for (typename Bag<X>::iterator y_iter = model->y->begin(); 
-				y_iter != model->y->end(); y_iter++)
+			// Compute new states for the models
+			for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
+					imm_iter != imm.end(); imm_iter++)
+				exec_event(*imm_iter,true,tN);
+			for (typename Bag<Atomic<X>*>::iterator imm_iter = activated.begin(); 
+					imm_iter != activated.end(); imm_iter++)
+				exec_event(*imm_iter,false,tN);
+			// Clean up intra lp output
+			for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
+				imm_iter != imm.end(); imm_iter++)
 			{
-				Message* msg = alloc_msg();
-				// Local copy of the output
-				msg->src = model;
-				msg->t = tN;
-				msg->value = *y_iter;
-				intra_lp_output.push_back(msg);
-				// Send messages to local models and other LPs
-				route(model->getParent(),model,*y_iter);
+				// NEED TO GARBAGE COLLECT!
+				(*imm_iter)->y->clear();
+				io_pool.destroy_obj((*imm_iter)->y);
+				(*imm_iter)->y = NULL;
 			}
-			// Clean up
-			model->y->clear();
-			io_pool.destroy_obj(model->y);
+			// Clear the active model lists
+			imm.clear();
+			activated.clear();
 		}
+		// Send our earliest output time estimate
+		sendEOT();
+		if (tstop_reached) return;
+		// Get a message from the input queue
+		Message<X> msg = input_q.remove();
+		// If it is a NULL message, then update the EIT
+		if (msg.target == NULL) eit[msg.src->getID()] = msg.t;
+		// Otherwise put it into the input queue
+		else xq.push(msg);
 	}
-	// Route the external input that is in the avail list
-	while (!avail.empty() && avail.front()->t <= tN)
-	{
-		Message* msg = avail.front();
-		avail.pop_front();
-		used.push_back(msg);
-		inject_event(msg->dst->typeIsAtomic(),msg->value);
-	}
-	// Compute the next states of all of the actived and imminent models
-	typename Bag<Atomic<X>*>::iterator iter;
-	for (iter = imm.begin(); iter != imm.end(); iter++)
-		exec_event(*iter,true,tN);
-	for (iter = activated.begin(); iter != activated.end(); iter++)
-		exec_event(*iter,false,tN);
-	imm.clear();
-	activated.clear();
 }
 
-template <class X>
+template <typename X>
 void LogicalProcess<X>::exec_event(Atomic<X>* model, bool internal, Time t)
 {
-	// Save the current state
-	CheckPoint* c = alloc_chk_pt();
-	c->ti = model->tL;
-	c->tf = t;
-	c->model = model;
-	c->data = model->save_state();
-	c->reported = model->reported;
-	chk_pt.push_back(c); 
-	garbage_count++;
-	// Compute the next state
-	if (model->x == NULL) model->delta_int();
+	if (model->x == NULL)
+	{
+		model->delta_int();
+	}
 	else
 	{
 		if (internal) model->delta_conf(*(model->x));
@@ -566,10 +335,11 @@ void LogicalProcess<X>::exec_event(Atomic<X>* model, bool internal, Time t)
 		sched.schedule(model,tN);
 	}
 	else sched.schedule(model,Time::Inf());
-	model->reported = model->active = false;
+	model->active = false;
+	sim->notify_state_listeners(model,t.t);
 }
 
-template <class X>
+template <typename X>
 void LogicalProcess<X>::inject_event(Atomic<X>* model, X& value)
 {
 	if (model->active == false)
@@ -584,11 +354,13 @@ void LogicalProcess<X>::inject_event(Atomic<X>* model, X& value)
 	model->x->insert(value);
 }
 
-template <class X>
-void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x, bool* inter_lp_msg)
+template <typename X>
+void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 {
 	// No one to do the routing, so return
 	if (parent == NULL) return;
+	// If this is not an input to a coupled model
+	if (parent != src) sim->notify_output_listeners(src,x,sched.minPriority().t);
 	// Create a bag to collect the receivers
 	Bag<Event<X> >* recvs = recv_pool.make_obj();
 	// Compute the set of receivers for this value
@@ -611,36 +383,29 @@ void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x, bool* inte
 		if (amodel != NULL)
 		{
 			// Atomic model local to the LP
-			if (amodel->lp == this)
+			if (amodel->par_info.lp == this)
 				inject_event(amodel,(*recv_iter).value);
 			// Atomic model at another LP
-			else if (inter_LP_ok)
+			else 
 			{
-				if (inter_lp_msg != NULL) *inter_lp_msg = true;
-				Message* to_copy = intra_lp_output.back();
-				Message* m_to_send = alloc_msg();
-				Message* m_to_keep = alloc_msg();
-				m_to_keep->t = m_to_send->t = to_copy->t;
-				m_to_keep->src = m_to_send->src = to_copy->src;
-				m_to_keep->ID = m_to_send->ID = ID++;
-				assert(ID > 0);
-				m_to_keep->dst = m_to_send->dst = amodel;
-				m_to_keep->value = m_to_send->value = (*recv_iter).value;
-				if (m_to_send->t.t < send_min) send_min = m_to_send->t.t;
-				amodel->lp->sendMessage(m_to_send);
-				inter_lp_output.push_back(m_to_keep);
+				Message<X> msg;
+				msg.src = this;
+				msg.t = sched.minPriority();
+				msg.target = amodel;
+				msg.value = (*recv_iter).value;
+				amodel->par_info.lp->sendMessage(msg);
 			}
 		}
 		// if this is an external output from the parent model
 		else if ((*recv_iter).model == parent)
 		{
-			route(parent->getParent(),parent,(*recv_iter).value,inter_lp_msg);
+			route(parent->getParent(),parent,(*recv_iter).value);
 		}
 		// otherwise it is an input to a coupled model
 		else
 		{
 			route((*recv_iter).model->typeIsNetwork(),
-				(*recv_iter).model,(*recv_iter).value,inter_lp_msg);
+				(*recv_iter).model,(*recv_iter).value);
 		}
 	}
 	// Free the bag of receivers
@@ -649,126 +414,8 @@ void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x, bool* inte
 }
 
 template <class X>
-bool LogicalProcess<X>::sendMessage(Message* msg)
-{
-	bool insert_it = (msg->ID > 0);
-	// Insert the message
-	omp_set_lock(&lock);
-	if (!insert_it) insert_it = !anti_message(input,msg);
-	if (insert_it) input.push_back(msg);
-	omp_unset_lock(&lock);
-	if (!insert_it) perf_data.destroyed_in_input++;
-	return insert_it;
-}
-
-template <class X>
-void LogicalProcess<X>::insert_message(adevs::ulist<Message>& l, Message* msg)
-{
-	typename adevs::ulist<Message>::iterator msg_iter;
-	for (msg_iter = l.begin(); msg_iter != l.end(); msg_iter++)
-	{
-		if (msg->t <= (*msg_iter)->t) break;
-	}
-	l.insert(msg_iter,msg);
-}
-
-template <class X>
-bool LogicalProcess<X>::patch(Message* msg)
-{
-	// If this is an anti-message we can't patch it
-	if (msg->ID < 0) return false;
-	// Get the target model
-	Atomic<X>* model = msg->dst;
-	// Is the message in the future of its target?
-	if (model->tL < msg->t)
-	{
-		// If so, apply it tentatively
-		void* data = model->save_state();
-		model->x = io_pool.make_obj();
-		model->x->insert(msg->value);
-		model->delta_ext(msg->t.t-model->tL.t,*(model->x));
-		model->x->clear();
-		io_pool.destroy_obj(model->x);
-		model->x = NULL;
-		double h = model->ta();
-		Time tN(Time::Inf());
-		Time tL = msg->t + Time(0.0,1);
-		if (h < DBL_MAX)
-		{
-			tN = tL + Time(h,0); 
-			if (tN < tL) tN = tL;
-		}
-		// If the next event time is not in the past
-		// then we are ok
-		if (chk_pt.empty() || chk_pt.back()->tf < tN)
-		{
-			perf_data.patches++;
-			sched.schedule(model,tN);
-			CheckPoint* c = alloc_chk_pt();
-			c->ti = model->tL;
-			c->tf = msg->t;
-			model->tL = tL;
-			c->model = model;
-			c->data = data;
-			c->reported = model->reported;
-			model->reported = false;
-			typename adevs::ulist<CheckPoint>::iterator iter;
-			for (iter = chk_pt.begin(); iter != chk_pt.end(); iter++)
-			{
-				if (c->tf <= (*iter)->tf) break;
-			}
-			chk_pt.insert(iter,c);
-			garbage_count++;
-			insert_message(used,msg);
-			return true;
-		}
-		// Otherwise our attempt at a patch failed
-		else
-		{
-			model->restore_state(data);
-			model->gc_state(data);
-			return false;
-		}
-	}
-	return false;
-}
-
-template <class X>
 LogicalProcess<X>::~LogicalProcess()
 {
-	fossilCollect(Time::Inf(),NULL);
-	// destroy lock
-	omp_destroy_lock(&lock);
-	// cleanup lists of messages and checkpoints
-	assert(used.empty());
-	assert(chk_pt.empty());
-	assert(discard.empty());
-	assert(inter_lp_output.empty());
-	assert(intra_lp_output.empty());
-	while (!avail.empty())
-	{
-		Message* msg = avail.front();
-		avail.pop_front();
-		delete msg;
-	}
-	while (!free_msg_list.empty())
-	{
-		Message* msg = free_msg_list.front();
-		free_msg_list.pop_front();
-		delete msg;
-	}
-	while (!free_chk_pt_list.empty())
-	{
-		CheckPoint* c = free_chk_pt_list.front();
-		free_chk_pt_list.pop_front();
-		delete c;
-	}
-	while (!input.empty())
-	{
-		Message* msg = input.front();
-		input.pop_front();
-		delete msg;
-	}
 }
 
 } // end of namespace 

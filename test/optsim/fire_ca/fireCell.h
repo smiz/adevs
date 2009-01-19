@@ -60,12 +60,13 @@ class fireCell: public adevs::Atomic<CellEvent>
 		void output_func(adevs::Bag<CellEvent>& yb);
 		// Time advance function
 		double ta();
+		double lookahead();
 		// Garbage collection. Does nothing.
 		void gc_output(adevs::Bag<CellEvent>& g){}
 		// Destructor
 		~fireCell(){}
 		// Get the state of the cell
-		fireCell::state_t getState(const void* state_data = NULL);
+		fireCell::state_t getState();
 		// Get the cell x location
 		long int xpos() const { return x; }
 		// get the cell y location

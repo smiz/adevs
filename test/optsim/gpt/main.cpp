@@ -24,27 +24,33 @@ class Listener:
 		}
 		void outputEvent(adevs::Event<adevs::PortValue<job> > x, double t)
 		{
-			if (x.model == gnr && x.value.port == gnr->out)
-				cout << t << " genr!out" << endl;
-			else if (x.model == trnsd && x.value.port == trnsd->out)
-				cout << t << " transd!out" << endl;
-			else if (x.model == prc && x.value.port == prc->out)
-				cout << t << " proc!out" << endl;
-			else
-				assert(false);
-		}
-		void stateChange(adevs::Atomic<adevs::PortValue<job> >* model, double t, void* state)
-		{
-			cout << "State change @ t = " << t;
-			if (model == prc) cout << " : proc" << endl;
-			else if (model == gnr) cout << " : genr" << endl;
-			else if (model == trnsd)
+			#pragma omp critical
 			{
-				cout << " : transd" << endl;
-				trnsd->printSummary(state);
+				if (x.model == gnr && x.value.port == gnr->out)
+					cout << t << " genr!out" << endl;
+				else if (x.model == trnsd && x.value.port == trnsd->out)
+					cout << t << " transd!out" << endl;
+				else if (x.model == prc && x.value.port == prc->out)
+					cout << t << " proc!out" << endl;
+				else
+					assert(false);
 			}
-			else
-				assert(false);
+		}
+		void stateChange(adevs::Atomic<adevs::PortValue<job> >* model, double t)
+		{
+			#pragma omp critical
+			{
+				cout << "State change @ t = " << t;
+				if (model == prc) cout << " : proc" << endl;
+				else if (model == gnr) cout << " : genr" << endl;
+				else if (model == trnsd)
+				{
+					cout << " : transd" << endl;
+					trnsd->printSummary();
+				}
+				else
+					assert(false);
+			}
 		}
 	private:
 };
@@ -76,9 +82,9 @@ int main()
 	model.couple(trnsd, trnsd->out, gnr, gnr->stop);
 	/// Create a simulator for the model and run it until
 	/// the model passivates.
-	adevs::OptSimulator<PortValue> sim(&model);
+	adevs::ParSimulator<PortValue> sim(&model);
 	sim.addEventListener(new Listener());
-	sim.execUntil(DBL_MAX);
+	sim.execUntil(10.0);
 	/// Done!
 	return 0;
 }

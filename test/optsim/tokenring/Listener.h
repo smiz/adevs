@@ -15,12 +15,15 @@ class Listener:
 		{
 		}
 		void outputEvent(adevs::Event<PortValue> x, double t){}
-		void stateChange(adevs::Atomic<PortValue>* model, double t, void* data)
+		void stateChange(adevs::Atomic<PortValue>* model, double t)
 		{
 			node* n = dynamic_cast<node*>(model);
-			assert(t == n->getTime(data));
-			std::cout << n->getMessage(data);
-			std::cout.flush();
+			assert(t == n->getTime());
+			#pragma omp critical
+			{
+				std::cout << n->getMessage();
+				std::cout.flush();
+			}
 		}
 };
 

@@ -36,8 +36,6 @@ template <class X> class Atomic;
 template <class X, class T> class Schedule;
 template <class X> class Simulator;
 // These predeclerations are needed to support the optimistic simulator
-template <class X> class OptSimulator;
-template <class X> class SpecThread;
 template <class X> class LogicalProcess;
 
 /**
@@ -151,7 +149,6 @@ template <class X> class Atomic: public Devs<X>
 			x = y = NULL;
 			q_index = 0; // The Schedule requires this to be zero
 			active = false;
-			lp = NULL; // This is created by the OptSimulator if it is needed
 		}
 		/// Internal transition function.
 		virtual void delta_int() = 0;
@@ -170,31 +167,18 @@ template <class X> class Atomic: public Devs<X>
 		output by this model.
 		*/
 		virtual void gc_output(Bag<X>& g) = 0;
-		/**
-		 * Make a copy of the model's current state and return it as a pointer to
-		 * void. This is used by the optimistic simulator for making simulation
-		 * checkpoints. The default implementation returns NULL.
-		 */
-		virtual void* save_state() { return NULL; }
-		/**
-		 * Restore a state that was previously obtained with a call to save_state().
-		 * This is used by the optimistic simulator to restore a simulation checkpoint.
-		 * The default implementation does nothing.
-		 */
-		virtual void restore_state(void* state){}
-		/**
-		 * Delete a checkpoint that was created previously by calling save_state().
-		 * This is used by the optimistic simulator to do fossil collection. The
-		 * default implementation does nothing.
-		 */
-		virtual void gc_state(void* old_state){}
 		/// Destructor.
 		virtual ~Atomic()
 		{
 		}
+		/// Get the lookahead for the model
+		virtual double lookahead() { return 0.0; }
 		/// Returns a pointer to this model.
 		Atomic<X>* typeIsAtomic() { return this; }
-
+		/// Assign this model to an LP 
+		void assignToLP(int lp) { par_info.pref_lp = lp; }
+		/// Get the LP assignment for this model
+		int getLP() const { return par_info.pref_lp; }
 	protected:
 		/**
 		Get the last event time for this model. This is 
@@ -207,8 +191,7 @@ template <class X> class Atomic: public Devs<X>
 	private:
 
 		friend class Simulator<X>;
-		friend class OptSimulator<X>;
-		friend class SpecThread<X>;
+		friend class LogicalProcess<X>;
 		friend class Schedule<X,double>;
 		friend class Schedule<X,Time>;
 
@@ -219,7 +202,11 @@ template <class X> class Atomic: public Devs<X>
 		// Input and output event bags
 		Bag<X> *x, *y;
 		// The logical process that this model is assigned to
-		LogicalProcess<X>* lp;
+		union
+		{
+			LogicalProcess<X>* lp;
+			int pref_lp;
+		} par_info;
 		// Has this model been actived?
 		bool active;
 };

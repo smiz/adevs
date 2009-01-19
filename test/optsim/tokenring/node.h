@@ -33,12 +33,15 @@ class node: public adevs::Atomic<PortValue>
 		sigma(DBL_MAX),
 		t(0.0)
 		{
+			assignToLP(ID);
+			assert(holdtime > 0.0);
 			if (token != NULL)
 			{
 				sigma = holdtime;
 			}
 			msg[0] = '\0';
 		}
+		double lookahead() { return holdtime; }
 		double ta()
 		{
 			return sigma;
@@ -94,23 +97,13 @@ class node: public adevs::Atomic<PortValue>
 		~node()
 		{
 		}
-		const char* getMessage(void* state)
+		const char* getMessage()
 		{
-			if (state != NULL)
-			{
-				state_t* s = (state_t*)state;
-				return s->msg;
-			}
-			else return msg;
+			return msg;
 		}
-		double getTime(void* state)
+		double getTime()
 		{
-			if (state != NULL)
-			{
-				state_t* s = (state_t*)state;
-				return s->t;
-			}
-			else return t;
+			return t;
 		}
 	private:	
 		const int ID;

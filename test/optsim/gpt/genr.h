@@ -19,7 +19,9 @@ class genr: public adevs::Atomic<PortValue>
 		sigma(period),
 		count(0)
 		{
+			assignToLP(0);
 		}
+		double lookahead() { assert(period > 0.0); return period; }
 		/// Internal transition function
 		void delta_int()
 		{

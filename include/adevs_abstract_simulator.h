@@ -64,7 +64,7 @@ template <class X> class AbstractSimulator
 		/// Notify listeners of an output event.
 		void notify_output_listeners(Devs<X>* model, const X& value, double t);
 		/// Notify listeners of a state change.
-		void notify_state_listeners(Atomic<X>* model, double t, void* value = NULL);
+		void notify_state_listeners(Atomic<X>* model, double t);
 	private:
 		/// Eternal event listeners
 		Bag<EventListener<X>*> listeners;
@@ -83,12 +83,12 @@ void AbstractSimulator<X>::notify_output_listeners(Devs<X>* model, const X& valu
 }
 
 template <class X>
-void AbstractSimulator<X>::notify_state_listeners(Atomic<X>* model, double t, void* value)
+void AbstractSimulator<X>::notify_state_listeners(Atomic<X>* model, double t)
 {
 	typename Bag<EventListener<X>*>::iterator iter;
 	for (iter = listeners.begin(); iter != listeners.end(); iter++)
 	{
-		(*iter)->stateChange(model,t,value);
+		(*iter)->stateChange(model,t);
 	}
 }
 

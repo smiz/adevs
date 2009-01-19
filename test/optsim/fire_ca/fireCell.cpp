@@ -24,6 +24,12 @@ free_list(NULL)
 	else phase = UNBURNED;
 }
 
+double fireCell::lookahead()
+{
+	if (fuel < move_rate) return DBL_MAX;
+	else return move_rate;
+}
+
 double fireCell::ta()
 {
 	// A Burning cell burns for as long as it has fuel
@@ -119,18 +125,10 @@ void fireCell::output_func(adevs::Bag<CellEvent>& yb)
 	}
 }
 
-fireCell::state_t fireCell::getState(const void* state_data)
+fireCell::state_t fireCell::getState()
 {
-	if (state_data == NULL)
-	{
-		state_t s(phase,fuel,heat);
-		return s;
-	}
-	else
-	{
-		const state_t* state = static_cast<const state_t*>(state_data);
-		return *state;
-	}
+	state_t s(phase,fuel,heat);
+	return s;
 }
 
 void* fireCell::save_state()
