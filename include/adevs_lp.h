@@ -41,13 +41,21 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 namespace adevs
 {
 
-template <typename X> struct Message
+template <typename X> struct Junk
 {
 	Time t;
+	Atomic<X>* owner;
+	Bag<X>* y;
+};
+
+template <typename X> struct Message
+{
+	typedef enum { OUTPUT, EIT, LET } msg_type_t;
+	Time t;
 	LogicalProcess<X> *src;
-	// Target's model is NULL if this is a null event
 	Atomic<X>* target;
 	X value;
+	msg_type_t type;
 	// Sort by timestamp, smallest timestamp first in the STL priority_queue
 	bool operator<(const Message<X>& other) const
 	{
@@ -129,18 +137,23 @@ template <class X> class LogicalProcess
 	private:
 		/// ID of this LP
 		const int ID;
-		// List of influencees
-		const std::vector<int> E;
+		// List of influencees and influencers
+		const std::vector<int> E, I;
 		// All of the LPs
 		LogicalProcess<X>** all_lps;
 		// Lookahead for this LP
 		double lookahead;
-		// Earliest input times
-		std::map<int,Time> eit;
+		// Earliest input times and last event timers
+		std::map<int,Time> eit, let;
 		// Input messages to the LP
 		MessageQ<X> input_q;
 		// Priority queue of messages to process
 		std::priority_queue<Message<X> > xq;
+		// Time order lists of messages inter-lp messages that need to be deleted
+		std::list<Junk<X> > inter_lp_msgs;
+		// This flag is set to true by the route method if the message
+		// goes to another LP
+		bool inter_lp;
 		// Smallest of the earliest input times
 		Time min_eit, prev_eot;
 		// Bags of imminent and active models.
@@ -154,6 +167,8 @@ template <class X> class LogicalProcess
 		AbstractSimulator<X>* sim;
 		// Send the EOT
 		void sendEOT();
+		// Send the last event time to influencers
+		void sendLET(Time tL);
 		// Find the smallest of the EIT
 		void updateEIT();
 		// Route events using the Network models' route methods
@@ -164,12 +179,14 @@ template <class X> class LogicalProcess
 		void inject_event(Atomic<X>* model, X& value);
 		// Build the imminent set and route the output
 		void computeOutput();
+		// Delete inter LP messages that are no longer in use
+		void cleanupInterLPMsgs();
 };
 
 template <typename X>
 LogicalProcess<X>::LogicalProcess(int ID, const std::vector<int>& I, const std::vector<int>& E,
 		LogicalProcess<X>** all_lps, AbstractSimulator<X>* sim):
-	ID(ID),E(E),all_lps(all_lps),sim(sim)
+	ID(ID),E(E),I(I),all_lps(all_lps),sim(sim)
 {
 	prev_eot = Time(0.0,0);
 	all_lps[ID] = this;
@@ -177,6 +194,10 @@ LogicalProcess<X>::LogicalProcess(int ID, const std::vector<int>& I, const std::
 	for (typename std::vector<int>::const_iterator iter = I.begin();
 			iter != I.end(); iter++)
 		if (*iter != ID) eit[*iter] = Time(0.0,0);
+	for (typename std::vector<int>::const_iterator iter = E.begin();
+			iter != E.end(); iter++)
+		if (*iter != ID) let[*iter] = Time(0.0,0);
+	updateEIT();
 }
 
 template <typename X>
@@ -192,11 +213,43 @@ void LogicalProcess<X>::addModel(Atomic<X>* model)
 }
 
 template <typename X>
+void LogicalProcess<X>::cleanupInterLPMsgs()
+{
+	Time min_let = Time::Inf();
+	for (std::map<int,Time>::iterator iter = let.begin();
+			iter != let.end(); iter++)	
+		min_let = std::min((*iter).second,min_let);
+	while (!inter_lp_msgs.empty() && inter_lp_msgs.front().t <= min_let)
+	{
+		Atomic<X>* model = inter_lp_msgs.front().owner;
+		Bag<X>* garbage = inter_lp_msgs.front().y;
+		inter_lp_msgs.pop_front();
+		model->gc_output(*garbage);
+		garbage->clear();
+		io_pool.destroy_obj(garbage);
+	}
+}
+
+template <typename X>
+void LogicalProcess<X>::sendLET(Time tL)
+{
+	Message<X> msg;
+	msg.target = NULL;
+	msg.src = this;
+	msg.type = Message<X>::LET;
+	msg.t = tL;
+	for (std::vector<int>::const_iterator iter = I.begin();
+			iter != I.end(); iter++)
+		if (*iter != ID) all_lps[(*iter)]->sendMessage(msg);
+}
+
+template <typename X>
 void LogicalProcess<X>::sendEOT()
 {
 	Message<X> msg;
 	msg.target = NULL;
 	msg.src = this;
+	msg.type = Message<X>::EIT;
 	msg.t = min_eit;
 	msg.t.t += lookahead;
 	msg.t.c = 0;
@@ -235,6 +288,7 @@ void LogicalProcess<X>::computeOutput()
 		Atomic<X>* model = *imm_iter;
 		model->y = io_pool.make_obj();
 		model->output_func(*(model->y));
+		inter_lp = false;
 		// Route each event in y
 		for (typename Bag<X>::iterator y_iter = model->y->begin(); 
 			y_iter != model->y->end(); y_iter++)
@@ -242,17 +296,26 @@ void LogicalProcess<X>::computeOutput()
 			// Send messages to local models and other LPs
 			route(model->getParent(),model,*y_iter);
 		}
+		if (inter_lp)
+		{
+			Junk<X> junk_msg;
+			junk_msg.owner = model;
+			junk_msg.t = sched.minPriority();
+			junk_msg.y = model->y;
+			inter_lp_msgs.push_back(junk_msg);
+			model->y = NULL;
+		}
 	}
 }
 
 template <typename X>
 void LogicalProcess<X>::run(double t_stop)
 {
+	Time tL = Time(0.0,0);
 	bool tstop_reached = false;
 	while (true)
 	{
-		// Find the smallest EIT 
-		updateEIT();
+		bool send_let = false;
 		// Make sure we stop at t_stop
 		Time tStop = min_eit;
 		if (tStop == Time::Inf() || tStop > Time(t_stop,UINT_MAX))
@@ -290,22 +353,40 @@ void LogicalProcess<X>::run(double t_stop)
 			for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
 				imm_iter != imm.end(); imm_iter++)
 			{
-				// NEED TO GARBAGE COLLECT!
-				(*imm_iter)->y->clear();
-				io_pool.destroy_obj((*imm_iter)->y);
-				(*imm_iter)->y = NULL;
+				if ((*imm_iter)->y != NULL)
+				{
+					(*imm_iter)->gc_output(*((*imm_iter)->y));
+					(*imm_iter)->y->clear();
+					io_pool.destroy_obj((*imm_iter)->y);
+					(*imm_iter)->y = NULL;
+				}
 			}
 			// Clear the active model lists
 			imm.clear();
 			activated.clear();
+			// Should we send a LET message when done?
+			send_let = true;
+			tL = tN;
 		}
+		if (send_let) sendLET(tL);
 		// Send our earliest output time estimate
 		sendEOT();
 		if (tstop_reached) return;
 		// Get a message from the input queue
 		Message<X> msg = input_q.remove();
 		// If it is a NULL message, then update the EIT
-		if (msg.target == NULL) eit[msg.src->getID()] = msg.t;
+		if (msg.type == Message<X>::EIT)
+		{
+			eit[msg.src->getID()] = msg.t;
+			updateEIT();
+		}
+		// If it is a LET message, then update the earliest input time and
+		// clean up if we can
+		else if (msg.type == Message<X>::LET)
+		{
+			let[msg.src->getID()] = msg.t;
+			cleanupInterLPMsgs();
+		}
 		// Otherwise put it into the input queue
 		else xq.push(msg);
 	}
@@ -393,7 +474,9 @@ void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 				msg.t = sched.minPriority();
 				msg.target = amodel;
 				msg.value = (*recv_iter).value;
+				msg.type = Message<X>::OUTPUT;
 				amodel->par_info.lp->sendMessage(msg);
+				inter_lp = true;
 			}
 		}
 		// if this is an external output from the parent model
@@ -416,6 +499,26 @@ void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 template <class X>
 LogicalProcess<X>::~LogicalProcess()
 {
+	// Delete any inter lp messages that are still hanging around
+	let.clear();
+	cleanupInterLPMsgs();
+	// Cleanup input and output bags that are still lingering
+	for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
+		imm_iter != imm.end(); imm_iter++)
+	{
+		if ((*imm_iter)->x != NULL) io_pool.destroy_obj((*imm_iter)->x);
+		if ((*imm_iter)->y != NULL)
+		{
+			(*imm_iter)->gc_output(*((*imm_iter)->y));
+			io_pool.destroy_obj((*imm_iter)->y);
+		}
+	}
+	// Cleanup input and output bags that are still lingering
+	for (typename Bag<Atomic<X>*>::iterator imm_iter = activated.begin(); 
+		imm_iter != activated.end(); imm_iter++)
+	{
+		if ((*imm_iter)->x != NULL) io_pool.destroy_obj((*imm_iter)->x);
+	}
 }
 
 } // end of namespace 
