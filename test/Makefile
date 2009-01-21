@@ -4,6 +4,8 @@ include make.common
 # Everything else should work fine
 check: bag_test obj_pool sched atomic gcd_test gpt_test tokenring_test dyn_devs_test zero_time_test ode_test listener_test wrapper_test optsim_test
 
+check_no_par: bag_test obj_pool sched atomic gcd_test gpt_test tokenring_test dyn_devs_test zero_time_test ode_test listener_test wrapper_test 
+
 optsim_test:
 	cd optsim $(CMD_SEP) $(MAKE) check
 

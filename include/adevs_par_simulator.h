@@ -1,3 +1,22 @@
+/***************
+Copyright (C) 2009 by James Nutaro
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+Bugs, comments, and questions can be sent to nutaro@gmail.com
+***************/
 #ifndef __adevs_par_simulator_h_
 #define __adevs_par_simulator_h_
 #include "adevs.h"
@@ -14,40 +33,44 @@ namespace adevs
 {
 
 /**
- * This class implements an optimistic simulation algorithm that uses
- * the OpenMP standard for its threading functionality. Your model
- * must satisfy four properties for this simulator to work properly:
- * (1) Every Atomic model must implement the methods for saving and restoring
- * its state, (2) Atomic models can not share any state variables (read
- * or write), (3) the route methods of all of the Network models must
- * be re-entrant, and (4) there are no structure changes. 
+ * This is a conservative simulator implemented using OpenMP. To work, your models must have
+ * a positive lookahead and your event listeners must be thread safe. This simulator
+ * is a little more restrictive than the single processor Simulator. You can not
+ * inject input into a running simulation, and you must tell it when to stop. The simulator
+ * will not halt automatically when there are no more events left (there is no global
+ * simulation clock, and so time just keeps creeping forward until the specified
+ * end time is reached).
 */
 template <class X> class ParSimulator:
    public AbstractSimulator<X>	
 {
 	public:
 		/**
-		Create a simulator for the provided model. The simulator
-		constructor will fail and throw an adevs::exception if the
-		time advance of any component atomic model is less than zero.
-		The batch size parameter controls the potential degree of parallelism
-		and parallel overhead; it is the number of models that will process
-		an event in every iteration of the optimistic simulator.  
+		 * Create a simulator for the provided model. The Atomic components will
+		 * be assigned to the prefered processors, or assigned randomly if no
+		 * preference is given or the preference can not be satisfied.
 		*/
 		ParSimulator(Devs<X>* model);
+		/**
+		 * This constructor also accepts a directed graph whose edges tell the
+		 * simulator which processes feed input to which other processes.
+		 * For example, a simulator with processors 1, 2, and 3 where 1 -> 2
+		 * and 2 -> 3 would have two edges: 1->2 and 2->3.
+		 */
 		ParSimulator(Devs<X>* model, LpGraph& g);
 		/// Get the model's next event time
 		double nextEventTime();
 		/**
 		 * Execute the simulator until the next event time is greater
-		 * than the specified value.
+		 * than the specified value. There is no global clock, and
+		 * so this must be the actual time that you want to stop.
 		 */
 		void execUntil(double stop_time);
 		/**
-		Deletes the simulator, but leaves the model intact. The model must
-		exist when the simulator is deleted.  Delete the model only after
-		the simulator is deleted.
-		*/
+		 * Deletes the simulator, but leaves the model intact. The model must
+		 * exist when the simulator is deleted.  Delete the model only after
+		 * the simulator is deleted.
+		 */
 		~ParSimulator();
 	private:
 		LogicalProcess<X>** lp;

@@ -33,4 +33,6 @@ Include everything needed to compile user models.
 #include "adevs_rk45_improved.h"
 #include "adevs_poly.h"
 #include "adevs_wrapper.h"
+#ifdef _OPENMP
 #include "adevs_par_simulator.h"
+#endif
