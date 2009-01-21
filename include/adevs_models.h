@@ -171,11 +171,16 @@ template <class X> class Atomic: public Devs<X>
 		virtual ~Atomic()
 		{
 		}
-		/// Get the lookahead for the model
+		/**
+		 * Lookahead is a guarantee that, if the input trajectory if known
+		 * until time t, then the output trajectory is fixed until time
+		 * t+lookahead inclusive. The model must have positive lookahead
+		 * for the parallel simulator to work. This method returns 0 by default.
+		 */ 
 		virtual double lookahead() { return 0.0; }
 		/// Returns a pointer to this model.
 		Atomic<X>* typeIsAtomic() { return this; }
-		/// Assign this model to an LP 
+		/// Assign this model to an LP. They are numbered 0 to OMP_NUM_THREADS. 
 		void assignToLP(int lp) { par_info.pref_lp = lp; }
 		/// Get the LP assignment for this model
 		int getLP() const { return par_info.pref_lp; }

@@ -1,7 +1,8 @@
 # Common macros
 COMPARE = tclsh $(PREFIX)/util/compare
 # GNU gcc compiler
-CFLAGS = -fopenmp -g -Wall -I$(PREFIX)/include
+OPENMP = -fopenmp
+CFLAGS = $(OPENMP) -g -Wall -I$(PREFIX)/include
 CC = g++
 TEST_EXEC=./a.out
 DEL = rm -f
