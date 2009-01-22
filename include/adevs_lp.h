@@ -29,15 +29,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #include <map>
 #include <queue>
 #include <limits.h>
-/**
- * This is an implementation of the time warp simulation algorithm described in
- * J. Nutaro, "On Constructing Optimistic Simulation Algorithms for the Discrete
- * Event System Specification", Transactions on Modeling and Computer Simulation,
- * Vol. V, No. N, pgs xx--yy, 2008.
- *
- * This file contains all of the support classes for the optimistic simulator
- * in adevs_opt_sim.h
- */
+
 namespace adevs
 {
 
@@ -56,11 +48,35 @@ template <typename X> struct Message
 	Atomic<X>* target;
 	X value;
 	msg_type_t type;
+	// Default constructor
+	Message():value(){}
+	// Create a message with a particular value
+	Message(const X& value):value(value){}
+	// Copy constructor
+	Message(const Message& other):
+		t(other.t),
+		src(other.src),
+		target(other.target),
+		value(other.value),
+		type(other.type)
+	{
+	}
+	// Assignment operator
+	const Message<X>& operator=(const Message<X>& other)
+	{
+		t = other.t;
+		src = other.src;
+		target = other.target;
+		value = other.value;
+		type = other.type;
+		return *this;
+	}
 	// Sort by timestamp, smallest timestamp first in the STL priority_queue
 	bool operator<(const Message<X>& other) const
 	{
 		return other.t < t;
 	}
+	~Message(){}
 };
 
 template <class X> class MessageQ
@@ -80,10 +96,9 @@ template <class X> class MessageQ
 		}
 		Message<X> remove()
 		{
-			Message<X> msg;
 			while (qsize == 0);
 			omp_set_lock(&lock);
-			msg = q.front();
+			Message<X> msg(q.front());
 			q.pop_front();
 			qsize--;
 			omp_unset_lock(&lock);
@@ -303,7 +318,7 @@ void LogicalProcess<X>::computeOutput()
 			junk_msg.t = sched.minPriority();
 			junk_msg.y = model->y;
 			inter_lp_msgs.push_back(junk_msg);
-			model->y = NULL;
+			model->y = NULL; 
 		}
 	}
 }
@@ -332,15 +347,16 @@ void LogicalProcess<X>::run(double t_stop)
 			if (!xq.empty() && xq.top().t < tN) tN = xq.top().t;
 			assert(imm.empty() || tN == sched.minPriority());
 			if (tN == sched.minPriority()) computeOutput();
+			else assert(imm.empty());
 			// If this is at the EIT, the we don't have the input at tN
 			// yet and must wait to compute the next state of the model
 			if (tN == min_eit) break;
 			// Find and inject pending input
 			while (!xq.empty() && xq.top().t <= tN)
 			{
-				Message<X> msg = xq.top();
-				xq.pop();
+				Message<X> msg(xq.top());
 				inject_event(msg.target,msg.value);
+				xq.pop();
 			}
 			// Compute new states for the models
 			for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
@@ -373,7 +389,7 @@ void LogicalProcess<X>::run(double t_stop)
 		sendEOT();
 		if (tstop_reached) return;
 		// Get a message from the input queue
-		Message<X> msg = input_q.remove();
+		Message<X> msg(input_q.remove());
 		// If it is a NULL message, then update the EIT
 		if (msg.type == Message<X>::EIT)
 		{
@@ -469,11 +485,10 @@ void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 			// Atomic model at another LP
 			else 
 			{
-				Message<X> msg;
+				Message<X> msg((*recv_iter).value);
 				msg.src = this;
 				msg.t = sched.minPriority();
 				msg.target = amodel;
-				msg.value = (*recv_iter).value;
 				msg.type = Message<X>::OUTPUT;
 				amodel->par_info.lp->sendMessage(msg);
 				inter_lp = true;

@@ -39,7 +39,8 @@ namespace adevs
  * inject input into a running simulation, and you must tell it when to stop. The simulator
  * will not halt automatically when there are no more events left (there is no global
  * simulation clock, and so time just keeps creeping forward until the specified
- * end time is reached).
+ * end time is reached). MAKE SURE THAT THE DEFAULT CONSTRUCTOR FOR YOUR IO TYPE
+ * MAKES SENSE! It will be used extensively by the simulator.
 */
 template <class X> class ParSimulator:
    public AbstractSimulator<X>	

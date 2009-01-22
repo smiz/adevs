@@ -149,6 +149,7 @@ template <class X> class Atomic: public Devs<X>
 			x = y = NULL;
 			q_index = 0; // The Schedule requires this to be zero
 			active = false;
+			assignToLP(-1);
 		}
 		/// Internal transition function.
 		virtual void delta_int() = 0;
