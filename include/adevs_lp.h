@@ -401,10 +401,6 @@ void LogicalProcess<X>::run(double t_stop)
 		sendEOT(tStop);
 		if (tstop_reached)
 		{
-			#pragma omp critical
-			{
-				std::cerr << ID << " " << tL << std::endl;
-			}
 			return;
 		}
 		// Wait for EIT to increase
