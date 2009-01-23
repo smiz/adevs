@@ -86,22 +86,32 @@ template <class X> class MessageQ
 		{
 			omp_init_lock(&lock);
 			qsize = 0;
+			qsafe = &q1;
+			qshare = &q2;
 		}
 		void insert(const Message<X>& msg)
 		{
 			omp_set_lock(&lock);
-			q.push_back(msg);
-			qsize++;
+			qshare->push_back(msg);
 			omp_unset_lock(&lock);
+			#pragma omp atomic	
+			qsize++;
 		}
 		Message<X> remove()
 		{
 			while (qsize == 0);
-			omp_set_lock(&lock);
-			Message<X> msg(q.front());
-			q.pop_front();
+			#pragma omp atomic	
 			qsize--;
-			omp_unset_lock(&lock);
+			if (qsafe->empty())
+			{
+				std::list<Message<X> > *tmp = qshare;
+				omp_set_lock(&lock);
+				qshare = qsafe;
+				omp_unset_lock(&lock);
+				qsafe = tmp;
+			}
+			Message<X> msg(qsafe->front());
+			qsafe->pop_front();
 			return msg;
 		}
 		~MessageQ()
@@ -110,7 +120,8 @@ template <class X> class MessageQ
 		}
 	private:
 		omp_lock_t lock;
-		std::list<Message<X> > q;
+		std::list<Message<X> > q1, q2;
+		std::list<Message<X> > *qsafe, *qshare;
 		volatile int qsize;
 };
 
@@ -181,7 +192,7 @@ template <class X> class LogicalProcess
 		// Abstract simulator for notifying listeners
 		AbstractSimulator<X>* sim;
 		// Send the EOT
-		void sendEOT();
+		void sendEOT(Time tstop);
 		// Send the last event time to influencers
 		void sendLET(Time tL);
 		// Find the smallest of the EIT
@@ -259,13 +270,13 @@ void LogicalProcess<X>::sendLET(Time tL)
 }
 
 template <typename X>
-void LogicalProcess<X>::sendEOT()
+void LogicalProcess<X>::sendEOT(Time tstop)
 {
 	Message<X> msg;
 	msg.target = NULL;
 	msg.src = this;
 	msg.type = Message<X>::EIT;
-	msg.t = min_eit;
+	msg.t = std::min(tstop,min_eit);
 	msg.t.t += lookahead;
 	msg.t.c = 0;
 	if (sched.minPriority() <= msg.t)
@@ -274,6 +285,7 @@ void LogicalProcess<X>::sendEOT()
 		// If we have sent them, then advance the EOT by one discrete step
 		if (!imm.empty()) msg.t.c += 1;
 	}
+	assert(msg.t.c >= 0);
 	if (prev_eot == msg.t) return;
 	else prev_eot = msg.t;
 	for (std::vector<int>::const_iterator iter = E.begin();
@@ -333,7 +345,7 @@ void LogicalProcess<X>::run(double t_stop)
 		bool send_let = false;
 		// Make sure we stop at t_stop
 		Time tStop = min_eit;
-		if (tStop == Time::Inf() || tStop > Time(t_stop,UINT_MAX))
+		if (tStop == Time::Inf() || tStop.t > t_stop)
 		{
 			tStop = Time(t_stop,UINT_MAX);
 			tstop_reached = true;
@@ -350,7 +362,7 @@ void LogicalProcess<X>::run(double t_stop)
 			else assert(imm.empty());
 			// If this is at the EIT, the we don't have the input at tN
 			// yet and must wait to compute the next state of the model
-			if (tN == min_eit) break;
+			if (tN == min_eit) { assert(!tstop_reached); break; }
 			// Find and inject pending input
 			while (!xq.empty() && xq.top().t <= tN)
 			{
@@ -386,25 +398,37 @@ void LogicalProcess<X>::run(double t_stop)
 		}
 		if (send_let) sendLET(tL);
 		// Send our earliest output time estimate
-		sendEOT();
-		if (tstop_reached) return;
-		// Get a message from the input queue
-		Message<X> msg(input_q.remove());
-		// If it is a NULL message, then update the EIT
-		if (msg.type == Message<X>::EIT)
+		sendEOT(tStop);
+		if (tstop_reached)
 		{
-			eit[msg.src->getID()] = msg.t;
-			updateEIT();
+			#pragma omp critical
+			{
+				std::cerr << ID << " " << tL << std::endl;
+			}
+			return;
 		}
-		// If it is a LET message, then update the earliest input time and
-		// clean up if we can
-		else if (msg.type == Message<X>::LET)
+		// Wait for EIT to increase
+		Time eit_now(min_eit);
+		while (eit_now == min_eit)
 		{
-			let[msg.src->getID()] = msg.t;
-			cleanupInterLPMsgs();
+			// Get a message from the input queue
+			Message<X> msg(input_q.remove());
+			// If it is a NULL message, then update the EIT
+			if (msg.type == Message<X>::EIT)
+			{
+				eit[msg.src->getID()] = msg.t;
+				updateEIT();
+			}
+			// If it is a LET message, then update the earliest input time and
+			// clean up if we can
+			else if (msg.type == Message<X>::LET)
+			{
+				let[msg.src->getID()] = msg.t;
+				cleanupInterLPMsgs();
+			}
+			// Otherwise put it into the input queue
+			else xq.push(msg);
 		}
-		// Otherwise put it into the input queue
-		else xq.push(msg);
 	}
 }
 
