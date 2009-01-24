@@ -5,6 +5,7 @@
 #include <fstream>
 #include <cstdio>
 #include <ctime>
+#include <cstring>
 #include <GL/glut.h>
 using namespace std;
 
@@ -24,10 +25,10 @@ class PhaseListener:
 	public adevs::EventListener<CellEvent>
 {
 	public:
-		void stateChange(adevs::Atomic<CellEvent>* model, double t, void* state)
+		void stateChange(adevs::Atomic<CellEvent>* model, double t)
 		{
 			fireCell* cell = dynamic_cast<fireCell*>(model);
-			phase[cell->xpos()][cell->ypos()] = cell->getPhase(state);
+			phase[cell->xpos()][cell->ypos()] = cell->getPhase();
 		}
 		void outputEvent(adevs::Event<CellEvent>,double){}
 };
@@ -155,7 +156,7 @@ void simulateSpace()
 		}
 		else
 		{
-			sim = new adevs::OptSimulator<CellEvent>(cell_space);
+			sim = new adevs::ParSimulator<CellEvent>(cell_space);
 		}
 		// Create a listener for the model
 		listener = new PhaseListener();

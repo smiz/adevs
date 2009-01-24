@@ -33,14 +33,22 @@ namespace adevs
 {
 
 /**
- * This is a conservative simulator implemented using OpenMP. To work, your models must have
- * a positive lookahead and your event listeners must be thread safe. This simulator
+ * <p>This is an EXPERIMENTAL, conservative simulator implemented using OpenMP. It passes
+ * the set of test cases included in the distribution, but is likely still to contain problems.
+ * So be careful, and check your answers carefully.</p>
+ * <p>To work, your models must have
+ * a positive lookahead, your event listeners must be thread safe, and your atomic models must
+ * not share any state variables. The conservative simulator
  * is a little more restrictive than the single processor Simulator. You can not
  * inject input into a running simulation, and you must tell it when to stop. The simulator
  * will not halt automatically when there are no more events left (there is no global
  * simulation clock, and so time just keeps creeping forward until the specified
- * end time is reached). MAKE SURE THAT THE DEFAULT CONSTRUCTOR FOR YOUR IO TYPE
- * MAKES SENSE! It will be used extensively by the simulator.
+ * end time is reached).</p>
+ * <p>Don't expect too much from this simulator. Unless you have a lot of lookahead,
+ * your time advances tend to be about the size of the lookahead, and you carefully
+ * partition your models between processors, this simulator is likely to slow things
+ * down rather than speed them up. I hope that, with time, it will acquire greater
+ * practical value.</p> 
 */
 template <class X> class ParSimulator:
    public AbstractSimulator<X>	

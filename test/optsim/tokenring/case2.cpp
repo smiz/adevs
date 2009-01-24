@@ -6,15 +6,15 @@ using namespace std;
 int main () 
 {
 	adevs::Digraph<token_t*>* model = new adevs::Digraph<token_t*>();
-	node* n1 = new node(0,1,new token_t());
-	node* n2 = new node(1,0,NULL);
+	node* n1 = new node(0,1,new token_t(0));
+	node* n2 = new node(1,1,new token_t(1));
 	model->add(n1);
 	model->add(n2);
 	model->couple(n1,n1->out,n2,n2->in);
 	model->couple(n2,n2->out,n1,n1->in);  
-	adevs::OptSimulator<PortValue>* sim = new adevs::OptSimulator<PortValue>(model);
+	adevs::ParSimulator<PortValue>* sim = new adevs::ParSimulator<PortValue>(model);
 	sim->addEventListener(new Listener());
-	sim->execUntil(5.0);
+	sim->execUntil(2.0);
 	cout << "End of run!" << endl;
 	delete sim;
 	delete model;
