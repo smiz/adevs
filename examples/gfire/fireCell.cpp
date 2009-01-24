@@ -6,6 +6,12 @@ using namespace std;
 // Movement rate of the fire
 const double fireCell::move_rate = 1.0;
 
+double fireCell::lookahead()
+{
+	if (fuel < move_rate) return DBL_MAX;
+	else return move_rate;
+}
+
 fireCell::fireCell(double fuel, bool on_fire, 
 long int x, long int y):
 adevs::Atomic<CellEvent>(),
@@ -118,35 +124,8 @@ void fireCell::output_func(adevs::Bag<CellEvent>& yb)
 	}
 }
 
-Phase fireCell::getPhase(const void* state_data)
+Phase fireCell::getPhase()
 {
-	if (state_data == NULL)
-	{
-		return phase;
-	}
-	else
-	{
-		const state_t* state = static_cast<const state_t*>(state_data);
-		return state->phase;
-	}
-}
-
-void* fireCell::save_state()
-{
-	return new state_t(phase,fuel,heat);
-}
-
-void fireCell::restore_state(void* data)
-{
-	state_t* state = static_cast<state_t*>(data);
-	phase = state->phase;
-	heat = state->heat;
-	fuel = state->fuel;
-}
-
-void fireCell::gc_state(void* data)
-{
-	state_t* state = static_cast<state_t*>(data);
-	delete state;
+	return phase;
 }
 

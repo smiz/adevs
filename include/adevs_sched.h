@@ -62,6 +62,7 @@ template <class X, class T=double> class Schedule
 		 * 1 and size inclusive.
 		 */
 		Atomic<X>* get(unsigned int k) const { return heap[k].item; }
+		T getPriority(unsigned int k) const { return heap[k].priority; }
 		/// Get the number of elements in the heap.
 		unsigned int getSize() const { return size; }
 		/// Destructor.

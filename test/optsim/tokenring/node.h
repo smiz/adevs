@@ -24,14 +24,15 @@ class node: public adevs::Atomic<PortValue>
 		static const int in;
 		static const int out;
 
-		node(int ID, int holdtime, token_t* token):
+		node(int ID, int holdtime, token_t* token, bool stutter = false):
 		adevs::Atomic<PortValue>(),
 		ID(ID),
 		token(token),
 		out_token(token),
 		holdtime(holdtime),
 		sigma(DBL_MAX),
-		t(0.0)
+		t(0.0),
+		stutter(stutter)
 		{
 			assignToLP(ID);
 			assert(holdtime > 0.0);
@@ -50,6 +51,11 @@ class node: public adevs::Atomic<PortValue>
 		{
 			assert(token != NULL);
 			t += ta();
+			if (stutter && sigma > 0.0)
+			{
+				sigma = 0.0;
+				return;
+			}
 			sprintf(msg,"%d sent %d @ t = %.0f\n",ID,out_token->value,t);
 			// Copy the internal token if we are going to reuse it
 			if (out_token == token) token = new token_t(*token);
@@ -86,6 +92,7 @@ class node: public adevs::Atomic<PortValue>
 		}
 		void output_func(adevs::Bag<PortValue>& y)
 		{
+			if (stutter && sigma > 0.0) return;
 			PortValue pv(out,new token_t(*out_token));
 			y.insert(pv);
 		}
@@ -111,42 +118,7 @@ class node: public adevs::Atomic<PortValue>
 		const double holdtime;
 		double sigma, t;
 		char msg[100];
-
-		struct state_t
-		{
-			token_t *token, *out_token;
-			double sigma, t;
-			char msg[100];
-		};
-		void* save_state()
-		{
-			state_t* s = new state_t;
-			strcpy(s->msg,msg);
-			s->sigma = sigma;
-			s->t = t;
-			s->token = s->out_token = NULL;
-			if (token != NULL) s->token = new token_t(*token);
-			if (out_token == token) s->out_token = s->token;
-			else if (out_token != NULL) s->out_token = new token_t(*out_token);
-			return s;
-		}
-		void restore_state(void* data)
-		{
-			state_t* s = (state_t*)data;
-			strcpy(msg,s->msg);
-			sigma = s->sigma;
-			t = s->t;
-			if (token != NULL) delete token;
-			if (out_token != NULL && out_token != token) delete out_token;
-			token = out_token = NULL;
-			if (s->token != NULL) token = new token_t(*(s->token));
-			if (s->out_token == s->token) out_token = token;
-			else if (s->out_token != NULL) out_token = new token_t(*(s->out_token));
-		}
-		void gc_state(void* data)
-		{
-			delete (state_t*)data;
-		}
+		const bool stutter;
 };
 		
 const int node::in(0);
