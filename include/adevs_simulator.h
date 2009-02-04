@@ -26,6 +26,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #include "adevs_bag.h"
 #include "adevs_set.h"
 #include "object_pool.h"
+#include "adevs_lp.h"
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
@@ -50,7 +51,7 @@ template <class X> class Simulator:
 		time advance of any component atomic model is less than zero.
 		*/
 		Simulator(Devs<X>* model):
-			AbstractSimulator<X>()
+			AbstractSimulator<X>(),lp(NULL)
 		{
 			schedule(model,0.0);
 		}
@@ -92,7 +93,25 @@ template <class X> class Simulator:
 		the Simulator is deleted.
 		*/
 		~Simulator();
+		/**
+		 * Assign a model to the simulator. This has the same effect as passing
+		 * the model to the constructor.
+		 */
+		void addModel(Atomic<X>* model) 
+		{
+			schedule(model,0.0);
+		}
+		/**
+		 * Create a simulator that will be used by an LP as part of a parallel
+		 * simulation.
+		 */
+		Simulator(LogicalProcess<X>* lp):
+			AbstractSimulator<X>(),lp(lp)
+		{
+		}
 	private:
+		/// The processor that this simulator works for, or NULL if no simulator
+		LogicalProcess<X>* lp;
 		/// Bogus input bag for execNextEvent() method
 		Bag<Event<X> > bogus_input;
 		/// The event schedule
@@ -511,7 +530,11 @@ void Simulator<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 		amodel = (*recv_iter).model->typeIsAtomic();
 		if (amodel != NULL)
 		{
-			inject_event(amodel,(*recv_iter).value);
+			// Inject it only if it is assigned to our processor
+			if (lp == NULL || amodel->getProc() == lp->getID())
+				inject_event(amodel,(*recv_iter).value);
+			// Otherwise tell the lp about it
+			else lp->notifyInput(amodel,(*recv_iter).value);
 		}
 		// if this is an external output from the parent model
 		else if ((*recv_iter).model == parent)

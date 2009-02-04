@@ -3,10 +3,19 @@
 #include <cstring>
 
 #define MAX_SPEED 2.0
+
 struct car_t
 {
 	int ID;
 	double spd;
+};
+
+class CarMessageManager:
+	public adevs::MessageManager<car_t*>
+{
+	public:
+		car_t* clone(car_t*& car) { return new car_t(*car); }
+		void destroy(car_t*& car) { delete car; }
 };
 
 class Cell:
@@ -20,7 +29,7 @@ class Cell:
 			t(0.0),
 			pos(pos)
 		{
-			assignToLP(pos);
+			setProc(pos);
 			msg[0] = '\0';
 		}
 		void delta_int()
@@ -73,28 +82,6 @@ class Cell:
 			adevs::Bag<car_t*>::iterator iter = gb.begin();
 			for (; iter != gb.end(); iter++)
 				delete *iter;
-		}
-		void* save_state()
-		{
-			state_t* s = new state_t;
-			s->car = NULL;
-			if (car != NULL) s->car = new car_t(*car);
-			s->t = t;
-			strcpy(s->msg,msg);
-			return s;
-		}
-		void restore_state(void* data)
-		{
-			state_t* s = (state_t*)data;
-			if (car != NULL) delete car;
-			car = NULL;
-			if (s->car != NULL) car = new car_t(*(s->car));
-			t = s->t;
-			strcpy(msg,s->msg);
-		}
-		void gc_state(void* data)
-		{
-			delete (state_t*)data;
 		}
 		const char* getMsg()
 		{

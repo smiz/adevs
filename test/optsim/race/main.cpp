@@ -55,7 +55,7 @@ int main()
 	{
 		model->couple(road[i],road[i+1]);
 	}
-	ParSimulator<car_t*>* sim = new ParSimulator<car_t*>(model);
+	ParSimulator<car_t*>* sim = new ParSimulator<car_t*>(model,new CarMessageManager());
 	sim->addEventListener(new Listener());
 	sim->execUntil(2.0);
 	sim->execUntil(100.0);

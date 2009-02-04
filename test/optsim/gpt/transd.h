@@ -24,7 +24,7 @@ class transd: public adevs::Atomic<PortValue>
 		t(0.0),
 		finished(false)
 		{
-			assignToLP(3);
+			setProc(3);
 		}
 		double lookahead() { return observation_time; }
 		/// Internal transition function

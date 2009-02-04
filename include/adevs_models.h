@@ -33,10 +33,11 @@ parent in the basic devs model and for type ID functions.
 */
 template <class X> class Network;
 template <class X> class Atomic;
-template <class X, class T> class Schedule;
+template <class X> class Schedule;
 template <class X> class Simulator;
-// These predeclerations are needed to support the optimistic simulator
-template <class X> class LogicalProcess;
+
+/// Constant indicating no processor assignment for the model
+#define ADEVS_NOT_ASSIGNED_TO_PROCESSOR -1
 
 /**
 The Devs class provides basic operations for all devs models.
@@ -47,7 +48,8 @@ template <class X> class Devs
 	public:
 		/// Default constructor.
 		Devs():
-		parent(NULL)
+		parent(NULL),
+		proc(ADEVS_NOT_ASSIGNED_TO_PROCESSOR)
 		{
 		}
 		/// Destructor.
@@ -86,9 +88,27 @@ template <class X> class Devs
 		as part of the model transition.
 		*/
 		virtual bool model_transition() { return false; }
-		
+		/**
+		 * If you are using the parallel simulator, then this must return the model's lookahead.
+		 * It returns zero by default.
+		 */
+		virtual double lookahead() { return 0.0; }
+		/**
+		 * This assigns the model to a processor on the parallel computer. If this is
+		 * a network model, then its assignment will override the assignment of its
+		 * components. If no assignment is made, then the atomic leaves of the model
+		 * (or the model itself if it is already atomic) are assigned at random.
+		 */
+		void setProc(int proc) { this->proc = proc; }
+		/**
+		 * Get the processor assignment for this model. A negative number is returned
+		 * if no assignment was made.
+		 */
+		int getProc() { return proc; }
+
 	private:
 		Network<X>* parent;
+		int proc;
 };
 
 /**
@@ -149,7 +169,6 @@ template <class X> class Atomic: public Devs<X>
 			x = y = NULL;
 			q_index = 0; // The Schedule requires this to be zero
 			active = false;
-			assignToLP(-1);
 		}
 		/// Internal transition function.
 		virtual void delta_int() = 0;
@@ -169,22 +188,9 @@ template <class X> class Atomic: public Devs<X>
 		*/
 		virtual void gc_output(Bag<X>& g) = 0;
 		/// Destructor.
-		virtual ~Atomic()
-		{
-		}
-		/**
-		 * Lookahead is a guarantee that, if the input trajectory if known
-		 * until time t, then the output trajectory is fixed until time
-		 * t+lookahead inclusive. The model must have positive lookahead
-		 * for the parallel simulator to work. This method returns 0 by default.
-		 */ 
-		virtual double lookahead() { return 0.0; }
+		virtual ~Atomic(){}
 		/// Returns a pointer to this model.
 		Atomic<X>* typeIsAtomic() { return this; }
-		/// Assign this model to an LP. They are numbered 0 to OMP_NUM_THREADS. 
-		void assignToLP(int lp) { par_info.pref_lp = lp; }
-		/// Get the LP assignment for this model
-		int getLP() const { return par_info.pref_lp; }
 	protected:
 		/**
 		Get the last event time for this model. This is 
@@ -197,9 +203,7 @@ template <class X> class Atomic: public Devs<X>
 	private:
 
 		friend class Simulator<X>;
-		friend class LogicalProcess<X>;
-		friend class Schedule<X,double>;
-		friend class Schedule<X,Time>;
+		friend class Schedule<X>;
 
 		// Time of last event
 		Time tL;
@@ -207,12 +211,6 @@ template <class X> class Atomic: public Devs<X>
 		unsigned int q_index;
 		// Input and output event bags
 		Bag<X> *x, *y;
-		// The logical process that this model is assigned to
-		union
-		{
-			LogicalProcess<X>* lp;
-			int pref_lp;
-		} par_info;
 		// Has this model been actived?
 		bool active;
 };

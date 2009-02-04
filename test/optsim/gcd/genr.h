@@ -43,7 +43,7 @@ class genr: public adevs::Atomic<PortValue>
 		}
 		void init()
 		{
-			assignToLP(1);
+			setProc(1);
 			active = init_state;
 			count = 1;
 			if (!active) sigma = DBL_MAX;

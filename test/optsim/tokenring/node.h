@@ -34,7 +34,7 @@ class node: public adevs::Atomic<PortValue>
 		t(0.0),
 		stutter(stutter)
 		{
-			assignToLP(ID);
+			setProc(ID);
 			assert(holdtime > 0.0);
 			if (token != NULL)
 			{

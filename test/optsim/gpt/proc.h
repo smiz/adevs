@@ -18,7 +18,7 @@ class proc: public adevs::Atomic<PortValue>
 		sigma(DBL_MAX),
 		val(NULL)
 		{
-			assignToLP(1);
+			setProc(1);
 			t = 0.0;
 		}
 		double lookahead() { assert(processing_time > 0.0); return processing_time; }

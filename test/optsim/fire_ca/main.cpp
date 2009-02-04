@@ -79,7 +79,7 @@ void simulateSpace()
 			cell_space->add(cell,x,y);
 			snap_shot[x][y] = cell->getState();
 			int lp = x/(config->get_width()/omp_get_max_threads());
-			cell->assignToLP(lp);
+			cell->setProc(lp);
 		}
 	}
 	// Create a simulator for the model

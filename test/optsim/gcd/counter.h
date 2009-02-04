@@ -15,7 +15,7 @@ class counter: public adevs::Atomic<PortValue>
 		adevs::Atomic<PortValue>(),
 		s(0,0.0)
 		{
-			assignToLP(0);
+			setProc(0);
 		}
 		void delta_int() 
 		{
