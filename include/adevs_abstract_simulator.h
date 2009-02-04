@@ -34,14 +34,7 @@ namespace adevs
 template <class X> class AbstractSimulator 
 {
 	public:
-		/**
-		Create a simulator for the provided model. The simulator
-		constructor will fail and throw an adevs::exception if the
-		time advance of any component atomic model is less than zero.
-		*/
-		AbstractSimulator()
-		{
-		}
+		AbstractSimulator(){}
 		/**
 		Add an event listener that will be notified of output events 
 		produced by the model.

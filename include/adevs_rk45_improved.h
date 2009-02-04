@@ -23,6 +23,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #include <cmath>
 #include <algorithm>
 #include <iostream>
+#include <cassert>
 
 namespace adevs
 {

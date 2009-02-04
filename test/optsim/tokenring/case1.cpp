@@ -1,6 +1,8 @@
 #include <iostream>
 #include "node.h"
 #include "Listener.h"
+#include "MessageManager.h"
+
 using namespace std;
 
 int main () 
@@ -12,7 +14,7 @@ int main ()
 	model->add(n2);
 	model->couple(n1,n1->out,n2,n2->in);
 	model->couple(n2,n2->out,n1,n1->in);  
-	adevs::ParSimulator<PortValue>* sim = new adevs::ParSimulator<PortValue>(model);
+	adevs::ParSimulator<PortValue>* sim = new adevs::ParSimulator<PortValue>(model,new PortValueMessageManager());
 	sim->addEventListener(new Listener());
 	sim->execUntil(10.0);
 	cout << "End of run!" << endl;

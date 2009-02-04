@@ -21,7 +21,7 @@ class delay: public adevs::Atomic<PortValue>
 		dt(t),
 		sigma(DBL_MAX)
 		{
-			assignToLP(3);
+			setProc(3);
 		}
 		double lookahead() { assert(dt > 0.0); return dt; }
 		void delta_int()

@@ -19,15 +19,14 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 ***************/
 #ifndef __adevs_par_simulator_h_
 #define __adevs_par_simulator_h_
-#include "adevs.h"
 #include "adevs_abstract_simulator.h"
+#include "adevs_msg_manager.h"
 #include "adevs_lp.h"
+#include "adevs_lp_graph.h"
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
-#include "adevs_sched.h"
-#include "adevs_lp_graph.h"
 
 namespace adevs
 {
@@ -59,14 +58,14 @@ template <class X> class ParSimulator:
 		 * be assigned to the prefered processors, or assigned randomly if no
 		 * preference is given or the preference can not be satisfied.
 		*/
-		ParSimulator(Devs<X>* model);
+		ParSimulator(Devs<X>* model, MessageManager<X>* msg_manager = NULL);
 		/**
 		 * This constructor also accepts a directed graph whose edges tell the
 		 * simulator which processes feed input to which other processes.
 		 * For example, a simulator with processors 1, 2, and 3 where 1 -> 2
 		 * and 2 -> 3 would have two edges: 1->2 and 2->3.
 		 */
-		ParSimulator(Devs<X>* model, LpGraph& g);
+		ParSimulator(Devs<X>* model, LpGraph& g, MessageManager<X>* msg_manager = NULL);
 		/// Get the model's next event time
 		double nextEventTime();
 		/**
@@ -84,13 +83,14 @@ template <class X> class ParSimulator:
 	private:
 		LogicalProcess<X>** lp;
 		int lp_count;
+		MessageManager<X>* msg_manager;
 		void init(Devs<X>* model);
 		void init_sim(Devs<X>* model, LpGraph& g);
 }; 
 
 template <class X>
-ParSimulator<X>::ParSimulator(Devs<X>* model):
-	AbstractSimulator<X>()
+ParSimulator<X>::ParSimulator(Devs<X>* model, MessageManager<X>* msg_manager):
+	AbstractSimulator<X>(),msg_manager(msg_manager)
 {
 	// Create an all to all coupling
 	lp_count = omp_get_max_threads();
@@ -110,8 +110,8 @@ ParSimulator<X>::ParSimulator(Devs<X>* model):
 }
 
 template <class X>
-ParSimulator<X>::ParSimulator(Devs<X>* model, LpGraph& g):
-	AbstractSimulator<X>()
+ParSimulator<X>::ParSimulator(Devs<X>* model, LpGraph& g, MessageManager<X>* msg_manager):
+	AbstractSimulator<X>(),msg_manager(msg_manager)
 {
 	init_sim(model,g);
 }
@@ -119,11 +119,12 @@ ParSimulator<X>::ParSimulator(Devs<X>* model, LpGraph& g):
 template <class X>
 void ParSimulator<X>::init_sim(Devs<X>* model, LpGraph& g)
 {
+	if (msg_manager == NULL) msg_manager = new NullMessageManager<X>();
 	lp_count = omp_get_max_threads();
 	lp = new LogicalProcess<X>*[lp_count];
 	for (int i = 0; i < lp_count; i++)
 	{
-		lp[i] = new LogicalProcess<X>(i,g.getI(i),g.getE(i),lp,this);
+		lp[i] = new LogicalProcess<X>(i,g.getI(i),g.getE(i),lp,this,msg_manager);
 	}
 	init(model);
 }
@@ -145,7 +146,8 @@ ParSimulator<X>::~ParSimulator<X>()
 {
 	for (int i = 0; i < lp_count; i++)
 		delete lp[i];
-	delete [] lp; 
+	delete [] lp;
+   delete msg_manager;	
 }
 
 template <class X>
@@ -160,10 +162,15 @@ void ParSimulator<X>::execUntil(double tstop)
 template <class X>
 void ParSimulator<X>::init(Devs<X>* model)
 {
+	if (model->getProc() >= 0 && model->getProc() < lp_count)
+	{
+		lp[model->getProc()]->addModel(model);
+		return;
+	}
 	Atomic<X>* a = model->typeIsAtomic();
 	if (a != NULL)
 	{
-		int lp_assign = a->getLP();
+		int lp_assign = a->getProc();
 		if (lp_assign < 0 || lp_assign >= lp_count)
 			lp_assign = ((long int)a)%lp_count;
 		lp[lp_assign]->addModel(a);

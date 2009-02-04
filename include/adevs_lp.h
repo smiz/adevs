@@ -19,33 +19,31 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 ***************/
 #ifndef __adevs_lp_h_
 #define __adevs_lp_h_
-#include "adevs.h"
+#include "adevs_msg_manager.h"
 #include "adevs_abstract_simulator.h"
 #include "adevs_time.h"
 #include "object_pool.h"
+#include "adevs_simulator.h"
 #include <omp.h>
+#include <iostream>
 #include <vector>
 #include <list>
 #include <map>
 #include <queue>
 #include <limits.h>
+#include <cassert>
 
 namespace adevs
 {
 
-template <typename X> struct Junk
-{
-	Time t;
-	Atomic<X>* owner;
-	Bag<X>* y;
-};
+template <typename X> class LogicalProcess;
 
 template <typename X> struct Message
 {
-	typedef enum { OUTPUT, EIT, LET } msg_type_t;
+	typedef enum { OUTPUT, EIT } msg_type_t;
 	Time t;
 	LogicalProcess<X> *src;
-	Atomic<X>* target;
+	Devs<X>* target;
 	X value;
 	msg_type_t type;
 	// Default constructor
@@ -97,9 +95,9 @@ template <class X> class MessageQ
 			#pragma omp atomic	
 			qsize++;
 		}
+		bool empty() const { return qsize == 0; }
 		Message<X> remove()
 		{
-			while (qsize == 0);
 			#pragma omp atomic	
 			qsize--;
 			if (qsafe->empty())
@@ -130,7 +128,8 @@ template <class X> class MessageQ
  * that model optimistically. The atomic model must support state saving
  * and state restoration.
  */
-template <class X> class LogicalProcess
+template <class X> class LogicalProcess:
+	public EventListener<X>
 {
 	public:
 		/**
@@ -138,11 +137,12 @@ template <class X> class LogicalProcess
 		 * assigned to it.
 		 */
 		LogicalProcess(int ID, const std::vector<int>& I, const std::vector<int>& E,
-				LogicalProcess<X>** all_lps, AbstractSimulator<X>* sim);
+				LogicalProcess<X>** all_lps, AbstractSimulator<X>* sim,
+				MessageManager<X>* msg_manager);
 		/**
 		 * Assign a model to this logical process.
 		 */
-		void addModel(Atomic<X>* model);
+		void addModel(Devs<X>* model);
 		/**
 		 * Send a message to the logical process. This will put the message into the
 		 * back of the input queue.
@@ -151,7 +151,7 @@ template <class X> class LogicalProcess
 		/**
 		 * Get the smallest of the local time of next event. 
 		 */
-		Time getNextEventTime() { return sched.minPriority(); } 
+		Time getNextEventTime() { return sim.nextEventTime(); } 
 		// Get the process ID
 		int getID() const { return ID; }
 		/**
@@ -160,6 +160,15 @@ template <class X> class LogicalProcess
 		~LogicalProcess();
 		// Run the main simulation loop
 		void run(double t_stop);
+		void outputEvent(Event<X> x, double t)
+		{
+			psim->notify_output_listeners(x.model,x.value,t);
+		}
+		void stateChange(Atomic<X>* model, double t)
+		{
+			psim->notify_state_listeners(model,t);
+		}
+		void notifyInput(Atomic<X>* model, X& value);
 	private:
 		/// ID of this LP
 		const int ID;
@@ -169,391 +178,199 @@ template <class X> class LogicalProcess
 		LogicalProcess<X>** all_lps;
 		// Lookahead for this LP
 		double lookahead;
-		// Earliest input times and last event timers
-		std::map<int,Time> eit, let;
+		// Earliest input times 
+		std::map<int,Time> eit_map;
 		// Input messages to the LP
 		MessageQ<X> input_q;
 		// Priority queue of messages to process
 		std::priority_queue<Message<X> > xq;
-		// Time order lists of messages inter-lp messages that need to be deleted
-		std::list<Junk<X> > inter_lp_msgs;
-		// This flag is set to true by the route method if the message
-		// goes to another LP
-		bool inter_lp;
+		Bag<Event<X> > xb;
 		// Smallest of the earliest input times
-		Time min_eit, prev_eot;
-		// Bags of imminent and active models.
-		Bag<Atomic<X>*> imm, activated;
-		/// The event schedule
-		Schedule<X,Time> sched;
-		/// Pools of preallocated, commonly used objects
-		object_pool<Bag<X> > io_pool;
-		object_pool<Bag<Event<X> > > recv_pool;
+		Time eit, eot, tSelf;
 		// Abstract simulator for notifying listeners
-		AbstractSimulator<X>* sim;
-		// Send the EOT
-		void sendEOT(Time tstop);
-		// Send the last event time to influencers
-		void sendLET(Time tL);
-		// Find the smallest of the EIT
-		void updateEIT();
-		// Route events using the Network models' route methods
-		void route(Network<X>* parent, Devs<X>* src, X& x);
-		// Compute state transition of an atomic model and reschedule it
-		void exec_event(Atomic<X>* model, bool internal, Time t);
-		// Inject an input into an atomic model
-		void inject_event(Atomic<X>* model, X& value);
-		// Build the imminent set and route the output
-		void computeOutput();
-		// Delete inter LP messages that are no longer in use
-		void cleanupInterLPMsgs();
+		AbstractSimulator<X>* psim;
+		// For managing inter-lp messages
+		MessageManager<X>* msg_manager;
+		// Simulator for computing state transitions and outputs
+		Simulator<X> sim;
+		void sendEOT(Time tStop);
+		void processInputMessages();
+		void addToSimulator(Devs<X>* model);
+		void cleanup_xb();
 };
 
 template <typename X>
 LogicalProcess<X>::LogicalProcess(int ID, const std::vector<int>& I, const std::vector<int>& E,
-		LogicalProcess<X>** all_lps, AbstractSimulator<X>* sim):
-	ID(ID),E(E),I(I),all_lps(all_lps),sim(sim)
+		LogicalProcess<X>** all_lps, AbstractSimulator<X>* psim, MessageManager<X>* msg_manager):
+	ID(ID),E(E),I(I),all_lps(all_lps),psim(psim),msg_manager(msg_manager),sim(this)
 {
-	prev_eot = Time(0.0,0);
+	tSelf = eot = eit = Time(0.0,0);
 	all_lps[ID] = this;
 	lookahead = DBL_MAX;
 	for (typename std::vector<int>::const_iterator iter = I.begin();
 			iter != I.end(); iter++)
-		if (*iter != ID) eit[*iter] = Time(0.0,0);
-	for (typename std::vector<int>::const_iterator iter = E.begin();
-			iter != E.end(); iter++)
-		if (*iter != ID) let[*iter] = Time(0.0,0);
-	updateEIT();
+		if (*iter != ID) eit_map[*iter] = Time(0.0,0);
+	sim.addEventListener(this);
 }
 
 template <typename X>
-void LogicalProcess<X>::addModel(Atomic<X>* model)
+void LogicalProcess<X>::addModel(Devs<X>* model)
 {
 	lookahead = std::min(model->lookahead(),lookahead);
 	assert(lookahead > 0.0);
-	// Assign the model to this LP
-	model->par_info.lp = this;
-	// Put it into the schedule
-	double dt = model->ta();
-	if (dt < DBL_MAX) sched.schedule(model,Time(dt,0));
+	// Add it to the simulator and set the processor
+	// assignments for the submodels
+	addToSimulator(model);
 }
 
 template <typename X>
-void LogicalProcess<X>::cleanupInterLPMsgs()
+void LogicalProcess<X>::addToSimulator(Devs<X>* model)
 {
-	Time min_let = Time::Inf();
-	for (std::map<int,Time>::iterator iter = let.begin();
-			iter != let.end(); iter++)	
-		min_let = std::min((*iter).second,min_let);
-	while (!inter_lp_msgs.empty() && inter_lp_msgs.front().t <= min_let)
+	// Assign the model to this LP
+	model->setProc(ID);
+	Atomic<X>* a = model->typeIsAtomic();
+	if (a != NULL)
 	{
-		Atomic<X>* model = inter_lp_msgs.front().owner;
-		Bag<X>* garbage = inter_lp_msgs.front().y;
-		inter_lp_msgs.pop_front();
-		model->gc_output(*garbage);
-		garbage->clear();
-		io_pool.destroy_obj(garbage);
+		sim.addModel(a);
+		tSelf.t = sim.nextEventTime();
+	}
+	else
+	{
+		Set<Devs<X>*> components;
+		model->typeIsNetwork()->getComponents(components);
+		typename Set<Devs<X>*>::iterator iter = components.begin();
+		for (; iter != components.end(); iter++)
+		{
+			addToSimulator(*iter);
+		}
 	}
 }
 
 template <typename X>
-void LogicalProcess<X>::sendLET(Time tL)
+void LogicalProcess<X>::notifyInput(Atomic<X>* model, X& value)
 {
-	Message<X> msg;
-	msg.target = NULL;
+	assert(model->getProc() != ID);
+	// Send the event to the proper LP
+	Message<X> msg(msg_manager->clone(value));
+	msg.t = tSelf;
 	msg.src = this;
-	msg.type = Message<X>::LET;
-	msg.t = tL;
-	for (std::vector<int>::const_iterator iter = I.begin();
-			iter != I.end(); iter++)
-		if (*iter != ID) all_lps[(*iter)]->sendMessage(msg);
+	msg.target = model;
+	msg.type = Message<X>::OUTPUT;
+	all_lps[model->getProc()]->sendMessage(msg);
 }
 
 template <typename X>
-void LogicalProcess<X>::sendEOT(Time tstop)
+void LogicalProcess<X>::sendEOT(Time tStop)
 {
 	Message<X> msg;
 	msg.target = NULL;
 	msg.src = this;
 	msg.type = Message<X>::EIT;
-	msg.t = std::min(tstop,min_eit);
+	msg.t = tStop;
 	msg.t.t += lookahead;
 	msg.t.c = 0;
-	if (sched.minPriority() <= msg.t)
+	if (tSelf <= msg.t)
 	{
-		msg.t = sched.minPriority();
+		msg.t = tSelf;
 		// If we have sent them, then advance the EOT by one discrete step
-		if (!imm.empty()) msg.t.c += 1;
+		if (tSelf == eit) msg.t.c += 1;
 	}
 	assert(msg.t.c >= 0);
-	if (prev_eot == msg.t) return;
-	else prev_eot = msg.t;
+	// Our next event time can shrink, but EOT is a strictly increasing quantity
+	if (msg.t <= eot) return;
+	else eot = msg.t;
 	for (std::vector<int>::const_iterator iter = E.begin();
 			iter != E.end(); iter++)
 		if (*iter != ID) all_lps[(*iter)]->sendMessage(msg);
 }
 
 template <typename X>
-void LogicalProcess<X>::updateEIT()
+void LogicalProcess<X>::processInputMessages()
 {
-	min_eit = Time::Inf();
-	for (std::map<int,Time>::iterator iter = eit.begin();
-			iter != eit.end(); iter++)	
-		min_eit = std::min((*iter).second,min_eit);
-}
-
-template <typename X>
-void LogicalProcess<X>::computeOutput()
-{
-	// Don't do anything if the output is up to date
-	if (!imm.empty()) return;
-	sched.getImminent(imm);
-	// Calculate and route the output for the imminent models
-	for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
-		imm_iter != imm.end(); imm_iter++)
+	while (!input_q.empty())
 	{
-		Atomic<X>* model = *imm_iter;
-		model->y = io_pool.make_obj();
-		model->output_func(*(model->y));
-		inter_lp = false;
-		// Route each event in y
-		for (typename Bag<X>::iterator y_iter = model->y->begin(); 
-			y_iter != model->y->end(); y_iter++)
-		{
-			// Send messages to local models and other LPs
-			route(model->getParent(),model,*y_iter);
-		}
-		if (inter_lp)
-		{
-			Junk<X> junk_msg;
-			junk_msg.owner = model;
-			junk_msg.t = sched.minPriority();
-			junk_msg.y = model->y;
-			inter_lp_msgs.push_back(junk_msg);
-			model->y = NULL; 
-		}
+		Message<X> msg(input_q.remove());
+		eit_map[msg.src->getID()] = msg.t;
+		if (msg.type == Message<X>::OUTPUT)
+			xq.push(msg);
 	}
+	eit = Time::Inf();
+	for (std::map<int,Time>::iterator iter = eit_map.begin();
+			iter != eit_map.end(); iter++)	
+		eit = std::min((*iter).second,eit);
 }
 
 template <typename X>
 void LogicalProcess<X>::run(double t_stop)
 {
-	Time tL = Time(0.0,0);
-	bool tstop_reached = false;
 	while (true)
 	{
-		bool send_let = false;
+		bool tstop_reached = false;
 		// Make sure we stop at t_stop
-		Time tStop = min_eit;
-		if (tStop == Time::Inf() || tStop.t > t_stop)
+		Time tStop(eit);
+		if (Time::Inf() <= tStop || tStop.t > t_stop)
 		{
 			tStop = Time(t_stop,UINT_MAX);
 			tstop_reached = true;
 		}
-		// Simulate until that time
-		while ((!sched.empty() && sched.minPriority() <= tStop) ||
-				(!xq.empty() && xq.top().t <= tStop))
+		while (tSelf <= tStop || (!xq.empty() && xq.top().t <= tStop))
 		{
 			// Find the time of the next event
-			Time tN = sched.minPriority();
+			Time tN(tSelf);
 			if (!xq.empty() && xq.top().t < tN) tN = xq.top().t;
-			assert(imm.empty() || tN == sched.minPriority());
-			if (tN == sched.minPriority()) computeOutput();
-			else assert(imm.empty());
+			if (tSelf == tN) sim.computeNextOutput();
 			// If this is at the EIT, the we don't have the input at tN
 			// yet and must wait to compute the next state of the model
-			if (tN == min_eit) { assert(!tstop_reached); break; }
+			if (tN == eit) { assert(!tstop_reached); break; }
 			// Find and inject pending input
 			while (!xq.empty() && xq.top().t <= tN)
 			{
 				Message<X> msg(xq.top());
-				inject_event(msg.target,msg.value);
 				xq.pop();
+				assert(msg.target->getProc() == ID);
+				Event<X> input_event(msg.target,msg.value);
+				xb.insert(input_event);
 			}
-			// Compute new states for the models
-			for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
-					imm_iter != imm.end(); imm_iter++)
-				exec_event(*imm_iter,true,tN);
-			for (typename Bag<Atomic<X>*>::iterator imm_iter = activated.begin(); 
-					imm_iter != activated.end(); imm_iter++)
-				exec_event(*imm_iter,false,tN);
-			// Clean up intra lp output
-			for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
-				imm_iter != imm.end(); imm_iter++)
+			assert(tN.t < DBL_MAX);
+			sim.computeNextState(xb,tN.t);
+			cleanup_xb();
+			// What is our next internal event time?
+			tSelf = tN; // last event
+			if (tSelf.t < sim.nextEventTime()) // next event
 			{
-				if ((*imm_iter)->y != NULL)
-				{
-					(*imm_iter)->gc_output(*((*imm_iter)->y));
-					(*imm_iter)->y->clear();
-					io_pool.destroy_obj((*imm_iter)->y);
-					(*imm_iter)->y = NULL;
-				}
+				tSelf.t = sim.nextEventTime();
+				tSelf.c = 0;
 			}
-			// Clear the active model lists
-			imm.clear();
-			activated.clear();
-			// Should we send a LET message when done?
-			send_let = true;
-			tL = tN;
+			else tSelf.c++;
 		}
-		if (send_let) sendLET(tL);
 		// Send our earliest output time estimate
 		sendEOT(tStop);
-		if (tstop_reached)
-		{
-			return;
-		}
-		// Wait for EIT to increase
-		Time eit_now(min_eit);
-		while (eit_now == min_eit)
-		{
-			// Get a message from the input queue
-			Message<X> msg(input_q.remove());
-			// If it is a NULL message, then update the EIT
-			if (msg.type == Message<X>::EIT)
-			{
-				eit[msg.src->getID()] = msg.t;
-				updateEIT();
-			}
-			// If it is a LET message, then update the earliest input time and
-			// clean up if we can
-			else if (msg.type == Message<X>::LET)
-			{
-				let[msg.src->getID()] = msg.t;
-				cleanupInterLPMsgs();
-			}
-			// Otherwise put it into the input queue
-			else xq.push(msg);
-		}
+		if (tstop_reached) return;
+		// Get any available input
+		processInputMessages();
 	}
 }
 
-template <typename X>
-void LogicalProcess<X>::exec_event(Atomic<X>* model, bool internal, Time t)
+template <class X>
+void LogicalProcess<X>::cleanup_xb()
 {
-	if (model->x == NULL)
-	{
-		model->delta_int();
-	}
-	else
-	{
-		if (internal) model->delta_conf(*(model->x));
-		else model->delta_ext(t.t-model->tL.t,*(model->x));
-		model->x->clear();
-		io_pool.destroy_obj(model->x);
-		model->x = NULL;
-	}
-	model->tL = t+Time(0.0,1);
-	double dt = model->ta();
-	if (dt < DBL_MAX)
-	{
-		Time tN = model->tL + Time(dt,0);
-		if (tN < model->tL) tN = model->tL;
-		sched.schedule(model,tN);
-	}
-	else sched.schedule(model,Time::Inf());
-	model->active = false;
-	sim->notify_state_listeners(model,t.t);
-}
-
-template <typename X>
-void LogicalProcess<X>::inject_event(Atomic<X>* model, X& value)
-{
-	if (model->active == false)
-	{
-		model->active = true;
-		activated.insert(model);
-	}
-	if (model->x == NULL)
-	{
-		model->x = io_pool.make_obj();
-	}
-	model->x->insert(value);
-}
-
-template <typename X>
-void LogicalProcess<X>::route(Network<X>* parent, Devs<X>* src, X& x)
-{
-	// No one to do the routing, so return
-	if (parent == NULL) return;
-	// If this is not an input to a coupled model
-	if (parent != src) sim->notify_output_listeners(src,x,sched.minPriority().t);
-	// Create a bag to collect the receivers
-	Bag<Event<X> >* recvs = recv_pool.make_obj();
-	// Compute the set of receivers for this value
-	parent->route(x,src,*recvs);
-	// Deliver the event to each of its targets
-	Atomic<X>* amodel = NULL;
-	typename Bag<Event<X> >::iterator recv_iter = recvs->begin();
-	for (; recv_iter != recvs->end(); recv_iter++)
-	{
-		// Check for self-influencing error condition
-		if (src == (*recv_iter).model)
-		{
-			exception err("Model tried to influence self",src);
-			throw err;
-		}
-		/**
-		if the destination is an atomic model
-		*/
-		amodel = (*recv_iter).model->typeIsAtomic();
-		if (amodel != NULL)
-		{
-			// Atomic model local to the LP
-			if (amodel->par_info.lp == this)
-				inject_event(amodel,(*recv_iter).value);
-			// Atomic model at another LP
-			else 
-			{
-				Message<X> msg((*recv_iter).value);
-				msg.src = this;
-				msg.t = sched.minPriority();
-				msg.target = amodel;
-				msg.type = Message<X>::OUTPUT;
-				amodel->par_info.lp->sendMessage(msg);
-				inter_lp = true;
-			}
-		}
-		// if this is an external output from the parent model
-		else if ((*recv_iter).model == parent)
-		{
-			route(parent->getParent(),parent,(*recv_iter).value);
-		}
-		// otherwise it is an input to a coupled model
-		else
-		{
-			route((*recv_iter).model->typeIsNetwork(),
-				(*recv_iter).model,(*recv_iter).value);
-		}
-	}
-	// Free the bag of receivers
-	recvs->clear();
-	recv_pool.destroy_obj(recvs);
+	typename Bag<Event<X> >::iterator iter = xb.begin();
+	for (; iter != xb.end(); iter++)
+		msg_manager->destroy((*iter).value);
+	xb.clear();
 }
 
 template <class X>
 LogicalProcess<X>::~LogicalProcess()
 {
-	// Delete any inter lp messages that are still hanging around
-	let.clear();
-	cleanupInterLPMsgs();
-	// Cleanup input and output bags that are still lingering
-	for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
-		imm_iter != imm.end(); imm_iter++)
+	while (!xq.empty())
 	{
-		if ((*imm_iter)->x != NULL) io_pool.destroy_obj((*imm_iter)->x);
-		if ((*imm_iter)->y != NULL)
-		{
-			(*imm_iter)->gc_output(*((*imm_iter)->y));
-			io_pool.destroy_obj((*imm_iter)->y);
-		}
+		Message<X> msg(xq.top());
+		xq.pop();
+		Event<X> input_event(msg.target,msg.value);
+		xb.insert(input_event);
 	}
-	// Cleanup input and output bags that are still lingering
-	for (typename Bag<Atomic<X>*>::iterator imm_iter = activated.begin(); 
-		imm_iter != activated.end(); imm_iter++)
-	{
-		if ((*imm_iter)->x != NULL) io_pool.destroy_obj((*imm_iter)->x);
-	}
+	cleanup_xb();
 }
 
 } // end of namespace 
