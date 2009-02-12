@@ -21,7 +21,6 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #define __adevs_models_h_
 #include "adevs_bag.h"
 #include "adevs_set.h"
-#include "adevs_time.h"
 #include <cstdlib>
 
 namespace adevs
@@ -198,7 +197,7 @@ template <class X> class Atomic: public Devs<X>
 		functions and should not be relied on. It is likely to be
 		removed in later versions of the code.
 		*/
-		double getLastEventTime() const { return tL.t; }
+		double getLastEventTime() const { return tL; }
 
 	private:
 
@@ -206,7 +205,7 @@ template <class X> class Atomic: public Devs<X>
 		friend class Schedule<X>;
 
 		// Time of last event
-		Time tL;
+		double tL;
 		// Index in the priority queue
 		unsigned int q_index;
 		// Input and output event bags
