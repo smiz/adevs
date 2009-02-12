@@ -566,7 +566,7 @@ void Simulator<X>::exec_event(Atomic<X>* model, bool internal, double t)
 	}
 	else
 	{
-		model->delta_ext(t-model->tL.t,*(model->x));
+		model->delta_ext(t-model->tL,*(model->x));
 	}
 	// Notify any listeners
 	notify_state_listeners(model,t);
