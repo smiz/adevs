@@ -19,6 +19,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 ***************/
 #ifndef __adevs_lp_h_
 #define __adevs_lp_h_
+#include "adevs_message_q.h"
 #include "adevs_msg_manager.h"
 #include "adevs_abstract_simulator.h"
 #include "adevs_time.h"
@@ -35,93 +36,6 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 
 namespace adevs
 {
-
-template <typename X> class LogicalProcess;
-
-template <typename X> struct Message
-{
-	typedef enum { OUTPUT, EIT } msg_type_t;
-	Time t;
-	LogicalProcess<X> *src;
-	Devs<X>* target;
-	X value;
-	msg_type_t type;
-	// Default constructor
-	Message():value(){}
-	// Create a message with a particular value
-	Message(const X& value):value(value){}
-	// Copy constructor
-	Message(const Message& other):
-		t(other.t),
-		src(other.src),
-		target(other.target),
-		value(other.value),
-		type(other.type)
-	{
-	}
-	// Assignment operator
-	const Message<X>& operator=(const Message<X>& other)
-	{
-		t = other.t;
-		src = other.src;
-		target = other.target;
-		value = other.value;
-		type = other.type;
-		return *this;
-	}
-	// Sort by timestamp, smallest timestamp first in the STL priority_queue
-	bool operator<(const Message<X>& other) const
-	{
-		return other.t < t;
-	}
-	~Message(){}
-};
-
-template <class X> class MessageQ
-{
-	public:
-		MessageQ()
-		{
-			omp_init_lock(&lock);
-			qsize = 0;
-			qsafe = &q1;
-			qshare = &q2;
-		}
-		void insert(const Message<X>& msg)
-		{
-			omp_set_lock(&lock);
-			qshare->push_back(msg);
-			omp_unset_lock(&lock);
-			#pragma omp atomic	
-			qsize++;
-		}
-		bool empty() const { return qsize == 0; }
-		Message<X> remove()
-		{
-			#pragma omp atomic	
-			qsize--;
-			if (qsafe->empty())
-			{
-				std::list<Message<X> > *tmp = qshare;
-				omp_set_lock(&lock);
-				qshare = qsafe;
-				omp_unset_lock(&lock);
-				qsafe = tmp;
-			}
-			Message<X> msg(qsafe->front());
-			qsafe->pop_front();
-			return msg;
-		}
-		~MessageQ()
-		{
-			omp_destroy_lock(&lock);
-		}
-	private:
-		omp_lock_t lock;
-		std::list<Message<X> > q1, q2;
-		std::list<Message<X> > *qsafe, *qshare;
-		volatile int qsize;
-};
 
 /*
  * A logical process is assigned to every atomic model and it simulates
