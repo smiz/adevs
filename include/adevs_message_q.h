@@ -75,7 +75,7 @@ template <class X> class MessageQ
 		MessageQ()
 		{
 			omp_init_lock(&lock);
-			qsize = 0;
+			qshare_empty = true;
 			qsafe = &q1;
 			qshare = &q2;
 		}
@@ -83,20 +83,18 @@ template <class X> class MessageQ
 		{
 			omp_set_lock(&lock);
 			qshare->push_back(msg);
+			qshare_empty = false;
 			omp_unset_lock(&lock);
-			#pragma omp atomic	
-			qsize++;
 		}
-		bool empty() const { return qsize == 0; }
+		bool empty() const { return qsafe->empty() && qshare_empty; }
 		Message<X> remove()
 		{
-			#pragma omp atomic	
-			qsize--;
 			if (qsafe->empty())
 			{
 				std::list<Message<X> > *tmp = qshare;
 				omp_set_lock(&lock);
 				qshare = qsafe;
+				qshare_empty = true;
 				omp_unset_lock(&lock);
 				qsafe = tmp;
 			}
@@ -112,7 +110,7 @@ template <class X> class MessageQ
 		omp_lock_t lock;
 		std::list<Message<X> > q1, q2;
 		std::list<Message<X> > *qsafe, *qshare;
-		volatile int qsize;
+		volatile bool qshare_empty;
 };
 
 } // end of namespace
