@@ -17,12 +17,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 Bugs, comments, and questions can be sent to nutaro@gmail.com
 ***************/
-#ifndef __adevs_lp_h_
-#define __adevs_lp_h_
-#ifdef _OPENMP
-#include "adevs_lp_omp.h"
-#else
-#include "adevs_lp_no_omp.h"
-#endif
-#endif
+/*
+ * This is for compilers that do not support OpenMP
+ */
+#include "adevs_time.h"
+
+namespace adevs
+{
+
+template <typename X> struct LogicalProcess
+{
+	void addModel(Devs<X>*){}
+	Time getNextEventTime() { return Time::Inf(); } 
+	int getID() const { return 0; }
+	void run(double) {}
+	void outputEvent(Event<X>, double){}
+	void stateChange(Atomic<X>*, double){}
+	void notifyInput(Atomic<X>*, X&){}
+};
+
+} // end of namespace 
 
