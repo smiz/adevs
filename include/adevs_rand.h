@@ -178,7 +178,6 @@ class rv
 		Systems Automation Group
 		in the School of Engineering at Deakin University).
 		*/
-		double exp(double a) { return exponential(a); }
 		double exponential(double a);
 		double hyperexponential(double p,double a,double b);
 		double laplace(double a);
