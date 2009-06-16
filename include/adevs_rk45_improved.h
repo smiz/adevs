@@ -246,7 +246,7 @@ double rk45_improved<X>::next_event_func(bool& is_event)
 		if (err <= err_tol) break; // Check the error, exit if ok
 		// Reduce the step size otherwise
 		double h_next = 0.8*pow(err_tol*h_cur*h_cur*h_cur*h_cur*h_cur,0.2)/fabs(err);
-		if (h_next > h_cur) h_next = 0.8*h_cur;
+		if (h_next >= h_cur) h_next = 0.8*h_cur;
 		h_cur = h_next;
 	}
 	// q_tmp now stores the state variables at the end of the time step
@@ -273,8 +273,7 @@ double rk45_improved<X>::next_event_func(bool& is_event)
 			if (sign_change && !tolerance_met)
 			{
 				double t_cross = h_cur*es[i]/(es[i]-en[i]);
-				assert(t_cross < h_cur);
-				assert(t_cross > 0.0);
+				assert(t_cross >= 0.0);
 				if (t_cross < h_next) h_next = t_cross;
 			}
 		}
