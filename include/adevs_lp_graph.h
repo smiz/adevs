@@ -46,7 +46,7 @@ class LpGraph
 		/// Get the influencers of node B
 		const std::vector<int>& getI(int B) { return I[B]; }
 		/// Get the influencees of node A
-		const std::vector<int>& getE(int A) { return I[A]; }
+		const std::vector<int>& getE(int A) { return E[A]; }
 		/// Destructor
 		~LpGraph(){}
 	private:
