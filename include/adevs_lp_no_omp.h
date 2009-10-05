@@ -17,14 +17,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 Bugs, comments, and questions can be sent to nutaro@gmail.com
 ***************/
-/*
- * This is for compilers that do not support OpenMP
- */
 #include "adevs_time.h"
 
 namespace adevs
 {
 
+/*
+ * This is an empty class definition for compilers that do not support OpenMP.
+ */
 template <typename X> struct LogicalProcess
 {
 	void addModel(Devs<X>*){}

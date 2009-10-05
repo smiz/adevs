@@ -27,44 +27,36 @@ namespace adevs
 {
 
 /**
-The adevs::exception class is derived from the standard template
-library exception class.
-*/
+ * The adevs::exception class is derived from the standard template
+ * library exception class.
+ */
 class exception: public std::exception
 {
 	public:
 		/**
-		Create an exception with an error message and, if appropriate,
-		a pointer to the model that created the error.  To avoid
-		templated exceptions, the model pointer is just a void*.
-		*/
+		 * Create an exception with an error message and, if appropriate,
+		 * a pointer to the model that created the error.  To avoid
+		 * templated exceptions, the model pointer is just a void*.
+		 */
 		exception(const char* msg, void* model = NULL):
 		std::exception(),
 		msg(msg),
 		model(model) 
 		{}
-		/**
-		Copy constructor.
-		*/
+		/// Copy constructor.
 		exception(const adevs::exception& src):
 		std::exception(src),
 		msg(src.msg),
 		model(src.model)
 		{}
-		/**
-		Get the error message.
-		*/
+		/// Get the error message.
 		const char* what() const throw()
 		{
 			return msg.c_str();
 		}
-		/**
-		Get a pointer to the model that created the error.
-		*/
+		/// Get a pointer to the model that created the error.
 		void* who() const { return model; }
-		/**
-		Destructor.
-		*/
+		/// Destructor.
 		~exception() throw(){}
 	private:
 		std::string msg;

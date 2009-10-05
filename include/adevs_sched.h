@@ -57,12 +57,6 @@ template <class X> class Schedule
 		void schedule(Atomic<X>* model, double priority);
 		/// Returns true if the queue is empty, and false otherwise.
 		bool empty() const { return size == 0; }
-		/**
-		 * Get the model at position k in the heap. The value of k must be between
-		 * 1 and size inclusive.
-		 */
-		Atomic<X>* get(unsigned int k) const { return heap[k].item; }
-		double getPriority(unsigned int k) const { return heap[k].priority; }
 		/// Get the number of elements in the heap.
 		unsigned int getSize() const { return size; }
 		/// Destructor.
@@ -98,9 +92,9 @@ void Schedule<X>::getImminent(Bag<Atomic<X>*>& imm, unsigned int root) const
 	// Put the model into the imminent set
 	heap[root].item->active = true;
 	imm.insert(heap[root].item);
-	// Look for more imminent models in the left subtree
+	// Look for more imminent models in the left sub-tree
 	getImminent(imm,root*2);
-	// Look in the right subtree
+	// Look in the right sub-tree
 	getImminent(imm,root*2+1);
 }
 

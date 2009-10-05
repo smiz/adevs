@@ -29,7 +29,7 @@ namespace adevs
 	 * through a user provided input translation method before being handed off
 	 * to the wrapped model for processing. Output from the wrapped model is
 	 * passed through a user provided output translation method before emerging
-	 * as output from teh ModelWrapper. If the wrapped model is a Network, the input
+	 * as output from the ModelWrapper. If the wrapped model is a Network, the input
 	 * translation method can create inputs for any of its components. Similarly
 	 * the output translation method is provided with every output produced by
 	 * every component in the Network. If the wrapped model is Atomic then there

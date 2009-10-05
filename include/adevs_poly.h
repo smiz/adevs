@@ -32,43 +32,43 @@ namespace adevs
      * calculations, need to be interpolated for use
      * in a discrete event system. GDEVS is one particular
      * example of this.
-     * */
+     */
     class InterPoly
     {
 	public:
 	    /**
 	     * Construct a polynomial to interpolate
 	     * a function u(t). The u- values
-	     * are the depedent variable and t- the independent
+	     * are the dependent variable and t- the independent
 	     * variables.
-	     * */
+	     */
 	    InterPoly(const double* u, const double* t, unsigned int n);
 		/**
 		 * Construct a polynomial to interpolate u(t) with data points
 		 * that are regularly spaced in time from an offset t0
-		 * */
+		 */
 		InterPoly(const double* u, double dt, unsigned int n, double t0 = 0.0);
 		/**
 		 * Assign new values to the data set. If t is NULL, then
 		 * only new u values will be assigned and the old t data is
 		 * kept.
-		 * */
+		 */
 		void setData(const double* u, const double* t = NULL);
 	    /**
 	     * Get the interpolated value at t
-	     * */
+	     */
 	    double interpolate(double t) const;
 	    /**
 	     * Overloaded operator for the interpolate method
-	     * */
+	     */
 	    double operator()(double t) const;
 	    /**
 	     * Approximate the function derivative at t
-	     * */
+	     */
 	    double derivative(double t) const;
 	    /**
 	     * Destructor
-	     * */
+	     */
 	    ~InterPoly();
 	private:
 	    InterPoly(){}

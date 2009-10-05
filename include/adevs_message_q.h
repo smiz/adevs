@@ -61,7 +61,7 @@ template <typename X> struct Message
 		type = other.type;
 		return *this;
 	}
-	// Sort by timestamp, smallest timestamp first in the STL priority_queue
+	// Sort by time stamp, smallest time stamp first in the STL priority_queue
 	bool operator<(const Message<X>& other) const
 	{
 		return other.t < t;

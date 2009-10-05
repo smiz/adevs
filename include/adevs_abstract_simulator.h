@@ -36,9 +36,9 @@ template <class X> class AbstractSimulator
 	public:
 		AbstractSimulator(){}
 		/**
-		Add an event listener that will be notified of output events 
-		produced by the model.
-		*/
+		 * Add an event listener that will be notified of output events 
+		 * produced by the model.
+		 */
 		void addEventListener(EventListener<X>* l)
 		{
 			listeners.insert(l);
@@ -50,9 +50,9 @@ template <class X> class AbstractSimulator
 		}
 		/// Get the model's next event time
 		virtual double nextEventTime() = 0;
-		/// Execute the simulator until the next event is greater than tend
+		/// Execute the simulator until the next event time is greater than tend
 		virtual void execUntil(double tend) = 0;
-		/// Destructor should leave the model intact.
+		/// Destructor leaves the model intact.
 		virtual ~AbstractSimulator(){}
 		/// Notify listeners of an output event.
 		void notify_output_listeners(Devs<X>* model, const X& value, double t);
@@ -85,6 +85,6 @@ void AbstractSimulator<X>::notify_state_listeners(Atomic<X>* model, double t)
 	}
 }
 
-} // End of namespace
+} // end of namespace
 
 #endif

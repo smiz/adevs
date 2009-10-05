@@ -74,7 +74,7 @@ template <class T> class Bag
 			for (unsigned int i = 0; i < size_; i++) 
 				b[i] = src.b[i];
 		}
-		/// Assignment opeator uses the = operator of T
+		/// Assignment operator uses the = operator of T
 		const Bag<T>& operator=(const Bag<T>& src)
 		{
 			cap_ = src.cap_;
@@ -99,7 +99,7 @@ template <class T> class Bag
 		bool empty() const { return size_ == 0; }
 		/// Get an iterator pointing to the first element in the bag
 		iterator begin() const { return iterator(0,b); }
-		/// Get an interator to the end of the bag (i.e., just after the last element)
+		/// Get an iterator to the end of the bag (i.e., just after the last element)
 		iterator end() const { return iterator(size_,b); }
 		/// Erase the first instance of k
 		void erase(const T& k) 

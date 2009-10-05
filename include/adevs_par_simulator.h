@@ -32,35 +32,30 @@ namespace adevs
 {
 
 /**
- * <p>This is an EXPERIMENTAL, conservative simulator implemented using OpenMP. It passes
- * the set of test cases included in the distribution, but is likely still to contain problems.
- * So be careful, and check your answers carefully.</p>
- * <p>To work, your models must have
- * a positive lookahead, your event listeners must be thread safe, and your atomic models must
- * not share any state variables. The conservative simulator
- * is a little more restrictive than the single processor Simulator. You can not
- * inject input into a running simulation, and you must tell it when to stop. The simulator
- * will not halt automatically when there are no more events left (there is no global
- * simulation clock, and so time just keeps creeping forward until the specified
- * end time is reached).</p>
- * <p>Don't expect too much from this simulator. Unless you have a lot of lookahead,
- * your time advances tend to be about the size of the lookahead, and you carefully
- * partition your models between processors, this simulator is likely to slow things
- * down rather than speed them up. I hope that, with time, it will acquire greater
- * practical value.</p> 
-*/
+ * This is the conservative simulator described in "Building Software for Simulation".
+ * Models, network and atomic, can be assigned to specific threads (processors) by calling the
+ * setProc() method. The components of a network will inherit its thread assignment.
+ * Model's with an explicit assignment must have a positive lookahead. Atomic models that are
+ * unassigned, by inheritance or otherwise, must have a positive lookahead and will
+ * be assigned randomly to a thread.
+ */
 template <class X> class ParSimulator:
    public AbstractSimulator<X>	
 {
 	public:
 		/**
 		 * Create a simulator for the provided model. The Atomic components will
-		 * be assigned to the prefered processors, or assigned randomly if no
-		 * preference is given or the preference can not be satisfied.
-		*/
+		 * be assigned to the preferred processors, or assigned randomly if no
+		 * preference is given or the preference can not be satisfied. The
+		 * message manager is used to handle inter-thread events. If msg_manager
+		 * is NULL, the assignment and copy constructors of output objects 
+		 * are used and their is no explicit cleanup (see the MessageManager
+		 * documentation). This constructor assumes all to all connection of the
+		 * processors.
+		 */
 		ParSimulator(Devs<X>* model, MessageManager<X>* msg_manager = NULL);
 		/**
-		 * This constructor also accepts a directed graph whose edges tell the
+		 * This constructor accepts a directed graph whose edges tell the
 		 * simulator which processes feed input to which other processes.
 		 * For example, a simulator with processors 1, 2, and 3 where 1 -> 2
 		 * and 2 -> 3 would have two edges: 1->2 and 2->3.
@@ -70,13 +65,13 @@ template <class X> class ParSimulator:
 		double nextEventTime();
 		/**
 		 * Execute the simulator until the next event time is greater
-		 * than the specified value. There is no global clock, and
+		 * than the specified value. There is no global clock, 
 		 * so this must be the actual time that you want to stop.
 		 */
 		void execUntil(double stop_time);
 		/**
 		 * Deletes the simulator, but leaves the model intact. The model must
-		 * exist when the simulator is deleted.  Delete the model only after
+		 * exist when the simulator is deleted, so delete the model only after
 		 * the simulator is deleted.
 		 */
 		~ParSimulator();
@@ -187,6 +182,6 @@ void ParSimulator<X>::init(Devs<X>* model)
 	}
 }
 
-} // End of namespace
+} // end of namespace
 
 #endif
