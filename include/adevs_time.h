@@ -52,19 +52,19 @@ struct Time
 		c = 0;
 		return *this;
 	}
-	/// Oplus operator (this is not commutative or associative!)
+	/// Advance operator (this is not commutative or associative!)
 	Time operator+(const Time& t2) const
 	{
 	   if (t2.t == 0.0) return Time(t,t2.c+c);
 	   else return Time(t+t2.t,0);
 	}
-	/// Oplus and assign
+	/// Advance and assign
 	const Time& operator+=(const Time& t2)
 	{
 		*this = *this+t2;
 		return *this;
 	}
-	/// Substract a real number (used to get the elapsed time)
+	/// Subtract a real number (used to get the elapsed time)
 	double operator-(double t2) const
 	{
 		return t-t2;

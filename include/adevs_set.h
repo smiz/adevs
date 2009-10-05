@@ -26,9 +26,8 @@ namespace adevs
 {
 
 /**
-The Set class should be a model of a STL Unique 
-Associative Container.
-*/
+ * This Set is just an STL set. 
+ */
 template <class T> class Set: public std::set<T>
 {
 };
@@ -62,6 +61,6 @@ void set_assign_union(Set<T>& A, const Set<T>& B)
 	}
 }
 
-}
+} // end of namespace
 
 #endif

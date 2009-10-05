@@ -28,10 +28,10 @@ namespace adevs
 {
 
 /**
-The digraph model requires components to use PortValue objects
-as their basic I/O type.  The port and value types are template
-arguments.  The default port type is an integer.
-*/
+ * The digraph model requires components to use PortValue objects
+ * as their basic I/O type.  The port and value types are template
+ * arguments.  The default port type is an integer.
+ */
 template <class VALUE, class PORT=int> class PortValue
 {
 	public:
@@ -71,9 +71,9 @@ template <class VALUE, class PORT=int> class PortValue
 };
 
 /**
-This Digraph model uses PortValue objects to describe
-component coupling.  The default port type is an integer.
-*/
+ * This Digraph model uses PortValue objects to describe
+ * component coupling.  The default port type is an integer.
+ */
 template <class VALUE, class PORT=int> class Digraph: 
 public Network<PortValue<VALUE,PORT> >
 {

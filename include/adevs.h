@@ -18,8 +18,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 Bugs, comments, and questions can be sent to nutaro@gmail.com
 ***************/
 /**
-Include everything needed to compile user models.
-*/
+ * Include everything needed to compile user models.
+ */
 #include "adevs_exception.h"
 #include "adevs_models.h"
 #include "adevs_simulator.h"

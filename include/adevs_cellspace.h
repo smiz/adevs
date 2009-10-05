@@ -26,10 +26,10 @@ namespace adevs
 {
 
 /**
-Input and output events produced by components of a CellSpace must
-be of the type CellEvent.  A CellEvent has an event value (i.e., the actual
-input/output value) and a target cell for the event.
-*/
+ * Input and output events produced by components of a CellSpace must
+ * be of the type CellEvent.  A CellEvent has an event value (i.e., the actual
+ * input/output value) and a target cell for the event.
+ */
 template <class X> class CellEvent
 {
 	public:
@@ -55,14 +55,16 @@ template <class X> class CellEvent
 };
 
 /**
-This class describes a 3D cell space whose components accept and produce CellEvent objects.
-This class is meant to be useful for solving PDEs, simulating
-next event cell spaces, and other types of models represented as a space of 
-discrete interacting points. Output events produced by component models must be of type CellEvent. The CellEvent (x,y,z) coordinate indicates the
-target cell for the event. The corresponding input event will have the same (x,y,z) value as
-the output event. Targets that are outside of the CellSpace will become external output
-events for the CellSpace model.  Similarly, CellEvent objects that are injected into the CellSpace (i.e., external input events) will be delivered the appropriate target cell.
-*/
+ * This class describes a 3D cell space whose components accept and produce CellEvent objects.
+ * This class is meant to be useful for solving PDEs, simulating
+ * next event cell spaces, and other types of models represented as a space of 
+ * discrete interacting points. Output events produced by component models must be of type CellEvent.
+ * The CellEvent (x,y,z) coordinate indicates the
+ * target cell for the event. The corresponding input event will have the same (x,y,z) value as
+ * the output event. Targets that are outside of the CellSpace will become external output
+ * events for the CellSpace model.  Similarly, CellEvent objects that are injected into the
+ * CellSpace (i.e., external input events) will be delivered the appropriate target cell.
+ */
 template <class X> class CellSpace: public Network<CellEvent<X> >
 {
 	public:

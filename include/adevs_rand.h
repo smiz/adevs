@@ -59,9 +59,9 @@ typedef enum
 } errorType;
 
 /**
-The random_seq class is an abstract interface to a random sequence
-generator.
-*/
+ * The random_seq class is an abstract interface to a random sequence
+ * generator.
+ */
 class random_seq 
 {
 	public:
@@ -77,11 +77,11 @@ class random_seq
 };
 
 /**
-The mtrand class is a random number generator based on a GNU implementation
-of the Mersenne Twister (see mtrand.cpp for more info).  Each copy
-of the object has its own state, and so multiple copies
-will produce independent random number streams.
-*/
+ * The mtrand class is a random number generator based on a GNU implementation
+ * of the Mersenne Twister (see mtrand.cpp for more info).  Each copy
+ * of the object has its own state, and so multiple copies
+ * will produce independent random number streams.
+ */
 class mtrand: public random_seq 
 {
 	public:
@@ -115,12 +115,12 @@ class mtrand: public random_seq
 };
 
 /**
-The crand class provides random number sequences using the standard
-C rand() function.  Since the underlying stream generator is rand(),
-the state of the random number generator can not be captured with
-a call to copy.  Also, each instance of the object samples the same
-random number sequence.
-*/
+ * The crand class provides random number sequences using the standard
+ * C rand() function.  Since the underlying stream generator is rand(),
+ * the state of the random number generator can not be captured with
+ * a call to copy.  Also, each instance of the object samples the same
+ * random number sequence.
+ */
 class crand: public random_seq 
 {
 	public:
@@ -141,19 +141,19 @@ class crand: public random_seq
 };
 
 /**
-The rv class provides a random variable based on a selectable
-implementation.  By default, this implementation is the Mersenne
-Twister (see mtrand).
-*/
+ * The rv class provides a random variable based on a selectable
+ * implementation.  By default, this implementation is the Mersenne
+ * Twister (see mtrand).
+ */
 class rv 
 {
 	public:
 		/// Create a random variable with the default implementation.
 		rv (unsigned long seed = 1);
 		/**
-		Create a random variable with the desired implementation.  The
-		implementation class is adopted by the rv.
-		*/
+		 * Create a random variable with the desired implementation.  The
+		 * implementation class is adopted by the rv.
+		 */
 		rv(random_seq* rand);
 		/// Copy constructor relies on copy method of underlying stream.
 		rv(const rv& src);
@@ -168,16 +168,16 @@ class rv
 		/// Sample a uniform distribution in the range [a, b]
 		double uniform(double a, double b);
 		/**
-		Sample a normally distributed random variable with mean m and 
-		standard deviation s.
-		*/
+		 * Sample a normally distributed random variable with mean m and 
+		 * standard deviation s.
+		 */
 		double normal(double m, double s);
 		/**
-		An assortment of other random variable types contributed by
-		Alex Cave (who, at the time, was with the Intelligent 
-		Systems Automation Group
-		in the School of Engineering at Deakin University).
-		*/
+		 * An assortment of other random variable types contributed by
+		 * Alex Cave (who, at the time, was with the Intelligent 
+		 * Systems Automation Group
+		 * in the School of Engineering at Deakin University).
+		 */
 		double exponential(double a);
 		double hyperexponential(double p,double a,double b);
 		double laplace(double a);

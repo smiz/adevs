@@ -17,9 +17,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 Bugs, comments, and questions can be sent to nutaro@gmail.com
 ***************/
-/*
- * This is for compilers that support OpenMP
- */
 #include "adevs_time.h"
 #include "adevs_message_q.h"
 #include "adevs_msg_manager.h"
@@ -38,10 +35,9 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 namespace adevs
 {
 
-/*
+/**
  * A logical process is assigned to every atomic model and it simulates
- * that model optimistically. The atomic model must support state saving
- * and state restoration.
+ * that model conservatively. 
  */
 template <class X> class LogicalProcess:
 	public EventListener<X>
@@ -55,7 +51,8 @@ template <class X> class LogicalProcess:
 				LogicalProcess<X>** all_lps, AbstractSimulator<X>* sim,
 				MessageManager<X>* msg_manager);
 		/**
-		 * Assign a model to this logical process.
+		 * Assign a model to this logical process. The model must have a positive
+		 * lookahead.
 		 */
 		void addModel(Devs<X>* model);
 		/**
@@ -73,7 +70,7 @@ template <class X> class LogicalProcess:
 		 * Destructor leaves the models intact.
 		 */
 		~LogicalProcess();
-		// Run the main simulation loop
+		/// Run the main simulation loop
 		void run(double t_stop);
 		void outputEvent(Event<X> x, double t)
 		{
@@ -85,7 +82,7 @@ template <class X> class LogicalProcess:
 		}
 		void notifyInput(Atomic<X>* model, X& value);
 	private:
-		/// ID of this LP
+		// ID of this LP
 		const int ID;
 		// List of influencees and influencers
 		const std::vector<int> E, I;
@@ -134,7 +131,7 @@ void LogicalProcess<X>::addModel(Devs<X>* model)
 	lookahead = std::min(model->lookahead(),lookahead);
 	assert(lookahead > 0.0);
 	// Add it to the simulator and set the processor
-	// assignments for the submodels
+	// assignments for the sub-models
 	addToSimulator(model);
 }
 

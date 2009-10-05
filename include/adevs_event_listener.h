@@ -26,21 +26,21 @@ namespace adevs
 {
 
 /**
- * <p>The EventListener class is used to receive output events produced
+ * The EventListener class is used to receive output events produced
  * by models, injects injected into models, and to be notified of state changes by
- * Atomic models.</p> 
+ * Atomic models.
  */
 template <class X> class EventListener
 {
 	public:
-		/// Output event callback. The default implementation is empty.
+		/**
+		 * This callback is invoked when a model, network or atomic,
+		 * produces an output. The default implementation is empty.
+		 */
 		virtual void outputEvent(Event<X> x, double t){}
 		/**
-		 * This call back is made by the simulator after an Atomic
-		 * model changes its state. The state parameter is NULL  
-		 * when the Simulator makes this callback, and it contains
-		 * the model's saved state at time t when the OptSimulator
-		 * makes this call back. This method has an empty default
+		 * This callback is made by the simulator after an Atomic
+		 * model changes its state. This method has an empty default
 		 * implementation.
 		 */
 		virtual void stateChange(Atomic<X>* model, double t){}
