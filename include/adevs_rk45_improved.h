@@ -29,6 +29,7 @@ namespace adevs
 {
 
 /**
+<p> This class is deprecated. Use the Hybrid class instead.
 <p>This class can be used to simulate a set of ordinary differential
 equations with state and time events. An adaptive fourth/fifth
 order Runge-Kutta integration scheme is used to advance to solution.

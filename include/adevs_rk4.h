@@ -25,7 +25,8 @@ namespace adevs
 {
 
 /**
-This class can be used to simulate a set of ordinary differential
+<p>This class is deprecated, use the Hybrid class instead.
+<p>This class can be used to simulate a set of ordinary differential
 equations with state and time events. This classes uses a fourth
 order Runge-Kutta integration scheme and interval halving for
 event detection.

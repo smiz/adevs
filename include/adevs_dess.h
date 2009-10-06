@@ -25,14 +25,16 @@ namespace adevs
 {
 
 /**
-This is the base class for building ODE and DAE solvers that can
-be used inside of a discrete event simulation. A description of the
-integration technique can be found in ????. The template argument
-specifies the model input and output type. The DEVS state transition functions
-and output function should not be overridden by derived classes.
-The DEVS dynamic structure and output garbage collection functions can
-be used by derived classes.
-*/
+ * <p> This class has been deprecated and will be deleted in a later release.
+ * Use the Hybrid class instead.</p>
+ * <p>This is the base class for building ODE and DAE solvers that can
+ * be used inside of a discrete event simulation. A description of the
+ * integration technique can be found in ????. The template argument
+ * specifies the model input and output type. The DEVS state transition functions
+ * and output function should not be overridden by derived classes.
+ * The DEVS dynamic structure and output garbage collection functions can
+ * be used by derived classes.
+ */
 template <class X> class DESS: public Atomic<X>
 {
 	public:
