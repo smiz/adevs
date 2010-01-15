@@ -140,12 +140,15 @@ template <typename X> class Hybrid:
 		const double* getState() const { return q; }
 		/// Get the system that this solver is operating on
 		ode_system<X>* getSystem() { return sys; }
+		/// Did a discrete event occur at the last state transition?
+		bool eventHappened() const { return event_happened; }
 		/**
 		 * Do not override this method. It performs numerical integration and
 		 * invokes the ode_system method for internal events as needed.
 		 */
 		void delta_int()
 		{
+			event_happened = event_exists;
 			if (event_exists) // Execute the internal event
 				sys->internal_event(q_trial,event); 
 			// Copy the new state vector to q
@@ -158,6 +161,7 @@ template <typename X> class Hybrid:
 		 */
 		void delta_ext(double e, const Bag<X>& xb)
 		{
+			event_happened = true;
 			solver->advance(q,e); // Advance the state q by e
 			sys->external_event(q,e,xb); // Compute the external event
 			// Copy the new state to the trial solution 
@@ -170,6 +174,7 @@ template <typename X> class Hybrid:
 		 */
 		void delta_conf(const Bag<X>& xb)
 		{
+			event_happened = true;
 			if (event_exists) // Execute the confluent or external event
 				sys->confluent_event(q_trial,event,xb); 
 			else sys->external_event(q_trial,ta(),xb);
@@ -200,6 +205,7 @@ template <typename X> class Hybrid:
 		double *q, *q_trial; // Current and tentative states
 		bool* event; // Flags indicating the encountered event surfaces
 		bool event_exists; // True if there is at least one event
+		bool event_happened; // True if a discrete event in the ode_system took place
 		// Execute a tentative step and calculate the time advance function
 		void tentative_step()
 		{
