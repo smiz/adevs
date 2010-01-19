@@ -3,13 +3,20 @@ import java.util.Collection;
 import java.util.ArrayList;
 
 /**
- * This is a wrapper around the adevs Simulator class. It is used in exactly the
- * same way. The java version of this simulator does not support parallel simulation
- * (yet).
+ * This is a wrapper around the C++ Simulator class. It is used in exactly the
+ * same way. The Java version of this simulator does not support parallel simulation
+ * (yet). Also be aware that there is no support (yet) for exceptions thrown either by
+ * the C++ Simulator or by the models when their methods are invoked by the Simulator;
+ * so please be careful.
  */
 public class Simulator
 {
-	/// Create a simulator for an Atomic model
+	/**
+	 * Creates a simulator for an Atomic or Network model.
+	 *
+ 	 * @param	model	The Network or Atomic model that you want to simulate
+	 * @see	Network Atomic
+	 */
 	public Simulator(Devs model)
 	{
 		// These objects are needed by the native simulator
@@ -18,40 +25,87 @@ public class Simulator
 		// Now create the native simulator
 		Cpp_SimID = createCppSimulator(model);
 	}
-	/// Get the absolute time of the model's next event
+	/**
+	 * Get the time of the model's next event.
+	 *
+	 * @return	the time of the next internal event
+	 */
 	public double nextEventTime() { return nextEventTime(Cpp_SimID); }
-	/// Compute the output and next state at the next event time
+	/**
+	 * Compute the output and next state at the next event time. This invokes
+	 * callbacks on the registered listeners.
+	 *
+	 * @see	EventListener
+	 */
 	public void execNextEvent() { execNextEvent(Cpp_SimID); }
- 	/// Execute until nextEventTime() > tend. 
+ 	/**
+	 * Simulate until nextEventTime() is greater than tend. This invokes
+	 * callbacks on registered listeners as the simulation progresses.
+	 * Note that tend must be greater than or equal to the time of the
+	 * last event.
+	 *
+	 * @param	tend	time to stop the simulation
+	 * @see EventListener
+	 */
 	public void execUntil(double tend) { execUntil(tend,Cpp_SimID); }
-	/// Compute the output at the time of the next event
+	/**
+	 * Compute the output at the time of the next internal event. This
+	 * invokes the outputEvent method of registered listeners, but it
+	 * does not change the state of the model or advance the simualtion
+	 * clock.
+	 *
+	 * @see	EventListener
+	 */
 	public void computeNextOutput() { computeNextOutput(Cpp_SimID); }
-	/// Inject input into the model at the specified time
+	/**
+	 * Inject input into the model at the specified time. The time t
+	 * must be greater than the time of the last event and less than or
+	 * equal to the time of the next internal event. This invokes callbacks
+	 * on registered listeners.
+	 *
+	 * @param	input	The values to inject and the target models
+	 * @param	t	Time to apply the input
+	 * @see	Event
+	 */
 	public void computeNextState(Collection<Event> input, double t)
 	{
 		computeNextState(input,t,Cpp_SimID);
 	}
-	/// Register a listener to receive callbacks when output and changes in state occur.
+	/**
+	 * Register a listener to receive callbacks when output and changes in state occur.
+	 *
+	 * @param	l	The listener to register with the simulator
+	 * @see	EventListener
+	 */
 	public void addEventListener(EventListener l)
 	{
 		addEventListener(l,Cpp_SimID);
 	}
-	/// Unregister an EventListener
+	/**
+	 * Unregister a listener so that it will not receive callbacks from the simulator.
+	 *
+	 * @param	l	The listener to unregister
+	 * @see	EventListener
+	 */
 	public void removeEventListener(EventListener l)
 	{
 		removeEventListener(l,Cpp_SimID);
 	}
 	/**
-	 * Explicitly release native resources. This must be called if you plan to reuse
-	 * a model in a new instance of a Simulator. The Simulator can not be used
-	 * after this method is called. Subsequent method calls will have not effect.
+	 * Release the native resources used by this simulator.
+	 * This must be called if you plan to reuse a model in a new instance
+	 * of a Simulator. This Simulator object will not respond
+	 * to method calls after its native resources are disposed of.
 	 */
 	public void dispose()
 	{
 		destroyCppSimulator(Cpp_SimID);
 		Cpp_SimID = 0;
 	}
-	/// Finalizer deletes native resources
+	/**
+	 * Finalizer deletes native resources if they have not already
+	 * been taken care of by a call to dispose().
+	 */
 	protected void finalize()
 	{
 		dispose();
