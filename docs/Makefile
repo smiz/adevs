@@ -1,4 +1,5 @@
 HTML_DOC_DIR = api
+JAVADOC_DIR = java-api
 MANUAL_DIR = manual
 PREFIX = ..
 
@@ -6,7 +7,7 @@ PREFIX = ..
 # Should not need to edit below this line
 #
 
-docs: html_manual api_docs pdf_manual latex_clean
+docs: html_manual cpp_docs pdf_manual latex_clean java_docs
 
 pdf_manual:
 	cd tex-files; latex manual; latex manual; latex manual; dvipdf manual.dvi; mv manual.pdf .. 
@@ -14,7 +15,11 @@ pdf_manual:
 html_manual:
 	cd tex-files; latex2html -split 3 -no_math -html_version 3.2 -dir ../${MANUAL_DIR} -mkdir -contents_in_navigation manual
 
-api_docs:
+
+java_docs:
+	javadoc -sourcepath ../src/adevs_jni -d ${JAVADOC_DIR} adevs
+
+cpp_docs:
 	doxygen doxygen.config
 
 latex_clean:
@@ -27,5 +32,6 @@ latex_clean:
 clean:
 	rm -rf ${HTML_DOC_DIR}
 	rm -rf ${MANUAL_DIR}
+	rm -rf ${JAVADOC_DIR}
 	rm -f manual.pdf
 
