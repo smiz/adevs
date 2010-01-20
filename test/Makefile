@@ -63,5 +63,6 @@ clean_all:
 	cd ode $(CMD_SEP) $(MAKE) clean
 	cd wrapper $(CMD_SEP) $(MAKE) clean
 	cd optsim $(CMD_SEP) $(MAKE) clean_all
+	cd java $(CMD_SEP) $(DEL) *.class
 	$(MAKE) clean
 

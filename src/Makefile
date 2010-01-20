@@ -2,10 +2,12 @@
 # Makefile for the GNU g++ compiler.  Use make to build the adevs library with
 # this compiler.
 #
-# Prefix is appended to the include search paths
-PREFIX = ..
+# Point this at your java installation if you want to build the Java bindings
+JAVA_HOME = /usr/lib/jvm/java-1.6.0-sun-1.6.0.17
+# Use OpenMP? 
+OMP = -fopenmp
 # Compiler flags
-CFLAGS = -fopenmp -pedantic -Wall -I${PREFIX}/include
+CFLAGS = ${OMP} -Wall -I../include -I./ -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 # Best bet for GNU compiler
  CC = g++
  OPTFLAG = -O3
@@ -14,14 +16,28 @@ CFLAGS = -fopenmp -pedantic -Wall -I${PREFIX}/include
 # SHOULD NOT NEED TO EDIT BELOW THIS LINE
 #
 
-OBJS = rv.o mtrand.o poly.o time.o
+ADEVS_OBJS = rv.o mtrand.o poly.o time.o
+JAVA_OBJS = \
+	adevs_jni/JavaAtomic.o \
+	adevs_jni/JavaDevs.o \
+	adevs_jni/JavaEventListenerManager.o \
+	adevs_jni/JavaNetwork.o \
+	adevs_jni/JavaSimulator.o
 
 .SUFFIXES: .cpp
 .cpp.o:
-	${CC} ${CFLAGS} ${OPTFLAG} -c $<
+	${CC} ${CFLAGS} ${OPTFLAG} -o $@ -c $<
 
-adevs: ${OBJS}
-	ar -r libadevs.a ${OBJS}
+# This builds the static link library libadevs.a for linking
+# to C++ simulations
+adevs: ${ADEVS_OBJS}
+	ar -r libadevs.a ${ADEVS_OBJS}
+
+# This builds the Java bindings to the simulator
+java_adevs: ${JAVA_OBJS}
+	${CC} ${OMP} -shared -Wl,-soname,java_adevs -o libjava_adevs.so ${JAVA_OBJS}
+	javac adevs_jni/adevs/*.java
+	cd adevs_jni ; jar cfv ../adevs.jar adevs/*.class
 
 clean:
-	rm -f *.o core *.a
+	rm -f *.o core *.a *.so adevs_jni/*.o adevs_jni/adevs/*.class *.jar
