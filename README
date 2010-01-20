@@ -1,0 +1,28 @@
+
+---- C++ -----
+The simulation is implemented primarily as a set of C++ header files,
+and for many applications it is sufficient to use just those. You can
+build the rest of the simulation library with the command by changing
+to the 'src' directory and running 'make'. The compiler options in the
+makefile should work for the GNU g++ compiler. You may need to set
+other options for other Unix based compilers. OpenMP support is assumed
+by default.
+
+For Visual Studio and Windows, open a command shell, go the the 'src'
+directory, and run the batch file 'build.bat'. This will create a 
+static library to link with your application. The build script does
+not include any OpenMP options, so those must be added to the compiler
+switches if you want it (the Express versions of Visual Studio don't
+support OpenMP in any case).
+
+---- Java -----
+To build the java bindings, go the the 'src' directory and then edit the
+Makefile so that JAVA_HOME points to your jdk installation. The run
+'make java_adevs' to build the shared library libjava_adevs.so and the
+jar file adevs.jar. To use these, put the shared library into your LD_LIBRARY_PATH
+and the jar file into your CLASSPATH.
+
+For Windows, you can use the prebuilt java_adevs.dll and adevs.jar by putting
+the former into your PATH and the latter into your CLASSPATH. The adevs_jni/build.bat
+script has all of the commands needed to build these from scratch if you choose
+to do so (or if you got this from the svn repository).
