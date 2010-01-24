@@ -48,9 +48,9 @@ public Network<VALUE>
 		void add(Component* model);
 		/// Couple the source model to the destination model.  
 		void couple(Component* src, Component* dst);
-		/// Assigns the model component set to c
+		/// Puts the network's set of components into c
 		void getComponents(Set<Component*>& c);
-		/// Route an event based on the coupling information.
+		/// Route an event according to the network's couplings
 		void route(const VALUE& x, Component* model, 
 		Bag<Event<VALUE> >& r);
 		/// Destructor.  Destroys all of the component models.

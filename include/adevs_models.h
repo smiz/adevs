@@ -1,5 +1,5 @@
 /***************
-Copyright (C) 2000-2006 by James Nutaro
+Copyright (C) 2000-2010 by James Nutaro
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -35,12 +35,15 @@ template <class X> class Atomic;
 template <class X> class Schedule;
 template <class X> class Simulator;
 
-/// Constant indicating no processor assignment for the model
+/*
+ * Constant indicating no processor assignment for the model. This is used by the
+ * parallel simulator
+ */
 #define ADEVS_NOT_ASSIGNED_TO_PROCESSOR -1
 
 /**
  * The Devs class provides basic operations for all devs models.
- * The model I/O type can be specialized with the the template argument.
+ * The model I/O type is set by the template argument.
  */
 template <class X> class Devs
 {
@@ -57,11 +60,11 @@ template <class X> class Devs
 		}
 		/**
 		 * Returns NULL if this is not a network model; returns a pointer to
-		 * itself otherwise.  This method is used to avoid a relatively expensive
+		 * itself otherwise. This method is used to avoid a relatively expensive
 		 * dynamic cast.
 		 */
 		virtual Network<X>* typeIsNetwork() { return NULL; }
-		/// Returns NULL if this is not a atomic model; returns itself otherwise.
+		/// Returns NULL if this is not an atomic model; returns itself otherwise.
 		virtual Atomic<X>* typeIsAtomic() { return NULL; }
 		/**
 		 * Get the model that contains this model as a component.  Returns
@@ -78,7 +81,7 @@ template <class X> class Devs
 		void setParent(Network<X>* parent) { this->parent = parent; }
 		/**
 		 * This is the structure transition function.  It should return true
-		 * if a structure change to occurs, and false otherwise. False is the
+		 * if a structure change is to occur, and false otherwise. False is the
 		 * default return value.
 		 * This method is used by the simulator to limit the execution
 		 * of potentially expensive structure changes. 
@@ -90,10 +93,11 @@ template <class X> class Devs
 		 */
 		virtual bool model_transition() { return false; }
 		/**
-		 * If you are using the parallel simulator, and if this model has an
-		 * explicit thread (process) assignment (see setProc()) or is an
-		 * unassigned atomic model, then this method must return the model's lookahead.
-		 * It returns zero by default.
+		 * This method should return the model's lookahead, which is used by the parallel
+		 * simulator to detect opportunities for parallel execution. The lookahead of a
+		 * model (network or atomic) is the time into the future for which its output
+		 * can be predicted without knowledge of the input to that that. This method
+		 * returns zero by default.
 		 */
 		virtual double lookahead() { return 0.0; }
 		/**
@@ -115,8 +119,9 @@ template <class X> class Devs
 };
 
 /**
- * Event objects are used for routing and notification of external simulation
- * event listeners.
+ * Event objects are used for routing within a network model,
+ * for notifying event listeners of output events, and for injecting
+ * input into a running simulation.
  */
 template <class X> class Event
 {
@@ -127,7 +132,13 @@ template <class X> class Event
 		value()
 		{
 		}
-		/// Constructor that sets the model and value.
+		/**
+		 * Constructor sets the model and value. The input into a
+		 * Simulator and in a network's routing method,
+		 * the model is the target of the input value.
+		 * In a callback to an event listener, the model is the
+		 * source of the output value. 
+		 */
 		Event(Devs<X>* model, const X& value):
 		model(model),
 		value(value)
@@ -173,13 +184,26 @@ template <class X> class Atomic: public Devs<X>
 		}
 		/// Internal transition function.
 		virtual void delta_int() = 0;
-		/// External transition function.  
+		/**
+		 * External transition function.
+		 * @param e Time elapsed since the last change of state
+		 * @param xb Input for the model.
+		 */  
 		virtual void delta_ext(double e, const Bag<X>& xb) = 0;
-		/// Confluent transition function.
+		/**
+		 * Confluent transition function.
+		 * @param xb Input for the model.
+		 */
 		virtual void delta_conf(const Bag<X>& xb) = 0;
-		/// Output function.  Output values should be added to the bag y.
+		/**
+		 * Output function.  Output values should be added to the bag yb.
+		 * @param yb Empty bag to be filled with the model's output
+		 */
 		virtual void output_func(Bag<X>& yb) = 0;
-		/// Time advance function. DBL_MAX is used as infinity.
+		/**
+		 * Time advance function. DBL_MAX is used for infinity.
+		 * @return The time to the next internal event
+		 */
 		virtual double ta() = 0;
 		/**
 		 * Garbage collection function.  The objects in g are
@@ -196,7 +220,7 @@ template <class X> class Atomic: public Devs<X>
 		/**
 		 * Get the last event time for this model. This is 
 		 * provided primarily for use with the backwards compatibility
-		 * functions and should not be relied on. It is likely to be
+		 * module and should not be relied on. It is likely to be
 		 * removed in later versions of the code.
 		 */
 		double getLastEventTime() const { return tL; }
@@ -228,20 +252,27 @@ template <class X> class Network: public Devs<X>
 		{
 		}
 		/**
-		 * Implementations of this method should fill the
-		 * set c with all components models, excluding the model
+		 * This method should fill the
+		 * set c with all the Network's components, excluding the 
 		 * Network model itself.
+		 * @param c An empty set to the filled with the Network's components.
 		 */
 		virtual void getComponents(Set<Devs<X>*>& c) = 0;
 		/**
-		 * An implementation should fill the EventReceiver bag r
-		 * with all Events that describe the target model and value
-		 * to be delivered to the target. 
+		 * This method is called by the Simulator to route an output value
+		 * produced by a model. This method should fill the bag r
+		 * with Events that point to the target model and carry the value
+		 * to be delivered to the target. The target may be a component 
+		 * of the Network or the Network itself, the latter causing the
+		 * Network to produce an output.
+		 * @param model The model that produced the output value
+		 * @param value The output value produced by the model
+		 * @param r A bag to be filled with (target,value) pairs
 		 */
 		virtual void route(const X& value, Devs<X>* model, Bag<Event<X> >& r) = 0;
 		/**
 		 * Destructor.  This destructor does not delete any component models.
-		 * Any cleanup should be done by the derived class.
+		 * Any necessary cleanup should be done by the derived class.
 		 */
 		virtual ~Network()
 		{

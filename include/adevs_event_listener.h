@@ -1,5 +1,5 @@
 /***************
-Copyright (C) 2000-2008 by James Nutaro
+Copyright (C) 2000-2010 by James Nutaro
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -26,9 +26,8 @@ namespace adevs
 {
 
 /**
- * The EventListener class is used to receive output events produced
- * by models, injects injected into models, and to be notified of state changes by
- * Atomic models.
+ * The EventListener interface is used to receive output events produced
+ * by model and to be notified of state changes at Atomic models.
  */
 template <class X> class EventListener
 {
@@ -36,14 +35,19 @@ template <class X> class EventListener
 		/**
 		 * This callback is invoked when a model, network or atomic,
 		 * produces an output. The default implementation is empty.
+		 * @param x The model that produced the output and the output's value
+		 * @param t The absolute time at which the output occurred
 		 */
 		virtual void outputEvent(Event<X> x, double t){}
 		/**
-		 * This callback is made by the simulator after an Atomic
+		 * This callback is invoked by the simulator after an Atomic
 		 * model changes its state. This method has an empty default
 		 * implementation.
+		 * @param model The model that changed state
+		 * @param t The absolute time at which the state change occurred
 		 */
 		virtual void stateChange(Atomic<X>* model, double t){}
+		/// Destructor
 		virtual ~EventListener(){}
 };
 
