@@ -1,5 +1,5 @@
 /***************
-Copyright (C) 2000-2008 by James Nutaro
+Copyright (C) 2000-2010 by James Nutaro
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -37,8 +37,8 @@ namespace adevs
 
 /**
  * This Simulator class implements the DEVS simulation algorithm.
- * Its methods can throw adevs::exception objects if any of the DEVS model
- * constraints are violated (i.e., a negative time advance of a model
+ * Its methods throw adevs::exception objects if any of the DEVS model
+ * constraints are violated (i.e., a negative time advance or a model
  * attempting to send an input directly to itself).
  */
 template <class X> class Simulator:
@@ -46,16 +46,20 @@ template <class X> class Simulator:
 {
 	public:
 		/**
-		 * Create a simulator for the provided model. The simulator
+		 * Create a simulator for a model. The simulator
 		 * constructor will fail and throw an adevs::exception if the
 		 * time advance of any component atomic model is less than zero.
+		 * @param model The model to simulate
 		 */
 		Simulator(Devs<X>* model):
 			AbstractSimulator<X>(),lp(NULL)
 		{
 			schedule(model,0.0);
 		}
-		/// Get the model's next event time
+		/**
+		 * Get the model's next event time
+		 * @return The absolute time of the next event
+		 */
 		double nextEventTime()
 		{
 			return sched.minPriority();
@@ -73,18 +77,18 @@ template <class X> class Simulator:
 				execNextEvent();
 		}
 		/**
-		 * Compute the output values of the imminent models if these values
+		 * Compute the output values of the imminent component models if these values
 		 * have not already been computed.  This will
-		 * notify the EventListener objects as the outputs are found. This,
-		 * in effect, implements the output function of the resultant
-		 * model.
+		 * notify registered EventListeners as the outputs are produced. 
 		 */
 		void computeNextOutput();
 		/**
-		 * Apply the specified inputs at time t and then compute the next model
-		 * states.  Requires that lastEventTime() <= t <= nextEventTime().
+		 * Apply the bag of inputs at time t and then compute the next model
+		 * states. Requires that lastEventTime() <= t <= nextEventTime().
 		 * This, in effect, implements the state transition function of the resultant
 		 * model.
+		 * @param input A bag of (input target,value) pairs
+		 * @param t The time at which the input takes effect
 		 */
 		void computeNextState(Bag<Event<X> >& input, double t);
 		/**
@@ -103,7 +107,7 @@ template <class X> class Simulator:
 		}
 		/**
 		 * Create a simulator that will be used by an LP as part of a parallel
-		 * simulation.
+		 * simulation. This method is used by the parallel simulator.
 		 */
 		Simulator(LogicalProcess<X>* lp):
 			AbstractSimulator<X>(),lp(lp)
@@ -211,7 +215,7 @@ template <class X> class Simulator:
 		 */
 		void exec_event(Atomic<X>* model, bool internal, double t);
 		/**
-		 * Construct the complete descendent set of a network model and store it in s.
+		 * Construct the complete descendant set of a network model and store it in s.
 		 */
 		void getAllChildren(Network<X>* model, Set<Devs<X>*>& s);
 };
@@ -299,9 +303,9 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 	}
 	/**
 	 * Compute model transitions and build up the prev (pre-transition)
-	 * and next (post-transition) componenent sets. These sets are built
+	 * and next (post-transition) component sets. These sets are built
 	 * up from only the models that have the model_transition function
-	 * evalauted.
+	 * evaluated.
 	 */
 	if (model_func_eval_set.empty() == false)
 	{

@@ -2,6 +2,7 @@
 #include "sampler.h"
 #include "check_ball1d_solution.h"
 #include <iostream>
+#include <typeinfo>
 using namespace std;
 using namespace adevs;
 
