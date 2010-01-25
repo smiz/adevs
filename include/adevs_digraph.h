@@ -28,9 +28,9 @@ namespace adevs
 {
 
 /**
- * The digraph model requires components to use PortValue objects
- * as their basic I/O type.  The port and value types are template
- * arguments.  The default port type is an integer.
+ * The components of a digraph model must use PortValue objects
+ * as their basic I/O type: the port and value types are template
+ * arguments. The default port type is an integer.
  */
 template <class VALUE, class PORT=int> class PortValue
 {
@@ -71,14 +71,14 @@ template <class VALUE, class PORT=int> class PortValue
 };
 
 /**
- * This Digraph model uses PortValue objects to describe
- * component coupling.  The default port type is an integer.
+ * The digraph model is used to build block-diagrams from network and atomic components.
+ * Its components must have PortValue objects as their input/output type.
  */
 template <class VALUE, class PORT=int> class Digraph: 
 public Network<PortValue<VALUE,PORT> >
 {
 	public:
-		/// A component input or output
+		/// An input or output to a component model
 		typedef PortValue<VALUE,PORT> IO_Type;
 		/// A component of the Digraph model
 		typedef Devs<IO_Type> Component;
@@ -93,7 +93,7 @@ public Network<PortValue<VALUE,PORT> >
 		/// Couple the source model to the destination model.  
 		void couple(Component* src, PORT srcPort, 
 		Component* dst, PORT dstPort);
-		/// Assigns the model component set to c
+		/// Puts the network's components into to c
 		void getComponents(Set<Component*>& c);
 		/// Route an event based on the coupling information.
 		void route(const IO_Type& x, Component* model, 
