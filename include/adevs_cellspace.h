@@ -57,20 +57,20 @@ template <class X> class CellEvent
 /**
  * This class describes a 3D cell space whose components accept and produce CellEvent objects.
  * This class is meant to be useful for solving PDEs, simulating
- * next event cell spaces, and other types of models represented as a space of 
- * discrete interacting points. Output events produced by component models must be of type CellEvent.
- * The CellEvent (x,y,z) coordinate indicates the
+ * next event cell spaces, and for building other types of models represented as a space of 
+ * discrete, interacting points. Output events produced by component models must be of type CellEvent, and
+ * the CellEvent (x,y,z) coordinate indicates the
  * target cell for the event. The corresponding input event will have the same (x,y,z) value as
  * the output event. Targets that are outside of the CellSpace will become external output
  * events for the CellSpace model.  Similarly, CellEvent objects that are injected into the
- * CellSpace (i.e., external input events) will be delivered the appropriate target cell.
+ * CellSpace (i.e., external input events) will be delivered to the targeted cell.
  */
 template <class X> class CellSpace: public Network<CellEvent<X> >
 {
 	public:
 		/// A component model in the CellSpace
 		typedef Devs<CellEvent<X> > Cell;
-		/// Create an Width x Height x Depth CellSpace with NULL model entries in the cell locations.
+		/// Create an Width x Height x Depth CellSpace with NULL entries in the cell locations.
 		CellSpace(long int width, long int height = 1, long int depth = 1);
 		/// Insert a model at the x,y,z position.
 		void add(Cell* model, long int x, long int y = 0, long int z = 0) 
@@ -94,12 +94,12 @@ template <class X> class CellSpace: public Network<CellEvent<X> >
 		long int getHeight() const { return h; }
 		/// Get the depth of the CellSpace.
 		long int getDepth() const { return d; }
-		// Get the model component set
+		/// Get the model's set of components
 		void getComponents(Set<Cell*>& c);
-		// Event routing method
+		/// Route events within the Cellspace
 		void route(const CellEvent<X>& event, Cell* model, 
 		Bag<Event<CellEvent<X> > >& r);
-		/// Destructor.
+		/// Destructor; this destroys the components as well.
 		~CellSpace();
 	private:	
 		long int w, h, d;
