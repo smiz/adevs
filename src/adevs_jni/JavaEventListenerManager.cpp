@@ -18,11 +18,11 @@ void JavaEventListenerManager::outputEvent(Event<java_io> x, double t)
 	{
 		assert(owner.simulator_shared_jevent != NULL);
 		owner.jenv->SetObjectField(owner.simulator_shared_jevent,
-				owner.jevent_model,cpp_model->getJavaObjRef()); 
+			owner.jevent_model,cpp_model->getJavaObjRef()); 
 		owner.jenv->SetObjectField(owner.simulator_shared_jevent,
-				owner.jevent_value,x.value); 
-		owner.jenv->CallVoidMethod(*iter,owner.jevent_listener_out,
-				owner.simulator_shared_jevent,(jdouble)t);
+			owner.jevent_value,x.value); 
+		CALL_AND_THROW(owner.jenv->CallVoidMethod(*iter,owner.jevent_listener_out,
+			owner.simulator_shared_jevent,(jdouble)t),owner.jenv)
 	}
 }
 
@@ -35,8 +35,8 @@ void JavaEventListenerManager::stateChange(Atomic<java_io>* model, double t)
 	for (; iter != global_refs.end(); iter++)
 	{
 		assert(owner.simulator_shared_jevent != NULL);
-		owner.jenv->CallVoidMethod(*iter,owner.jevent_listener_delta,
-				cpp_model->getJavaObjRef(),(jdouble)t);
+		CALL_AND_THROW(owner.jenv->CallVoidMethod(*iter,owner.jevent_listener_delta,
+			cpp_model->getJavaObjRef(),(jdouble)t),owner.jenv)
 	}
 }
 

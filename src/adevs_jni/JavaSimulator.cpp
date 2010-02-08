@@ -5,6 +5,20 @@ using namespace adevs;
 using namespace std;
 
 /**
+ * Throw a Java exception in response to an adevs exception.
+ */
+static void throwit(adevs::exception exp, JNIEnv* jenv)
+{
+	jclass newExcCls = jenv->FindClass("adevs/SimulationException");
+	if (newExcCls == NULL)
+	{
+		/* Unable to find the exception class, give up. */
+		return;
+	}
+	jenv->ThrowNew(newExcCls,exp.what());
+}
+	
+/**
  * Free references left dangling when the networks route their events.
  * The routed_events list is filled with objects in the JavaNetwork's
  * route method.
@@ -113,6 +127,8 @@ JNIEXPORT jlong JNICALL Java_adevs_Simulator_createCppSimulator
 	env->DeleteLocalRef(clazz);
 	// Done!
 	env->PopLocalFrame(NULL);
+	// No event listeners to start
+	sim->event_lst_mgr = NULL;
 	// Create a reference to our shared collection
 	sim->jsimulator_shared_collection =
 		env->NewGlobalRef(env->GetObjectField(caller,shared_jcollection));
@@ -120,12 +136,23 @@ JNIEXPORT jlong JNICALL Java_adevs_Simulator_createCppSimulator
 	sim->simulator_shared_jevent =
 		env->NewGlobalRef(env->GetObjectField(caller,shared_jevent));
 	// Create a simulator for the model
-	if (env->GetBooleanField(model,sim->jdevs_is_atomic) == JNI_TRUE)
-		sim->sim = new Simulator<java_io>(new JavaAtomic(model,*sim));
-	else
-		sim->sim = new Simulator<java_io>(new JavaNetwork(model,*sim));
-	// No event listeners to start
-	sim->event_lst_mgr = NULL;
+	try 
+	{
+		if (env->GetBooleanField(model,sim->jdevs_is_atomic) == JNI_TRUE)
+			sim->sim = new Simulator<java_io>(new JavaAtomic(model,*sim));
+		else
+			sim->sim = new Simulator<java_io>(new JavaNetwork(model,*sim));
+	}
+	catch(jthrowable exp)
+	{
+		sim->sim = NULL;
+		env->ExceptionClear();
+		env->Throw(exp);
+	}
+	catch(adevs::exception exp)
+	{
+		throwit(exp,env);
+	}
 	// Return a reference to it
 	return (jlong)sim;
 }
@@ -155,7 +182,19 @@ JNIEXPORT void JNICALL Java_adevs_Simulator_execNextEvent
 	if (peer_id == 0) return;
 	JavaSimulator* sim = (JavaSimulator*)peer_id;
 	sim->jenv = env;
-	sim->sim->execNextEvent();
+	try
+	{
+		sim->sim->execNextEvent();
+	}
+	catch(jthrowable exp)
+	{
+		env->ExceptionClear();
+		env->Throw(exp);
+	}
+	catch(adevs::exception exp)
+	{
+		throwit(exp,env);
+	}
 	clean_up_dangling_io_references(sim);
 	clean_up_orphaned_models(sim);
 }
@@ -171,7 +210,19 @@ JNIEXPORT void JNICALL Java_adevs_Simulator_execUntil
 	if (peer_id == 0) return;
 	JavaSimulator* sim = (JavaSimulator*)peer_id;
 	sim->jenv = env;
-	sim->sim->execUntil((double)tend);
+	try
+	{
+		sim->sim->execUntil((double)tend);
+	}
+	catch(jthrowable exp)
+	{
+		env->ExceptionClear();
+		env->Throw(exp);
+	}
+	catch(adevs::exception exp)
+	{
+		throwit(exp,env);
+	}
 }
 
 /*
@@ -185,7 +236,19 @@ JNIEXPORT void JNICALL Java_adevs_Simulator_computeNextOutput
 	if (peer_id == 0) return;
 	JavaSimulator* sim = (JavaSimulator*)peer_id;
 	sim->jenv = env;
-	sim->sim->computeNextOutput();
+	try 
+	{
+		sim->sim->computeNextOutput();
+	}
+	catch(jthrowable exp)
+	{
+		env->ExceptionClear();
+		env->Throw(exp);
+	}
+	catch(adevs::exception exp)
+	{
+		throwit(exp,env);
+	}
 }
 
 /*
@@ -217,7 +280,19 @@ JNIEXPORT void JNICALL Java_adevs_Simulator_computeNextState
 	}
 	sim->jenv->DeleteGlobalRef(iter);
 	// Apply the input to the simulator
-	sim->sim->computeNextState(sim->input_bag,(double)t);
+	try
+	{
+		sim->sim->computeNextState(sim->input_bag,(double)t);
+	}
+	catch(jthrowable exp)
+	{
+		env->ExceptionClear();
+		env->Throw(exp);
+	}
+	catch(adevs::exception exp)
+	{
+		throwit(exp,env);
+	}
 	// Clear the bag for the next call
 	Bag<Event<java_io> >::iterator giter = sim->input_bag.begin();
 	for (; giter != sim->input_bag.end(); giter++)

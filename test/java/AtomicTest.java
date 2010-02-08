@@ -9,7 +9,40 @@ public class AtomicTest implements EventListener
 	public static void main(String args[])
 	{
 		test();
+		testJavaException();
+		testAdevsException();
 	}
+
+	public static void testJavaException()
+	{
+		System.out.println("Exception test");
+		model = new ExceptionTestModel(1.0);
+		try
+		{
+			Simulator sim = new Simulator(model);
+			sim.execNextEvent();
+		}
+		catch(Exception exp)
+		{
+			exp.printStackTrace();
+		}
+	}
+
+	public static void testAdevsException()
+	{
+		System.out.println("adevs Exception test");
+		model = new ExceptionTestModel(-1.0);
+		try
+		{
+			Simulator sim = new Simulator(model);
+			sim.execNextEvent();
+		}
+		catch(Exception exp)
+		{
+			exp.printStackTrace();
+		}
+	}
+
 	public static void test()
 	{
 		if (model == null)
