@@ -16,6 +16,17 @@ typedef jobject java_io;
 class JavaEventListenerManager;
 
 /**
+ * This macro calls a java native method, checks for an exception after the return, and
+ * if one is found throws the jthrowable object.
+ */
+#define CALL_AND_THROW(call,jenv) \
+{ \
+	call; \
+	if (jenv->ExceptionCheck() == JNI_TRUE) \
+		throw jenv->ExceptionOccurred(); \
+} 
+
+/**
  * This Simulator implements the Java adevs.Simulator class. It adds to the Simulator 
  * class a list of Java object peers that are in use by the simulation. This is used
  * for garbage collection when the Simulator is destroyed.
