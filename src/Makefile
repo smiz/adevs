@@ -3,7 +3,7 @@
 # this compiler.
 #
 # Point this at your java installation if you want to build the Java bindings
-JAVA_HOME = /usr/lib/jvm/java-1.6.0-sun-1.6.0.17
+JAVA_HOME = /etc/alternatives/java_sdk
 # Use OpenMP? 
 OMP = -fopenmp
 # Compiler flags
