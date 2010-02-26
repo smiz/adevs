@@ -29,6 +29,12 @@ template <typename X> class ode_system
 		virtual void state_event_func(const double* q, double* z) = 0;
 		/// Compute the time event function using state q
 		virtual double time_event_func(const double* q) = 0;
+		/**
+		 * This method is invoked immediately following an update of the continuous state variables and
+		 * prior to the execution of a discrete transition. The main use of this callback is to 
+		 * update algberaic variables. The default implementation does nothing.
+		 */
+		virtual void postStep(const double* q){};
 		/// The internal transition function
 		virtual void internal_event(double* q,
 				const bool* state_event) = 0;
@@ -148,6 +154,9 @@ template <typename X> class Hybrid:
 		 */
 		void delta_int()
 		{
+			// Let the model adjust algebraic variables, etc. for the new state
+			sys->postStep(q_trial);
+			// Execute any discrete events
 			event_happened = event_exists;
 			if (event_exists) // Execute the internal event
 				sys->internal_event(q_trial,event); 
@@ -163,7 +172,10 @@ template <typename X> class Hybrid:
 		{
 			event_happened = true;
 			solver->advance(q,e); // Advance the state q by e
-			sys->external_event(q,e,xb); // Compute the external event
+			// Let the model adjust algebraic variables, etc. for the new state
+			sys->postStep(q);
+			// Process the discrete input
+			sys->external_event(q,e,xb); 
 			// Copy the new state to the trial solution 
 			for (int i = 0; i < sys->numVars(); i++) q_trial[i] = q[i];
 			tentative_step(); // Take a tentative step
@@ -174,6 +186,9 @@ template <typename X> class Hybrid:
 		 */
 		void delta_conf(const Bag<X>& xb)
 		{
+			// Let the model adjust algebraic variables, etc. for the new state
+			sys->postStep(q_trial);
+			// Execute any discrete events
 			event_happened = true;
 			if (event_exists) // Execute the confluent or external event
 				sys->confluent_event(q_trial,event,xb); 
