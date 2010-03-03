@@ -6,7 +6,7 @@ check: atomic ping dynstruct
 atomic:
 	javac AtomicTest.java
 	java AtomicTest > tmp
-	diff AtomicTest.ok tmp
+	diff -b AtomicTest.ok tmp
 
 ping:
 	javac PingPong.java
@@ -17,4 +17,4 @@ ping:
 dynstruct:
 	javac DynStructPingPong.java
 	java DynStructPingPong > tmp
-	diff DynStructPingPong.ok tmp
+	diff -b DynStructPingPong.ok tmp
