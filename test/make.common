@@ -17,4 +17,4 @@ CMD_SEP = ;
 #CMD_SEP = &&
 # Common targets
 clean:
-	$(DEL) *.obj *.o tmp $(TEST_EXEC)
+	$(DEL) *.obj *.o tmp $(TEST_EXEC) $(DEL) *.class

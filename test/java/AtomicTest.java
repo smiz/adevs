@@ -15,32 +15,50 @@ public class AtomicTest implements EventListener
 
 	public static void testJavaException()
 	{
+		boolean passed = false;
 		System.out.println("Exception test");
 		model = new ExceptionTestModel(1.0);
 		try
 		{
+			System.out.println("Model throwing exception");
 			Simulator sim = new Simulator(model);
 			sim.execNextEvent();
 		}
 		catch(Exception exp)
 		{
 			exp.printStackTrace();
+			passed = true;
 		}
+		if (!passed)
+		{
+			System.err.println("Failed");
+			System.exit(0);
+		}
+		System.out.println("Passed");
 	}
 
 	public static void testAdevsException()
 	{
+		boolean passed = false;
 		System.out.println("adevs Exception test");
 		model = new ExceptionTestModel(-1.0);
 		try
 		{
+			System.out.println("Simulator throwing exception");
 			Simulator sim = new Simulator(model);
 			sim.execNextEvent();
 		}
 		catch(Exception exp)
 		{
+			passed = true;
 			exp.printStackTrace();
 		}
+		if (!passed)
+		{
+			System.out.println("Failed");
+			System.exit(0);
+		}
+		System.out.println("Passed");
 	}
 
 	public static void test()

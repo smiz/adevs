@@ -10,19 +10,41 @@ public class PingPong extends Network
 		{
 			super();
 			count = 0;
-			this.has_ball = has_ball;
+			t = 0.0;
+			even = this.has_ball = has_ball;
 		}
 		public void delta_int()
 		{
+			t += ta();
+			if ((even && (int)t%2 != 1) || (!even && (int)t%2 != 0))
+			{
+				System.out.println("Bad internal event");
+				System.exit(0);
+			}
 			count++;
 			has_ball = false;
 		}
 		public void delta_ext(double e, Collection<String> xb)
 		{
+			int count = 0;
+			t += e;
 			Iterator iter = xb.iterator();
-			while (iter.hasNext())
-				System.out.println(iter.next().toString());
+			while (iter.hasNext()) 
+			{
+				count++;
+				iter.next();
+			}
+			if (count != 2) 
+			{
+				System.out.println("Not enough input");
+				System.exit(0);
+			}
 			has_ball = true;
+			if ((even && (int)t%2 != 0) || (!even && (int)t%2 != 1))
+			{
+				System.out.println("Bad internal event");
+				System.exit(0);
+			}
 		}
 		public void delta_conf(Collection<String> xb)
 		{
@@ -44,7 +66,8 @@ public class PingPong extends Network
 			return false;
 		}
 		private int count;
-		private boolean has_ball;
+		private boolean has_ball, even;
+		private double t;
 	}
 	public PingPong()
 	{
@@ -66,15 +89,28 @@ public class PingPong extends Network
 
 	public static void main(String args[])
 	{
-		for (int i = 0; i < 100000; i++)
+		long mem_start = Runtime.getRuntime().freeMemory();
+		for (int i = 0; i < 1000; i++)
+		{
 			test();
+			System.gc();
+			long mem_end = Runtime.getRuntime().freeMemory();
+			long diff = mem_end-mem_start;
+			System.out.println("Final memory consumed " + diff);
+		}
 	}
 	public static void test()
 	{
+		double t = 0.0;
 		Simulator sim = new Simulator(new PingPong());
 		while (sim.nextEventTime() < Double.MAX_VALUE)
 		{
-			System.out.println(new String("t = ")+ sim.nextEventTime());
+			t += 1.0;
+			if (sim.nextEventTime() != t)
+			{
+				System.out.println("Bad time of next event");
+				System.exit(0);
+			}
 			sim.execNextEvent();
 		}
 	}
