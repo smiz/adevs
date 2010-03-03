@@ -22,7 +22,11 @@ public class DynStructPingPong extends Network
 		{
 			Iterator iter = xb.iterator();
 			while (iter.hasNext())
-				System.out.println(iter.next().toString());
+			{
+				if (!DynStructPingPong.quiet)
+					System.out.println(iter.next().toString());
+				else iter.next();
+			}
 			has_ball = true;
 		}
 		public void delta_conf(Collection<String> xb)
@@ -68,27 +72,42 @@ public class DynStructPingPong extends Network
 	@Override
 	public boolean model_transition()
 	{
+		instances++;
 		if (p1 instanceof Atomic)
 			p1 = new DynStructPingPong();
 		else
 			p1 = new Player(!((Player)p2).hasBall());
-		System.out.println(this + "->p1 = " + p1.toString());
+		if (!DynStructPingPong.quiet)
+			System.out.println("pnew #" + instances);
 		return true;
 	}
 
 	private Devs p1, p2;
+	private static int instances = 0;
+	public static boolean quiet = false;
 
 	public static void main(String args[])
 	{
-		for (int i = 0; i < 100; i++)
+		test();
+		long mem_start = Runtime.getRuntime().freeMemory();
+		for (int i = 0; i < 10; i++)
+		{
+			quiet = true;
+			instances = 0;
 			test();
+			System.gc();
+			long mem_end = Runtime.getRuntime().freeMemory();
+			System.err.println("Memory consumed is " + (mem_end-mem_start));
+		}
+		System.err.println("These numbers should not increase substantially");
 	}
 	public static void test()
 	{
 		Simulator sim = new Simulator(new DynStructPingPong());
 		while (sim.nextEventTime() < 1000.0)
 		{
-			System.out.println(new String("t = ")+ sim.nextEventTime());
+			if (!DynStructPingPong.quiet)
+				System.out.println(new String("t = ")+ sim.nextEventTime());
 			sim.execNextEvent();
 		}
 	}

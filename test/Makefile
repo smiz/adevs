@@ -2,9 +2,19 @@ PREFIX=..
 include make.common
 
 # Everything else should work fine
-check: bag_test obj_pool sched atomic gcd_test gpt_test tokenring_test dyn_devs_test zero_time_test ode_test listener_test wrapper_test optsim_test
+check: check_cpp check_par check_java
 
-check_no_par: bag_test obj_pool sched atomic gcd_test gpt_test tokenring_test dyn_devs_test zero_time_test ode_test listener_test wrapper_test 
+# Check cpp code only
+check_cpp: bag_test obj_pool sched atomic gcd_test gpt_test tokenring_test dyn_devs_test zero_time_test ode_test listener_test wrapper_test
+
+# Check OpenMP code
+check_par: optsim_test  
+
+# Check the java library
+check_java: java_test
+
+java_test:
+	cd java $(CMD_SEP) $(MAKE) check
 
 optsim_test:
 	cd optsim $(CMD_SEP) $(MAKE) check
@@ -63,6 +73,6 @@ clean_all:
 	cd ode $(CMD_SEP) $(MAKE) clean
 	cd wrapper $(CMD_SEP) $(MAKE) clean
 	cd optsim $(CMD_SEP) $(MAKE) clean_all
-	cd java $(CMD_SEP) $(DEL) *.class
+	cd java $(CMD_SEP) $(MAKE) clean
 	$(MAKE) clean
 
