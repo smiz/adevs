@@ -5,9 +5,7 @@ import java.util.ArrayList;
 /**
  * This is a wrapper around the C++ Simulator class. It is used in exactly the
  * same way. The Java version of this simulator does not support parallel simulation
- * (yet). Also be aware that there is no support (yet) for exceptions thrown either by
- * the C++ Simulator or by the models when their methods are invoked by the Simulator;
- * so please be careful.
+ * (yet). 
  */
 public class Simulator
 {
