@@ -1,3 +1,5 @@
+This file contains build instructions for the C++ library and Java
+bindings.
 
 ---- C++ -----
 The simulation is implemented primarily as a set of C++ header files,
@@ -5,8 +7,8 @@ and for many applications it is sufficient to use just those. You can
 build the rest of the simulation library with the command by changing
 to the 'src' directory and running 'make'. The compiler options in the
 makefile should work for the GNU g++ compiler. You may need to set
-other options for other Unix based compilers. OpenMP support is assumed
-by default.
+other options for other Unix based compilers. OpenMP support is
+assumed by default.
 
 For Visual Studio and Windows, open a command shell, go the the 'src'
 directory, and run the batch file 'build.bat'. This will create a 
@@ -16,13 +18,35 @@ switches if you want it (the Express versions of Visual Studio don't
 support OpenMP in any case).
 
 ---- Java -----
-To build the java bindings, go the the 'src' directory and then edit the
-Makefile so that JAVA_HOME points to your jdk installation. The run
-'make java_adevs' to build the shared library libjava_adevs.so and the
-jar file adevs.jar. To use these, put the shared library into your LD_LIBRARY_PATH
-and the jar file into your CLASSPATH.
+To build the java bindings, go the the 'src' directory and then edit 
+the Makefile so that JAVA_HOME points to your jdk installation. Then
+run 'make java_adevs' to build the shared library libjava_adevs.so and
+the jar file adevs.jar. To use these, put the shared library into your
+LD_LIBRARY_PATH and the jar file into your CLASSPATH.
 
-For Windows, you can use the prebuilt java_adevs.dll and adevs.jar by putting
-the former into your PATH and the latter into your CLASSPATH. The adevs_jni/build.bat
-script has all of the commands needed to build these from scratch if you choose
-to do so (or if you got this from the svn repository).
+For Windows, you can use the prebuilt java_adevs.dll and adevs.jar by
+putting the former into your PATH and the latter into your CLASSPATH.
+The adevs_jni/build.bat script has all of the commands needed to build
+these from scratch if you choose to do so (or if you got this from the
+svn repository). You will need the Visual Studio compiler (cl.exe)
+from Microsoft if you want to build from source.
+
+The pre-built Java libraries can be found in the src directory. These
+are built for 32 bit computers.
+
+---- TESTING -----
+There are three sets of test cases, each of which can be run from
+the directory 'test'. The first set are for the C++ library without
+OpenMP support; these test are run with 'make check_cpp'. The parts
+of the C++ library that require OpenMP support can be tested by
+executing 'make check_par'. The java bindings can be tested by
+executing 'make check_java'. Be sure your PATH, LD_LIBRARY_PATH,
+and CLASSPATH are setup properly before running the Java test
+cases. Executing 'make check' runs all of the test cases.
+
+The make.common file contains platform specific settings for
+the test scripts. It is setup by default for a GNU/Linux type of
+environment. Change as needed for your environment, but if you are
+using a more or less typical Linux distribution then the defaults
+should work fine
+
