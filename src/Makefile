@@ -7,7 +7,7 @@ JAVA_HOME = /etc/alternatives/java_sdk
 # Use OpenMP? 
 OMP = -fopenmp
 # Compiler flags
-CFLAGS = ${OMP} -Wall -I../include -I./ -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
+CFLAGS = ${OMP} -fPIC -Wall -I../include -I./ -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 # Best bet for GNU compiler
  CC = g++
  OPTFLAG = -O3

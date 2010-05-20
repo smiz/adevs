@@ -32,7 +32,7 @@ public class AtomicTest implements EventListener
 		if (!passed)
 		{
 			System.err.println("Failed");
-			System.exit(0);
+			System.exit(-1);
 		}
 		System.out.println("Passed");
 	}
@@ -56,7 +56,7 @@ public class AtomicTest implements EventListener
 		if (!passed)
 		{
 			System.out.println("Failed");
-			System.exit(0);
+			System.exit(-1);
 		}
 		System.out.println("Passed");
 	}
@@ -73,7 +73,7 @@ public class AtomicTest implements EventListener
 			if (sim.nextEventTime() != i+1)
 			{
 				System.out.println("FAIL: bad tN");
-				System.exit(0);
+				System.exit(-1);
 			}
 			sim.execNextEvent();
 		}
@@ -89,7 +89,7 @@ public class AtomicTest implements EventListener
 		else
 		{
 			System.out.println("Peer not reset! " + model.getNativePeer());
-			System.exit(0);
+			System.exit(-1);
 		}
 	}
 	public void outputEvent(Event x, double t)

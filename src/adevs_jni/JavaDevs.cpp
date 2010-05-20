@@ -16,7 +16,7 @@ void JavaDevs::set_peer(void* obj_addr)
 
 void JavaDevs::clear_peer()
 {
-	owner.jenv->SetLongField(jmodel_global_ref,owner.jdevs_cpp_peer,(jlong)NULL);
+	owner.jenv->SetLongField(jmodel_global_ref,owner.jdevs_cpp_peer,(jlong)0x00);
 	owner.jenv->DeleteGlobalRef(jmodel_global_ref);
 	jmodel_global_ref = NULL;
 }
