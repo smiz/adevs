@@ -24,7 +24,7 @@ run 'make java_adevs' to build the shared library libjava_adevs.so and
 the jar file adevs.jar. To use these, put the shared library into your
 LD_LIBRARY_PATH and the jar file into your CLASSPATH.
 
-For Windows, you can use the prebuilt java_adevs.dll and adevs.jar by
+For Windows, you can use the pre-built java_adevs.dll and adevs.jar by
 putting the former into your PATH and the latter into your CLASSPATH.
 The adevs_jni/build.bat script has all of the commands needed to build
 these from scratch if you choose to do so (or if you got this from the
