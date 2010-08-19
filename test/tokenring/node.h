@@ -1,6 +1,7 @@
 #ifndef __node_h_
 #define __node_h_
 #include <iostream>
+#include <cstdio>
 #include <cassert>
 #include "adevs.h"
 
