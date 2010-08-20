@@ -1,0 +1,22 @@
+This is the power system from section 6.2 of "Building Software for Simulation".
+This is a very involved example: their are almost 2,300 lines of source code.
+The makefile assumes that you are using the GNU C++ compiler. Run 'make' to build
+the simulator. The shell script 'run.sh' is will execute all of the cases 
+considered in section 6.2. The files in the gnuplot_scripts directory will produce
+plots of frequency, power output from the generators, and initial and final voltages
+as they appear in the book. You need, of course, gnuplot to use these files.
+
+The data for the power system is contained in ieee118cdf.txt and ieee118cdf.ini. The
+first file contains the data for the transmission lines, loads, etc. The second file 
+contains the initial conditions for the simulator. Don't delete these file because the
+simulator will not run without them.
+
+This code differs slightly from what is described in the book. The ElectricalModel class
+here is derived from the Hybrid class, and not the ode_system class as described in
+"Building Software for Simulation". Rather, the ElectricalModel class contains the
+ElectricalModelEqns class, which does inherit from the ode_system class and implements
+the model's continuous equation. This simplifies the code in the various listeners that
+record power, frequency, etc. by not requiring them to first get the state variables from
+the Hybrid class before calculating whatever they want to record. Instead, all of these
+steps are contained in the ElectricalModel's query methods.
+

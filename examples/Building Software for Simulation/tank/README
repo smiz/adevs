@@ -1,0 +1,39 @@
+This directory contains the source code for the interactive simulation of the
+robotic tank, its controller, and the several simulation experiments discussed
+in "Building Software for Simulation". The Makefile in this directory assumes
+that you are using the GNU C++ compiler. The several make targets are described
+in the makefile. All of the examples except the interactive simulator should
+build without any additional libraries. The interactive simulator requires the
+following:
+
+SDL, use the last in the 1.2 series of releases, get it from www.libsdl.org
+GNU Common C++, get it from http://www.gnu.org/software/commoncpp/
+OpenGL's GLUT and GL libraries, which are installed with most Linux distributions
+
+If you are using Windows or Mac OSX, you'll need to find ports of these libraries
+for your operating system. SDL, GL, and GLUT are available for most platforms
+(Windows support for GLUT and GL is spotty though). The GNU Common C++ library
+is used for communicating with the human interface of the tank via a UDP
+socket (see SimControl.cpp and SimControl.h). You may want to simply
+rewrite the UDPSocket and IPV4Address classes using a native API.
+
+The controller for the tank is written in Java, and the source code is located
+in the controller directory. To compile it, just issue the command
+
+javac Terminal.java
+
+and use 
+
+java Terminal
+
+to execute the controller. It is designed to use a gamepad (as described
+in the book), and you need the Java bindings to the SDL for this to work.
+You can get these from http://sourceforge.net/projects/sdljava/. If you
+have a gamepad with two sticks then you are ready to go. The left stick
+will accelerate (push up) or decelerate (push back). The right stick
+turns the tank to the left (push left) and right (push right).
+
+The controller and tank use the address 127.0.0.1 and port 10000 by default.
+The address bound by each can be set on the command line (or you could
+reprogram the default).
+

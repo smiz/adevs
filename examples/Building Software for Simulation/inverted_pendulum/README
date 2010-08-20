@@ -1,0 +1,20 @@
+This directory contains the code for the cart and pendulum example in section 6.1 of
+"Building Software for Simulation". Run the bash script 'build.sh' to construct three
+executables: idealsim, mop, and inverted_pendulum. The executable 'idealsim' is
+the ideal system in which the communication network imposes neither delay nor
+lost data. The second executable 'mop' is used to calculate the metric of
+performance for the control system. The third executable 'inverted_pendulum'
+is the simulator that uses OMNET++ to model the Ethernet separating controller
+and sensor.
+
+The two simulators produces the output files 's.dat' and 'y.dat'. The file 's.dat' has the
+arm angle of the cart. The file 'y.dat' has the output of the arm angle sensor. The
+data is in two columns, the first for time (in seconds) and the second for the angle
+(in degrees).
+
+To build and execute this model you must install OMNET++ and its Inet extension.
+These are available on the web at http://www.omnetpp.org/
+
+When the simulators are built, the experiments in the book can be repeated
+with the bash script 'run.sh'. This script also provides an example of how
+to execute the OMNET++ simulator. 

@@ -1,0 +1,37 @@
+set xlabel 'time (seconds)'
+set ylabel 'Pm (per unit)'
+unset key
+plot '../_pm.dat' using 1:2 with lines,\
+'' using 1:3 with lines,\
+'' using 1:4 with lines,\
+'' using 1:5 with lines,\
+'' using 1:6 with lines,\
+'' using 1:7 with lines,\
+'' using 1:8 with lines,\
+'' using 1:9 with lines,\
+'' using 1:10 with lines,\
+'' using 1:11 with lines,\
+'' using 1:12 with lines,\
+'' using 1:13 with lines,\
+'' using 1:14 with lines,\
+'' using 1:15 with lines,\
+'' using 1:16 with lines,\
+'' using 1:17 with lines,\
+'' using 1:18 with lines,\
+'' using 1:19 with lines,\
+'' using 1:20 with lines,\
+'' using 1:21 with lines,\
+'' using 1:22 with lines,\
+'' using 1:23 with lines,\
+'' using 1:24 with lines,\
+'' using 1:25 with lines,\
+'' using 1:26 with lines,\
+'' using 1:27 with lines,\
+'' using 1:28 with lines,\
+'' using 1:29 with lines,\
+'' using 1:30 with lines,\
+'' using 1:31 with lines,\
+'' using 1:32 with lines,\
+'' using 1:33 with lines,\
+'' using 1:34 with lines,\
+'' using 1:35 with lines

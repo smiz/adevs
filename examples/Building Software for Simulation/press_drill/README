@@ -1,0 +1,7 @@
+This directory contains the model of the press and drill that is
+described in section 4.2.3 of "Building Software for Simulation".
+Only the bottom up example is contained here. The makefile assumes
+that you are using the GNU C++ compiler, but should be easily
+to build in any development environment. The input files
+'input', 'input_a', and 'input_b' contain the trajectories used to
+construct table 4.2 and described in section 4.2.4.

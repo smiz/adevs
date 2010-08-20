@@ -1,0 +1,7 @@
+This is the circuit example from section 5.4 of
+"Building Software for Simulation. The Makefile
+provided with this example assumes that you are
+using the GNU C++ compiler. To compile the simulator
+execute 'make'. This will create the executable
+'a.out', which is the simulator. See the comments
+in circuit.cpp for more information.
