@@ -13,7 +13,11 @@ data is in two columns, the first for time (in seconds) and the second for the a
 (in degrees).
 
 To build and execute this model you must install OMNET++ and its Inet extension.
-These are available on the web at http://www.omnetpp.org/
+These are available on the web at http://www.omnetpp.org/. You will need to edit
+build.sh so that the OMNET_HOME and points to the directory where OMNET is installed
+and INET_PROJ to point to where the Inet extensions are installed. Depending
+on your compiler, the file Makefile.ideal will also need to be adjusted for
+compiler flags and link libraries.
 
 When the simulators are built, the experiments in the book can be repeated
 with the bash script 'run.sh'. This script also provides an example of how
