@@ -1,0 +1,15 @@
+This is the asynchronous cellular automata from section 4.5 of "Building Software
+for Simulation". The Makefile assumes that you are using the GNU C++ file. To
+build the simulator execute 'make'. This will create the executable 'a.out' that
+is the simulator. Running this example creates a file 'image.bmp' that contains
+the discrete trajectory of the cellspace, as shown for example in Figure 4.13 
+of the book. 
+
+You will need to install the SDL library before trying to build and run this
+example. After installing the SDL, check that the Makefile points to the proper
+installation directory. If you are using a popular Linux distribution, then
+the SDL may already be installed. Otherwise, You can get the SDL library at
+www.libsdl.org; this example requires version 1.2.x (where x is the latest
+release in the 1.2 series). 
+
+

@@ -1,0 +1,8 @@
+set ylabel 'volts (pu)'
+set xlabel 'bus ID'
+set key bottom left
+set xrange [-0.1:114.1]
+set yrange [0.875:1.005]
+plot "../init_voltage.dat" with steps title 'initial',\
+"../final_voltage.dat" with steps title 'final'
+

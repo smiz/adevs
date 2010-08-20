@@ -1,0 +1,18 @@
+CFLAGS = -Wall -O3 -static-libstdc++
+CC = g++
+
+# Adjust these as needed to find the adevs headers
+INCLUDE = -I../../../include
+
+# Build the interactive simulation
+#
+all: sim mop_calc
+
+sim: 
+	${CC} ${CFLAGS} ideal.cpp CartModel.cc ${INCLUDE} -o idealsim
+
+mop_calc: control_perf.o
+	${CC} ${CFLAGS} control_perf.o -o mop
+
+clean:
+	rm -f *.o core a.out idealsim mop

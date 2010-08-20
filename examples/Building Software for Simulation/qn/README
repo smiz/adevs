@@ -1,0 +1,5 @@
+This directory contains the model used in section B.3 to demonstrate
+the conservative simulation algorithm. The makefile assumes that you
+are using a recent, GNU C++ compiler that supports OpenMP. To do
+anything interesting, you should have a multi-core or multi-processor
+computer too. Execute 'make' to build the example.
