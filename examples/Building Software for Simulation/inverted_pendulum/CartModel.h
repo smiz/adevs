@@ -2,7 +2,9 @@
 #define CART_MODEL_H
 #include "adevs.h"
 
+#ifndef PI
 #define PI 3.1415926535897931
+#endif
 #define RAD_TO_DEG (180.0/PI)
 // This is the dynamic model of the pendulum. The only input
 // is the force applied by the cart's motor and the only output

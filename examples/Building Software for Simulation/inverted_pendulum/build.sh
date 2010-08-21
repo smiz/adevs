@@ -1,7 +1,7 @@
 # Build the ideal simulator and MOP calculator
 make -f Makefile.ideal 
 # These should point to your OMNET++ installation.
-OMNET_HOME=/c/omnetpp-4.1
+OMNET_HOME=/usr/local/omnetpp-4.1
 INET_PROJ=$OMNET_HOME/inet
 # This constructs the makefile for your OMNET++ simulator
 opp_makemake -f -e cc \

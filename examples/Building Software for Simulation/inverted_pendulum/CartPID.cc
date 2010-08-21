@@ -13,6 +13,7 @@ Define_Module(CartPID); // Make CartPID into an OMNET++ module
 // OMNET++ calls this method at the start of the simulation
 void CartPID::initialize()
 {
+	cSimpleModule::initialize();
 	// Create the cart and controller
 	pid = new PIDControl();
 	CartModel *cart = new CartModel();
@@ -114,5 +115,6 @@ void CartPID::outputEvent(adevs::Event<double> y, double t)
 
 CartPID::~CartPID()
 {
+	if (self_event.isScheduled()) cancelEvent(&self_event);
 	delete sim; delete top_model; delete traj;
 }
