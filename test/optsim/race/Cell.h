@@ -1,6 +1,7 @@
 #ifndef _Cell_h_
 #define _Cell_h_
 #include <cstring>
+#include <cstdio>
 
 #define MAX_SPEED 2.0
 
