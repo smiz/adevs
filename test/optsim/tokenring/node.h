@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cassert>
 #include <cstring>
+#include <cstdio>
 #include "adevs.h"
 
 struct token_t
