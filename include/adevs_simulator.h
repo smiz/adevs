@@ -128,8 +128,8 @@ template <class X> class Simulator:
 		object_pool<Bag<X> > io_pool;
 		object_pool<Bag<Event<X> > > recv_pool;
 		// Sets for computing structure changes.
-		Set<Devs<X>*> added;
-		Set<Devs<X>*> removed;
+		Bag<Devs<X>*> added;
+		Bag<Devs<X>*> removed;
 		Set<Devs<X>*> next;
 		Set<Devs<X>*> prev;
 		// Model transition functions are evaluated from the bottom up!
@@ -321,28 +321,20 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 			model_func_eval_set.erase(network_model);
 		}
 		// Find the set of models that were added.
-		set_assign_union(added,set_difference(next,prev));
+		set_assign_diff(added,next,prev);
 		// Find the set of models that were removed
-		set_assign_union(removed,set_difference(prev,next));
+		set_assign_diff(removed,prev,next);
+		// Intersection of added and removed is always empty, so no need to look
+		// for models in both (an earlier version of the code did this).
 		next.clear();
 		prev.clear();
-		// Any models that moved from one network to another should be left alone.
-		Set<Devs<X>*> moved(set_intersect(removed,added));
-		for (typename Set<Devs<X>*>::iterator iter = moved.begin();
-		iter != moved.end(); iter++)
-		{
-			typename Set<Devs<X>*>::iterator iter_tmp = added.find(*iter);
-			if (iter_tmp != added.end()) added.erase(iter_tmp);
-			iter_tmp = removed.find(*iter);
-			if (iter_tmp != removed.end()) removed.erase(iter_tmp);
-		}
 		/** 
 		 * The model adds are processed first.  This is done so that, if any
 		 * of the added models are components something that was removed at
 		 * a higher level, then the models will not have been deleted when
 		 * trying to schedule them.
 		 */
-		for (typename Set<Devs<X>*>::iterator iter = added.begin(); 
+		for (typename Bag<Devs<X>*>::iterator iter = added.begin(); 
 			iter != added.end(); iter++)
 		{
 			schedule(*iter,t);
@@ -350,7 +342,7 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 		// Done with the additions
 		added.clear();
 		// Remove the models that are in the removed set.
-		for (typename Set<Devs<X>*>::iterator iter = removed.begin(); 
+		for (typename Bag<Devs<X>*>::iterator iter = removed.begin(); 
 			iter != removed.end(); iter++)
 		{
 			clean_up(*iter);
@@ -370,13 +362,13 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 			 */
 			if (model_to_remove->typeIsNetwork() != NULL)
 			{
-				getAllChildren(model_to_remove->typeIsNetwork(),removed);
-				for (typename Set<Devs<X>*>::iterator iter = removed.begin(); 
-					iter != removed.end(); iter++)
+				getAllChildren(model_to_remove->typeIsNetwork(),prev);
+				for (typename Set<Devs<X>*>::iterator iter = prev.begin(); 
+					iter != prev.end(); iter++)
 				{
 					sorted_removed.erase(*iter);
 				}
-				removed.clear();
+				prev.clear();
 			}
 			// Remove the model
 			sorted_removed.erase(sorted_removed.begin());
@@ -384,7 +376,7 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 			delete model_to_remove;
 		}
 		// Removed sets should be empty now
-		assert(removed.empty());
+		assert(prev.empty());
 		assert(sorted_removed.empty());
 	} // End of the structure change
 	// Cleanup and reschedule models that changed state in this iteration

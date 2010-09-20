@@ -32,32 +32,14 @@ template <class T> class Set: public std::set<T>
 {
 };
 
-/// Set intersection operator.  Returns A intersect B.
-template <class T> 
-Set<T> set_intersect(const Set<T>& A, const Set<T>& B)
-{
-	Set<T> result;
-	std::insert_iterator<Set<T> > i_iter(result,result.begin());
-	std::set_intersection(A.begin(),A.end(),B.begin(),B.end(),i_iter);
-	return result;
-}
 /// Set difference operator. Returns the set A-B.
 template <class T> 
-Set<T> set_difference(const Set<T>& A, const Set<T>& B)
+void set_assign_diff(Bag<T>& result, const Set<T>& A, const Set<T>& B)
 {
-	Set<T> result;
-	std::insert_iterator<Set<T> > i_iter(result,result.begin());
-	std::set_difference(A.begin(),A.end(),B.begin(),B.end(),i_iter);
-	return result;
-}
-/// Set union operator.  Assigns A union B to the set A.
-template <class T> 
-void set_assign_union(Set<T>& A, const Set<T>& B)
-{
-	typename Set<T>::const_iterator iter = B.begin();
-	for (; iter != B.end(); iter++)
+	typename Set<T>::const_iterator iter = A.begin();
+	for (; iter != A.end(); iter++)
 	{
-		A.insert(*iter);
+		if (B.find(*iter) == B.end()) result.insert(*iter);
 	}
 }
 
