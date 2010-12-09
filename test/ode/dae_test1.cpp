@@ -44,7 +44,7 @@ class dae:
 			if (tripped)
 				z[0] = 1.0;
 			else
-				z[0] = q[0]*a[0];
+				z[0] = q[0]*a[0]-0.4;
 		}
 		double time_event_func(const double* q, const double* a)
 		{
@@ -57,6 +57,7 @@ class dae:
 			double z[1];
 			state_event_func(q,a,z);
 			assert(fabs(z[0]) < 1E-5);
+			tripped = true;
 		}
 		void postStep(const double* q, const double* a)
 		{
@@ -77,7 +78,7 @@ class dae:
 			double z[1];
 			state_event_func(q,a,z);
 			assert(fabs(z[0]) < 1E-5);
-			yb.insert(1.0);
+			yb.insert(q[0]*a[0]);
 		}
 		void gc_output(Bag<double>& g){}
 
@@ -102,7 +103,12 @@ class SolutionPlotter:
 			{}
 		void stateChange(Atomic<double>* model, double t)
 		{
-			cout << t << " " << hsys->getState(1) << " " << hsys->getState(0) << " " << dsys->getAlgVar(0) << endl;
+			cout << t << " " << hsys->getState(1) << " "
+				<< hsys->getState(0) << " " << dsys->getAlgVar(0) << endl;
+		}
+		void outputEvent(Event<double> y, double t)
+		{
+			cerr << t << " output --> " << y.value << endl;
 		}
 	private:
 		Hybrid<double>* hsys;
