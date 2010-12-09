@@ -1,6 +1,7 @@
 #ifndef _adevs_hybrid_h_
 #define _adevs_hybrid_h_
 #include <algorithm>
+#include <cmath>
 #include "adevs_models.h"
 
 namespace adevs
@@ -30,8 +31,9 @@ template <typename X> class ode_system
 		/// Compute the time event function using state q
 		virtual double time_event_func(const double* q) = 0;
 		/**
-		 * This method is invoked immediately following an update of the continuous state variables and
-		 * prior to the execution of a discrete transition. The main use of this callback is to 
+		 * This method is invoked immediately following an update of the
+		 * continuous state variables and prior to the execution of a
+		 * discrete transition. The main use of this callback is to
 		 * update algberaic variables. The default implementation does nothing.
 		 */
 		virtual void postStep(const double* q){};
@@ -54,6 +56,159 @@ template <typename X> class ode_system
 	private:
 		const int N, M;
 };
+
+/**
+ * <p>This extension of the ode_system provides for modeling semi-explicit
+ * DAE's of index 1. These have the form dx/dt = f(x,y), 0 = g(x,y), and
+ * the partial of g with respect to y is not singular. The method of
+ * solution is described in ???. It uses fixed point iteration to solve
+ * the algebraic equations.</p>
+ *
+ * Only the methods that include the algebraic variables should be overriden.
+ * Any ODE solver can be used to generate trajectories for this object.
+ */
+template <typename X> class dae_se1_system:
+	public ode_system<X>
+{
+	public:
+		/// Make a system with N state variables and M state event functions
+		dae_se1_system(int N_vars, int M_event_funcs, int A_alg_vars,
+				double err_tol = 1E-8):
+			ode_system<X>(N_vars,M_event_funcs),
+			A(A_alg_vars),
+			err_tol(err_tol),
+			good(0)
+			{
+				a[0] = new double[A];
+				a[1] = new double[A];
+			}
+		/// Get the number of algebraic variables
+		int numAlgVars() const { return A; }
+		/// Get the algebraic variables
+		double getAlgVar(int i) const { return a[good][i]; }
+		/**
+		 * Write an intial solution for the state variables q
+		 * and algebraic variables a.
+		 */
+		virtual void init(double* q, double* a) = 0;
+		/**
+		 * Calculate the algebraic function for the state vector
+		 * q and algebraic variables a and store the result to af.
+		 * A solution to alg_func(a,q) == 0 will be found by iteration
+		 * on this function.
+		 */
+		virtual void alg_func(const double* q, const double* a, double* af) = 0;
+		/**
+		 * Calculate the derivative of the state variables and store
+		 * the result in dq.
+		 */
+		virtual void der_func(const double* q, const double* a, double* dq) = 0;
+		/**
+		 * Calculate the state event functions and store the result in z.
+		 */
+		virtual void state_event_func(const double* q, const double* a, double* z) = 0;
+		/// Compute the time event function using state q and algebraic variables a
+		virtual double time_event_func(const double* q, const double* a) = 0;
+		/**
+		 * Update any variables that need updating at then end of a simulation step.
+		 */
+		virtual void postStep(const double* q, const double* a) = 0;
+		/// The internal transition function
+		virtual void internal_event(double* q, double* a,
+				const bool* state_event) = 0;
+		/// The external transition function
+		virtual void external_event(double* q, double* a,
+				double e, const Bag<X>& xb) = 0;
+		/// The confluent transition function
+		virtual void confluent_event(double *q, double* a, 
+				const bool* state_event, const Bag<X>& xb) = 0;
+		/// The output function
+		virtual void output_func(const double *q, const double* a,
+				const bool* state_event, Bag<X>& yb) = 0;
+		/// Destructor
+		virtual ~dae_se1_system()
+		{
+			delete [] a[0];
+			delete [] a[1];
+		}
+
+		// Do not override
+		void init(double* q) { init(q,a[good]); }
+		// Do not override
+		void der_func(const double* q, double* dq)
+		{
+			solve(q); der_func(q,a[good],dq);
+		}
+		// Override only if you have no state event functions.
+		void state_event_func(const double* q, double* z)
+		{
+			solve(q); state_event_func(q,a[good],z);
+		}
+		// Override only if you have no time events.
+		double time_event_func(const double* q)
+		{
+			solve(q); return time_event_func(q,a[good]);
+		}
+		// Do not override
+		void postStep(const double* q)
+		{
+			solve(q); postStep(q,a[good]);
+		}
+		// Do not override
+		void internal_event(double* q, const bool* state_event)
+		{
+			// The variable a was solved for in the post step
+			internal_event(q,a[good],state_event);
+		}
+		// Do not override
+		void external_event(double* q, double e, const Bag<X>& xb)
+		{
+			// The variable a was solved for in the post step
+			external_event(q,a[good],e,xb);
+		}
+		// Do not override
+		void confluent_event(double *q, const bool* state_event, const Bag<X>& xb)
+		{
+			// The variable a was solved for in the post step
+			confluent_event(q,a[good],state_event,xb);
+		}
+		// Do not override
+		void output_func(const double *q, const bool* state_event, Bag<X>& yb)
+		{
+			// The variable a was solved for in the post step
+			output_func(q,a[good],state_event,yb);
+		}
+	private:
+		const int A;
+		const double err_tol;
+		int good;
+		double* a[2];
+		// Solve the algebraic equations by fixed point iteration
+		void solve(const double* q);
+};
+
+template <typename X>
+void dae_se1_system<X>::solve(const double* q)
+{
+	double err;
+	int alt = (good+1)%2;
+	// Iterate unsubsequent guesses and hope that they
+	// converge to a solution
+	do
+	{
+		err = 0.0;
+		alg_func(q,a[good],a[alt]);
+		for (int i = 0; i < A; i++)
+		{
+			float ee = fabs(a[alt][i]);
+			if (ee > err) err = ee;
+			a[alt][i] += a[good][i];
+		}
+		good = alt;
+		alt = (good+1)%2;
+	}
+	while (err > err_tol);
+}
 
 /**
  * This is the interface for numerical integrators that are to be used with the
