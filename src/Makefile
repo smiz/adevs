@@ -3,7 +3,7 @@
 # this compiler.
 #
 # Point this at your java installation if you want to build the Java bindings
-JAVA_HOME = /etc/alternatives/java_sdk
+JAVA_HOME = /usr/local/jdk1.6.0_21
 # Use OpenMP? 
 OMP = -fopenmp
 # Compiler flags
