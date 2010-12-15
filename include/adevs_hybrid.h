@@ -159,18 +159,24 @@ template <typename X> class dae_se1_system:
 		{
 			// The variable a was solved for in the post step
 			internal_event(q,a[good],state_event);
+			// Make sure the algebraic variables are consistent with q
+			solve(q);
 		}
 		// Do not override
 		void external_event(double* q, double e, const Bag<X>& xb)
 		{
 			// The variable a was solved for in the post step
 			external_event(q,a[good],e,xb);
+			// Make sure the algebraic variables are consistent with q
+			solve(q);
 		}
 		// Do not override
 		void confluent_event(double *q, const bool* state_event, const Bag<X>& xb)
 		{
 			// The variable a was solved for in the post step
 			confluent_event(q,a[good],state_event,xb);
+			// Make sure the algebraic variables are consistent with q
+			solve(q);
 		}
 		// Do not override
 		void output_func(const double *q, const bool* state_event, Bag<X>& yb)
@@ -178,13 +184,20 @@ template <typename X> class dae_se1_system:
 			// The variable a was solved for in the post step
 			output_func(q,a[good],state_event,yb);
 		}
+	protected:
+		/**
+		 * Solve the algebraic equations by fixed point iteration. This should
+		 * not usually need to be called by the derived class. An exception might
+		 * be where updated values for the algebraic variables are needed from
+		 * within an event function due to some discrete change in q or the
+		 * structure of the systems.
+		 */
+		void solve(const double* q);
 	private:
 		const int A;
 		const double err_tol;
 		int good;
 		double* a[2];
-		// Solve the algebraic equations by fixed point iteration
-		void solve(const double* q);
 };
 
 template <typename X>
