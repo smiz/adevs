@@ -32,8 +32,7 @@ template <typename X> class ode_system
 		virtual double time_event_func(const double* q) = 0;
 		/**
 		 * This method is invoked immediately following an update of the
-		 * continuous state variables and prior to the execution of a
-		 * discrete transition. The main use of this callback is to
+		 * continuous state variables. The main use of this callback is to
 		 * update algberaic variables. The default implementation does nothing.
 		 */
 		virtual void postStep(const double* q){};
@@ -81,6 +80,7 @@ template <typename X> class dae_se1_system:
 			{
 				a[0] = new double[A];
 				a[1] = new double[A];
+				a[2] = new double[A];
 			}
 		/// Get the number of algebraic variables
 		int numAlgVars() const { return A; }
@@ -111,6 +111,8 @@ template <typename X> class dae_se1_system:
 		virtual double time_event_func(const double* q, const double* a) = 0;
 		/**
 		 * Update any variables that need updating at then end of a simulation step.
+		 * This is called both immediately following an update of the continuous
+		 * state variables and again on executing a discrete event.
 		 */
 		virtual void postStep(const double* q, const double* a) = 0;
 		/// The internal transition function
@@ -133,26 +135,33 @@ template <typename X> class dae_se1_system:
 		}
 
 		// Do not override
-		void init(double* q) { init(q,a[good]); }
+		void init(double* q)
+		{
+			init(q,a[good]);
+		}
 		// Do not override
 		void der_func(const double* q, double* dq)
 		{
-			solve(q); der_func(q,a[good],dq);
+			solve(q);
+			der_func(q,a[good],dq);
 		}
 		// Override only if you have no state event functions.
 		void state_event_func(const double* q, double* z)
 		{
-			solve(q); state_event_func(q,a[good],z);
+			solve(q);
+			state_event_func(q,a[good],z);
 		}
 		// Override only if you have no time events.
 		double time_event_func(const double* q)
 		{
-			solve(q); return time_event_func(q,a[good]);
+			solve(q);
+			return time_event_func(q,a[good]);
 		}
 		// Do not override
 		void postStep(const double* q)
 		{
-			solve(q); postStep(q,a[good]);
+			solve(q);
+			postStep(q,a[good]);
 		}
 		// Do not override
 		void internal_event(double* q, const bool* state_event)
@@ -161,6 +170,7 @@ template <typename X> class dae_se1_system:
 			internal_event(q,a[good],state_event);
 			// Make sure the algebraic variables are consistent with q
 			solve(q);
+			postStep(q,a[good]);
 		}
 		// Do not override
 		void external_event(double* q, double e, const Bag<X>& xb)
@@ -169,6 +179,7 @@ template <typename X> class dae_se1_system:
 			external_event(q,a[good],e,xb);
 			// Make sure the algebraic variables are consistent with q
 			solve(q);
+			postStep(q,a[good]);
 		}
 		// Do not override
 		void confluent_event(double *q, const bool* state_event, const Bag<X>& xb)
@@ -177,6 +188,7 @@ template <typename X> class dae_se1_system:
 			confluent_event(q,a[good],state_event,xb);
 			// Make sure the algebraic variables are consistent with q
 			solve(q);
+			postStep(q,a[good]);
 		}
 		// Do not override
 		void output_func(const double *q, const bool* state_event, Bag<X>& yb)
@@ -204,16 +216,16 @@ template <typename X>
 void dae_se1_system<X>::solve(const double* q)
 {
 	double err;
-	int alt = (good+1)%2;
 	// Iterate unsubsequent guesses and hope that they
 	// converge to a solution
+	int alt = (good+1)%2;
 	do
 	{
 		err = 0.0;
 		alg_func(q,a[good],a[alt]);
 		for (int i = 0; i < A; i++)
 		{
-			float ee = fabs(a[alt][i]);
+			double ee = fabs(a[alt][i]);
 			if (ee > err) err = ee;
 			a[alt][i] += a[good][i];
 		}
@@ -322,8 +334,6 @@ template <typename X> class Hybrid:
 		 */
 		void delta_int()
 		{
-			// Let the model adjust algebraic variables, etc. for the new state
-			sys->postStep(q_trial);
 			// Execute any discrete events
 			event_happened = event_exists;
 			if (event_exists) // Execute the internal event
@@ -354,8 +364,6 @@ template <typename X> class Hybrid:
 		 */
 		void delta_conf(const Bag<X>& xb)
 		{
-			// Let the model adjust algebraic variables, etc. for the new state
-			sys->postStep(q_trial);
 			// Execute any discrete events
 			event_happened = true;
 			if (event_exists) // Execute the confluent or external event
@@ -370,7 +378,10 @@ template <typename X> class Hybrid:
 		/// Do not override. Invokes the ode_system output function as needed.
 		void output_func(Bag<X>& yb)
 		{
-			if (event_exists) sys->output_func(q_trial,event,yb);
+			// Let the model adjust algebraic variables, etc. for the new state
+			sys->postStep(q_trial);
+			if (event_exists)
+				sys->output_func(q_trial,event,yb);
 		}
 		/// Do not override. Invokes the ode_system gc_output method as needed.
 		void gc_output(Bag<X>& gb) { sys->gc_output(gb); }
