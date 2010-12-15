@@ -1,11 +1,11 @@
 PREFIX = ../..
 include ../make.common
 
-check: bnew rk4_test rk45_test rk45_improved_test
+check: bnew rk4_test rk45_test rk45_improved_test dae
 
 dae:
 	$(CC) $(CFLAGS) dae_test1.cpp
-#	$(TEST_EXEC) > tmp
+	$(TEST_EXEC) 1> tmp 2> tmp
 
 bnew:
 	$(CC) $(CFLAGS) ball1d_new.cpp check_ball1d_solution.cpp
