@@ -58,10 +58,8 @@ template <typename X> class ode_system
 
 /**
  * <p>This extension of the ode_system provides for modeling semi-explicit
- * DAE's of index 1. These have the form dx/dt = f(x,y), 0 = g(x,y), and
- * the partial of g with respect to y is not singular. The method of
- * solution is described in ???. It uses fixed point iteration to solve
- * the algebraic equations.</p>
+ * DAE's of index 1. These have the form dx/dt = f(x,y), y = g(x,y), and
+ * the partial of g with respect to y is not singular.</p>
  *
  * Only the methods that include the algebraic variables should be overriden.
  * Any ODE solver can be used to generate trajectories for this object.
@@ -80,7 +78,6 @@ template <typename X> class dae_se1_system:
 			{
 				a[0] = new double[A];
 				a[1] = new double[A];
-				a[2] = new double[A];
 			}
 		/// Get the number of algebraic variables
 		int numAlgVars() const { return A; }
@@ -94,7 +91,7 @@ template <typename X> class dae_se1_system:
 		/**
 		 * Calculate the algebraic function for the state vector
 		 * q and algebraic variables a and store the result to af.
-		 * A solution to alg_func(a,q) == 0 will be found by iteration
+		 * A solution to alg_func(a,q) = a will be found by iteration
 		 * on this function.
 		 */
 		virtual void alg_func(const double* q, const double* a, double* af) = 0;
@@ -225,9 +222,8 @@ void dae_se1_system<X>::solve(const double* q)
 		alg_func(q,a[good],a[alt]);
 		for (int i = 0; i < A; i++)
 		{
-			double ee = fabs(a[alt][i]);
+			double ee = fabs(a[good][i]-a[alt][i]);
 			if (ee > err) err = ee;
-			a[alt][i] += a[good][i];
 		}
 		good = alt;
 		alt = (good+1)%2;
