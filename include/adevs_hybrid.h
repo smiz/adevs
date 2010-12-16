@@ -215,12 +215,14 @@ template <typename X> class dae_se1_system:
 template <typename X>
 void dae_se1_system<X>::solve(const double* q)
 {
+	unsigned iter_count = 0;
 	double err;
+	int alt = (good+1)%2;
 	// Iterate unsubsequent guesses and hope that they
 	// converge to a solution
-	int alt = (good+1)%2;
 	do
 	{
+		iter_count++;
 		err = 0.0;
 		alg_func(q,a[good],a[alt]);
 		for (int i = 0; i < A; i++)
@@ -231,7 +233,12 @@ void dae_se1_system<X>::solve(const double* q)
 		good = alt;
 		alt = (good+1)%2;
 	}
-	while (err > err_tol);
+	while (err_tol < err && iter_count < 10000);
+	if (err_tol < err) 
+	{
+		adevs::exception err("dae_se1_system::solve failed to converge");
+		throw err;
+	}	
 }
 
 /**

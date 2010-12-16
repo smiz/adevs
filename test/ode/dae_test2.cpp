@@ -69,7 +69,7 @@ class dae:
 
 		void check_soln(const double* q, const double* a)
 		{
-			double af[0];
+			double af[1];
 			alg_func(q,a,af);
 			assert(fabs(af[0]-a[0]) < 1E-5);
 			assert(fabs(q[0]-exp(-q[1]/3.0)) < 1E-5);
