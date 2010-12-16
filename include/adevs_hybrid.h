@@ -57,10 +57,9 @@ template <typename X> class ode_system
 };
 
 /**
- * <p>This extension of the ode_system provides for modeling semi-explicit
- * DAE's of index 1. These have the form dx/dt = f(x,y), y = g(x,y), and
- * the partial of g with respect to y is not singular.</p>
- *
+ * This extension of the ode_system provides for modeling some semi-explicit
+ * DAEs of index 1. These have the form dx/dt = f(x,y), y = g(x,y).
+ * The solution to y=g(x,y) is found by fixed point iteration. 
  * Only the methods that include the algebraic variables should be overriden.
  * Any ODE solver can be used to generate trajectories for this object.
  */
@@ -68,7 +67,10 @@ template <typename X> class dae_se1_system:
 	public ode_system<X>
 {
 	public:
-		/// Make a system with N state variables and M state event functions
+		/**
+		 * Make a system with N state variables, M state event functions
+		 * and A algebraic variables.
+		 */
 		dae_se1_system(int N_vars, int M_event_funcs, int A_alg_vars,
 				double err_tol = 1E-8):
 			ode_system<X>(N_vars,M_event_funcs),
@@ -91,8 +93,9 @@ template <typename X> class dae_se1_system:
 		/**
 		 * Calculate the algebraic function for the state vector
 		 * q and algebraic variables a and store the result to af.
-		 * A solution to alg_func(a,q) = a will be found by iteration
-		 * on this function.
+		 * A solution to alg_func(a,q) = a will be found by fixed
+		 * point iteration on this function; i.e., by
+		 * a(i+1) = af(a(i),q) until a(i+1)-af(q(i),q) ~ 0.
 		 */
 		virtual void alg_func(const double* q, const double* a, double* af) = 0;
 		/**
@@ -108,8 +111,8 @@ template <typename X> class dae_se1_system:
 		virtual double time_event_func(const double* q, const double* a) = 0;
 		/**
 		 * Update any variables that need updating at then end of a simulation step.
-		 * This is called both immediately following an update of the continuous
-		 * state variables and again on executing a discrete event.
+		 * This is called both when postStep(q) would be called and also immediately
+		 * after the execution a discrete state transition.
 		 */
 		virtual void postStep(const double* q, const double* a) = 0;
 		/// The internal transition function
