@@ -8,7 +8,7 @@ using namespace adevs;
 
 /**
  * Solves dx/dt = (k+1)x by solving the DAE
- * dx/dt = -y+x, kx-y/4 = 0. This should
+ * dx/dt = -y+x, y = 4kx. This should
  * give a solution x(t) = x(0)exp((1-4k)t).
  * The system starts at x(0)=1 and has state
  * events at x*y = 4kx^2 = 0.4 (so x = 0.01/sqrt(k)).
@@ -32,7 +32,7 @@ class dae:
 		}
 		void alg_func(const double* q, const double* a, double* af)
 		{
-			af[0] = k*q[0]-0.25*a[0]; 
+			af[0] = 4.0*k*q[0]; 
 		}
 		void der_func(const double* q, const double* a, double* dq)
 		{
