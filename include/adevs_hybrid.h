@@ -57,11 +57,17 @@ template <typename X> class ode_system
 };
 
 /**
- * This extension of the ode_system provides for modeling some semi-explicit
+ * <p>This extension of the ode_system provides for modeling some semi-explicit
  * DAEs of index 1. These have the form dx/dt = f(x,y), y = g(x,y).
- * The solution to y=g(x,y) is found by fixed point iteration. 
- * Only the methods that include the algebraic variables should be overriden.
- * Any ODE solver can be used to generate trajectories for this object.
+ * The solution to y=g(x,y) is found by fixed point iteration on y.
+ * See "The Numerical Solution of Differential-Algebraic Systems by Runge-Kutta
+ * Methods" by Ernst Hairer, Michel Roche and Christian Lubich, published
+ * by Springer as Lecture Notes in Mathematics, Volum 1409, c. 1989.
+ * The section on Half-explicit methods (starting pg. 20 of my copy)
+ * describes the procedure.</p>
+ * <p>Only the methods that include the algebraic variables should be overriden.
+ * Any explicit, single step ODE solver can be used to generate trajectories for
+ * this object (and Runge-Kutta methods in particular).</p>
  */
 template <typename X> class dae_se1_system:
 	public ode_system<X>
