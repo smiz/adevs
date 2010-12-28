@@ -59,7 +59,7 @@ template <typename X> class ode_system
 /**
  * <p>This extension of the ode_system provides for modeling some semi-explicit
  * DAEs of index 1. These have the form dx/dt = f(x,y), y = g(x,y).
- * The solution to y=g(x,y) is found by fixed point iteration on y.
+ * The solution to y=g(x,y) is found by iteration on y.
  * See "The Numerical Solution of Differential-Algebraic Systems by Runge-Kutta
  * Methods" by Ernst Hairer, Michel Roche and Christian Lubich, published
  * by Springer as Lecture Notes in Mathematics, Volum 1409, c. 1989.
@@ -75,22 +75,28 @@ template <typename X> class dae_se1_system:
 	public:
 		/**
 		 * Make a system with N state variables, M state event functions
-		 * and A algebraic variables.
+		 * and A algebraic variables. 
 		 */
 		dae_se1_system(int N_vars, int M_event_funcs, int A_alg_vars,
-				double err_tol = 1E-8):
+				double err_tol = 1E-10, int max_iters = 30, double alpha = -1.0):
 			ode_system<X>(N_vars,M_event_funcs),
 			A(A_alg_vars),
+			max_iters(max_iters),
 			err_tol(err_tol),
-			good(0)
+			alpha(alpha)
 			{
-				a[0] = new double[A];
-				a[1] = new double[A];
+				failed = 0;
+				max_err = 0.0;
+				a = new double[A];
+				atmp = new double[A];
+				d = new double[A];
+				f[1] = new double[A];
+				f[0] = new double[A];
 			}
 		/// Get the number of algebraic variables
 		int numAlgVars() const { return A; }
 		/// Get the algebraic variables
-		double getAlgVar(int i) const { return a[good][i]; }
+		double getAlgVar(int i) const { return a[i]; }
 		/**
 		 * Write an intial solution for the state variables q
 		 * and algebraic variables a.
@@ -99,9 +105,8 @@ template <typename X> class dae_se1_system:
 		/**
 		 * Calculate the algebraic function for the state vector
 		 * q and algebraic variables a and store the result to af.
-		 * A solution to alg_func(a,q) = a will be found by fixed
-		 * point iteration on this function; i.e., by
-		 * a(i+1) = af(a(i),q) until a(i+1)-af(q(i),q) ~ 0.
+		 * A solution to alg_func(a,q) = a will be found by 
+		 * iteration on this function.
 		 */
 		virtual void alg_func(const double* q, const double* a, double* af) = 0;
 		/**
@@ -136,75 +141,88 @@ template <typename X> class dae_se1_system:
 		/// Destructor
 		virtual ~dae_se1_system()
 		{
-			delete [] a[0];
-			delete [] a[1];
+			delete [] d;
+			delete [] a;
+			delete [] atmp;
+			delete [] f[1];
+			delete [] f[0];
 		}
-
+		/**
+		 * Get the number of times that the error tolerance was not satisfied
+		 * before the iteration limit was reached.
+		 */
+		int getIterFailCount() const { return failed; }
+		/**
+		 * Get the worst error in a case where the algebraic solver did
+		 * not satisfy the error tolerance. This will be zero if
+		 * there were no failures of the algebraic solver.
+		 */
+		double getWorseError() const { return max_err; }
 		// Do not override
 		void init(double* q)
 		{
-			init(q,a[good]);
+			init(q,a);
 		}
 		// Do not override
 		void der_func(const double* q, double* dq)
 		{
 			solve(q);
-			der_func(q,a[good],dq);
+			der_func(q,a,dq);
 		}
 		// Override only if you have no state event functions.
 		void state_event_func(const double* q, double* z)
 		{
 			solve(q);
-			state_event_func(q,a[good],z);
+			state_event_func(q,a,z);
 		}
 		// Override only if you have no time events.
 		double time_event_func(const double* q)
 		{
 			solve(q);
-			return time_event_func(q,a[good]);
+			return time_event_func(q,a);
 		}
 		// Do not override
 		void postStep(const double* q)
 		{
 			solve(q);
-			postStep(q,a[good]);
+			postStep(q,a);
 		}
 		// Do not override
 		void internal_event(double* q, const bool* state_event)
 		{
 			// The variable a was solved for in the post step
-			internal_event(q,a[good],state_event);
+			internal_event(q,a,state_event);
 			// Make sure the algebraic variables are consistent with q
 			solve(q);
-			postStep(q,a[good]);
+			postStep(q,a);
 		}
 		// Do not override
 		void external_event(double* q, double e, const Bag<X>& xb)
 		{
 			// The variable a was solved for in the post step
-			external_event(q,a[good],e,xb);
+			external_event(q,a,e,xb);
 			// Make sure the algebraic variables are consistent with q
 			solve(q);
-			postStep(q,a[good]);
+			postStep(q,a);
 		}
 		// Do not override
 		void confluent_event(double *q, const bool* state_event, const Bag<X>& xb)
 		{
 			// The variable a was solved for in the post step
-			confluent_event(q,a[good],state_event,xb);
+			confluent_event(q,a,state_event,xb);
 			// Make sure the algebraic variables are consistent with q
 			solve(q);
-			postStep(q,a[good]);
+			postStep(q,a);
 		}
 		// Do not override
 		void output_func(const double *q, const bool* state_event, Bag<X>& yb)
 		{
 			// The variable a was solved for in the post step
-			output_func(q,a[good],state_event,yb);
+			output_func(q,a,state_event,yb);
 		}
 	protected:
 		/**
-		 * Solve the algebraic equations by fixed point iteration. This should
+		 * Solve the algebraic equations. This should
 		 * not usually need to be called by the derived class. An exception might
 		 * be where updated values for the algebraic variables are needed from
 		 * within an event function due to some discrete change in q or the
@@ -212,39 +230,100 @@ template <typename X> class dae_se1_system:
 		 */
 		void solve(const double* q);
 	private:
-		const int A;
-		const double err_tol;
-		int good;
-		double* a[2];
+		const int A, max_iters;
+		const double err_tol, alpha;
+		// Guess at the algebraic solution
+		double *a, *atmp;
+		// Guesses at g(y)-y
+		double* f[2];
+		// Direction
+		double* d;
+		// Maximum error in the wake of a failure
+		double max_err;
+		// Number of failures
+		int failed;
 };
 
 template <typename X>
 void dae_se1_system<X>::solve(const double* q)
 {
-	unsigned iter_count = 0;
-	double err;
-	int alt = (good+1)%2;
-	// Iterate unsubsequent guesses and hope that they
-	// converge to a solution
-	do
+	int iter_count = 0, alt, good;
+	double prev_err, err = 0.0, ee, beta, g2, alpha_tmp = alpha;
+	/**
+	 * Solve y=g(x,y) by the conjugate gradient method.
+	 * Method iterates on f(x,y)=g(x,y)-y to find
+	 * f(x,y)=0.
+	 */
+	_adevs_dae_se_1_system_solve_try_it_again:
+	alt = 0;
+	good = 1;
+	prev_err = DBL_MAX;
+	// First step by steepest descent
+	alg_func(q,a,f[alt]);
+	for (int i = 0; i < A; i++)
+	{
+		// Calculate f(x,y)
+		f[alt][i] -= a[i];
+		// First direction
+		d[i] = -f[alt][i];
+		// Make the move
+		atmp[i] = a[i];
+		a[i] += alpha_tmp*d[i];
+	}
+	// Otherwise, first guess by steepest descent
+	// Finish search by conjugate gradiant
+	while (iter_count < max_iters)
 	{
 		iter_count++;
 		err = 0.0;
-		alg_func(q,a[good],a[alt]);
+		// Calculate y = g(x,y) 
+		alg_func(q,a,f[good]);
+		// Check the quality of the solution
 		for (int i = 0; i < A; i++)
 		{
-			double ee = fabs(a[good][i]-a[alt][i]);
+			// Calculate f(x,y) 
+			f[good][i] -= a[i];
+			// Get the largest error 
+			ee = fabs(f[good][i]);
 			if (ee > err) err = ee;
 		}
+		// If the solution is good enough then return
+		if (err < err_tol) return;
+		// If the solution is not converging...
+		if (err > prev_err)
+		{
+			// Restore previous solution
+			for (int i = 0; i < A; i++)
+				a[i] = atmp[i];
+			// Restart with a new value for alpha
+			if (alpha_tmp < 0.0) alpha_tmp = -alpha_tmp;
+			else alpha_tmp *= -0.5;
+			goto _adevs_dae_se_1_system_solve_try_it_again;
+		}
+		prev_err = err;
+		// Calculate beta. See Strang's "Intro. to Applied Mathematics",
+		// pg. 379.
+		beta = g2 = 0.0;
+		for (int i = 0; i < A; i++)
+			g2 += f[alt][i]*f[alt][i];
+		for (int i = 0; i < A; i++)
+			beta += f[good][i]*(f[good][i]-f[alt][i]);
+		beta /= g2;
+		// Calculate a new guess at the solution
+		for (int i = 0; i < A; i++)
+		{
+			d[i] = beta*d[i]-f[good][i];
+			atmp[i] = a[i];
+			a[i] += alpha_tmp*d[i];
+		}
+		// Swap buffers
 		good = alt;
 		alt = (good+1)%2;
 	}
-	while (err_tol < err && iter_count < 10000);
-	if (err_tol < err) 
-	{
-		adevs::exception err("dae_se1_system::solve failed to converge");
-		throw err;
-	}	
+	// Throw an exception if the search failed
+	failed++;
+	if (err > max_err)
+		max_err = err;
 }
 
 /**
