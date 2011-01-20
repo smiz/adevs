@@ -58,7 +58,7 @@ template <typename X> class ode_system
 
 /**
  * <p>This extension of the ode_system provides for modeling some semi-explicit
- * DAEs of index 1. These have the form dx/dt = f(x,y), y = g(x,y).
+ * DAEs of index 1, specifically those in the form dx/dt = f(x,y), y = g(x,y).
  * The solution to y=g(x,y) is found by iteration on y.
  * See "The Numerical Solution of Differential-Algebraic Systems by Runge-Kutta
  * Methods" by Ernst Hairer, Michel Roche and Christian Lubich, published
@@ -67,7 +67,7 @@ template <typename X> class ode_system
  * describes the procedure.</p>
  * <p>Only the methods that include the algebraic variables should be overriden.
  * Any explicit, single step ODE solver can be used to generate trajectories for
- * this object (and Runge-Kutta methods in particular).</p>
+ * this object (e.g., the Runge-Kutta methods included with adevs will work).</p>
  */
 template <typename X> class dae_se1_system:
 	public ode_system<X>
@@ -75,7 +75,10 @@ template <typename X> class dae_se1_system:
 	public:
 		/**
 		 * Make a system with N state variables, M state event functions
-		 * and A algebraic variables. 
+		 * and A algebraic variables. The error tolerance determines
+		 * the acceptable accuracy for the algebraic solution to y=g(x,y).
+		 * The max_iters argument determines how many iterations will
+		 * be used to try and generate a solution.
 		 */
 		dae_se1_system(int N_vars, int M_event_funcs, int A_alg_vars,
 				double err_tol = 1E-10, int max_iters = 30, double alpha = -1.0):
@@ -158,36 +161,36 @@ template <typename X> class dae_se1_system:
 		 * there were no failures of the algebraic solver.
 		 */
 		double getWorseError() const { return max_err; }
-		// Do not override
+		/// Do not override
 		void init(double* q)
 		{
 			init(q,a);
 		}
-		// Do not override
+		/// Do not override
 		void der_func(const double* q, double* dq)
 		{
 			solve(q);
 			der_func(q,a,dq);
 		}
-		// Override only if you have no state event functions.
+		/// Override only if you have no state event functions.
 		void state_event_func(const double* q, double* z)
 		{
 			solve(q);
 			state_event_func(q,a,z);
 		}
-		// Override only if you have no time events.
+		/// Override only if you have no time events.
 		double time_event_func(const double* q)
 		{
 			solve(q);
 			return time_event_func(q,a);
 		}
-		// Do not override
+		/// Do not override
 		void postStep(const double* q)
 		{
 			solve(q);
 			postStep(q,a);
 		}
-		// Do not override
+		/// Do not override
 		void internal_event(double* q, const bool* state_event)
 		{
 			// The variable a was solved for in the post step
@@ -196,7 +199,7 @@ template <typename X> class dae_se1_system:
 			solve(q);
 			postStep(q,a);
 		}
-		// Do not override
+		/// Do not override
 		void external_event(double* q, double e, const Bag<X>& xb)
 		{
 			// The variable a was solved for in the post step
@@ -205,7 +208,7 @@ template <typename X> class dae_se1_system:
 			solve(q);
 			postStep(q,a);
 		}
-		// Do not override
+		/// Do not override
 		void confluent_event(double *q, const bool* state_event, const Bag<X>& xb)
 		{
 			// The variable a was solved for in the post step
@@ -214,7 +217,7 @@ template <typename X> class dae_se1_system:
 			solve(q);
 			postStep(q,a);
 		}
-		// Do not override
+		/// Do not override
 		void output_func(const double *q, const bool* state_event, Bag<X>& yb)
 		{
 			// The variable a was solved for in the post step
@@ -320,7 +323,8 @@ void dae_se1_system<X>::solve(const double* q)
 		good = alt;
 		alt = (good+1)%2;
 	}
-	// Throw an exception if the search failed
+	// Increment the failed count and worse case error if an 
+	// acceptible solution was not found.
 	failed++;
 	if (err > max_err)
 		max_err = err;
