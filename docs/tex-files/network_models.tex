@@ -250,7 +250,7 @@ SimpleDigraph<VALUE>::~SimpleDigraph() {
  
 \section{Digraph Models}
 \label{section:digraph_models}
-This section introduces the \classname{Digraph} model, which is part of the \adevs\ simulation library. The \classname{Digraph} is a tool for building network models base on, or described by, a block diagram. The model of the convenience store, developed in section \ref{chapter:intro}, was our first example of a \classname{Digraph} model. The code used to construct the convenience store model (without the \classname{Observer}) is shown below. The block diagram that corresponds to this code snippet is shown in Fig. \ref{fig:two_component_diagram}.
+This section introduces the \classname{Digraph} model, which is part of the \adevs\ simulation library. The \classname{Digraph} is a tool for building network models based on, or described by, a block diagram. The model of the convenience store, developed in section \ref{chapter:intro}, was our first example of a \classname{Digraph} model. The code used to construct the convenience store model (without the \classname{Observer}) is shown below. The block diagram that corresponds to this code snippet is shown in Fig. \ref{fig:two_component_diagram}.
 \begin{verbatim}
 // Create a digraph model whose components use PortValue<Customer*>
 // objects as input and output objects.
@@ -272,16 +272,9 @@ store.couple(genr,genr->arrive,clrk,clrk->arrive);
 
 The components of a \classname{Digraph} must use \classname{adevs::PortValue} objects for their input and output type.  The \classname{Digraph} is a template class with two template parameters. The first parameter is the type of object used for a value in the \classname{PortValue} objects. The second parameter is the type of object used for a port in the \classname{PortValue} objects. The port parameter is of type 'int' by default.
 
-For the modeler, the \classname{Digraph} has two primary methods. The add method is used to add component models to the network. The couple method is used to connect components of the network. The
-first two arguments to the \methodname{couple} method are the source model and
-source port. The second two arguments are the destination model and
-the destination port. 
-
-The effect of coupling a source model to a destination model is that
-output produced by the source model on the source port appear
-as input to the destination model on the destination port. To
-illustrate this, consider the output function of the \classname{Generator} model
-shown in Fig. \ref{fig:two_component_diagram}.
+For the modeler, the \classname{Digraph} has two primary methods. The add method is used to add components to the network; the argument to the add method is just the model to be included in the network. The couple method is used to connect components of the network. The first two arguments to the couple method are the source model and source port. The second two arguments are the destination model and the destination port.
+ 
+The effect of coupling a source model to a destination model is that output produced by the source model on the source port appears as input to the destination model on the destination port. To illustrate this, consider the output function of the \classname{Generator} model that is shown in Fig. \ref{fig:two_component_diagram}.
 \begin{verbatim}
 void Generator::output_func(Bag<IO_Type>& yb)
 {
@@ -291,13 +284,9 @@ void Generator::output_func(Bag<IO_Type>& yb)
 }
 \end{verbatim}
 
-This places an output value of type \classname<Customer*> on the ``arrive" output port of the \classname{Generator}.  A corresponding \classname{PortValue} object appears in the input bag of the \classname{Clerk}. The value of this \classname{PortValue} object points to the \classname{Customer*} object created by the \classname{Generator} and the port is the \classname{Clerk}'s ``arrive" port.
+This output function places an output value of type `Customer*' on the ``arrive'' output port of the \classname{Generator}; recall that 'IO\_Type' is a typedef for `PortValue<Customer*>'. A corresponding \classname{PortValue} object appears in the input bag of the \classname{Clerk}. The value attribute of the \classname{PortValue} object received by the clerk points to the \classname{Customer} object created by the \classname{Generator}, and the port is the \classname{Clerk}'s ``arrive" port.
 
-In addition to coupling \classname{Atomic} models, the \classname{Digraph} class can also have other \classname{Network} models as its components. Suppose that we want to model a convenience store
-that has two checkout clerks. When customers are ready to pay their
-bill, they look for the line with the smallest number of people and
-enter that line. We can reuse the \classname{Clerk}, \classname{Generator}, and \classname{Observer}
-models that were introduced in section \ref{chapter:intro} to build this new model. 
+The components for the network need not consist only of \classname{Atomic} models; the \classname{Digraph} can also have other \classname{Network} models as its components. For instance, suppose that we want to model a convenience store that has two clerks. When customers are ready to pay their bill, they enter the shortest line. To build this model, we reuse the \classname{Clerk}, \classname{Generator}, and \classname{Observer} models that were introduced in section \ref{chapter:intro}, and add an additional model for the process of customers selecting a checkout line.
 
 The header and source code for the model of the customer's line-selection process is shown below. The model has two output
 ports, one for each line. There are three input ports. One of these
