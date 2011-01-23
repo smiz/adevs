@@ -405,7 +405,8 @@ template <typename X> class Hybrid:
 		 */
 		Hybrid(ode_system<X>* sys, ode_solver<X>* solver,
 				event_locator<X>* event_finder):
-			sys(sys),solver(solver),event_finder(event_finder)
+			sys(sys),solver(solver),event_finder(event_finder),
+			e_accum(0.0)
 		{
 			q = new double[sys->numVars()];
 			q_trial = new double[sys->numVars()];
@@ -429,10 +430,14 @@ template <typename X> class Hybrid:
 		 */
 		void delta_int()
 		{
+			e_accum += ta();
 			// Execute any discrete events
 			event_happened = event_exists;
 			if (event_exists) // Execute the internal event
+			{
 				sys->internal_event(q_trial,event); 
+				e_accum = 0.0;
+			}
 			// Copy the new state vector to q
 			for (int i = 0; i < sys->numVars(); i++) q[i] = q_trial[i];
 			tentative_step(); // Take a tentative step
@@ -448,7 +453,8 @@ template <typename X> class Hybrid:
 			// Let the model adjust algebraic variables, etc. for the new state
 			sys->postStep(q);
 			// Process the discrete input
-			sys->external_event(q,e,xb); 
+			sys->external_event(q,e+e_accum,xb);
+			e_accum = 0.0;
 			// Copy the new state to the trial solution 
 			for (int i = 0; i < sys->numVars(); i++) q_trial[i] = q[i];
 			tentative_step(); // Take a tentative step
@@ -463,7 +469,8 @@ template <typename X> class Hybrid:
 			event_happened = true;
 			if (event_exists) // Execute the confluent or external event
 				sys->confluent_event(q_trial,event,xb); 
-			else sys->external_event(q_trial,ta(),xb);
+			else sys->external_event(q_trial,e_accum+ta(),xb);
+			e_accum = 0.0;
 			// Copy the new state vector to q
 			for (int i = 0; i < sys->numVars(); i++) q[i] = q_trial[i];
 			tentative_step(); // Take a tentative step 
@@ -495,6 +502,7 @@ template <typename X> class Hybrid:
 		bool* event; // Flags indicating the encountered event surfaces
 		bool event_exists; // True if there is at least one event
 		bool event_happened; // True if a discrete event in the ode_system took place
+		double e_accum; // Accumlated time between discrete events
 		// Execute a tentative step and calculate the time advance function
 		void tentative_step()
 		{

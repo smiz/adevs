@@ -1,8 +1,89 @@
 \chapter{Continuous Models}
-A complicated system is likely to have parts that are best modeled with continuous equations. Where continuous models interact with discrete event models, these interactions are necessarily discrete. For example, a digital thermometer reports temperature in discrete increments, circuit breakers and electrical switches are either open or closed, a threshold sensor is either tripped or it is not. If, on the other hand, two systems interact continuously, then the both systems are probably best modeled with continuous mathematics. In this case, accurate calculations are greatly facilitated by lumping the two systems into a single assembly; in \adevs\ this assembly is an \classname{Atomic} model that encapsulates the system's continuous dynamics.
+Many engineered systems consist of computers, communications networks, and other digital (i.e., discrete event) systems whose purpose is to monitor and control a physical (electrical, mechanical, thermodynamic, etc.) process. Models of these systems have parts modeled as discrete event systems, parts modeled with continuous (differntial or differential-algebraic) equations, and the interaction of these parts is crucial to understanding the system's behavior. Where the continuous models interact with the discrete event models, these interactions are necessarily discrete. For example, a digital thermometer reports temperature in discrete increments, electrical switches are either open or closed, a threshold sensor is either tripped or it is not. Discrete interactions in a combined continuous-discrete event simulation are managed just as before; the models interact by producing output events and reacting to input events.
 
-There are three possibly outcomes if we follow this lumping process to its conclusion. One possibility is that we end up with a single assembly; in this case our model is essentially continuous and we are probably better off using a simulation tool for continuous systems. At the other extreme, we find that the continuous parts of our model are relatively simple; they yield to analytical techniques and can be be easily transformed into discrete event models. Between these two extremes are models with continuous dynamics that are not simple but which do not dominate the modeling problem. The continuous system simulation part of \adevs\ is aimed at this third type of model.\footnote{The method used here for adding continuous models to a discrete event simulation is described and illustrated in the following papers: James Nutaro, Teja Kuruganti, and Mallikarjun Shankar. Seamless Simulation of Hybrid Systems with Discrete Event Software Packages. In the Proceedings of the 40th Annual Simulation Symposium, pp. 81-87, March 2007 and James Nutaro, Phani Teja Kuruganti, Laurie Miller, Sara Mullen and Mallikarjun Shankar. Integrated Hybrid-Simulation of Electric Power and Communications Systems. In Proceedings of the 2007 IEEE Power Engineering Society General Meeting, pp. 1-8, June 2007.}
+If, on the other hand, two systems interact continuously, then those interacting parts at least are modeled with continuous equations. In this case, accurate simulation is greatly facilitated by lumping the two systems into a single assembly; in \adevs\ this assembly is an \classname{Atomic} model that encapsulates the system's continuous dynamics. The essence of the approach to combined simulation in \adevs\ consists therefore of building atomic models that i) approximate the behavior of the continuous systems and ii) generates and consumes events at those instants when the continuous system interacts with a discrete event one.
 
+There are three possibly outcomes of this lumping process. One possibility is that we end up with a single assembly; in this case our model is essentially continuous and we are probably better off using a simulation tool for continuous systems. At the other extreme, we find that the continuous parts of our model are very simple, yielding to analytical solutions that are easily transformed into discrete event models. Between these two extremes are models with continuous dynamics that are not simple but also do not dominate the modeling problem. The continuous system simulation part of \adevs\ is aimed at this type of model.
+
+\section{Differential equation modeling with the \classname{ode\_system} class}
+Models described by ordinary differential equations are implemented by subclassing the \classname{ode\_system} class. This class has two sets of methods: the first is for the model's continuous dynamics and the second is for the model's discrete event dynamics. I'll illustrate both with the simple, if somewhat contrived, example of a cherry bomb\footnote{A cherry bomb is a small red firecracker. They are dangerous, and illegal in the United States. Nonetheless, every school seems to have at least one obnoxious kid who likes to put them into toilets.}. This bomb is dropped from a height of 1 meter and bounces until it either explodes or is doused with water. We'll assume that the cherry bomb only bounces up and down and is perfectly elastic. The cherry bomb explodes 2 seconds from the time it is lit and dropped unless doused first. Dousing the cherry bomb puts out the fuse\footnote{Cherry bomb fuses are frequently water proofed.}. Dousing is a discrete input event and the cherry bomb produces a discrete output event if it explodes. 
+
+This model has two continuous state variables: the height and velocity of the cherry bomb. Between events, these variables are governed by the pair of differential equations
+\begin{align}
+&\dot{v} = -9.8 \label{eqn:v} \\
+&\dot{h} = v \label{eqn:h}
+\end{align}
+where $9.8$ meters per second per second is acceleration due to gravity, $v$ is velocity, and $h$ is height. In this example, it is also useful to know the current time. We keep track of this by adding one more differential equation
+\begin{equation}
+\dot{t} = 1 \label{eqn:t}
+\end{equation}
+whose solution is $t_0 + t$ or just $t$ if we set $t_0 = 0$. The ball bounces when it hits the floor, and bouncing causes the ball's velocity to change sign; specifically
+\begin{equation}
+h = 0 \ \& \ v < 0 \implies v \leftarrow -v \label{eqn:state_event}
+\end{equation}
+where $\implies$ is logical implication and $\leftarrow$ indicates an assignment. 
+
+Equations \ref{eqn:v}, \ref{eqn:h}, and \ref{eqn:t} are the state variable derivatives, and these equations are implemented in the \methodname{der\_func} method of the \classname{ode\_system} class. The signature for this method is
+\begin{verbatim}
+void der_func(const double* q, double* dq)
+\end{verbatim}
+The q pointer is the array of state variable values; in this case $h$, $v$, and $t$. The dq pointer is the array of state variable derivatives; in this case $\dot{h}$, $\dot{v}$, and $\dot{t}$. When the simulator calls the der\_func method, it supplies q. In response, the method computes the values of $\dot{h}$, $\dot{q}$, and $\dot{t}$ and stores them in the dq array.
+
+Equation \ref{eqn:state_event} is a state event condition and it is implemented in two parts. The \methodname{state\_event\_func} method implements the `if' part (left hand side) of the condition. The signature of this method is
+\begin{verbatim}
+void state_event_func(const double *q, double *z)
+\end{verbatim}
+Again, the supplied q array contains the current state variable values. These are used to evaluate the state event condition and store the result in the z array. The simulator detects state events by looking for changes in the sign of the z array entries. Note that the event condition should be continuous in the state variables on which it depends. In the case of the cherry bomb this is simple to do: we simply use $z=h$ if $v < 0$ and $z=1$ if $v >= 0$.  
+
+The `then' part (right hand side) is implemented with the \methodname{internal\_event} method, which the simulator invokes when the state event condition is true. The signature of this method is
+\begin{verbatim}
+void internal_event(double *q, const bool *state_event)
+\end{verbatim}
+where, again, $q$ is the value of the state variables at the event. The entries of the array state\_event are true for each z in the state event condition array that evaluates to zero. This array therefore has one entry for each state event condition, and it has one additional entry to indicate time events, which are described below.
+
+The cherry bomb has one discrete state variable with three possible values: the fuse is lit, the fuse is not lit, and the bomb is exploded. This variable changes in response to two events. The first event is when the bomb explodes; this is a time event that we know will occur 2 seconds from the time that the fuse it lit. The \methodname{time\_event\_func} method is used to schedule the explosion by returning the time remaining until the fuse burns out. The signature of the of this method is
+\begin{verbatim}
+double time_event_func(const double* q)
+\end{verbatim}
+As before, q is the current value of the state variables. The \methodname{time\_event\_func} is similar to the familiar \methodname{ta} method; it is used to schedule autonomous events based on the current value of the model's state variables. When this time expires, the simulator calls the \methodname{internal\_event} method with the last flag in the state event array set to true.
+
+The second event that can change the state of the fuse is dousing with water. This an external event. External events, of course, are not scheduled by the model itself; they occur when and if the input event arrives. The \methodname{external\_event} method implements the response of the cherry bomb to dousing with water. Its signature is
+\begin{verbatim}
+void external_event(double *q, double e, const Bag<X> &xb)
+\end{verbatim}
+The array q contains the values of the continuous state variables, e is the time since the last discrete event, and xb is the bag of input. The douse event is an input and it appears in the input bag xb if the event occurs. 
+
+As before, it is possible for an external and internal event to coincide. When this happens, the simulator calls the method \methodname{confluent\_event}. Its signature is
+\begin{verbatim}
+void confluent_event (double *q, const bool *state_event, const Bag<X> &xb)
+\end{verbatim}
+and its arguments are as described for the internal and external methods.
+
+The cherry bomb model produces an output event when it explodes, and the \methodname{output\_func} method is use for this purpose. Its signature is
+\begin{verbatim}
+void output_func(const double *q, const bool *state_event, Bag<X> &yb)
+\end{verbatim}
+Its q and state\_event arguments are as described for the internal\_event method, and the bag yb is to be filled with the model's output. As with an \classname{Atomic} model, the output\_func is always invoked immediately prior to the internal\_event and confluent\_event methods.
+
+All that remains in the implementation is to supply a \methodname{gc\_output} for collecting garbage, a constructor, and a method for initializing the continuous state variables. The gc\_output method works identically to that of the \classname{Atomic} class and so needs no more discussion here. The constructor for the cherry bomb must call the constructor of its \classname{ode\_system} base class. The signature of this method is
+\begin{verbatim}
+ode_system (int N_vars, int M_event_funcs)
+\end{verbatim}
+where N\_vars is the number of entries in the q and dq arrays (i.e., the number of continuous state variables) and M\_event\_funcs is the number of entries in the z and state\_event arrays (plus one for the time event). For the cherry bomb, N\_vars is three and M\_event\_funcs is one.
+
+The constructor does not initialize the continuous state variables. Instead, the simulator calls the init method whose signature is
+\begin{verbatim}
+void init(double* q)
+\end{verbatim}
+and where q is an array that should be filled with the initial values for, in the case of the cherry bomb, $h$, $v$, and $t$. The complete implementation of the \classname{CherryBomb} is listed below.
+
+Figure \ref{fig:cherry_bomb_trajectory} shows the cherry bomb trajectory from $t=0$ to its explosion at $t=2$. This plot was produced using the simulation program listed above. There is nothing particular surprising about it, but you can observe the discrete changes in the cherry bomb's trajectory. There are two bounce events at $t \approx 0.45$ and $t \approx 1.4$. The cherry bomb explodes abruptly at the start of its third decent.
+\begin{figure}[ht]
+\centering
+\epsfig{file=cont_models_figs/ball_height.eps}
+\caption{A simulation of the cherry bomb model that terminates when the cherry bomb explodes.}
+\label{fig:cherry_bomb_trajectory}
+\end{figure}
 \section{Using the Runge-Kutte Integration Modules}
 \adevs\ has two pre-built \classname{Atomic} models that can be used to simulation continuous systems. These two models are essentially the same; one uses a fixed step size, fourth order Runge-Kutte integration scheme to solve a set of ordinary differential equations and the other uses a variable step size, fourth/fifth order Runge-Kutte scheme to do the same thing. In general, you will probably prefer to use the variable step size scheme because it, unlike the fixed step size scheme, has a built in error control mechanism. Both models are used in exactly the same way, differing only in the parameters that are passed to their constructors.
 
@@ -17,117 +98,7 @@ void state_changed(const double* q)
 \end{verbatim}
 which are used, as the names suggest, to implement the state variable derivative functions and state event conditions, to schedule time events, to implement discrete state changes, to generate discrete outputs, and to take an action (usually recording the state trajectory in a file) when the integration scheme changes a state variable. 
 
-I'll use a simple, if contrived, example to introduce the parts of a continuous model and the corresponding use of the RK model methods. 
-A cherry bomb\footnote{A cherry bomb is a small red firecracker. They are dangerous and illegal in the United States. None the less, every school seems to have at least one obnoxious kid who likes to put them into toilets.} is dropped from a height of 1 meter and bounces until it either explodes or is doused with water. We'll assume that the cherry bomb only bounces up and down and that it is perfectly elastic. The cherry bomb will explode 2 seconds from the time it is lit and dropped. Dousing the cherry bomb will put out the fuse\footnote{Cherry bomb fuses are frequently water proofed.}. Dousing is an input event and the cherry bomb will produce an output event if it explodes.
 
-This model has two continuous state variables: the height and velocity of the cherry bomb. Between events, these variables are governed by the pair of differential equations
-\begin{align}
-&\dot{v} = -9.8 \label{eqn:v} \\
-&\dot{h} = v \label{eqn:h}
-\end{align}
-where $9.8$ is acceleration due to gravity, $v$ is velocity, and $h$ is height. In this example, it will also be useful to know the current time. We can keep track of this by adding one more differential equation
-\begin{equation}
-\dot{t} = 1 \label{eqn:t}
-\end{equation}
-whose solution is $t_0 + t$ or just $t$ if we set $t_0 = 0$.
-The ball bounces when it hits the floor; the effect of a bounce is to instantaneously reverse the cherry bomb's velocity; specifically
-\begin{equation}
-h = 0 \ \& \ v < 0 \implies v \leftarrow -v \label{eqn:state_event}
-\end{equation}
-where $\implies$ is logical implication and $\leftarrow$ indicates an assignment. 
-
-Equations \ref{eqn:v} and \ref{eqn:h} (and \ref{eqn:t}) are the state variable derivatives and our cherry bomb class implements them in its \methodname{der\_func} method. The q parameter is a state variable array that contains, in our case, the values of $h$ and $v$ (and t), and the dq parameter is the state variable derivative array. The method computes the values of $\dot{h}$ and $\dot{q}$ (and $\dot{t}$) and store then in the dq array. Equation \ref{eqn:state_event} is a state event condition and it is implemented in two parts. The \methodname{state\_event\_func} method implements the `if' part (left hand side) of the condition. Again, the supplied q array contains the current state variable values, $h$ and $v$ (and $t$) in this case. These are use to evaluate the state event condition and store the result in the z array. The simulator detects state events by looking for changes in the sign of the z array entries (i.e., from -1 to 0, 0 to 1, -1 to 1, and vice versa). The `then' part (right hand side) is implemented with the \methodname{discrete\_action} method, which the simulator invokes when the state event condition is true.
-
-The cherry bomb has one discrete state variable with three possible values: the fuse is lit, the fuse is not lit, and the bomb is exploded. This variable changes in response to two events. The first event is when the bomb explodes; this is a time event that we know will occur 2 seconds from the time that the fuse it lit. Time \methodname{time\_event\_func} method is used to schedule the explosion by returning the time remaining until the fuse burns out. The \methodname{time\_event\_func} is similar to the familiar \methodname{ta} method; it is used to schedule autonomous events based on the current value of the model's state variables. The second event is an external event; this event is the fuse being doused with water. External events, of course, are not scheduled; they occur when and if the input event arrives.
-
-The \methodname{discrete\_action} method implements the response of the cherry bomb to explosion and douse events in addition to the bounce event (i.e., the right hand side of Equation \ref{eqn:state_event}). The array q contains the values of the continuous state variables at the event time. The bounce and explosion events are both internal events and the input bag xb will be empty. The douse event is an input and it will appear in the input bag xb if the event occurs. 
-
-The cherry bomb model produces an output event when it explodes. The \methodname{discrete\_output} method is used to implement the model's output behavior. As with the other methods, the q array contains the current value of the continuous state variables. The method fills the output bag yb with the model's output events (just as with the familiar \methodname{output\_func}). Because the cherry bomb is derived from the \classname{Atomic} class, its output method is always invoked immediately prior to an internal event; internal events occur when the \methodname{time\_event\_func} duration expires or the \methodname{state\_event\_func} indicates that a state event condition is true.
-
-The cherry bomb model can be implemented in two ways: as a sub-class of the \classname{rk4} class or as a sub-class of the \classname{rk45} class. The \classname{rk4} class uses a fixed step size, fourth order Runge-Kutte integration scheme to solve the differential equations that describe a model's continuous dynamics; the \classname{rk45} is an adaptive step size variant of the same scheme. Both schemes use a very simple interval bisection technique to locate state events\footnote{This state event detection in not particular robust; it can fail to detect a state event in some circumstances. You should be careful when employing it. Nonetheless, the scheme is sufficient in many cases.} The only out difference between the \classname{rk4} and \classname{rk45} class is in their constructors; the \classname{rk45} class requires one extra parameter that defines the error tolerance of the integration scheme. 
-
-The \classname{rk45} derived cherry bomb model called \classname{CherryBomb} is shown below. The base class constructor specifies five things: the number of continuous state variables (i.e., the size of the q and dq arrays), the largest integration time step that you will allow, the absolute error permitted at each integration step\footnote{The error at each integration step is estimated by the integration algorithm and the step size is adjusted in an effort to keep the error at this tolerance. Beware that the actual error could be larger than your specified tolerance! As a rule of thumb I often set the error tolerance to one tenth of the value I actually want. For example, if I want errors less than $0.01$, I'll use an error tolerance of $0.001$.}, the number of state event conditions (i.e., the size of the z array), and the time error tolerance for the event detection scheme (the default value is $10^{-12}$)\footnote{If this value is too small, then the simulator can get stuck.The default is $10^{-12}$ because that seems to be the smallest robust value when time is represented with a double precision floating point number.} The \classname{CherryBomb} constructor sets the initial value of its continuous variables $h$ and $v$ (and $t$) by using the \classname{rk45}'s \methodname{init} method; its signature is
-\begin{verbatim}
-void init(int i, double q0)
-\end{verbatim}
-The first parameter is the index (start from zero) of the continuous state variable and the second parameter is the variable's initial value. In this example, the initial height is 1 meter and the initial velocity is zero. The remainder of the \classname{CherryBomb} implementation is just as described in the previous paragraphs.
-\begin{verbatim}
-#include "adevs.h"
-#include <iostream>
-using namespace std;
-using namespace adevs;
-
-// Array indices for the CherryBomb state variables
-#define H 0
-#define V 1
-#define T 2
-// Discrete variable enumeration for the CherryBomb
-typedef enum { FUSE_LIT, DOUSE, EXPLODE } Phase;
-
-class CherryBomb: public rk45<string> {
-   public:
-      CherryBomb():rk45<string>(
-            3, // three state variables including time
-            0.01, // maximum time step
-            0.001, // error tolerance for one integration step
-            1 // 1 state event condition
-            ) {
-         init(H,1.0); // Initial height
-         init(V,0.0); // Initial velocity
-         init(T,0.0); // Start time at zero
-         phase = FUSE_LIT; // Light the fuse!
-      }
-      void der_func(const double* q, double* dq) {
-         dq[V] = -9.8; // Equation 5.1
-         dq[H] = q[V]; // Equation 5.2
-         dq[T] = 1.0; // Equation 5.3
-      }
-      void state_event_func(const double* q, double *z) {
-         // Test condition 5.4. The test uses h <= 0 instead of h = 0 to avoid
-         // a problem if h, which is a floating point number, is not exactly 0.
-         // For instance, it might be computed at 1E-32 which is close enough.
-         if (q[H] <= 0.0 && q[V] < 0.0) z[0] = 1.0;
-         else z[0] = -1.0;
-      }
-      double time_event_func(const double* q) {
-         if (q[T] < 2.0) return 2.0 - q[T]; // Explode at time 2
-         else return DBL_MAX; // Don't do anything after that
-      }
-      void discrete_action(double* q, const Bag<string>& xb) {
-         if (xb.size() > 0 && phase == FUSE_LIT) phase = DOUSE; // Any input is a douse event
-         else if (q[T] >= 2.0 && phase == FUSE_LIT) phase = EXPLODE; // Explode at time 2
-         if (q[H] <= 0.0) q[V] = -q[V]; // Bounce
-      }
-      void discrete_output(const double *q, Bag<string>& yb) {
-         if (q[T] >= 2.0 && phase == FUSE_LIT) yb.insert("BOOM!"); // Explode!
-      }
-      void state_changed(const double* q) {
-         // Write the current state to std out
-         cout << q[T] << " " << q[H] << " " << q[V] << " " << phase << endl;
-      }
-      void gc_output(Bag<string>&){} // No garbage collection is needed
-      Phase getPhase() { return phase; } // Get the current value of the discrete variable
-   private:
-      Phase phase;
-};
-
-int main() {
-   CherryBomb* bomb = new CherryBomb();
-   Simulator<string>* sim = new Simulator<string>(bomb);
-   while (bomb->getPhase() == FUSE_LIT)
-      sim->execNextEvent();
-   delete sim; delete bomb;
-   return 0;
-}
-\end{verbatim}
-
-Figure \ref{fig:cherry_bomb_trajectory} shows the cherry bomb trajectory from $t=0$ to its explosion at $t=2$. This plot was produced using the simulation program listed above. There is nothing particular surprising about it, but you can observe the discrete changes in the cherry bomb's trajectory. There are two bounce events at $t \approx 0.45$ and $t \approx 1.4$. The cherry bomb explodes abruptly at the start of its third decent.
-\begin{figure}[ht]
-\centering
-\epsfig{file=cont_models_figs/ball_height.eps}
-\caption{A simulation of the cherry bomb model that terminates when the cherry bomb explodes.}
-\label{fig:cherry_bomb_trajectory}
-\end{figure}
 
 \section{Building Numerical Integration Blocks for \adevs}
 The \classname{rk45} and \classname{rk4} classes are not directly derived from the \classname{Atomic} class; they are actually derived from the \classname{DESS} class, which is derived from the \classname{Atomic} class. The \classname{DESS} (Differential Equation System Specification) class\footnote{The classification of dynamic systems into discrete event, discrete time, and continuous models is formalized by Zeigler in his book ``Theory of Modeling and Simulation". The acronyms for each class are DEVS (Discrete EVent system Specification), DTSS (Discrete Time System Specification), and DESS (Differential Equation System Specification).} replaces the five familiar \classname{Atomic} model methods with five new methods: 
