@@ -15,21 +15,24 @@ class bouncing_ball:
 {
 	public:
 		bouncing_ball():
-		ode_system<PortValue<double> >(2,1),
+		ode_system<PortValue<double> >(3,1),
 		sample(false),
 		phase(FALL)
 		{
 		}
 		void init(double* q)
 		{
+			last_event_time = 0.0;
 			q[0] = 1.0; // Initial height
 			q[1] = 0.0; // Initial velocity
+			q[2] = 0.0; // Time
 		}
 		void der_func(const double* q, double* dq)
 		{
 			dq[0] = q[1];
 //			dq[1] = -9.8; // Real gravity
 			dq[1] = -2.0; // For test case
+			dq[2] = 1.0;
 		}
 		void state_event_func(const double* q, double* z)
 		{
@@ -56,10 +59,13 @@ class bouncing_ball:
 				}
 			}
 			sample = false;
+			last_event_time = q[2];
 		}
 		void external_event(double* q, double e, const Bag<PortValue<double> >& xb)
 		{
+			assert(fabs(q[2]-last_event_time-e) < 1E-9); 
 			sample = xb.size() > 0;
+			last_event_time = q[2];
 		}
 		void confluent_event(double* q, const bool* event_flag, const Bag<PortValue<double> >& xb)
 		{
@@ -77,6 +83,7 @@ class bouncing_ball:
 
 	private:
 		bool sample;
+		double last_event_time;
 		enum { CLIMB, FALL } phase;
 };
 

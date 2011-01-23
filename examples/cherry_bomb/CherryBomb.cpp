@@ -30,7 +30,7 @@ class CherryBomb: public ode_system<string> {
 		}
 		void state_event_func(const double* q, double *z) {
 			// Test for hitting the ground. 
-			if (q[V] < 0.0) return q[H];
+			if (q[V] < 0.0) z[0] = q[H];
 			else z[0] = 1.0;
 		}
 		double time_event_func(const double* q) {
@@ -44,14 +44,14 @@ class CherryBomb: public ode_system<string> {
 			if (state_event[0]) q[V] = -q[V]; // Bounce!
 			if (state_event[1]) phase = EXPLODE;
 		}
-		void confluent_event(double* q, const Bag<string>& xb,
-			const bool* state_event) {
+		void confluent_event(double* q, const bool* state_event,
+			const Bag<string>& xb) {
 			internal_event(q,state_event);
 			external_event(q,0.0,xb);
 		}
 		void output_func(const double *q, const bool* state_event,
 				Bag<string>& yb) {
-			if (stat_event[1] && phase == FUSE_LIT)
+			if (state_event[1] && phase == FUSE_LIT)
 				yb.insert("BOOM!"); // Explode!
 		}
 		void postStep(const double* q) {
@@ -67,8 +67,24 @@ class CherryBomb: public ode_system<string> {
 };
 
 int main() {
+	// Create the model
 	CherryBomb* bomb = new CherryBomb();
-	Simulator<string>* sim = new Simulator<string>(bomb);
+	// Create the ODE solver for this model. Maximum error
+	// tolerance at each step is 1E-4 and the maximum
+	// size of an integration step is 0.01.
+	ode_solver<string>* ode_solve =
+		new corrected_euler<string>(bomb,1E-4,0.01);
+	// Create the event locator for this model. Maximum
+	// error tolerace for the location of an event in
+	// the state space is 1E-8.
+	event_locator<string>* event_find =
+		new linear_event_locator<string>(bomb,1E-8);
+	// Create an atomic model that puts all of these
+	// together to simulate the continuous system.
+	Hybrid<string>* model =
+		new Hybrid<string>(bomb,ode_solve,event_find);
+	// Create and run a simulator for this model
+	Simulator<string>* sim = new Simulator<string>(model);
 	while (bomb->getPhase() == FUSE_LIT)
 		sim->execNextEvent();
 	delete sim; delete bomb;
