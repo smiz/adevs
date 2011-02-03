@@ -7,19 +7,22 @@
 class Genr: public adevs::Atomic<int>
 {
 	public:
-		Genr(int freq):adevs::Atomic<int>(),events(0),period(1.0/(double)freq)
+		Genr(int freq):adevs::Atomic<int>(),
+			events(0),period(1.0/(double)freq)
 		{
 			srandom(1);
+			next = random();
 		}
-		void delta_int(){ events++; }
+		void delta_int(){ next = random(); events++; }
 		void delta_ext(double, const adevs::Bag<int>&){}
 		void delta_conf(const adevs::Bag<int>&){}
 		double ta() { return period; }
-		void output_func(adevs::Bag<int>& yb) { yb.insert(random()); }
+		void output_func(adevs::Bag<int>& yb) { yb.insert(next); }
 		void gc_output(adevs::Bag<int>&){}
 		double lookahead() { return DBL_MAX; }
 	private:
 		unsigned int events;
+		long int next;
 		const double period;
 };
 

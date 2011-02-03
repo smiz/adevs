@@ -46,6 +46,7 @@ class genr: public adevs::Atomic<PortValue>
 			setProc(1);
 			active = init_state;
 			count = 1;
+			num_stop_inputs = 0;
 			if (!active) sigma = DBL_MAX;
 			else
 			{

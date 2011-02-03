@@ -73,7 +73,8 @@ class node: public adevs::Atomic<PortValue>
 			// Make a copy of the input
 			token = new token_t(*token);
 			if (out_token == NULL) out_token = token;
-			sigma = holdtime;
+			if (sigma == DBL_MAX) sigma = holdtime;
+			else sigma -= e;
 			sprintf(msg,"%d got %d @ t = %.0f\n",ID,token->value,t);
 		}
 		void delta_conf(const adevs::Bag<PortValue>& x) 

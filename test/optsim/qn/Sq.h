@@ -12,7 +12,8 @@ class Sq: public adevs::Atomic<int>
 		void delta_ext(double e, const adevs::Bag<int>& xb)
 		{
 			if (!q.empty()) ttg -= e;
-			for (adevs::Bag<int>::const_iterator i = xb.begin(); i != xb.end(); i++)
+			for (adevs::Bag<int>::const_iterator i = xb.begin();
+					i != xb.end(); i++)
 				q.push_back(*i);
 		}
 		void delta_conf(const adevs::Bag<int>& xb)
