@@ -26,7 +26,7 @@ free_list(NULL)
 
 double fireCell::lookahead()
 {
-	if (fuel < move_rate) return DBL_MAX;
+	if (fuel < move_rate) return fuel;
 	else return move_rate;
 }
 

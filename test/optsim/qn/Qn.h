@@ -9,7 +9,8 @@ class Qn: public adevs::Network<int>
 {
 	public:
 		Qn(int q, int s, adevs::LpGraph& lpg):
-			adevs::Network<int>(),qcount(s),ql(new Ql*[s]),genr((double)s/2.0),collect()
+			adevs::Network<int>(),qcount(s),ql(new Ql*[s]),
+			genr((double)s/2.0),collect()
 		{
 			// Get the number of threads
 			int thrds = omp_get_max_threads();
@@ -41,7 +42,8 @@ class Qn: public adevs::Network<int>
 		}
 		void route(const int &value, adevs::Devs<int> *model,
 			adevs::Bag<adevs::Event<int> > &r) {
-			if (model == &genr) r.insert(adevs::Event<int>(ql[value%qcount],value));
+			if (model == &genr) r.insert(
+					adevs::Event<int>(ql[value%qcount],value));
 			else r.insert(adevs::Event<int>(&collect,value));
 		}
 		~Qn()
