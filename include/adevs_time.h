@@ -45,7 +45,10 @@ struct Time
 	}
 	/// Comparing with a double compares the real field
 	bool operator<(double t2) const { return t < t2; }
-	/// Assigning a double sets the real field to the double and the integer field to zero
+	/**
+	 * Assigning a double sets the real field to the double and
+	 * the integer field to zero
+	 */
 	const Time& operator=(double t2)
 	{
 		t = t2;
