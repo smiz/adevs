@@ -47,17 +47,17 @@ template <class X> class LogicalProcess:
 		 * Constructor builds a logical process without any models
 		 * assigned to it.
 		 */
-		LogicalProcess(int ID, const std::vector<int>& I, const std::vector<int>& E,
-				LogicalProcess<X>** all_lps, AbstractSimulator<X>* sim,
-				MessageManager<X>* msg_manager);
+		LogicalProcess(int ID, const std::vector<int>& I,
+			const std::vector<int>& E, LogicalProcess<X>** all_lps, 
+			AbstractSimulator<X>* sim, MessageManager<X>* msg_manager);
 		/**
-		 * Assign a model to this logical process. The model must have a positive
-		 * lookahead.
+		 * Assign a model to this logical process. The model must have a
+		 * positive lookahead.
 		 */
 		void addModel(Devs<X>* model);
 		/**
-		 * Send a message to the logical process. This will put the message into the
-		 * back of the input queue.
+		 * Send a message to the logical process. This will put the 
+		 * message into the back of the input queue.
 		 */
 		void sendMessage(Message<X>& msg) { input_q.insert(msg); }
 		/**
@@ -74,10 +74,12 @@ template <class X> class LogicalProcess:
 		void run(double t_stop);
 		void outputEvent(Event<X> x, double t)
 		{
+			if (looking_ahead) return;
 			psim->notify_output_listeners(x.model,x.value,t);
 		}
 		void stateChange(Atomic<X>* model, double t)
 		{
+			if (looking_ahead) return;
 			psim->notify_state_listeners(model,t);
 		}
 		void notifyInput(Atomic<X>* model, X& value);
@@ -90,6 +92,7 @@ template <class X> class LogicalProcess:
 		LogicalProcess<X>** all_lps;
 		// Lookahead for this LP
 		double lookahead;
+		bool looking_ahead;
 		// Earliest input times 
 		std::map<int,Time> eit_map;
 		// Input messages to the LP
@@ -98,27 +101,33 @@ template <class X> class LogicalProcess:
 		std::priority_queue<Message<X> > xq;
 		Bag<Event<X> > xb;
 		// Smallest of the earliest input times
-		Time eit, eot, tSelf;
+		Time eit, eot, tNow, tOut, tL;
 		// Abstract simulator for notifying listeners
 		AbstractSimulator<X>* psim;
 		// For managing inter-lp messages
 		MessageManager<X>* msg_manager;
 		// Simulator for computing state transitions and outputs
 		Simulator<X> sim;
-		void sendEOT(Time tStop);
+		void advanceOutput();
+		// Returns true if it reaches t_stop
+		void advanceState(double t_stop);
 		void processInputMessages();
 		void addToSimulator(Devs<X>* model);
+		Time tNextEvent(Time t);
 		void cleanup_xb();
 };
 
 template <typename X>
-LogicalProcess<X>::LogicalProcess(int ID, const std::vector<int>& I, const std::vector<int>& E,
-		LogicalProcess<X>** all_lps, AbstractSimulator<X>* psim, MessageManager<X>* msg_manager):
-	ID(ID),E(E),I(I),all_lps(all_lps),psim(psim),msg_manager(msg_manager),sim(this)
+LogicalProcess<X>::LogicalProcess(int ID, const std::vector<int>& I, 
+	const std::vector<int>& E, LogicalProcess<X>** all_lps,
+	AbstractSimulator<X>* psim, MessageManager<X>* msg_manager):
+	ID(ID),E(E),I(I),all_lps(all_lps),psim(psim),
+	msg_manager(msg_manager),sim(this)
 {
-	tSelf = eot = eit = Time(0.0,0);
+	tL = tOut = tNow = eot = eit = Time(0.0,0);
 	all_lps[ID] = this;
 	lookahead = DBL_MAX;
+	looking_ahead = false;
 	for (typename std::vector<int>::const_iterator iter = I.begin();
 			iter != I.end(); iter++)
 		if (*iter != ID) eit_map[*iter] = Time(0.0,0);
@@ -144,7 +153,6 @@ void LogicalProcess<X>::addToSimulator(Devs<X>* model)
 	if (a != NULL)
 	{
 		sim.addModel(a);
-		tSelf.t = sim.nextEventTime();
 	}
 	else
 	{
@@ -161,10 +169,12 @@ void LogicalProcess<X>::addToSimulator(Devs<X>* model)
 template <typename X>
 void LogicalProcess<X>::notifyInput(Atomic<X>* model, X& value)
 {
+	// Don't send messages that have already been sent
+	if (tNow <= tOut) return;
 	assert(model->getProc() != ID);
 	// Send the event to the proper LP
 	Message<X> msg(msg_manager->clone(value));
-	msg.t = tSelf;
+	msg.t = tNow;
 	msg.src = this;
 	msg.target = model;
 	msg.type = Message<X>::OUTPUT;
@@ -172,28 +182,105 @@ void LogicalProcess<X>::notifyInput(Atomic<X>* model, X& value)
 }
 
 template <typename X>
-void LogicalProcess<X>::sendEOT(Time tStop)
+Time LogicalProcess<X>::tNextEvent(Time tlast)
 {
-	Message<X> msg;
-	msg.target = NULL;
-	msg.src = this;
-	msg.type = Message<X>::EIT;
-	msg.t = tStop;
-	msg.t.t += lookahead;
-	msg.t.c = 0;
-	if (tSelf <= msg.t)
+	if (tlast.t < sim.nextEventTime())
 	{
-		msg.t = tSelf;
-		// If we have sent them, then advance the EOT by one discrete step
-		if (tSelf == eit) msg.t.c += 1;
+		tlast.t = sim.nextEventTime();
+		tlast.c = 0;
 	}
-	assert(msg.t.c >= 0);
-	// Our next event time can shrink, but EOT is a strictly increasing quantity
-	if (msg.t <= eot) return;
-	else eot = msg.t;
-	for (std::vector<int>::const_iterator iter = E.begin();
+	else tlast.c++;
+	return tlast;
+}
+
+template <typename X>
+void LogicalProcess<X>::advanceState(double t_stop)
+{
+	// Make sure we stop at t_stop
+	Time tStop(eit);
+	if (Time::Inf() <= tStop || tStop.t > t_stop)
+	{
+		tStop = Time(t_stop,UINT_MAX);
+	}
+	// Advance the state to eit or tStop
+	while (true)
+	{
+		Time tSelf(tNextEvent(tL));
+		// Find the time of the next event
+		if (!xq.empty() && xq.top().t < tSelf) tNow = xq.top().t;
+		else tNow = tSelf;
+		// Are we done?
+		if (tNow.t == DBL_MAX || tStop < tNow ) return;
+		// Send output if this is an internal or confluent event
+		if (tNow == tSelf) sim.computeNextOutput();
+		// Advance the output window if the state has caught up
+		if (tOut <= tNow) tOut = tNow;
+		// If this is at EIT, then we don't have the input at tN
+		// yet and must wait to compute the next state of the model
+		if (tNow == eit) return; 
+		// Find and inject pending input
+		while (!xq.empty() && xq.top().t <= tNow)
+		{
+			Message<X> msg(xq.top());
+			xq.pop();
+			assert(msg.target->getProc() == ID);
+			Event<X> input_event(msg.target,msg.value);
+			xb.insert(input_event);
+		}
+		// Compute the next state
+		sim.computeNextState(xb,tNow.t);
+		cleanup_xb();
+		// Remember the time of our last event
+		tL = tNow; 
+	}
+}
+
+template <typename X>
+void LogicalProcess<X>::advanceOutput()
+{
+	looking_ahead = true;
+	sim.beginLookahead();
+	// This is the time for the new output and state
+	tNow = tNextEvent(tL);
+	// Try to advance the output trajectory
+	while (tNow.t < DBL_MAX && tNow < eit + lookahead)
+	{
+		bool ok = true;
+		try
+		{
+			assert(tNow.t == sim.nextEventTime());
+			sim.lookNextEvent();
+		}
+		catch (lookahead_impossible_exception)
+		{
+			ok = false;
+		}
+		if (tOut <= tNow) tOut = tNow;
+		// Move to the next autonomous event
+		if (ok) tNow = tNextEvent(tNow);
+		else break;
+	}
+	sim.endLookahead();
+	assert(tNextEvent(tL).t == sim.nextEventTime());
+	looking_ahead = false;
+	// Earliest time for our next output
+	Time newEot(eit+lookahead);
+	if (tNow < newEot) newEot = tNow;
+	if (newEot == eit) newEot.c++;
+	// If this new EOT value is greater than our previous EOT
+	// value then sent it to the downstream LPs
+	if (eot < newEot)
+	{
+		eot = newEot;
+		Message<X> msg;
+		msg.target = NULL;
+		msg.src = this;
+		msg.type = Message<X>::EIT;
+		msg.t = eot; 
+		for (std::vector<int>::const_iterator iter = E.begin();
 			iter != E.end(); iter++)
-		if (*iter != ID) all_lps[(*iter)]->sendMessage(msg);
+			if (*iter != ID) all_lps[(*iter)]->sendMessage(msg);
+	}
 }
 
 template <typename X>
@@ -215,51 +302,23 @@ void LogicalProcess<X>::processInputMessages()
 template <typename X>
 void LogicalProcess<X>::run(double t_stop)
 {
-	while (true)
+	bool try_again = true;
+	// Run until advanceState reaches the stopping time
+	while (
+		eit.t <= t_stop ||
+		eot.t <= t_stop ||
+		tNextEvent(tL).t <= t_stop ||
+		(!xq.empty() && xq.top().t.t <= t_stop)
+	)
 	{
-		bool tstop_reached = false;
-		// Make sure we stop at t_stop
-		Time tStop(eit);
-		if (Time::Inf() <= tStop || tStop.t > t_stop)
+		if (try_again)
 		{
-			tStop = Time(t_stop,UINT_MAX);
-			tstop_reached = true;
+			advanceState(t_stop);
+			advanceOutput();
 		}
-		while (tSelf <= tStop || (!xq.empty() && xq.top().t <= tStop))
-		{
-			// Find the time of the next event
-			Time tN(tSelf);
-			if (!xq.empty() && xq.top().t < tN) tN = xq.top().t;
-			if (tSelf == tN) sim.computeNextOutput();
-			// If this is at the EIT, the we don't have the input at tN
-			// yet and must wait to compute the next state of the model
-			if (tN == eit) { assert(!tstop_reached); break; }
-			// Find and inject pending input
-			while (!xq.empty() && xq.top().t <= tN)
-			{
-				Message<X> msg(xq.top());
-				xq.pop();
-				assert(msg.target->getProc() == ID);
-				Event<X> input_event(msg.target,msg.value);
-				xb.insert(input_event);
-			}
-			assert(tN.t < DBL_MAX);
-			sim.computeNextState(xb,tN.t);
-			cleanup_xb();
-			// What is our next internal event time?
-			tSelf = tN; // last event
-			if (tSelf.t < sim.nextEventTime()) // next event
-			{
-				tSelf.t = sim.nextEventTime();
-				tSelf.c = 0;
-			}
-			else tSelf.c++;
-		}
-		// Send our earliest output time estimate
-		sendEOT(tStop);
-		if (tstop_reached) return;
-		// Get any available input
+		Time eit_now(eit);
 		processInputMessages();
+		try_again = eit_now < eit;
 	}
 }
 

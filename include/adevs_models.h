@@ -21,6 +21,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #define __adevs_models_h_
 #include "adevs_bag.h"
 #include "adevs_set.h"
+#include "adevs_exception.h"
 #include <cstdlib>
 
 namespace adevs
@@ -178,6 +179,7 @@ template <class X> class Atomic: public Devs<X>
 		Devs<X>()
 		{
 			tL = 0.0;
+			tL_cp = -1.0;
 			x = y = NULL;
 			q_index = 0; // The Schedule requires this to be zero
 			active = false;
@@ -212,6 +214,27 @@ template <class X> class Atomic: public Devs<X>
 		 * output by this model.
 		 */
 		virtual void gc_output(Bag<X>& g) = 0;
+		/**
+		 * This method is called by the simulator just before the model
+		 * is used in a lookahead calculation. When this method is called
+		 * the model must perform in such a way as to be able to restore
+		 * itself to its current state when the restore() method is called
+		 * at the end of the lookahead calculation. If this method is not
+		 * supported then it must throw a method_not_supported_exception,
+		 * which is the default.
+		 */
+		virtual void beginLookahead()
+		{
+			method_not_supported_exception ns("beginLookahead",this);
+			throw ns;
+		}
+		/**
+		 * This method is called when a lookahead calculation is finished.
+		 * The model must restore its state to that which it was in when
+		 * beginLookahead was called. The default implementation is to
+		 * do nothing.
+		 */
+		virtual void endLookahead(){}
 		/// Destructor.
 		virtual ~Atomic(){}
 		/// Returns a pointer to this model.
@@ -238,6 +261,8 @@ template <class X> class Atomic: public Devs<X>
 		Bag<X> *x, *y;
 		// Has this model been activated?
 		bool active;
+		// When did the model start checkpointing?
+		double tL_cp;
 };
 
 /**

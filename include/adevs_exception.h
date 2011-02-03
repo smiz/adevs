@@ -63,6 +63,39 @@ class exception: public std::exception
 		void* model;
 };
 
+/**
+ * The unsupported method exception is raised if an optional virtual method
+ * is not supported by a model.
+ */
+class method_not_supported_exception:
+	public exception
+{
+	public:
+		/**
+		 * Constructor should be supplied with the model throwing
+		 * the exception and the name of the method that is not supported.
+		 */
+		method_not_supported_exception(const char* method, void* model):
+			exception((std::string("Unsupported method: ")+std::string(method)).c_str(),
+					model)
+		{
+		}
+};
+
+/**
+ * The lookahead impossible exception is raised when the simulator is
+ * unable to proceed with a lookahead calculation. 
+ */
+class lookahead_impossible_exception:
+	public exception
+{
+	public:
+		lookahead_impossible_exception():
+			exception("Lookahead cannot proceed")
+		{
+		}
+};
+	
 } // end of namespace
 
 #endif
