@@ -36,13 +36,21 @@ class LpGraph
 {
 	public:
 		/// Create a graph without any edges
-		LpGraph(){}
+		LpGraph():nodes(0){}
 		/// Create an edge from node A to node B
 		void addEdge(int A, int B)
 		{
+			if (E.find(A) == E.end()
+					&& I.find(A) == I.end())
+				nodes++; 
+			if (E.find(B) == E.end()
+					&& I.find(B) == I.end())
+				nodes++; 
 			E[A].push_back(B);
 			I[B].push_back(A);
 		}
+		/// Get the number of LPs
+		int getLPCount() const { return nodes; }
 		/// Get the influencers of node B
 		const std::vector<int>& getI(int B) { return I[B]; }
 		/// Get the influencees of node A
@@ -50,6 +58,8 @@ class LpGraph
 		/// Destructor
 		~LpGraph(){}
 	private:
+		// Number of nodes in the graph
+		int nodes;
 		// Influencee graph
 		std::map<int,std::vector<int> > E;
 		// Complimentary influencer graph

@@ -2,9 +2,7 @@
 #include <iostream>
 #include "adevs.h"
 #include "job.h"
-#include "proc.h"
-#include "genr.h"
-#include "transd.h"
+#include "state_saving_models.h"
 using namespace std;
 
 genr* gnr = NULL;
@@ -68,9 +66,9 @@ int main()
 	cout << endl;
 	/// Create and connect the atomic components using a digraph model.
 	adevs::Digraph<job> model;
-	gnr = new genr(g);
-	trnsd = new transd(t);
-	prc = new proc(p);
+	gnr = new genrWithStateSaving(g);
+	trnsd = new transdWithStateSaving(t);
+	prc = new procWithStateSaving(p);
 	/// Add the components to the digraph
 	model.add(gnr);
 	model.add(trnsd);

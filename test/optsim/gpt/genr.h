@@ -4,9 +4,8 @@
 #include "job.h"
 
 /*
-The genr class produces jobs periodically.  The genr starts
-producing jobs when it receives an input on its start port.
-It stops producing jobs when it receives an input on its
+The genr class produces jobs periodically.  The genr 
+stops producing jobs when it receives an input on its
 stop port.  Jobs appear on the out port.
 */
 class genr: public adevs::Atomic<PortValue>
@@ -17,7 +16,8 @@ class genr: public adevs::Atomic<PortValue>
 		adevs::Atomic<PortValue>(),
 		period(period),
 		sigma(period),
-		count(0)
+		count(0),
+		stop_on_next(false)
 		{
 			setProc(0);
 		}
@@ -31,7 +31,8 @@ class genr: public adevs::Atomic<PortValue>
 			*/
 			count++;
 			// Wait until its time to produce the next job
-			sigma = period;
+			if (stop_on_next) sigma = DBL_MAX;
+			else sigma = period;
 		}
 		/// External transition function
 		void delta_ext(double e, const adevs::Bag<PortValue>& x)
@@ -39,23 +40,13 @@ class genr: public adevs::Atomic<PortValue>
 			// Continue with next event time unchanged if, for some reason,
 			// the input is on neither on these ports.
 			sigma -= e;
-			// Look for input on the start port.  If input is found,
-			// hold until it is time to produce the first output.
+			// Look for input on the stop port.
 			adevs::Bag<PortValue>::const_iterator iter;
-			for (iter = x.begin(); iter != x.end(); iter++)
-			{
-				if ((*iter).port == start)
-				{
-					sigma = period;
-				}
-			}
-			// Look for input on the stop port.  If input is found,
-			// stop the generator by setting our time of next event to infinity.
 			for (iter = x.begin(); iter != x.end(); iter++)
 			{
 				if ((*iter).port == stop)
 				{
-					sigma = DBL_MAX;
+					stop_on_next = true;
 				}
 			}
 		}
@@ -80,7 +71,6 @@ class genr: public adevs::Atomic<PortValue>
 		/// Output doesn't require heap allocation, so don't do anything
 		void gc_output(adevs::Bag<PortValue>&){}
 		/// Model input ports
-		static const int start;
 		static const int stop;
 		/// Model output port
 		static const int out;
@@ -91,6 +81,7 @@ class genr: public adevs::Atomic<PortValue>
 			state->period = period;
 			state->sigma = sigma;
 			state->count = count;
+			state->stop_on_next = stop_on_next;
 			return state;
 		}
 		void restore_state(void* data)
@@ -99,6 +90,7 @@ class genr: public adevs::Atomic<PortValue>
 			period = state->period;
 			sigma = state->sigma;
 			count = state->count;
+			stop_on_next = state->stop_on_next;
 		}
 		void gc_state(void* data)
 		{
@@ -108,17 +100,18 @@ class genr: public adevs::Atomic<PortValue>
 		/// Model state variables
 		double period, sigma;
 		int count;
+		bool stop_on_next;
 		/// Structure for saving and restoring the state
 		struct state_t
 		{
 			double period, sigma;
 			int count;
+			bool stop_on_next;
 		};
 };
 
 /// Create the static ports and assign them unique 'names' (numbers)
 const int genr::stop(0);
-const int genr::start(1);
 const int genr::out(2);
   
 #endif

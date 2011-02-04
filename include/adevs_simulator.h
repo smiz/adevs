@@ -578,7 +578,8 @@ void Simulator<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 			if (lps == NULL || amodel->getProc() == lps->lp->getID())
 				inject_event(amodel,(*recv_iter).value);
 			// Otherwise tell the lp about it
-			else lps->lp->notifyInput(amodel,(*recv_iter).value);
+			else if (lps->out_flag != RESTORING_OUTPUT)
+				lps->lp->notifyInput(amodel,(*recv_iter).value);
 		}
 		// if this is an external output from the parent model
 		else if ((*recv_iter).model == parent)
@@ -699,6 +700,8 @@ void Simulator<X>::endLookahead()
 		(*iter)->endLookahead();
 		schedule(*iter,(*iter)->tL_cp);
 		(*iter)->tL_cp = -1.0;
+		assert((*iter)->x == NULL);
+		assert((*iter)->y == NULL);
 	}
 	lps->to_restore.clear();
 	assert(imm.empty());
