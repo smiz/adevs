@@ -12,8 +12,7 @@ adevs::Atomic<CellEvent>(),
 fuel(fuel),
 heat(0),
 x(x),
-y(y),
-free_list(NULL)	
+y(y)
 {
 	assert(fuel >= 0.0);
 	// If it is on fire and has enough fuel to spread
@@ -131,29 +130,15 @@ fireCell::state_t fireCell::getState()
 	return s;
 }
 
-void* fireCell::save_state()
+void fireCell::beginLookahead()
 {
-	if (free_list == NULL)
-		return new state_t(phase,fuel,heat);
-	else {
-		free_list->setState(phase,fuel,heat);
-		free_list = free_list->next;
-		return free_list;
-	} 
+	chkpt.setState(phase,fuel,heat);
 }
 
-void fireCell::restore_state(void* data)
+void fireCell::endLookahead()
 {
-	state_t* state = static_cast<state_t*>(data);
-	phase = state->phase;
-	heat = state->heat;
-	fuel = state->fuel;
-}
-
-void fireCell::gc_state(void* data)
-{
-	state_t* state = static_cast<state_t*>(data);
-	state->next = free_list;
-	free_list = state;
+	phase = chkpt.phase;
+	heat = chkpt.heat;
+	fuel = chkpt.fuel;
 }
 

@@ -50,3 +50,6 @@ environment. Change as needed for your environment, but if you are
 using a more or less typical Linux distribution then the defaults
 should work fine
 
+You will need to set the maximum number of threads to at least
+4 for the test suite to work (one of the test cases requires
+at least four threads). 
