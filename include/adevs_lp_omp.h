@@ -256,8 +256,9 @@ void LogicalProcess<X>::advanceOutput()
 			ok = false;
 		}
 		if (tOut <= tNow) tOut = tNow;
-		// Move to the next autonomous event
-		if (ok) tNow = tNextEvent(tNow);
+		// If we can and there is nothing more useful to do,
+		// move on to the next autonomous event
+		if (ok && input_q.empty()) tNow = tNextEvent(tNow);
 		else break;
 	}
 	sim.endLookahead();

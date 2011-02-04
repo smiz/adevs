@@ -16,5 +16,9 @@ check:
 	diff soln_8 soln_8_p
 	diff soln_9 soln_9_p
 
+perf_check:
+	$(CC) $(CFLAGS) fireCell.cpp Configuration.cpp main.cpp $(LIBS)
+	$(TEST_EXEC) --config test.dat -p
+
 clean_all: clean
 	$(DEL) soln*
