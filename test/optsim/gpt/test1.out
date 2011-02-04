@@ -1,51 +1,61 @@
 Genr period: Proc time: Observation time: 
 1 genr!out
-2 genr!out
-3 genr!out
-4 genr!out
-5 genr!out
 State change @ t = 1 : genr
-State change @ t = 2 : genr
-State change @ t = 3 : genr
-State change @ t = 4 : genr
-State change @ t = 5 : genr
-5 transd!out
 State change @ t = 1 : transd
 Working @ 1
 jobs arrived : 1
 jobs solved : 0
+State change @ t = 1 : proc
+2 proc!out
+2 genr!out
+State change @ t = 2 : proc
+State change @ t = 2 : genr
 State change @ t = 2 : transd
 Working @ 2
 jobs arrived : 2
 jobs solved : 1
+3 genr!out
+3 proc!out
+State change @ t = 3 : genr
+State change @ t = 3 : proc
 State change @ t = 3 : transd
 Working @ 3
 jobs arrived : 3
 jobs solved : 2
+4 proc!out
+4 genr!out
+State change @ t = 4 : proc
+State change @ t = 4 : genr
 State change @ t = 4 : transd
 Working @ 4
 jobs arrived : 4
 jobs solved : 3
+5 genr!out
+5 transd!out
+5 proc!out
+State change @ t = 5 : genr
 State change @ t = 5 : transd
 End time: 5
 jobs arrived : 5
 jobs solved : 4
 AVERAGE TA = 1
 THROUGHPUT = 0.8
+State change @ t = 5 : proc
+6 proc!out
+6 genr!out
+State change @ t = 6 : proc
+State change @ t = 6 : genr
 State change @ t = 6 : transd
 End time: 6
-jobs arrived : 5
+jobs arrived : 6
 jobs solved : 5
 AVERAGE TA = 1
 THROUGHPUT = 0.833333
-2 proc!out
-3 proc!out
-4 proc!out
-5 proc!out
-6 proc!out
-State change @ t = 1 : proc
-State change @ t = 2 : proc
-State change @ t = 3 : proc
-State change @ t = 4 : proc
-State change @ t = 5 : proc
-State change @ t = 6 : proc
+7 proc!out
+State change @ t = 7 : proc
+State change @ t = 7 : transd
+End time: 7
+jobs arrived : 6
+jobs solved : 6
+AVERAGE TA = 1
+THROUGHPUT = 0.857143

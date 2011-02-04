@@ -27,6 +27,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+#include <cstdio>
 
 namespace adevs
 {
@@ -60,7 +61,8 @@ template <class X> class ParSimulator:
 		 * For example, a simulator with processors 1, 2, and 3 where 1 -> 2
 		 * and 2 -> 3 would have two edges: 1->2 and 2->3.
 		 */
-		ParSimulator(Devs<X>* model, LpGraph& g, MessageManager<X>* msg_manager = NULL);
+		ParSimulator(Devs<X>* model, LpGraph& g,
+			MessageManager<X>* msg_manager = NULL);
 		/// Get the model's next event time
 		double nextEventTime();
 		/**
@@ -105,7 +107,8 @@ ParSimulator<X>::ParSimulator(Devs<X>* model, MessageManager<X>* msg_manager):
 }
 
 template <class X>
-ParSimulator<X>::ParSimulator(Devs<X>* model, LpGraph& g, MessageManager<X>* msg_manager):
+ParSimulator<X>::ParSimulator(Devs<X>* model, LpGraph& g,
+		MessageManager<X>* msg_manager):
 	AbstractSimulator<X>(),msg_manager(msg_manager)
 {
 	init_sim(model,g);
@@ -115,11 +118,21 @@ template <class X>
 void ParSimulator<X>::init_sim(Devs<X>* model, LpGraph& g)
 {
 	if (msg_manager == NULL) msg_manager = new NullMessageManager<X>();
-	lp_count = omp_get_max_threads();
+	lp_count = g.getLPCount();
+	if (omp_get_max_threads() < lp_count)
+	{
+		char buffer[1000];
+		sprintf(buffer,"More LPs than threads. Set OMP_NUM_THREADS=%d.",
+			lp_count);
+		exception err(buffer);
+		throw err;
+	}
+	omp_set_num_threads(lp_count);
 	lp = new LogicalProcess<X>*[lp_count];
 	for (int i = 0; i < lp_count; i++)
 	{
-		lp[i] = new LogicalProcess<X>(i,g.getI(i),g.getE(i),lp,this,msg_manager);
+		lp[i] = new LogicalProcess<X>(i,g.getI(i),g.getE(i),
+			lp,this,msg_manager);
 	}
 	init(model);
 }
