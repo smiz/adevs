@@ -25,8 +25,29 @@ class Sq: public adevs::Atomic<int>
 		double ta() { if (q.empty()) return DBL_MAX; else return ttg; }
 		void gc_output(adevs::Bag<int>&){}
 		double lookahead() { return 1.0; }
+		void beginLookahead()
+		{
+			chkpt.r = r;
+			chkpt.q = q;
+			chkpt.ttg = ttg;
+		}
+		void endLookahead()
+		{
+			r = chkpt.r;
+			q = chkpt.q;
+			ttg = chkpt.ttg;
+		}
 	private:
-		adevs::rv r; std::list<int> q; double ttg;
+		adevs::rv r;
+		std::list<int> q;
+		double ttg;
+		struct checkpoint_t
+		{
+			adevs::rv r;
+			std::list<int> q;
+			double ttg;
+		};
+		checkpoint_t chkpt;
 		static int seed;
 };
 

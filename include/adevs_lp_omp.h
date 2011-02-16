@@ -109,6 +109,7 @@ template <class X> class LogicalProcess:
 		// Simulator for computing state transitions and outputs
 		Simulator<X> sim;
 		void advanceOutput();
+		void sendEOT(Time tNext);
 		// Returns true if it reaches t_stop
 		void advanceState(double t_stop);
 		void processInputMessages();
@@ -214,7 +215,7 @@ void LogicalProcess<X>::advanceState(double t_stop)
 		// Send output if this is an internal or confluent event
 		if (tNow == tSelf) sim.computeNextOutput();
 		// Advance the output window if the state has caught up
-		if (tOut <= tNow) tOut = tNow;
+		if (tOut <= tNow) tOut = tNow; 
 		// If this is at EIT, then we don't have the input at tN
 		// yet and must wait to compute the next state of the model
 		if (tNow == eit) return; 
@@ -238,35 +239,46 @@ void LogicalProcess<X>::advanceState(double t_stop)
 template <typename X>
 void LogicalProcess<X>::advanceOutput()
 {
-	looking_ahead = true;
-	sim.beginLookahead();
 	// This is the time for the new output and state
 	tNow = tNextEvent(tL);
-	// Try to advance the output trajectory
-	while (tNow.t < DBL_MAX && tNow < eit + lookahead)
+	// Try to move further ahead in time with the output
+	// only if there is nothing useful to do
+	if (eit.t < DBL_MAX && lookahead < DBL_MAX && input_q.empty())
 	{
-		bool ok = true;
-		try
+		looking_ahead = true;
+		sim.beginLookahead();
+		// Try to advance the output trajectory
+		while (tNow.t < DBL_MAX && tNow < eit + lookahead)
 		{
-			assert(tNow.t == sim.nextEventTime());
-			sim.lookNextEvent();
+			bool ok = true;
+			try
+			{
+				assert(tNow.t == sim.nextEventTime());
+				sim.lookNextEvent();
+			}
+			catch (lookahead_impossible_exception)
+			{
+				ok = false;
+			}
+			if (tOut <= tNow) tOut = tNow;
+			// If we can and there is nothing more useful to do,
+			// move on to the next autonomous event
+			if (ok) tNow = tNextEvent(tNow);
+			else break;
 		}
-		catch (lookahead_impossible_exception)
-		{
-			ok = false;
-		}
-		if (tOut <= tNow) tOut = tNow;
-		// If we can and there is nothing more useful to do,
-		// move on to the next autonomous event
-		if (ok && input_q.empty()) tNow = tNextEvent(tNow);
-		else break;
+		sim.endLookahead();
+		assert(tNextEvent(tL).t == sim.nextEventTime());
+		looking_ahead = false;
 	}
-	sim.endLookahead();
-	assert(tNextEvent(tL).t == sim.nextEventTime());
-	looking_ahead = false;
-	// Earliest time for our next output
+	sendEOT(tNow);
+}
+
+template <typename X>
+void LogicalProcess<X>::sendEOT(Time tNext)
+{
+	// Send a new value for the earliest output time
 	Time newEot(eit+lookahead);
-	if (tNow < newEot) newEot = tNow;
+	if (tNext < newEot) newEot = tNext;
 	if (newEot == eit) newEot.c++;
 	// If this new EOT value is greater than our previous EOT
 	// value then sent it to the downstream LPs

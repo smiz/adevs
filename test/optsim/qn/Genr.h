@@ -10,19 +10,24 @@ class Genr: public adevs::Atomic<int>
 		Genr(int freq):adevs::Atomic<int>(),
 			events(0),period(1.0/(double)freq)
 		{
-			srandom(1);
-			next = random();
 		}
-		void delta_int(){ next = random(); events++; }
+		void delta_int(){ events++; }
 		void delta_ext(double, const adevs::Bag<int>&){}
 		void delta_conf(const adevs::Bag<int>&){}
 		double ta() { return period; }
-		void output_func(adevs::Bag<int>& yb) { yb.insert(next); }
+		void output_func(adevs::Bag<int>& yb) { yb.insert(events); }
 		void gc_output(adevs::Bag<int>&){}
 		double lookahead() { return DBL_MAX; }
+		void beginLookahead()
+		{
+			chkpt_events = events;
+		}
+		void endLookahead()
+		{
+			events = chkpt_events;
+		}
 	private:
-		unsigned int events;
-		long int next;
+		unsigned int events, chkpt_events;
 		const double period;
 };
 
@@ -37,8 +42,16 @@ class Collector: public adevs::Atomic<int>
 		void output_func(adevs::Bag<int>&){}
 		void gc_output(adevs::Bag<int>&){}
 		double lookahead() { return DBL_MAX; }
+		void beginLookahead()
+		{
+			chkpt_events = events;
+		}
+		void endLookahead()
+		{
+			events = chkpt_events;
+		}
 	private:
-		unsigned int events;
+		unsigned int events, chkpt_events;
 };
 
 #endif
