@@ -8,12 +8,12 @@
 class Qn: public adevs::Network<int>
 {
 	public:
-		Qn(int q, int s, adevs::LpGraph& lpg):
+		Qn(int q, int s, adevs::LpGraph& lpg, bool recycle = false):
 			adevs::Network<int>(),qcount(s),ql(new Ql*[s]),
-			genr((double)s/2.0),collect()
+			genr((double)s/2.0),collect(),recycle(recycle)
 		{
 			// Get the number of threads
-			int thrds = omp_get_max_threads();
+			thrds = omp_get_max_threads();
 			// The generators go in one LP
 			genr.setParent(this);
 			genr.setProc(0);
@@ -33,7 +33,14 @@ class Qn: public adevs::Network<int>
 			// Add [0,thrds-1),thrds-1] to the lp graph. This connects
 			// everyone to the collector.
 			for (int i = 0; i < thrds-1; i++)
+			{
 				lpg.addEdge(i,thrds-1);
+			}
+			// Recycled output goes to the first LP
+			if (recycle)
+			{
+				lpg.addEdge(thrds-1,0);
+			}
 		}
 		void getComponents(adevs::Set<adevs::Devs<int>*>& c)
 		{
@@ -45,6 +52,14 @@ class Qn: public adevs::Network<int>
 			if (model == &genr) r.insert(
 					adevs::Event<int>(ql[value%qcount],value));
 			else r.insert(adevs::Event<int>(&collect,value));
+			if (recycle &&
+					model != &genr &&
+					model->getProc() == thrds-1 &&
+					value % 2 == 0)
+			{
+				assert(ql[0]->getProc() == 0);
+				r.insert(adevs::Event<int>(ql[0],value+1));
+			}
 		}
 		~Qn()
 		{
@@ -57,6 +72,8 @@ class Qn: public adevs::Network<int>
 		Ql** ql;
 		Genr genr;
 		Collector collect;
+		bool recycle;
+		int thrds;
 };
 
 #endif

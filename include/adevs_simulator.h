@@ -116,8 +116,8 @@ template <class X> class Simulator:
 		 * the atomic models involved to save their states at the point
 		 * that the lookahead calculation was begun. These states are
 		 * restored when the lookahead calculation ends.</P>
-		 * <P>Method invoked while doing lookahead calculations may
-		 * throw a lookahead_impossible_exception. This occurs when
+		 * <P>Lookahead calculations are done with the lookNextEvent method,
+		 * which may throw a lookahead_impossible_exception. This occurs when
 		 * the simulator calculate a new state for an atomic model
 		 * whose beginLookahead method is unsupported.</P>
 		 */
@@ -131,7 +131,7 @@ template <class X> class Simulator:
 		 * Look at future events assuming a input trajector with only
 		 * non-events. This has the same effect as calling execNextEvent
 		 * but the simulator can be restored to its prior state by
-		 * calling endLookahead.
+		 * calling endLookahead. 
 		 */
 		void lookNextEvent();
 	private:
