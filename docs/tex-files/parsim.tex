@@ -1,0 +1,75 @@
+\chapter{Simulation on multi-core computers}
+In addition to the sequential Simulator class, \adevs\ has a ParSimulator class that is designed specifically to take advantage of processors that have multiple cores and shared mememory machines with several processors, these possibly having several cores each. The parallel simulator is in most respects identical to the sequential simulator, and this section of the manual therefore focuses on where it is different.
+
+The ParSimulator class is designed specifically (only, really) to support symmetric, shared memory multiprocessors (SMPs). The multi-core processors that have become ubiquituous in recent years are an important instance of this class of machines. The software technology that underlies the ParSimulator is OpenMP (see \url{http://www.openmp.org}), which is a standardized extension for C and C++ compilers and runtime systems to support multi-threaded computing. The OpenMP standard is now support by most (probably all) major compilers: the GNU C++ Compiler and professional editions of Microsoft Visual Studio are important examples (important to me, that is, because those are what I use for most of my simulation work).
+
+The critical first step, therefore, to using the ParSimulator is to enable the OpenMP extensions for your compiler. For the GNU C++ compiler, simply add the flag '-fopenmp' to your linker and compiler arguments. For MS Visual Studio, this is a build option (though I forget the location of the switch, and do not at the moment have access to the professional edition). For other compilers and development environments, see your documentation. Prior to executing a simulation, the maximum number of threads that will be used by OpenMP (and, therefore, the simulator) can be set by setting the OMP\_NUM\_THREADS environment variable (this works for the GNU compilers, at least). The default in most cases is to use a number of threads equal to the number of processors or cores in your computer.
+
+Having enabled the OpenMP options for your compiler, you are ready to start preparing your model to work with the parallel simulator. As a first step, you can do the following. This example assumes that your main simulation routine looks something like this:
+\begin{verbatim}
+...
+Simulator<IO_Type>* sim = new Simulator<IO_Type>(my_model);
+/**
+ * Register listeners with the Simulator to collect statistics
+ * ....
+ */
+while (sim->nextEventTime() < t_end)
+    sim->execNextEvent();
+...
+\end{verbatim}
+or this
+\begin{verbatim}
+...
+Simulator<IO_Type>* sim = new Simulator<IO_Type>(my_model);
+/**
+ * Register listeners with the Simulator to collect statistics
+ * ....
+ */
+sim->execUntil(t_end);
+...
+\end{verbatim}
+which does the same thing. The reason for this assumption is described in the section on limitations. Note, however, that any Listeners you have registered with your Simulator instance will work normally )almost, I'll get to that).
+
+Assuming you have code like the above, replace it with code like the following:
+\begin{verbatim}
+...
+ParSimulator<IO_Type>* sim = new ParSimulator<IO_Type>(my_model);
+/**
+ * Register listeners with the ParSimulator to collect statistics
+ * ....
+ */
+sim->execUntil(t_end);
+...
+\end{verbatim}
+This should work just like your previous code with the following caveats. First, your models must not share variables; all information exchanged between models must occur via events at their input and output.
+
+Second, reports produced by your listeners may be formatted in ways you do not expect: for any individual model, the listing of state transisions and output events will be in time order. Across models, however, this may not be the case. For an extreme example, suppose that you have two models arranged as follows: A->B. You may see all state transitions and output for A listed first, followed by all state transitions and outputs for B. Most likely, these will be intermingled but not necessarily in time order.
+
+This latter effect is due to the fact that, while simulation of each model is done in the proper time order of its events, the ParSimulator overlaps simulation of models whenever this is possible. In the above example, it is possible to simulate model A without worrying about what B is doing because B never provides input to A. The simulator (if properly configured, as is described next) will take advantage of this to simulate A and B in parallel. Hence, we may see all of the output from A before we see anything for B. Once again, however, all callbacks to registered Listeners for any particular model will be in the proper time order.
+
+Note too that this implies that callbacks to your listeners may occur in parallel. In the above example, it may be that the same listener receives concurrent notifications about a state change for model A and state change for model B, or output from A and state change of B, or any such combination. It is imperative therefore that the callbacks in your listeners be thread safe.
+
+The above changes are sufficient in most cases to make your existing, sequential simulator work with the parallel simulator. In summary, these mandatory steps are:
+\begin{enumerate}
+\item Replace your Simulator with a ParSimulator.
+\item Use the ParSimulator's execUntil method to advance time.
+\item Make sure your Listeners are thread safe.
+\end{enumerate}
+
+The other thing that will occur is your simulation will take a very long time to complete. As a general rule, speeding up your simulation requires that the ParSimulator be given more information about your model; information that only you can provide. Without this information, the synchronization overhead incurred by the parallel simulation algorithm is staggeringly huge. The majority of this document deals with the problem of performance and how to overcome it. 
+
+\section{Limits of the parallel simulator}
+Before continuing any effort to make your simulator work with the algorithms used by the ParSimulator, you should be aware of specific capabilities of the sequential simulator that the parallel simulator does not support. These are:
+\begin{enumerate}
+\item Your compiler must support OpenMP.
+\item The execNextEvent, computeNextState, and computeNextOutput methods are not provided.
+\item As noted above, callbacks to a Listener for each individual atomic model will be given in the proper time order, but these may be arbitrarily interleaved with the callbacks for other atomic models.
+\item Listener callbacks must be made threadsafe using the OpenMP synchronization features.
+\end{enumerate}
+
+\section{Principles of the parallel simulator}
+
+\section{Using the simulator: an example}
+
+\section{Practical issues regarding performance}
+
