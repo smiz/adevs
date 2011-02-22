@@ -235,9 +235,9 @@ template <class X> class Simulator:
 		 */
 		void unschedule_model(Devs<X>* model);
 		/**
-		 * Set the atomic model active flag to false, delete any thing in the output bag,
-		 * and return the input and output bags to the pools.  Recursively clean up
-		 * network model components.
+		 * Set the atomic model active flag to false, delete any thing in the
+		 * output bag, and return the input and output bags to the pools. 
+		 * Recursively clean up network model components.
 		 */
 		void clean_up(Devs<X>* model);
 		/**
