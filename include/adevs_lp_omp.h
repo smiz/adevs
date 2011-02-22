@@ -229,6 +229,7 @@ void LogicalProcess<X>::advanceState(double t_stop)
 			xb.insert(input_event);
 		}
 		// Compute the next state
+		assert(tNow.t < DBL_MAX);
 		sim.computeNextState(xb,tNow.t);
 		cleanup_xb();
 		// Remember the time of our last event
@@ -254,10 +255,17 @@ void LogicalProcess<X>::advanceOutput()
 			try
 			{
 				assert(tNow.t == sim.nextEventTime());
+				/**
+				 * This computes the next output and might
+				 * compute the next state.
+				 */ 
 				sim.lookNextEvent();
 			}
 			catch (lookahead_impossible_exception)
 			{
+				/**
+				 * Failed to compute the next state.
+				 */
 				ok = false;
 			}
 			if (tOut <= tNow) tOut = tNow;
@@ -269,7 +277,7 @@ void LogicalProcess<X>::advanceOutput()
 		sim.endLookahead();
 		assert(tNextEvent(tL).t == sim.nextEventTime());
 		looking_ahead = false;
-	}
+	} 
 	sendEOT(tNow);
 }
 
