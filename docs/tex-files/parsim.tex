@@ -502,7 +502,7 @@ template <typename X> class NullMessageManager:
 };
 \end{verbatim}
 To illustrate the construction of a new MessageManager, the implementation below is for a model that uses C style strings (i.e., null terminate arrays of characters) for its input and output. The clone method allocated memory for a string and the copies to it the contents of the value string. The destroy method frees the memory allocated for the string.
-\begin{verbatin}
+\begin{verbatim}
 class CStringMessageManager:
    public adevs::MessageManager<char*>
 {

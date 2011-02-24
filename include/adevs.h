@@ -18,6 +18,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 Bugs, comments, and questions can be sent to nutaro@gmail.com
 ***************/
 /**
+ * \mainpage
+ * Links to the user manual, tutorials on DEVS, and other such
+ * stuff are <a href="../index.html">here</a>.
+ */
+/**
  * Include everything needed to compile user models.
  */
 #include "adevs_exception.h"
