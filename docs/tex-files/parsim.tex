@@ -73,6 +73,7 @@ Before continuing any effort to make your simulator work with the algorithms use
 \item The execNextEvent, computeNextState, and computeNextOutput methods are not provided. Only the execUntil method is provided for advancing the simulation.
 \item As noted above, callbacks to a Listener for each individual atomic model will be given in the proper time order, but these may be arbitrarily interleaved with the callbacks for other atomic models.
 \item Listener callbacks must be made thread safe using the OpenMP synchronization features.
+\item The parallel simulator does not support models that change structure. If your models implement their model\_transition methods, then you cannot use the parallel simulator at this time.
 \end{enumerate}
 
 Beyond these purely technical limits, it should be noted that making effective use of this (or any) parallel discrete event simulator is often difficult. Applications of practical interest require the identification of lookahead for the model's atomic components (described in the next section), partitioning of the model amongst the available processors, and implementing code to enable the parallel simulator to take advantage of your model's lookahead and partitioning.

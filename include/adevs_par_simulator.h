@@ -38,7 +38,8 @@ namespace adevs
  * setProc() method. The components of a network will inherit its thread assignment.
  * Model's with an explicit assignment must have a positive lookahead. Atomic models that are
  * unassigned, by inheritance or otherwise, must have a positive lookahead and will
- * be assigned randomly to a thread.
+ * be assigned randomly to a thread. Note that this simulator does not support dynamic
+ * structure models.
  */
 template <class X> class ParSimulator:
    public AbstractSimulator<X>	
