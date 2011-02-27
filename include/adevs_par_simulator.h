@@ -180,7 +180,8 @@ void ParSimulator<X>::init(Devs<X>* model)
 	{
 		int lp_assign = a->getProc();
 		if (lp_assign < 0 || lp_assign >= lp_count)
-			lp_assign = ((long int)a)%lp_count;
+			lp_assign =
+				((unsigned long int)(a)^(unsigned long int)(this))%lp_count;
 		lp[lp_assign]->addModel(a);
 	}
 	else
