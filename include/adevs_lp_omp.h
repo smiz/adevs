@@ -211,7 +211,7 @@ void LogicalProcess<X>::advanceState(double t_stop)
 		if (!xq.empty() && xq.top().t < tSelf) tNow = xq.top().t;
 		else tNow = tSelf;
 		// Are we done?
-		if (tNow.t == DBL_MAX || tStop < tNow ) return;
+		if (tNow.t == DBL_MAX || tStop < tNow ) return; 
 		// Send output if this is an internal or confluent event
 		if (tNow == tSelf) sim.computeNextOutput();
 		// Advance the output window if the state has caught up
@@ -242,9 +242,9 @@ void LogicalProcess<X>::advanceOutput()
 {
 	// This is the time for the new output and state
 	tNow = tNextEvent(tL);
-	// Try to move further ahead in time with the output
-	// only if there is nothing useful to do
-	if (eit.t < DBL_MAX && lookahead < DBL_MAX && input_q.empty())
+	// Project the output as far into the future 
+	// as possible
+	if (eit.t < DBL_MAX && lookahead < DBL_MAX)
 	{
 		looking_ahead = true;
 		sim.beginLookahead();
@@ -332,6 +332,7 @@ void LogicalProcess<X>::run(double t_stop)
 		(!xq.empty() && xq.top().t.t <= t_stop)
 	)
 	{
+
 		if (try_again)
 		{
 			advanceState(t_stop);
@@ -339,7 +340,7 @@ void LogicalProcess<X>::run(double t_stop)
 		}
 		Time eit_now(eit);
 		processInputMessages();
-		try_again = eit_now < eit;
+		try_again = eit_now < eit; 
 	}
 }
 
