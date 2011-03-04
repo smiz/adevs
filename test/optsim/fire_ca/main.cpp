@@ -90,8 +90,20 @@ void simulateSpace()
 	}
 	else
 	{
+		/**
+		 * Restrict the number of threads to the  number
+		 * of processors. Otherwise, the performance
+		 * is so horrible that you will age waiting
+		 * for this test cast to finish.
+		 */
+		int threads = omp_get_max_threads();
+		if (threads > omp_get_num_procs())
+		{
+			threads = omp_get_num_procs();
+		}
+		std::cerr << "Using " << threads << " threads" << std::endl;
 		adevs::LpGraph g;
-		for (int i = 1; i < omp_get_max_threads(); i++)
+		for (int i = 1; i < threads; i++)
 		{
 			g.addEdge(i-1,i);
 			g.addEdge(i,i-1);
