@@ -10,6 +10,7 @@ fireCell::fireCell(double fuel, bool on_fire,
 long int x, long int y):
 adevs::Atomic<CellEvent>(),
 fuel(fuel),
+move_left(move_rate),
 heat(0),
 x(x),
 y(y)
@@ -35,7 +36,7 @@ double fireCell::ta()
 	if (phase == BURN || phase == BURN_FAST) return fuel;
 	// An igniting cell becomes a burning cell move_rate time units later,
 	// and informs its neighbors that it is burning
-	else if (phase == IGNITE) return min(move_rate,fuel);
+	else if (phase == IGNITE) return min(move_left,fuel);
 	// Otherwise, the cell just waits for something to happen
 	else return DBL_MAX;
 }
@@ -66,6 +67,7 @@ void fireCell::delta_ext(double e, const adevs::Bag<CellEvent>& xb)
 	// If we are on fire, then update the fuel supply
 	if (phase == IGNITE || phase == BURN || phase == BURN_FAST) 
 	{
+		move_left -= e;
 		fuel -= e;
 	}
 	// Change heat level of this cell
@@ -126,19 +128,20 @@ void fireCell::output_func(adevs::Bag<CellEvent>& yb)
 
 fireCell::state_t fireCell::getState()
 {
-	state_t s(phase,fuel,heat);
+	state_t s(phase,fuel,heat,move_left);
 	return s;
 }
 
 void fireCell::beginLookahead()
 {
-	chkpt.setState(phase,fuel,heat);
+	chkpt.setState(phase,fuel,heat,move_left);
 }
 
 void fireCell::endLookahead()
 {
 	phase = chkpt.phase;
 	heat = chkpt.heat;
+	move_left = chkpt.move_left;
 	fuel = chkpt.fuel;
 }
 
