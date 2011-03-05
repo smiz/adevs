@@ -78,8 +78,6 @@ void simulateSpace()
 				config->get_fire(x,y),x,y);
 			cell_space->add(cell,x,y);
 			snap_shot[x][y] = cell->getState();
-			int lp = x/(config->get_width()/omp_get_max_threads());
-			cell->setProc(lp);
 		}
 	}
 	// Create a simulator for the model
@@ -91,17 +89,12 @@ void simulateSpace()
 	else
 	{
 		/**
-		 * Restrict the number of threads to the  number
-		 * of processors. Otherwise, the performance
+		 * Restrict the number of threads to two.
+		 * Otherwise, the performance
 		 * is so horrible that you will age waiting
 		 * for this test cast to finish.
 		 */
-		int threads = omp_get_max_threads();
-		if (threads > omp_get_num_procs())
-		{
-			threads = omp_get_num_procs();
-		}
-		std::cerr << "Using " << threads << " threads" << std::endl;
+		int threads = 2;
 		adevs::LpGraph g;
 		for (int i = 1; i < threads; i++)
 		{
