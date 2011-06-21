@@ -41,6 +41,12 @@ robot:
 	./a.out > soln
 	omc sim_robot.mos
 
+tank:
+	omc +s +simCodeTarget=Adevs Tank.mo Modelica
+	${CC} ${CFLAGS} Tank.cpp main_tank.cpp ${OMLIBS} 
+	./a.out 1 1 > soln
+	omc sim_tank.mos
+
 clean:
 	rm -f a.out soln *.xml *.mat *.libs *.makefile *.log *.plt *.o
 	rm -f Bounce*.c Bounce*.cpp Bounce*.h Bounce.c Bounce 
@@ -49,3 +55,4 @@ clean:
 	rm -f VanDerPol*.c VanDerPol*.cpp VanDerPol*.h VanDerPol.c VanDerPol 
 	rm -f dcmotor*.c dcmotor*.cpp dcmotor*.h dcmotor.c dcmotor 
 	rm -f Robot*.c Robot*.cpp Robot*.h Robot.c Robot 
+	rm -f Tank*.c Tank*.cpp Tank*.h Tank.c Tank
