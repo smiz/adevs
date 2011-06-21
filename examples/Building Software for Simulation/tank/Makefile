@@ -8,15 +8,16 @@ LIBS = -lSDL -lglut -lccgnu2
 LIBPATH = -L/usr/X11R6/lib
 INCLUDE = -I../../../include
 
-# These objects are common to all variations on the simulator
-OBJS = Display.o \
-	   SimControl.o \
+BASE_OBJS = \
 	   TankPhysics.o \
 	   TankPhysicsEqns.o \
 	   InterruptHandler.o \
 	   PacketProcessing.o \
 	   Computer.o \
-	   Tank.o 
+	   Tank.o
+
+# These objects are common to all variations on the simulator
+OBJS = ${BASE_OBJS} Display.o SimControl.o
 
 .SUFFIXES: .cpp
 .cpp.o:
@@ -43,6 +44,9 @@ tank: objs tankTest.o
 # Build the InterruptHandler simulation. This code is discussed in section 4.1.9.
 ih: InterruptHandler.o interruptExperiment.o
 	${CC} ${CFLAGS} ${OPTFLAG} interruptExperiment.o InterruptHandler.o ${LIBS} ${LIBPATH} ${INCLUDE}
+
+modelica: ${BASE_OBJS} modelica_test.o
+	${CC} ${CFLAGS} ${OPTFLAG} modelica_test.o ${BASE_OBJS} ${INCLUDE}
 
 clean:
 	rm -f *.o core a.out

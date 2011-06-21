@@ -1,0 +1,5 @@
+loadModel(Modelica);
+loadFile("Tank.mo");
+simulate(Tank,startTime=0.0,stopTime=1.0);
+plot2({hull.v,hull.omega,hull.theta});
+plot2({hull.x,hull.y});

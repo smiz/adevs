@@ -37,3 +37,8 @@ The controller and tank use the address 127.0.0.1 and port 10000 by default.
 The address bound by each can be set on the command line (or you could
 reprogram the default).
 
+This directory also contains the example file 'modelica_test.cpp' that
+has a standalone simulator for the tank (i.e., that does not require
+the SDL or socket libraries). This is used primarily for comparison
+with the Modelica-based simulator for the tank (see the modelica examples).
+This example can be built with the command 'make modelica'.
