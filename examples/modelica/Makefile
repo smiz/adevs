@@ -47,6 +47,12 @@ tank:
 	./a.out 1 1 > soln
 	omc sim_tank.mos
 
+pendulum:
+	omc +s +simCodeTarget=Adevs Pendulum.mo
+	${CC} ${CFLAGS} Pendulum.cpp main_pendulum.cpp ${OMLIBS} 
+	./a.out > soln
+	omc sim_pendulum.mos
+
 clean:
 	rm -f a.out soln *.xml *.mat *.libs *.makefile *.log *.plt *.o
 	rm -f Bounce*.c Bounce*.cpp Bounce*.h Bounce.c Bounce 
@@ -56,3 +62,4 @@ clean:
 	rm -f dcmotor*.c dcmotor*.cpp dcmotor*.h dcmotor.c dcmotor 
 	rm -f Robot*.c Robot*.cpp Robot*.h Robot.c Robot 
 	rm -f Tank*.c Tank*.cpp Tank*.h Tank.c Tank
+	rm -f Pendulum*.c Pendulum*.cpp Pendulum*.h Pendulum.c Pendulum

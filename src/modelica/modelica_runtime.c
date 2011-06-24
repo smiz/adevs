@@ -25,3 +25,8 @@ int LOG_NONLIN_SYS = 1;
 int LOG_ZEROCROSSINGS = 1;
 int LOG_DEBUG = 1;
 int sim_verbose = 0;
+int modelErrorCode = 0;
+int ERROR_NONLINSYS = 1;
+int ERROR_LINSYS = 2;
+
+ 
