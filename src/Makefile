@@ -4,6 +4,7 @@
 #
 # Point this at your java installation if you want to build the Java bindings
 JAVA_HOME = /usr/local/jdk1.6.0_21
+MODELICA_HOME = ${HOME}/Code/openmodelica/trunk/c_runtime
 # Use OpenMP? 
 OMP = -fopenmp
 # Compiler flags
@@ -18,6 +19,10 @@ CFLAGS = ${OMP} -fPIC -Wall -I../include -I./ -I${JAVA_HOME}/include -I${JAVA_HO
 
 ADEVS_OBJS = rv.o mtrand.o poly.o time.o
 ADEVSM_OBJS = modelica/modelica_runtime.o 
+MODELICA_OBJS = \
+	${MODELICA_HOME}/dgesv_aux.o \
+	${MODELICA_HOME}/hybrd.o 
+
 JAVA_OBJS = \
 	adevs_jni/JavaAtomic.o \
 	adevs_jni/JavaDevs.o \
@@ -33,7 +38,7 @@ JAVA_OBJS = \
 # to C++ simulations
 adevs: ${ADEVS_OBJS} ${ADEVSM_OBJS}
 	ar -r libadevs.a ${ADEVS_OBJS}
-	ar -r libadevsm.a ${ADEVSM_OBJS}
+	ar -r libadevsm.a ${ADEVSM_OBJS} ${MODELICA_OBJS}
 
 # This builds the Java bindings to the simulator
 java_adevs: ${JAVA_OBJS}

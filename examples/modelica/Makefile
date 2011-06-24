@@ -3,7 +3,7 @@ CFLAGS = -g -fopenmp -Wall -I../../include ${OMINCLUDE}
 CC = g++
 OMHOME=${HOME}/Code/openmodelica/trunk/build
 OMINCLUDE=-I${OMHOME}/include/omc
-OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevsm -lc_runtime -llapack
+OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevsm -lc_runtime -llapack /usr/local/lib/libf2c.a 
 
 hello:
 	omc +s +simCodeTarget=Adevs HelloWorld.mo 
