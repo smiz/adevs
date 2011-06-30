@@ -53,6 +53,12 @@ pendulum:
 	./a.out > soln
 	omc sim_pendulum.mos
 
+nonlinearmixed:
+	omc +s +simCodeTarget=Adevs NonlinearMixed.mo
+	${CC} ${CFLAGS} NonlinearMixed.cpp main_nonlinearmixed.cpp ${OMLIBS} 
+	./a.out > soln
+	omc sim_nonlinearmixed.mos
+
 clean:
 	rm -f a.out soln *.xml *.mat *.libs *.makefile *.log *.plt *.o
 	rm -f Bounce*.c Bounce*.cpp Bounce*.h Bounce.c Bounce 
@@ -63,3 +69,4 @@ clean:
 	rm -f Robot*.c Robot*.cpp Robot*.h Robot.c Robot 
 	rm -f Tank*.c Tank*.cpp Tank*.h Tank.c Tank
 	rm -f Pendulum*.c Pendulum*.cpp Pendulum*.h Pendulum.c Pendulum
+	rm -f NonlinearMixed*.c NonlinearMixed*.cpp NonlinearMixed*.h NonlinearMixed.c NonlinearMixed
