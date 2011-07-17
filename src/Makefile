@@ -1,27 +1,53 @@
 #
-# Makefile for the GNU g++ compiler.  Use make to build the adevs library with
-# this compiler.
+# Makefile for the GNU g++ compiler. There are three make targets.
 #
-# Point this at your java installation if you want to build the Java bindings
-JAVA_HOME = /usr/local/jdk1.6.0_21
-MODELICA_HOME = ${HOME}/Code/openmodelica/trunk/c_runtime
+# 1) java_adevs
+#
+# This target builds the java language bindings to the adevs simulator.
+# Point this at your java installation if you want to build the Java bindings.
+JAVA_HOME = /usr/local/jdk1.6.0_26
+CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
+#
+# 2) adevs
+#
+# This builds the vanilla adevs library against which to link your c++ 
+# simulations.
+#
+# 3) adevs_with_modelica
+#
+# This builds adevs as above and adds to the vanilla library some
+# additional object files that are needed to use adevs models 
+# produced by the Open Modelica compiler. For this to target to get
+# built, you need to have compiled a recent version of the omc compiler
+# and have the object files from that available for linking into the
+# adevs object library. Point this at your Open Modelica installation 
+# if you want to build the Modelica extensions for adevs.
+MODELICA_HOME = ${HOME}/Code/openmodelica/trunk
+
+# These are generic options for the GNU C++ compiler.
+
 # Use OpenMP? 
 OMP = -fopenmp
 # Compiler flags
-CFLAGS = ${OMP} -fPIC -Wall -I../include -I./ -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
+CFLAGS += ${OMP} -fPIC -Wall -I../include -I./
 # Best bet for GNU compiler
- CC = g++
- OPTFLAG = -O3
+CC = g++
+OPTFLAG = -O3
 
 #
 # SHOULD NOT NEED TO EDIT BELOW THIS LINE
 #
 
-ADEVS_OBJS = rv.o mtrand.o poly.o time.o
-ADEVSM_OBJS = modelica/modelica_runtime.o 
+ADEVS_OBJS = \
+	rv.o \
+	mtrand.o \
+	poly.o \
+	modelica_runtime.o \
+	time.o
+
 MODELICA_OBJS = \
-	${MODELICA_HOME}/dgesv_aux.o \
-	${MODELICA_HOME}/hybrd.o 
+	${MODELICA_HOME}/c_runtime/dgesv_aux.o \
+	${MODELICA_HOME}/c_runtime/hybrd.o 
 
 JAVA_OBJS = \
 	adevs_jni/JavaAtomic.o \
@@ -36,9 +62,12 @@ JAVA_OBJS = \
 
 # This builds the static link library libadevs.a for linking
 # to C++ simulations
-adevs: ${ADEVS_OBJS} ${ADEVSM_OBJS}
+adevs: ${ADEVS_OBJS} 
 	ar -r libadevs.a ${ADEVS_OBJS}
-	ar -r libadevsm.a ${ADEVSM_OBJS} ${MODELICA_OBJS}
+
+# This adds the modelica extensions to the adevs library
+adevs_with_modelica: ${ADEVS_OBJS}
+	ar -r libadevs.a ${ADEVS_OBJS} ${MODELICA_OBJS}
 
 # This builds the Java bindings to the simulator
 java_adevs: ${JAVA_OBJS}
@@ -47,4 +76,4 @@ java_adevs: ${JAVA_OBJS}
 	cd adevs_jni ; jar cfv ../adevs.jar adevs/*.class
 
 clean:
-	rm -f *.o core *.a *.so adevs_jni/*.o adevs_jni/adevs/*.class *.jar modelica/*.o
+	rm -f *.o core *.a *.so adevs_jni/*.o adevs_jni/adevs/*.class *.jar
