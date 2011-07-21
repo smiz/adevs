@@ -23,6 +23,12 @@ bounce:
 	./a.out > soln
 	omc sim_bounce.mos
 
+ball:
+	omc +s +simCodeTarget=Adevs BouncingBall.mo
+	${CC} ${CFLAGS} main_bouncing_ball.cpp BouncingBall.cpp ${OMLIBS} 
+	./a.out > soln
+	omc sim_BouncingBall.mos
+
 vanderpol:
 	omc +s +simCodeTarget=Adevs VanDerPol.mo
 	${CC} ${CFLAGS} main_vanderpol.cpp VanDerPol.cpp ${OMLIBS} 
