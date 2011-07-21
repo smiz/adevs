@@ -18,7 +18,7 @@ int main()
         Simulator<OMC_ADEVS_IO_TYPE>* sim =
 			new Simulator<OMC_ADEVS_IO_TYPE>(hybrid_model);
 		cout << "# time, h, v, flying" << endl;
-        while (sim->nextEventTime() <= 1.0)
+        while (sim->nextEventTime() <= 3.0)
 		{
 			cout << sim->nextEventTime() << " ";
 			sim->execNextEvent();
