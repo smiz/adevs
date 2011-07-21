@@ -1,7 +1,7 @@
 # GNU gcc compiler
 CFLAGS = -g -fopenmp -Wall -I../../include ${OMINCLUDE}
 CC = g++
-OMHOME=${HOME}/Code/openmodelica/trunk/build
+OMHOME=${HOME}/development/openmodelica/trunk/build
 OMINCLUDE=-I${OMHOME}/include/omc
 OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevs -lSimulationRuntimeC -lomcruntime -llapack -lf2c
 
@@ -24,10 +24,10 @@ bounce:
 	omc sim_bounce.mos
 
 ball:
-	omc +s +simCodeTarget=Adevs BouncingBall.mo
+#	omc +s +simCodeTarget=Adevs BouncingBall.mo
 	${CC} ${CFLAGS} main_bouncing_ball.cpp BouncingBall.cpp ${OMLIBS} 
 	./a.out > soln
-	omc sim_BouncingBall.mos
+#	omc sim_BouncingBall.mos
 
 vanderpol:
 	omc +s +simCodeTarget=Adevs VanDerPol.mo
