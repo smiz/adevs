@@ -1,4 +1,3 @@
-
 /**
  * This file contains definitions of external variable types
  * and other parts of the Open Modelica libsim that cannot
@@ -10,11 +9,10 @@
  * produced by the modelica compiler is therefore put here.
  *
  */
-
-/**
- * These are external variables required by the modelica
- * header 'simulation_runtime.h'
- */
+#include "adevs_modelica_runtime.h"
+#include <iostream>
+#include <cstdlib>
+using namespace std;
 
 int LOG_STATS = 1;
 int LOG_INIT = 1;
@@ -29,4 +27,18 @@ int modelErrorCode = 0;
 int ERROR_NONLINSYS = 1;
 int ERROR_LINSYS = 2;
 
- 
+void MODELICA_TERMINATE(const char* msg)
+{
+	cerr << msg << endl;
+	exit(-2);
+}
+
+void MODELICA_ASSERT(omc_fileInfo info, const char* msg)
+{
+	cerr << "ASSERT failed" << endl;
+	cerr << "File = " << info.filename << endl;
+	cerr << "Cols = " << info.colStart << " -> " << info.colEnd << endl;
+	cerr << "Lns = " << info.lineStart << " -> " << info.lineEnd << endl;
+	cerr << msg << endl;
+	exit(-1);
+}	

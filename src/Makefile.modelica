@@ -1,0 +1,72 @@
+# These are objects from the open modelica project
+
+META_OBJS = \
+${MODELICA_HOME}/c_runtime/meta/meta_modelica.o \
+${MODELICA_HOME}/c_runtime/meta/meta_modelica_builtin.o \
+${MODELICA_HOME}/c_runtime/meta/meta_modelica_real.o \
+${MODELICA_HOME}/c_runtime/meta/meta_modelica_string_lit.o \
+${MODELICA_HOME}/c_runtime/meta/meta_modelica_catch.o \
+${MODELICA_HOME}/c_runtime/meta/meta_modelica_gc.o \
+${MODELICA_HOME}/c_runtime/meta/meta_modelica_gc_list.o \
+${MODELICA_HOME}/c_runtime/meta/meta_modelica_gc_stack.o \
+${MODELICA_HOME}/c_runtime/meta/meta_modelica_gc_roots.o \
+${MODELICA_HOME}/c_runtime/meta/meta_modelica_gc_pages.o \
+${MODELICA_HOME}/c_runtime/meta/meta_modelica_gc_stats.o \
+${MODELICA_HOME}/c_runtime/meta/meta_modelica_gc_settings.o 
+
+MODELICA_OBJS = \
+${MODELICA_HOME}/c_runtime/boolean_array.o \
+${MODELICA_HOME}/c_runtime/index_spec.o \
+${MODELICA_HOME}/c_runtime/integer_array.o \
+${MODELICA_HOME}/c_runtime/memory_pool.o \
+${MODELICA_HOME}/c_runtime/base_array.o \
+${MODELICA_HOME}/c_runtime/real_array.o \
+${MODELICA_HOME}/c_runtime/string_array.o \
+${MODELICA_HOME}/c_runtime/read_write.o \
+${MODELICA_HOME}/c_runtime/utility.o \
+${MODELICA_HOME}/c_runtime/modelica_string.o \
+${MODELICA_HOME}/c_runtime/bigden.o \
+${MODELICA_HOME}/c_runtime/ddasrt.o \
+${MODELICA_HOME}/c_runtime/dlinpk.o \
+${MODELICA_HOME}/c_runtime/enorm.o  \
+${MODELICA_HOME}/c_runtime/hybrd1.o \
+${MODELICA_HOME}/c_runtime/nelmead.o \
+${MODELICA_HOME}/c_runtime/qform.o \
+${MODELICA_HOME}/c_runtime/r1updt.o \
+${MODELICA_HOME}/c_runtime/biglag.o \
+${MODELICA_HOME}/c_runtime/ddassl.o \
+${MODELICA_HOME}/c_runtime/dogleg.o \
+${MODELICA_HOME}/c_runtime/fdjac1.o \
+${MODELICA_HOME}/c_runtime/hybrj.o \
+${MODELICA_HOME}/c_runtime/newuoa.o \
+${MODELICA_HOME}/c_runtime/qrfac.o \
+${MODELICA_HOME}/c_runtime/trsapp.o \
+${MODELICA_HOME}/c_runtime/daux.o \
+${MODELICA_HOME}/c_runtime/dlamch.o \
+${MODELICA_HOME}/c_runtime/dpmpar.o \
+${MODELICA_HOME}/c_runtime/hybrd.o \
+${MODELICA_HOME}/c_runtime/lsame.o \
+${MODELICA_HOME}/c_runtime/newuob.o \
+${MODELICA_HOME}/c_runtime/r1mpyq.o \
+${MODELICA_HOME}/c_runtime/update.o \
+${MODELICA_HOME}/c_runtime/division.o \
+${MODELICA_HOME}/c_runtime/java_interface.o \
+${MODELICA_HOME}/c_runtime/rtclock.o \
+${MODELICA_HOME}/c_runtime/ModelicaUtilities.o \
+${MODELICA_HOME}/c_runtime/simulation_varinfo.o \
+${MODELICA_HOME}/c_runtime/read_matlab4.o \
+${MODELICA_HOME}/c_runtime/read_csv.o \
+${MODELICA_HOME}/c_runtime/simulation_init.o \
+${MODELICA_HOME}/c_runtime/simulation_input.o \
+${MODELICA_HOME}/c_runtime/simulation_input_xml.o \
+${MODELICA_HOME}/c_runtime/linearize.o \
+${MODELICA_HOME}/c_runtime/solver_main.o \
+${MODELICA_HOME}/c_runtime/simulation_result_plt.o \
+${MODELICA_HOME}/c_runtime/simulation_result_csv.o \
+${MODELICA_HOME}/c_runtime/simulation_result_mat.o \
+${MODELICA_HOME}/c_runtime/simulation_delay.o \
+${MODELICA_HOME}/c_runtime/tables.o \
+${MODELICA_HOME}/c_runtime/options.o \
+${MODELICA_HOME}/c_runtime/dgesv_aux.o \
+${MODELICA_HOME}/c_runtime/simulation_modelinfo.o \
+$(META_OBJS) 
