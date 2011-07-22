@@ -1,9 +1,9 @@
 # GNU gcc compiler
 CFLAGS = -g -fopenmp -Wall -I../../include ${OMINCLUDE}
 CC = g++
-OMHOME=${HOME}/development/openmodelica/trunk/build
+OMHOME=${HOME}/Code/openmodelica/trunk/build
 OMINCLUDE=-I${OMHOME}/include/omc
-OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevs -lSimulationRuntimeC -lomcruntime -llapack -lf2c
+OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevs -lSimulationRuntimeC -lomcruntime -llapack -Wl,-Bstatic -lf2c -Wl,-Bdynamic
 
 hello:
 	omc +s +simCodeTarget=Adevs HelloWorld.mo 
@@ -24,10 +24,10 @@ bounce:
 	omc sim_bounce.mos
 
 ball:
-#	omc +s +simCodeTarget=Adevs BouncingBall.mo
+	omc +s +simCodeTarget=Adevs BouncingBall.mo
 	${CC} ${CFLAGS} main_bouncing_ball.cpp BouncingBall.cpp ${OMLIBS} 
 	./a.out > soln
-#	omc sim_BouncingBall.mos
+	omc sim_BouncingBall.mos
 
 vanderpol:
 	omc +s +simCodeTarget=Adevs VanDerPol.mo
@@ -66,13 +66,14 @@ nonlinearmixed:
 	omc sim_nonlinearmixed.mos
 
 clean:
-	rm -f a.out soln *.xml *.mat *.libs *.makefile *.log *.plt *.o
-	rm -f Bounce*.c Bounce*.cpp Bounce*.h Bounce.c Bounce 
-	rm -f Influenza*.c Influenza*.cpp Influenza*.h Influenza.c Influenza 
-	rm -f HelloWorld*.c HelloWorld*.cpp HelloWorld*.h HelloWorld.c HelloWorld 
-	rm -f VanDerPol*.c VanDerPol*.cpp VanDerPol*.h VanDerPol.c VanDerPol 
-	rm -f dcmotor*.c dcmotor*.cpp dcmotor*.h dcmotor.c dcmotor 
-	rm -f Robot*.c Robot*.cpp Robot*.h Robot.c Robot 
-	rm -f Tank*.c Tank*.cpp Tank*.h Tank.c Tank
-	rm -f Pendulum*.c Pendulum*.cpp Pendulum*.h Pendulum.c Pendulum
-	rm -f NonlinearMixed*.c NonlinearMixed*.cpp NonlinearMixed*.h NonlinearMixed.c NonlinearMixed
+	rm -f a.out soln *.h *.c *.xml *.mat *.libs *.makefile *.log *.plt *.o
+	rm -f Bounce.cpp Bounce 
+	rm -f Influenza.cpp Influenza 
+	rm -f HelloWorld.cpp HelloWorld 
+	rm -f VanDerPol.cpp VanDerPol 
+	rm -f dcmotor.cpp dcmotor 
+	rm -f Robot.cpp Robot 
+	rm -f Tank.cpp Tank
+	rm -f Pendulum.cpp Pendulum
+	rm -f NonlinearMixed.cpp NonlinearMixed
+	rm -f BouncingBall.cpp BouncingBall
