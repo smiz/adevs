@@ -22,7 +22,9 @@ CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 # and have the object files from that available for linking into the
 # adevs object library. Point this at your Open Modelica installation 
 # if you want to build the Modelica extensions for adevs.
-MODELICA_HOME = ${HOME}/Code/openmodelica/trunk
+MODELICA_HOME = ${HOME}/development/openmodelica/trunk
+CFLAGS += -I${MODELICA_HOME}/c_runtime 
+include Makefile.modelica
 
 # These are generic options for the GNU C++ compiler.
 
@@ -31,7 +33,7 @@ OMP = -fopenmp
 # Compiler flags
 CFLAGS += ${OMP} -fPIC -Wall -I../include -I./
 # Best bet for GNU compiler
-CC = g++
+CC = g++44
 OPTFLAG = -O3
 
 #
@@ -42,12 +44,7 @@ ADEVS_OBJS = \
 	rv.o \
 	mtrand.o \
 	poly.o \
-	modelica_runtime.o \
 	time.o
-
-MODELICA_OBJS = \
-	${MODELICA_HOME}/c_runtime/dgesv_aux.o \
-	${MODELICA_HOME}/c_runtime/hybrd.o 
 
 JAVA_OBJS = \
 	adevs_jni/JavaAtomic.o \
@@ -66,8 +63,8 @@ adevs: ${ADEVS_OBJS}
 	ar -r libadevs.a ${ADEVS_OBJS}
 
 # This adds the modelica extensions to the adevs library
-adevs_with_modelica: ${ADEVS_OBJS}
-	ar -r libadevs.a ${ADEVS_OBJS} ${MODELICA_OBJS}
+adevs_with_modelica: ${ADEVS_OBJS} modelica_runtime.o 
+	ar -r libadevs.a ${ADEVS_OBJS} ${MODELICA_OBJS} modelica_runtime.o
 
 # This builds the Java bindings to the simulator
 java_adevs: ${JAVA_OBJS}
