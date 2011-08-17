@@ -1,9 +1,14 @@
 # GNU gcc compiler
-CFLAGS = -g -fopenmp -Wall -I../../include ${OMINCLUDE} -Wl,--unresolved-symbols=ignore-all
+#CFLAGS = -g -fopenmp -Wall -I../../include ${OMINCLUDE} -Wl,--unresolved-symbols=ignore-all
+CFLAGS = -g -fopenmp -Wall -I../../include ${OMINCLUDE} 
 CC = g++44
-OMHOME=${HOME}/development/openmodelica/trunk/build
+OMHOME=${HOME}/Code/openmodelica/trunk/build
 OMINCLUDE=-I${OMHOME}/include/omc
 OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevs -llapack -lf2c 
+
+inittest:
+	${CC} ${CFLAGS} main_inittest.cpp InitTest.cpp ${OMLIBS}
+	./a.out
 
 hello:
 	omc +s +simCodeTarget=Adevs HelloWorld.mo 

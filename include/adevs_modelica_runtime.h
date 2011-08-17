@@ -15,6 +15,21 @@ extern int modelErrorCode;
 extern int ERROR_NONLINSYS;
 extern int ERROR_LINSYS;
 
+extern "C"
+{
+void newuoa_(
+  long *nz,
+  long *NPT,
+  double *z,
+  double *RHOBEG,
+  double *RHOEND,
+  long *IPRINT,
+  long *MAXFUN,
+  double *W,
+  void (*leastSquare) (long *nz, double *z, double *funcValue)
+  );
+};
+
 void MODELICA_ASSERT(omc_fileInfo info, const char* msg);
 void MODELICA_TERMINATE(const char* msg);
 

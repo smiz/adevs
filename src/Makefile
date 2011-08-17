@@ -22,7 +22,7 @@ CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 # and have the object files from that available for linking into the
 # adevs object library. Point this at your Open Modelica installation 
 # if you want to build the Modelica extensions for adevs.
-MODELICA_HOME = ${HOME}/development/openmodelica/trunk
+MODELICA_HOME = ${HOME}/Code/openmodelica/trunk
 CFLAGS += -I${MODELICA_HOME}/c_runtime 
 include Makefile.modelica
 
