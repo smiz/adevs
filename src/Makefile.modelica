@@ -69,4 +69,6 @@ ${MODELICA_HOME}/c_runtime/tables.o \
 ${MODELICA_HOME}/c_runtime/options.o \
 ${MODELICA_HOME}/c_runtime/dgesv_aux.o \
 ${MODELICA_HOME}/c_runtime/simulation_modelinfo.o \
+${MODELICA_HOME}/c_runtime/newuoa.o \
+${MODELICA_HOME}/c_runtime/newuob.o \
 $(META_OBJS) 
