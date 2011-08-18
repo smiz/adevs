@@ -2,7 +2,7 @@
 COMPARE = tclsh $(PREFIX)/util/compare
 # GNU gcc compiler
 OPENMP = -fopenmp
-CFLAGS = $(OPENMP) -g -Wall -I$(PREFIX)/include
+CFLAGS = $(OPENMP) -g -pedantic -Wall -I$(PREFIX)/include
 CC = g++
 TEST_EXEC=./a.out
 DEL = rm -f

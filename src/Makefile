@@ -33,7 +33,7 @@ OMP = -fopenmp
 # Compiler flags
 CFLAGS += ${OMP} -fPIC -Wall -I../include -I./
 # Best bet for GNU compiler
-CC = g++44
+CC = g++
 OPTFLAG = -O3
 
 #

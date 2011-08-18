@@ -1,14 +1,16 @@
 # GNU gcc compiler
 #CFLAGS = -g -fopenmp -Wall -I../../include ${OMINCLUDE} -Wl,--unresolved-symbols=ignore-all
 CFLAGS = -g -fopenmp -Wall -I../../include ${OMINCLUDE} 
-CC = g++44
+CC = g++
 OMHOME=${HOME}/Code/openmodelica/trunk/build
 OMINCLUDE=-I${OMHOME}/include/omc
-OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevs -llapack -lf2c 
+OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevs -llapack /usr/local/lib/libf2c.a
 
-inittest:
-	${CC} ${CFLAGS} main_inittest.cpp InitTest.cpp ${OMLIBS}
-	./a.out
+population:
+	omc +s +simCodeTarget=Adevs Population.mo 
+	${CC} ${CFLAGS} main_population.cpp Population.cpp ${OMLIBS}
+	./a.out > soln
+	omc sim_pop.mos
 
 hello:
 	omc +s +simCodeTarget=Adevs HelloWorld.mo 
@@ -82,3 +84,4 @@ clean:
 	rm -f Pendulum.cpp Pendulum
 	rm -f NonlinearMixed.cpp NonlinearMixed
 	rm -f BouncingBall.cpp BouncingBall
+	rm -f Population.cpp Population
