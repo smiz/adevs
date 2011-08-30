@@ -33,7 +33,8 @@ OMP = -fopenmp
 # Compiler flags
 CFLAGS += ${OMP} -fPIC -Wall -I../include -I./
 # Best bet for GNU compiler
-CC = g++
+CXX = g++
+CC = gcc
 OPTFLAG = -O3
 
 #
@@ -53,8 +54,10 @@ JAVA_OBJS = \
 	adevs_jni/JavaNetwork.o \
 	adevs_jni/JavaSimulator.o
 
-.SUFFIXES: .cpp
+.SUFFIXES: .cpp .c
 .cpp.o:
+	${CXX} ${CFLAGS} ${OPTFLAG} -o $@ -c $<
+.c.o:
 	${CC} ${CFLAGS} ${OPTFLAG} -o $@ -c $<
 
 # This builds the static link library libadevs.a for linking
@@ -68,9 +71,9 @@ adevs_with_modelica: ${ADEVS_OBJS} modelica_runtime.o
 
 # This builds the Java bindings to the simulator
 java_adevs: ${JAVA_OBJS}
-	${CC} ${OMP} -shared -Wl,-soname,java_adevs -o libjava_adevs.so ${JAVA_OBJS}
+	${CXX} ${OMP} -shared -Wl,-soname,java_adevs -o libjava_adevs.so ${JAVA_OBJS}
 	javac adevs_jni/adevs/*.java
 	cd adevs_jni ; jar cfv ../adevs.jar adevs/*.class
 
 clean:
-	rm -f *.o core *.a *.so adevs_jni/*.o adevs_jni/adevs/*.class *.jar
+	rm -f *.o core *.a *.so adevs_jni/*.o adevs_jni/adevs/*.class *.jar minpack/*.o
