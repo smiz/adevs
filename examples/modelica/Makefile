@@ -1,5 +1,4 @@
 # GNU gcc compiler
-#CFLAGS = -g -fopenmp -Wall -I../../include ${OMINCLUDE} -Wl,--unresolved-symbols=ignore-all
 CFLAGS = -g -fopenmp -Wall -I../../include ${OMINCLUDE} 
 CC = g++
 OMHOME=${HOME}/Code/openmodelica/trunk/build

@@ -28,7 +28,7 @@ void newuoa_(
   double *W,
   void (*leastSquare) (long *nz, double *z, double *funcValue)
   );
-};
+}
 
 void MODELICA_ASSERT(omc_fileInfo info, const char* msg);
 void MODELICA_TERMINATE(const char* msg);
