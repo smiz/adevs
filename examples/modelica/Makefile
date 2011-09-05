@@ -5,6 +5,11 @@ OMHOME=${HOME}/Code/openmodelica/trunk/build
 OMINCLUDE=-I${OMHOME}/include/omc
 OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevs -llapack /usr/local/lib/libf2c.a
 
+circuit:
+	omc +s +simCodeTarget=Adevs Circuit.mo 
+	${CC} ${CFLAGS} main_circuit.cpp Circuit.cpp ${OMLIBS}
+	./a.out > soln
+
 population:
 	omc +s +simCodeTarget=Adevs Population.mo 
 	${CC} ${CFLAGS} main_population.cpp Population.cpp ${OMLIBS}
@@ -84,3 +89,4 @@ clean:
 	rm -f NonlinearMixed.cpp NonlinearMixed
 	rm -f BouncingBall.cpp BouncingBall
 	rm -f Population.cpp Population
+	rm -f Circuit.cpp 
