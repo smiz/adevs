@@ -17,11 +17,11 @@ CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 #
 # This builds adevs as above and adds to the vanilla library some
 # additional object files that are needed to use adevs models 
-# produced by the Open Modelica compiler. For this to target to get
-# built, you need to have compiled a recent version of the omc compiler
+# produced by the Open Modelica compiler. To build this this target
+# you need to have compiled a recent version of the omc compiler
 # and have the object files from that available for linking into the
-# adevs object library. Point this at your Open Modelica installation 
-# if you want to build the Modelica extensions for adevs.
+# adevs object library. Point MODELICA_HOME at your Open Modelica 
+# installation if you want to build the Modelica extensions for adevs.
 MODELICA_HOME = ${HOME}/Code/openmodelica/trunk
 CFLAGS += -I${MODELICA_HOME}/c_runtime 
 include Makefile.modelica

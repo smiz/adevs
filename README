@@ -1,5 +1,5 @@
-This file contains build instructions for the C++ library and Java
-bindings.
+This file contains build instructions for the C++ library, the C++
+library with support for OpenModelica, and Java the bindings.
 
 ---- C++ -----
 The simulation is implemented primarily as a set of C++ header files,
@@ -16,6 +16,44 @@ static library to link with your application. The build script does
 not include any OpenMP options, so those must be added to the compiler
 switches if you want it (the Express versions of Visual Studio don't
 support OpenMP in any case).
+
+
+---- C++ with OpenModelica support ----
+Do everything described in the C++ instructions above, plus the following:
+
+1) Get the source code for OpenModelica from their svn repository. Instructions
+for doing this are at http://www.openmodelica.org/index.php/developer/source-code
+
+2) Build the omc compiler from the source. To do this, you will need smlnj
+and rml. These are described in the instructions for building OpenModelica.
+You do not need any of the optional libraries for OpenModelica; just build
+the bare minimum. I build omc with the commands
+
+./configure --without-paradiseo --enable-omshell-terminal=no
+make omc
+
+This puts the compiler executable (called omc) into the build/bin directory
+of the OpenModelica source true.
+
+3) Put the omc compiler into your executable PATH.
+
+4) Edit the Makefile for adevs to point MODELICA_HOME at your OpenModelica
+source tree.
+
+5) Run the command 'make adevs_with_modelica'.
+
+6) You can test out your new modelica compiler and runtime environment
+with the modelica examples in the adevs/examples directory.
+
+You will need a statically linkable f2c library for OpenModelica and
+its adevs runtime environment. I've had trouble using vanilla f2c
+libraries with OpenModelica, and suggest that you use the f2c library
+that comes with OpenModelica. This is located in the directory 
+c_runtime/libf2c directory of the OpenModelica source tree. From this
+directory, run the command 'make -f makefile.u'. This will create
+a library called libf2c.a that you want for statically linking with
+your simulation executables. Copy it to a convenient place (I use
+/usr/local/lib).
 
 ---- Java -----
 To build the java bindings, go the the 'src' directory and then edit 
@@ -34,14 +72,16 @@ code needed by the jar file). You can use these by putting the former
 into your CLASSPATH and latter into your PATH.
 
 ---- TESTING -----
-There are three sets of test cases, each of which can be run from
+There are four sets of test cases, each of which can be run from
 the directory 'test'. The first set are for the C++ library without
 OpenMP support; these test are run with 'make check_cpp'. The parts
 of the C++ library that require OpenMP support can be tested by
 executing 'make check_par'. The java bindings can be tested by
 executing 'make check_java'. Be sure your PATH, LD_LIBRARY_PATH,
 and CLASSPATH are setup properly before running the Java test
-cases. Executing 'make check' runs all of the test cases.
+cases. The test cases for the OpenModelica support can be run
+with 'make check_modelica'. Executing 'make check' runs all of
+the test cases.
 
 The make.common file contains platform specific settings for
 the test scripts. It is setup by default for a GNU/Linux type of
@@ -50,5 +90,5 @@ using a more or less typical Linux distribution then the defaults
 should work fine
 
 You will need to set the maximum number of threads to at least
-4 for the test suite to work (one of the test cases requires
+4 for the OpenMP test suite to work (one of the test cases requires
 at least four threads). 
