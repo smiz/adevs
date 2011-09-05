@@ -32,17 +32,19 @@ class CircuitExt:
 		}
 		void test_state()
 		{
-			assert(fabs(get_$PRbridge$PT1$Pv()-get_$PRbridge$PT2$Pv())<1E-6);
-			assert(fabs(get_$PRbridge$PT2$Pi()) < 1E-6);
+			double v = 1.0;
 			if (get_time() > start_time)
 			{
-				double v = exp(start_time-get_time());
+				v = exp(start_time-get_time());
 				assert(fabs(v-get_$PVsrc$PT$Pv()) < 1E-6);
 			}
 			else
 			{
-				assert(fabs(1.0-get_$PVsrc$PT$Pv()) < 1E-6);
+				assert(fabs(v-get_$PVsrc$PT$Pv()) < 1E-6);
 			}
+			assert(fabs(get_$PRbridge$PT1$Pv()-get_$PRbridge$PT2$Pv())<1E-6);
+			assert(fabs(get_$PRbridge$PT1$Pv()-v/2.0)<1E-6);
+			assert(fabs(get_$PRbridge$PT2$Pi()) < 1E-6);
 		}
 	private:
 		double start_time;
