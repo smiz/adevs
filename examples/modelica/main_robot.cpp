@@ -27,7 +27,7 @@ class RobotWithSensor:
 		void init(double* q)
 		{
 			Robot::init(q);
-			k = get_$Ptheta()/mAngle;
+			k = int(get_$Ptheta()/mAngle);
 		}
 		void extra_state_event_funcs(double* z)
 		{
