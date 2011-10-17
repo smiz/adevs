@@ -12,7 +12,7 @@ The signature of the \methodname{route} method is
 \begin{verbatim}
 void route(const X& value, Devs<X>* model, Bag<Event<X> >& r) 
 \end{verbatim}
-for which the value argument is the object being routed, the model argument is the \classname{Network} or \classname{Atomic} model that originated the event (i.e., the event's source), and the r argument is a bag to be filled with the targets of the event. Each target is described by an \classname{Event} object that carries to pieces of information: a pointer to the model that is the event's target and the object to be delivered to that target.
+for which the value argument is the object being routed, the model argument is the \classname{Network} or \classname{Atomic} model that originated the event (i.e., the event's source), and the r argument is a bag to be filled with the targets of the event. Each target is described by an \classname{Event} object that carries two pieces of information: a pointer to the model that is the event's target and the object to be delivered to that target.
 
 The simulator uses these \classname{Event} objects in one of three ways, which depending on the relationship between the source of the event and its target. These uses are
 \begin{enumerate}
@@ -113,7 +113,7 @@ void getComponents(Set<Devs<int>*>& c) {
 }
 \end{verbatim}
 
-There are just three other items to mention in relation to \classname{Network} models. First, components cannot be connected to themselves. This means that direct feedback loops and connections direct through a network model are illegal. The former can always be replaced with an internal event an the latter by simply bypassing the network (which won't do anything with the input in any event). These two cases are illustrated in Fig. \ref{fig:bad_coupling}. Second, direct coupling can only occur between components belonging to the same network, and every component must belong to, at most, one network. Third, the \methodname{route} method is allowed to modify an output before sending it along; this can be useful in some cases.
+There are just three other items to mention in relation to \classname{Network} models. First, components cannot be connected to themselves. This means that direct feedback loops and connections direct through a network model are illegal. The former can always be replaced with an internal event and the latter by simply bypassing the network (which won't do anything with the input in any event). These two cases are illustrated in Fig. \ref{fig:bad_coupling}. Second, direct coupling can only occur between components belonging to the same network, and every component must belong to, at most, one network. Third, the \methodname{route} method is allowed to modify an output before sending it along; this can be useful in some cases.
 \begin{figure}[ht]
 \centering
 \epsfig{file=network_models_figs/bad_couplings.eps}
@@ -122,7 +122,7 @@ There are just three other items to mention in relation to \classname{Network} m
 \end{figure}
 
 \section{Simulating a Network Model}
-Each iteration of the simulator has four phases: 1) advance the simulation clock to the time of the next event, 2) compute the outputs from atomic models that will change state (i.e., how will undergo an internal or confluent event) and convert these outputs into inputs for other models, 3) calculate the next state of each model with events to process, and 4) cleanup garbage left over from the output calculations. These four phase are repeated until the time of the next event is at infinity (i.e., DBL\_MAX) or you decide to stop the simulation. 
+Each iteration of the simulator has four phases: 1) advance the simulation clock to the time of the next event, 2) compute the outputs from atomic models that will change state (i.e., that will undergo an internal or confluent event) and convert these outputs into inputs for other models, 3) calculate the next state of each model with events to process, and 4) cleanup garbage left over from the output calculations. These four phases are repeated until the time of the next event is at infinity (i.e., DBL\_MAX) or you decide to stop the simulation. 
 
 Conveniently, there are no special rules for simulating networks of network models. The simulator considers the entire collection of atomic models when determining the next event time; output from atomic models are recursively routed to their atomic destinations; and the state transitions and garbage collection are performed over the complete set of active atomic components. Hierarchies of network models are a convenient organizing tool for the modeler, but the simulator treats (via its recursive routing of events) the multi-level network as a flat structure.
 
@@ -157,7 +157,7 @@ Algorithm \ref{alg:coupled_model} sketches the simulation procedure. Note that t
 \section{A complete example of a network model}
 I'll use the \adevs\ \classname{SimpleDigraph} class to illustrate the process of building a network model. The \classname{SimpleDigraph} models a network of components whose connections are represented with a directed graph. If, for example, component $A$ is connected to component $B$, then all output events generated by $A$ become input events to $B$.
 
-The \classname{SimpleDigraph} has two methods for building a network. The \methodname{add} method takes an \classname{Atomic} or \classname{Network} model and adds it to the set of components. The \methodname{couple} method accepts a pair of components and connects the first to the second. Below is the class definition for the model; note that is has a template parameter for setting its input and output type. The \classname{Network}, \classname{Devs}, \classname{Bag}, and \classname{Set} are in the adevs namespace, and \mbox{adevs::} must precede them unless the \classname{SimpleDigraph} is itself in the adevs namespace (which, in this case, it is). 
+The \classname{SimpleDigraph} has two methods for building a network. The \methodname{add} method takes an \classname{Atomic} or \classname{Network} model and adds it to the set of components. The \methodname{couple} method accepts a pair of components and connects the first to the second. Below is the class definition for the model; note that it has a template parameter for setting its input and output type. The \classname{Network}, \classname{Devs}, \classname{Bag}, and \classname{Set} are in the adevs namespace, and \mbox{adevs::} must precede them unless the \classname{SimpleDigraph} is itself in the adevs namespace (which, in this case, it is). 
 \begin{verbatim}
 template <class VALUE> class SimpleDigraph: public Network<VALUE> { 
    public:
@@ -186,9 +186,9 @@ template <class VALUE> class SimpleDigraph: public Network<VALUE> {
 \end{verbatim}
 The \classname{SimpleDigraph} has two member variables. The first is a set of pointers to the components of the network; these are stored in the \classname{Set} models. The components can be \classname{Atomic} objects, \classname{Network} objects, or both. The \classname{SimpleDigraph} components are the nodes of the directed graph. The second member variable is a STL map that contains the network's links, or edges; these are stored in the \classname{map} graph.
 
-The \classname{SimpleGraph} has four methods beyond the required route and getComponents. One of these is the constructor, which creates an empty network. The other is the destructor, which deletes all of the network's components. The others are add and couple.
+The \classname{SimpleDigraph} has four methods beyond the required route and getComponents. One of these is the constructor, which creates an empty network. The other is the destructor, which deletes all of the network's components. The others are add and couple.
 
-The add method does three things. First, it checks that the network is not being added to itself; this is illegal and would cause no end of trouble for the simulator. Next, it adds the new component to its set of components. Last, the \classname{SimpleNetwork} sets the component's parent. The last step is needed so that the simulator can climb up and down the model tree. If it is omitted then the routing of events is likely fail. Here is the implementation of the \methodname{add} method.
+The add method does three things. First, it checks that the network is not being added to itself; this is illegal and would cause no end of trouble for the simulator. Next, it adds the new component to its set of components. Last, the \classname{SimpleDigraph} sets the component's parent. The last step is needed so that the simulator can climb up and down the model tree. If it is omitted then the routing of events is likely fail. Here is the implementation of the \methodname{add} method.
 \begin{verbatim}
 template <class VALUE> 
 void SimpleDigraph<VALUE>::add(Component* model) {
@@ -288,7 +288,7 @@ This output function places an output value of type `Customer*' on the ``arrive'
 
 The components for the network need not consist only of \classname{Atomic} models; the \classname{Digraph} can also have other \classname{Network} models as its components. For instance, suppose that we want to model a convenience store that has two clerks. When customers are ready to pay their bill, they enter the shortest line. To build this model, we reuse the \classname{Clerk}, \classname{Generator}, and \classname{Observer} models that were introduced in section \ref{chapter:intro}, and add an additional model for the process of customers selecting a checkout line.
 
-The header and source code for the model of the line-selection process is shown below. This model has two output ports, one for each line, and there are three input ports. One input port accepts new customers. The others are used to track the number of number of customers departing each line: a customer departing either clerk generates an event on the appropriate input port. In this way, the model is able to track the number of customers in each line and assign new customers to the shortest one. With this information, the state transition and output functions are (I hope) self explanatory. Here is the class definition
+The header and source code for the model of the line-selection process is shown below. This model has two output ports, one for each line, and there are three input ports. One input port accepts new customers. The others are used to track the number of customers departing each line: a customer departing either clerk generates an event on the appropriate input port. In this way, the model is able to track the number of customers in each line and assign new customers to the shortest one. With this information, the state transition and output functions are (I hope) self explanatory. Here is the class definition
 \begin{verbatim}
 #include "adevs.h"
 #include "Customer.h"
@@ -648,7 +648,7 @@ void Cell::output_func(adevs::Bag<CellEvent>& yb) {
 \end{verbatim}
 The \methodname{output\_func} method shows how a cell sends messages to its neighbors. The double for loop creates a \classname{CellEvent} targeted at each adjacent cell. The location of the target cell is written to the x, y, and z attributes of the \classname{CellEvent} object. Just like arrays, the locations can range from zero to the cell space's size minus one. The \classname{CellSpace} routes the \classname{CellEvent}s to their targets. However, if the target of the \classname{CellEvent} is outside of the cell space, then the \classname{CellSpace} itself will produce the \classname{CellEvent} as an output.
 
-The remainder of the simulation program looks very much like the simulation programs that we've seen so far (except for some OpenGL specific code, omitted here, that is used to display the cells). A \classname{CellSpace} object is created and we add the cells to it. Then a \classname{Simulator} object is create and a pointer to the \classname{CellSpace} is passed to the \classname{Simulator}'s constructor. Last, we execute events until our stopping criteria is met. The execution part is already familiar, so let's just focus on creating the \classname{CellSpace}. Here is the code snippet that performs the construction.
+The remainder of the simulation program looks very much like the simulation programs that we've seen so far (except for some OpenGL specific code, omitted here, that is used to display the cells). A \classname{CellSpace} object is created and we add the cells to it. Then a \classname{Simulator} object is created and a pointer to the \classname{CellSpace} is passed to the \classname{Simulator}'s constructor. Last, we execute events until our stopping criteria is met. The execution part is already familiar, so let's just focus on creating the \classname{CellSpace}. Here is the code snippet that performs the construction.
 \begin{verbatim}
 // Create the cellspace model
 cell_space = new adevs::CellSpace<Phase>(WIDTH,HEIGHT);
