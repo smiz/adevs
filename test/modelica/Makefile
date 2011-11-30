@@ -7,7 +7,7 @@ OMLIBS=-L$(OMHOME)/lib/omc -llapack /usr/local/lib/libf2c.a
 CFLAGS += $(OMINCLUDE)
 LIBS += $(OMLIBS)
 
-check: t1 t2 t3
+check: t1 t2 t3 t4
 
 t1:
 	omc +s +simCodeTarget=Adevs test1.mo 
@@ -24,5 +24,11 @@ t2:
 t3:
 	omc +s +simCodeTarget=Adevs test3.mo 
 	$(CC) $(CFLAGS) Circuit.cpp main_test3.cpp $(LIBS)
+	$(TEST_EXEC) > tmp
+	$(DEL) Circuit.cpp Circuit.h
+
+t4:
+	omc +s +simCodeTarget=Adevs test4.mo 
+	$(CC) $(CFLAGS) Circuit.cpp main_test4.cpp $(LIBS)
 	$(TEST_EXEC) > tmp
 	$(DEL) Circuit.cpp Circuit.h
