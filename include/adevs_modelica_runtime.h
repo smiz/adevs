@@ -33,5 +33,11 @@ void newuoa_(
 void MODELICA_ASSERT(omc_fileInfo info, const char* msg);
 void MODELICA_TERMINATE(const char* msg);
 
+#define start(x) x
+#ifdef DIVISION
+#undef DIVISION
+#endif
+#define DIVISION(a,b,c) (a/b)
+
 #endif
 

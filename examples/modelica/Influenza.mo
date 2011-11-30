@@ -1,11 +1,9 @@
 // Influenza model
 
-connector Port = Real;
-
 model Population
-  input Port in_1;
-  input Port in_2;
-  output Port out_1;
+  input Real in_1;
+  input Real in_2;
+  output Real out_1;
   output Real p(start=10);
 equation
   der(p)=in_1 - in_2;
@@ -14,9 +12,9 @@ end Population;
 
 
 model Division
-  input Port in_1;
-  input Port in_2;
-  output Port out_1;
+  input Real in_1;
+  input Real in_2;
+  output Real out_1;
   parameter Real c=1.00;
 equation
   out_1 = c*in_1/in_2;
@@ -24,7 +22,7 @@ end Division;
 
 
 model Constants
-  output Port out_1;
+  output Real out_1;
   parameter Real c=1.0;
 equation
   out_1 = c;
@@ -32,8 +30,8 @@ end Constants;
 
 
 model Product1
-  input Port in_1;
-  output Port out_1;
+  input Real in_1;
+  output Real out_1;
   parameter Real c=0.10;
 equation
   out_1=c*in_1;
@@ -41,9 +39,9 @@ end Product1;
 
 
 model Product2
-  input Port in_1;
-  input Port in_2;
-  output Port out_1;
+  input Real in_1;
+  input Real in_2;
+  output Real out_1;
   parameter Real c=1.00;
 equation
   out_1=c*in_1*in_2;
@@ -51,18 +49,18 @@ end Product2;
 
 
 model Sum
-  input Port in_1;
-  input Port in_2;
-  output Port out_1;
+  input Real in_1;
+  input Real in_2;
+  output Real out_1;
 equation
   out_1 = in_1 + in_2;
 end Sum;
 
 
 model Minimum
-  input Port in_1;
-  input Port in_2;
-  output Port out_1;
+  input Real in_1;
+  input Real in_2;
+  output Real out_1;
 equation
   out_1 = if (in_1 < in_2) then in_1 else in_2;
 end Minimum;
