@@ -76,4 +76,4 @@ java_adevs: ${JAVA_OBJS}
 	cd adevs_jni ; jar cfv ../adevs.jar adevs/*.class
 
 clean:
-	rm -f *.o core *.a *.so adevs_jni/*.o adevs_jni/adevs/*.class *.jar minpack/*.o
+	rm -f *.o core *.a *.so adevs_jni/*.o adevs_jni/adevs/*.class *.jar 
