@@ -550,7 +550,7 @@ void Simulator<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 {
 	// Notify event listeners if this is an output event
 	if (parent != src && (lps == NULL || lps->out_flag != RESTORING_OUTPUT))
-		notify_output_listeners(src,x,sched.minPriority());
+		this->notify_output_listeners(src,x,sched.minPriority());
 	// No one to do the routing, so return
 	if (parent == NULL) return;
 	// Compute the set of receivers for this value
