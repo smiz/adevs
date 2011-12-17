@@ -1,19 +1,5 @@
 # These are objects from the open modelica project
 
-META_OBJS = \
-${MODELICA_HOME}/c_runtime/meta/meta_modelica.o \
-${MODELICA_HOME}/c_runtime/meta/meta_modelica_builtin.o \
-${MODELICA_HOME}/c_runtime/meta/meta_modelica_real.o \
-${MODELICA_HOME}/c_runtime/meta/meta_modelica_string_lit.o \
-${MODELICA_HOME}/c_runtime/meta/meta_modelica_catch.o \
-${MODELICA_HOME}/c_runtime/meta/meta_modelica_gc.o \
-${MODELICA_HOME}/c_runtime/meta/meta_modelica_gc_list.o \
-${MODELICA_HOME}/c_runtime/meta/meta_modelica_gc_stack.o \
-${MODELICA_HOME}/c_runtime/meta/meta_modelica_gc_roots.o \
-${MODELICA_HOME}/c_runtime/meta/meta_modelica_gc_pages.o \
-${MODELICA_HOME}/c_runtime/meta/meta_modelica_gc_stats.o \
-${MODELICA_HOME}/c_runtime/meta/meta_modelica_gc_settings.o 
-
 MODELICA_OBJS = \
 ${MODELICA_HOME}/c_runtime/boolean_array.o \
 ${MODELICA_HOME}/c_runtime/index_spec.o \
@@ -70,5 +56,4 @@ ${MODELICA_HOME}/c_runtime/options.o \
 ${MODELICA_HOME}/c_runtime/dgesv_aux.o \
 ${MODELICA_HOME}/c_runtime/simulation_modelinfo.o \
 ${MODELICA_HOME}/c_runtime/newuoa.o \
-${MODELICA_HOME}/c_runtime/newuob.o \
-$(META_OBJS) 
+${MODELICA_HOME}/c_runtime/newuob.o 
