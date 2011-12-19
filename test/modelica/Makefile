@@ -7,7 +7,13 @@ OMLIBS=-L$(OMHOME)/lib/omc -llapack /usr/local/lib/libf2c.a
 CFLAGS += $(OMINCLUDE)
 LIBS += $(OMLIBS)
 
-check: t1 t2 t3 t4
+check: t0 t1 t2 t3 t4
+
+t0:
+	omc +s +simCodeTarget=Adevs builtins.mo 
+	$(CC) $(CFLAGS) builtins.cpp main_builtins.cpp $(LIBS)
+	$(TEST_EXEC) > tmp
+	$(DEL) builtins.cpp builtins.h
 
 t1:
 	omc +s +simCodeTarget=Adevs test1.mo 
