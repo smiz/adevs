@@ -1,9 +1,18 @@
+// Test case for built in mathematical functions.
+
 class builtins
-	Real x(start = 1);
+	Real x(start = 0.5);
 	output Real y_sqrt(start = 0);
 	output Real y_cos(start = 0);
 	output Real y_sin(start = 0);
 	output Real y_tan(start = 0);
+	output Real y_acos(start = 0);
+	output Real y_asin(start = 0);
+	output Real y_atan(start = 0);
+	output Real y_atan2(start = 0);
+	output Real y_cosh(start = 0);
+	output Real y_sinh(start = 0);
+	output Real y_tanh(start = 0);
 	output Real y_abs(start = 0);
 	output Real y_ceil(start = 0);
 	output Real y_floor(start = 0);
@@ -13,12 +22,21 @@ class builtins
 	output Integer y_sign(start = 0);
 	output Integer y_div(start = 0);
 	output Real y_mod(start = 0);
+	output Integer y_rem(start = 0);
+	output Real y_int(start = 0);
 equation
-	der(x) = 1;
+	der(x) = 0.1;
 	y_sqrt = sqrt(x);
 	y_cos = cos(x);
 	y_sin = sin(x);
 	y_tan = tan(x);
+	y_acos = acos(x);
+	y_asin = asin(x);
+	y_atan = atan(x);
+	y_cosh = cosh(x);
+	y_sinh = sinh(x);
+	y_tanh = tanh(x);
+	y_atan2 = atan2(1.0,x);
 	y_abs = abs(x);
 	y_ceil = ceil(x);
 	y_floor = floor(x);
@@ -28,4 +46,6 @@ equation
 	y_sign = sign(x);
 	y_div = div(y_sign,x);
 	y_mod = mod(2.0,x);
+	y_rem = rem(x,x);
+	y_int = integer(x);
 end builtins;
