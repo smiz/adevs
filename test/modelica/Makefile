@@ -4,7 +4,7 @@ include ../make.common
 OMHOME=$(HOME)/Code/openmodelica/trunk/build
 OMINCLUDE=-I$(OMHOME)/include/omc
 OMLIBS=-L$(OMHOME)/lib/omc -llapack /usr/local/lib/libf2c.a
-CFLAGS += $(OMINCLUDE)
+CFLAGS += $(OMINCLUDE) 
 LIBS += $(OMLIBS)
 
 check: t0 t1 t2 t3 t4

@@ -27,6 +27,6 @@ export PATH=$RMLHOME/bin:$PATH
 # Build the openmodelica compiler
 svn co https://openmodelica.org/svn/OpenModelica/trunk/
 cd trunk
-./configure --without-paradiseo --enable-omterminal-shell=no
+./configure --without-paradiseo --enable-omshell-terminal=no
 make omc
 # Done
