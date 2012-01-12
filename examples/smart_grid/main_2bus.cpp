@@ -99,7 +99,7 @@ class StepLoad:
 		StepLoad():
 			Atomic<OMC_ADEVS_IO_TYPE>(),
 			when(1.0),
-			fraction(0.01)
+			stepsize(0.01)
 		{
 		}
 		void delta_int() { when = DBL_MAX; }
@@ -107,13 +107,13 @@ class StepLoad:
 		void delta_conf(const Bag<OMC_ADEVS_IO_TYPE>&){}
 		void output_func(Bag<OMC_ADEVS_IO_TYPE>& yb)
 		{
-			yb.insert(OMC_ADEVS_IO_TYPE(load_event,fraction));
+			yb.insert(OMC_ADEVS_IO_TYPE(load_event,stepsize));
 		}
 		double ta() { return when; }
 		void gc_output(Bag<OMC_ADEVS_IO_TYPE>&){}
 	private:
 		double when;
-		const double fraction;
+		const double stepsize;
 };
 
 const int StepLoad::load_event = 0;
@@ -219,11 +219,11 @@ const int Control::sensor_event = 1;
 /**
  * Model that connects the above two.
  */
-class MainModel:
+class SmartGrid:
 	public Digraph<double>
 {
 	public:
-		MainModel():
+		SmartGrid():
 			Digraph<double>(),
 			fout("soln")
 		{
@@ -251,13 +251,13 @@ class MainModel:
 				control,control->sensor_event);
 		}
 		void print_vars(double t);
-		~MainModel() { fout.close(); }
+		~SmartGrid() { fout.close(); }
 	private:
 		twoBusAdjustableLoad* pwr_sys;
 		ofstream fout;
 };
 
-void MainModel::print_vars(double t)
+void SmartGrid::print_vars(double t)
 {
 	if (t == 0)
 	{
@@ -279,7 +279,7 @@ void MainModel::print_vars(double t)
 
 int main()
 {
-	MainModel* model = new MainModel();
+	SmartGrid* model = new SmartGrid();
 	// Create the simulator
 	Simulator<OMC_ADEVS_IO_TYPE>* sim =
 		new Simulator<OMC_ADEVS_IO_TYPE>(model);
