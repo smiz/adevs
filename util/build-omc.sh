@@ -16,7 +16,7 @@ export PATH=$PWD/bin:$PATH
 cd ..
 # Build the RML compiler and put it in our path
 mkdir rml
-svn co https://openmodelica.org/svn/MetaModelica/trunk mmc
+svn co --username=anonymous --password=none https://openmodelica.org/svn/MetaModelica/trunk mmc
 RMLHOME=$PWD/rml
 cd mmc
 ./configure --prefix=$RMLHOME
