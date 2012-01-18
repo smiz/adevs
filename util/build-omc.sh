@@ -36,4 +36,7 @@ fi
 # Configure and build omc
 ./configure --without-paradiseo --enable-omshell-terminal=no
 make omc
+# Make sure the runtime object files are available for use
+cd $HOMEDIR/trunk/c_runtime
+make
 # Done
