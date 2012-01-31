@@ -1,7 +1,7 @@
 // Test case for built in mathematical functions.
 
 class builtins
-	Real x(start = 0.5);
+	Real x(start = 0.5,fixed=true);
 	output Real y_sqrt(start = 0);
 	output Real y_cos(start = 0);
 	output Real y_sin(start = 0);
