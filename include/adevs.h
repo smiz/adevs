@@ -36,10 +36,6 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #include "adevs_corrected_euler.h"
 #include "adevs_linear_event_locator.h"
 #include "adevs_rk_45.h"
-#include "adevs_dess.h" // Deprecated
-#include "adevs_rk4.h" // Deprecated
-#include "adevs_rk45.h" // Deprecated
-#include "adevs_rk45_improved.h" // Deprecated
 #include "adevs_poly.h"
 #include "adevs_wrapper.h"
 #ifdef _OPENMP
