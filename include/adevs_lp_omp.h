@@ -29,7 +29,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #include <list>
 #include <map>
 #include <queue>
-#include <limits.h>
+#include <limits>
 #include <cassert>
 
 namespace adevs
@@ -39,8 +39,8 @@ namespace adevs
  * A logical process is assigned to every atomic model and it simulates
  * that model conservatively. 
  */
-template <class X> class LogicalProcess:
-	public EventListener<X>
+template <class X, class T = double> class LogicalProcess:
+	public EventListener<X,T>
 {
 	public:
 		/**
@@ -48,22 +48,22 @@ template <class X> class LogicalProcess:
 		 * assigned to it.
 		 */
 		LogicalProcess(int ID, const std::vector<int>& I,
-			const std::vector<int>& E, LogicalProcess<X>** all_lps, 
-			AbstractSimulator<X>* sim, MessageManager<X>* msg_manager);
+			const std::vector<int>& E, LogicalProcess<X,T>** all_lps, 
+			AbstractSimulator<X,T>* sim, MessageManager<X>* msg_manager);
 		/**
 		 * Assign a model to this logical process. The model must have a
 		 * positive lookahead.
 		 */
-		void addModel(Devs<X>* model);
+		void addModel(Devs<X,T>* model);
 		/**
 		 * Send a message to the logical process. This will put the 
 		 * message into the back of the input queue.
 		 */
-		void sendMessage(Message<X>& msg) { input_q.insert(msg); }
+		void sendMessage(Message<X,T>& msg) { input_q.insert(msg); }
 		/**
 		 * Get the smallest of the local time of next event. 
 		 */
-		Time getNextEventTime() { return sim.nextEventTime(); } 
+		Time<T> getNextEventTime() { return sim.nextEventTime(); } 
 		// Get the process ID
 		int getID() const { return ID; }
 		/**
@@ -71,72 +71,72 @@ template <class X> class LogicalProcess:
 		 */
 		~LogicalProcess();
 		/// Run the main simulation loop
-		void run(double t_stop);
-		void outputEvent(Event<X> x, double t)
+		void run(T t_stop);
+		void outputEvent(Event<X,T> x, T t)
 		{
 			if (looking_ahead) return;
 			psim->notify_output_listeners(x.model,x.value,t);
 		}
-		void stateChange(Atomic<X>* model, double t)
+		void stateChange(Atomic<X,T>* model, T t)
 		{
 			if (looking_ahead) return;
 			psim->notify_state_listeners(model,t);
 		}
-		void notifyInput(Atomic<X>* model, X& value);
+		void notifyInput(Atomic<X,T>* model, X& value);
 	private:
 		// ID of this LP
 		const int ID;
 		// List of influencees and influencers
 		const std::vector<int> E, I;
 		// All of the LPs
-		LogicalProcess<X>** all_lps;
+		LogicalProcess<X,T>** all_lps;
 		// Lookahead for this LP
-		double lookahead;
+		T lookahead;
 		bool looking_ahead;
 		// Earliest input times 
-		std::map<int,Time> eit_map;
+		std::map<int,Time<T> > eit_map;
 		// Input messages to the LP
-		MessageQ<X> input_q;
+		MessageQ<X,T> input_q;
 		// Priority queue of messages to process
-		std::priority_queue<Message<X> > xq;
-		Bag<Event<X> > xb;
+		std::priority_queue<Message<X,T> > xq;
+		Bag<Event<X,T> > xb;
 		// Smallest of the earliest input times
-		Time eit, eot, tNow, tOut, tL;
+		Time<T> eit, eot, tNow, tOut, tL;
 		// Abstract simulator for notifying listeners
-		AbstractSimulator<X>* psim;
+		AbstractSimulator<X,T>* psim;
 		// For managing inter-lp messages
 		MessageManager<X>* msg_manager;
 		// Simulator for computing state transitions and outputs
-		Simulator<X> sim;
+		Simulator<X,T> sim;
 		void advanceOutput();
-		void sendEOT(Time tNext);
+		void sendEOT(Time<T> tNext);
 		// Returns true if it reaches t_stop
-		void advanceState(double t_stop);
+		void advanceState(T t_stop);
 		void processInputMessages();
-		void addToSimulator(Devs<X>* model);
-		Time tNextEvent(Time t);
+		void addToSimulator(Devs<X,T>* model);
+		Time<T> tNextEvent(Time<T> t);
 		void cleanup_xb();
 };
 
-template <typename X>
-LogicalProcess<X>::LogicalProcess(int ID, const std::vector<int>& I, 
-	const std::vector<int>& E, LogicalProcess<X>** all_lps,
-	AbstractSimulator<X>* psim, MessageManager<X>* msg_manager):
+template <typename X, class T>
+LogicalProcess<X,T>::LogicalProcess(int ID, const std::vector<int>& I, 
+	const std::vector<int>& E, LogicalProcess<X,T>** all_lps,
+	AbstractSimulator<X,T>* psim, MessageManager<X>* msg_manager):
 	ID(ID),E(E),I(I),all_lps(all_lps),psim(psim),
 	msg_manager(msg_manager),sim(this)
 {
-	tL = tOut = tNow = eot = eit = Time(0.0,0);
+	tL = tOut = tNow = eot = eit = Time<T>(0,0);
 	all_lps[ID] = this;
-	lookahead = DBL_MAX;
+	lookahead = type_max<T>();
 	looking_ahead = false;
 	for (typename std::vector<int>::const_iterator iter = I.begin();
 			iter != I.end(); iter++)
-		if (*iter != ID) eit_map[*iter] = Time(0.0,0);
+		if (*iter != ID) eit_map[*iter] = Time<T>(0,0);
 	sim.addEventListener(this);
 }
 
-template <typename X>
-void LogicalProcess<X>::addModel(Devs<X>* model)
+template <typename X, class T>
+void LogicalProcess<X,T>::addModel(Devs<X,T>* model)
 {
 	lookahead = std::min(model->lookahead(),lookahead);
 	assert(lookahead > 0.0);
@@ -145,21 +145,21 @@ void LogicalProcess<X>::addModel(Devs<X>* model)
 	addToSimulator(model);
 }
 
-template <typename X>
-void LogicalProcess<X>::addToSimulator(Devs<X>* model)
+template <typename X, class T>
+void LogicalProcess<X,T>::addToSimulator(Devs<X,T>* model)
 {
 	// Assign the model to this LP
 	model->setProc(ID);
-	Atomic<X>* a = model->typeIsAtomic();
+	Atomic<X,T>* a = model->typeIsAtomic();
 	if (a != NULL)
 	{
 		sim.addModel(a);
 	}
 	else
 	{
-		Set<Devs<X>*> components;
+		Set<Devs<X,T>*> components;
 		model->typeIsNetwork()->getComponents(components);
-		typename Set<Devs<X>*>::iterator iter = components.begin();
+		typename Set<Devs<X,T>*>::iterator iter = components.begin();
 		for (; iter != components.end(); iter++)
 		{
 			addToSimulator(*iter);
@@ -167,23 +167,23 @@ void LogicalProcess<X>::addToSimulator(Devs<X>* model)
 	}
 }
 
-template <typename X>
-void LogicalProcess<X>::notifyInput(Atomic<X>* model, X& value)
+template <typename X, class T>
+void LogicalProcess<X,T>::notifyInput(Atomic<X,T>* model, X& value)
 {
 	// Don't send messages that have already been sent
 	if (tNow <= tOut) return;
 	assert(model->getProc() != ID);
 	// Send the event to the proper LP
-	Message<X> msg(msg_manager->clone(value));
+	Message<X,T> msg(msg_manager->clone(value));
 	msg.t = tNow;
 	msg.src = this;
 	msg.target = model;
-	msg.type = Message<X>::OUTPUT;
+	msg.type = Message<X,T>::OUTPUT;
 	all_lps[model->getProc()]->sendMessage(msg);
 }
 
-template <typename X>
-Time LogicalProcess<X>::tNextEvent(Time tlast)
+template <typename X, class T>
+Time<T> LogicalProcess<X,T>::tNextEvent(Time<T> tlast)
 {
 	if (tlast.t < sim.nextEventTime())
 	{
@@ -194,24 +194,24 @@ Time LogicalProcess<X>::tNextEvent(Time tlast)
 	return tlast;
 }
 
-template <typename X>
-void LogicalProcess<X>::advanceState(double t_stop)
+template <typename X, class T>
+void LogicalProcess<X,T>::advanceState(T t_stop)
 {
 	// Make sure we stop at t_stop
-	Time tStop(eit);
-	if (Time::Inf() <= tStop || tStop.t > t_stop)
+	Time<T> tStop(eit);
+	if (Time<T>::Inf() <= tStop || tStop.t > t_stop)
 	{
-		tStop = Time(t_stop,UINT_MAX);
+		tStop = Time<T>(t_stop,numeric_limits<unsigned int>::max());
 	}
 	// Advance the state to eit or tStop
 	while (true)
 	{
-		Time tSelf(tNextEvent(tL));
+		Time<T> tSelf(tNextEvent(tL));
 		// Find the time of the next event
 		if (!xq.empty() && xq.top().t < tSelf) tNow = xq.top().t;
 		else tNow = tSelf;
 		// Are we done?
-		if (tNow.t == DBL_MAX || tStop < tNow ) return; 
+		if (tNow.t == type_max<T>() || tStop < tNow ) return; 
 		// Send output if this is an internal or confluent event
 		if (tNow == tSelf) sim.computeNextOutput();
 		// Advance the output window if the state has caught up
@@ -222,14 +222,14 @@ void LogicalProcess<X>::advanceState(double t_stop)
 		// Find and inject pending input
 		while (!xq.empty() && xq.top().t <= tNow)
 		{
-			Message<X> msg(xq.top());
+			Message<X,T> msg(xq.top());
 			xq.pop();
 			assert(msg.target->getProc() == ID);
-			Event<X> input_event(msg.target,msg.value);
+			Event<X,T> input_event(msg.target,msg.value);
 			xb.insert(input_event);
 		}
 		// Compute the next state
-		assert(tNow.t < DBL_MAX);
+		assert(tNow.t < type_max<T>());
 		sim.computeNextState(xb,tNow.t);
 		cleanup_xb();
 		// Remember the time of our last event
@@ -237,19 +237,19 @@ void LogicalProcess<X>::advanceState(double t_stop)
 	}
 }
 
-template <typename X>
-void LogicalProcess<X>::advanceOutput()
+template <typename X, class T>
+void LogicalProcess<X,T>::advanceOutput()
 {
 	// This is the time for the new output and state
 	tNow = tNextEvent(tL);
 	// Project the output as far into the future 
 	// as possible
-	if (eit.t < DBL_MAX && lookahead < DBL_MAX)
+	if (eit.t < type_max<T>() && lookahead < type_max<T>())
 	{
 		looking_ahead = true;
 		sim.beginLookahead();
 		// Try to advance the output trajectory
-		while (tNow.t < DBL_MAX && tNow < eit + lookahead)
+		while (tNow.t < type_max<T>() && tNow < eit + lookahead)
 		{
 			bool ok = true;
 			try
@@ -281,11 +281,11 @@ void LogicalProcess<X>::advanceOutput()
 	sendEOT(tNow);
 }
 
-template <typename X>
-void LogicalProcess<X>::sendEOT(Time tNext)
+template <typename X, class T>
+void LogicalProcess<X,T>::sendEOT(Time<T> tNext)
 {
 	// Send a new value for the earliest output time
-	Time newEot(eit+lookahead);
+	Time<T> newEot(eit+lookahead);
 	if (tNext < newEot) newEot = tNext;
 	if (newEot == eit) newEot.c++;
 	// If this new EOT value is greater than our previous EOT
@@ -293,10 +293,10 @@ void LogicalProcess<X>::sendEOT(Time tNext)
 	if (eot < newEot)
 	{
 		eot = newEot;
-		Message<X> msg;
+		Message<X,T> msg;
 		msg.target = NULL;
 		msg.src = this;
-		msg.type = Message<X>::EIT;
+		msg.type = Message<X,T>::EIT;
 		msg.t = eot; 
 		for (std::vector<int>::const_iterator iter = E.begin();
 			iter != E.end(); iter++)
@@ -304,24 +304,25 @@ void LogicalProcess<X>::sendEOT(Time tNext)
 	}
 }
 
-template <typename X>
-void LogicalProcess<X>::processInputMessages()
+template <typename X, class T>
+void LogicalProcess<X,T>::processInputMessages()
 {
 	while (!input_q.empty())
 	{
-		Message<X> msg(input_q.remove());
+		Message<X,T> msg(input_q.remove());
 		eit_map[msg.src->getID()] = msg.t;
-		if (msg.type == Message<X>::OUTPUT)
+		if (msg.type == Message<X,T>::OUTPUT)
 			xq.push(msg);
 	}
-	eit = Time::Inf();
-	for (std::map<int,Time>::iterator iter = eit_map.begin();
+	eit = Time<T>::Inf();
+    typename std::map<int,Time<T> >::iterator iter;
+	for (iter = eit_map.begin();
 			iter != eit_map.end(); iter++)	
 		eit = std::min((*iter).second,eit);
 }
 
-template <typename X>
-void LogicalProcess<X>::run(double t_stop)
+template <typename X, class T>
+void LogicalProcess<X,T>::run(T t_stop)
 {
 	bool try_again = true;
 	// Run until advanceState reaches the stopping time
@@ -338,29 +339,29 @@ void LogicalProcess<X>::run(double t_stop)
 			advanceState(t_stop);
 			advanceOutput();
 		}
-		Time eit_now(eit);
+		Time<T> eit_now(eit);
 		processInputMessages();
 		try_again = eit_now < eit; 
 	}
 }
 
-template <class X>
-void LogicalProcess<X>::cleanup_xb()
+template <class X, class T>
+void LogicalProcess<X,T>::cleanup_xb()
 {
-	typename Bag<Event<X> >::iterator iter = xb.begin();
+	typename Bag<Event<X,T> >::iterator iter = xb.begin();
 	for (; iter != xb.end(); iter++)
 		msg_manager->destroy((*iter).value);
 	xb.clear();
 }
 
-template <class X>
-LogicalProcess<X>::~LogicalProcess()
+template <class X, class T>
+LogicalProcess<X,T>::~LogicalProcess()
 {
 	while (!xq.empty())
 	{
-		Message<X> msg(xq.top());
+		Message<X,T> msg(xq.top());
 		xq.pop();
-		Event<X> input_event(msg.target,msg.value);
+		Event<X,T> input_event(msg.target,msg.value);
 		xb.insert(input_event);
 	}
 	cleanup_xb();

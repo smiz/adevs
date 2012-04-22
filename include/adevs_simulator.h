@@ -41,8 +41,8 @@ namespace adevs
  * constraints are violated (i.e., a negative time advance or a model
  * attempting to send an input directly to itself).
  */
-template <class X> class Simulator:
-	public AbstractSimulator<X>
+template <class X, class T = double> class Simulator:
+	public AbstractSimulator<X,T>
 {
 	public:
 		/**
@@ -51,8 +51,8 @@ template <class X> class Simulator:
 		 * time advance of any component atomic model is less than zero.
 		 * @param model The model to simulate
 		 */
-		Simulator(Devs<X>* model):
-			AbstractSimulator<X>(),lps(NULL)
+		Simulator(Devs<X,T>* model):
+			AbstractSimulator<X,T>(),lps(NULL)
 		{
 			schedule(model,0.0);
 		}
@@ -60,7 +60,7 @@ template <class X> class Simulator:
 		 * Get the model's next event time
 		 * @return The absolute time of the next event
 		 */
-		double nextEventTime()
+		T nextEventTime()
 		{
 			return sched.minPriority();
 		}
@@ -71,10 +71,12 @@ template <class X> class Simulator:
 			computeNextState(bogus_input,sched.minPriority());
 		}
 		/// Execute until nextEventTime() > tend
-		void execUntil(double tend)
+		void execUntil(T tend)
 		{
-			while (nextEventTime() <= tend && nextEventTime() < DBL_MAX)
+			while (nextEventTime() <= tend 
+                   && nextEventTime() < type_max<T>()) {
 				execNextEvent();
+            }
 		}
 		/**
 		 * Compute the output values of the imminent component models 
@@ -90,7 +92,7 @@ template <class X> class Simulator:
 		 * @param input A bag of (input target,value) pairs
 		 * @param t The time at which the input takes effect
 		 */
-		void computeNextState(Bag<Event<X> >& input, double t);
+		void computeNextState(Bag<Event<X,T> >& input, T t);
 		/**
 		 * Deletes the simulator, but leaves the model intact. The model must
 		 * exist when the simulator is deleted.  Delete the model only after
@@ -101,7 +103,7 @@ template <class X> class Simulator:
 		 * Assign a model to the simulator. This has the same effect as passing
 		 * the model to the constructor.
 		 */
-		void addModel(Atomic<X>* model) 
+		void addModel(Atomic<X,T>* model) 
 		{
 			schedule(model,0.0);
 		}
@@ -109,7 +111,7 @@ template <class X> class Simulator:
 		 * Create a simulator that will be used by an LP as part of a parallel
 		 * simulation. This method is used by the parallel simulator.
 		 */
-		Simulator(LogicalProcess<X>* lp);
+		Simulator(LogicalProcess<X,T>* lp);
 		/**
 		 * <P>Call this method to indicate that all subsequent calls are part
 		 * of a lookahead calculation. Lookahead calculations will cause
@@ -140,37 +142,37 @@ template <class X> class Simulator:
 		struct lp_support
 		{
 			// The processor that this simulator works for
-			LogicalProcess<X>* lp;
+			LogicalProcess<X,T>* lp;
 			bool look_ahead, stop_forced;
 			OutputStatus out_flag;
-			Bag<Atomic<X>*> to_restore;
+			Bag<Atomic<X,T>*> to_restore;
 		};
 		// This is NULL if the simulator is not supporting a logical process
 		lp_support* lps;
 		// Bogus input bag for execNextEvent() method
-		Bag<Event<X> > bogus_input;
+		Bag<Event<X,T> > bogus_input;
 		// The event schedule
-		Schedule<X> sched;
+		Schedule<X,T> sched;
 		// List of imminent models
-		Bag<Atomic<X>*> imm;
+		Bag<Atomic<X,T>*> imm;
 		// List of models activated by input
-		Bag<Atomic<X>*> activated;
+		Bag<Atomic<X,T>*> activated;
 		// Pools of preallocated, commonly used objects
 		object_pool<Bag<X> > io_pool;
-		object_pool<Bag<Event<X> > > recv_pool;
+		object_pool<Bag<Event<X,T> > > recv_pool;
 		// Sets for computing structure changes.
-		Bag<Devs<X>*> added;
-		Bag<Devs<X>*> removed;
-		Set<Devs<X>*> next;
-		Set<Devs<X>*> prev;
+		Bag<Devs<X,T>*> added;
+		Bag<Devs<X,T>*> removed;
+		Set<Devs<X,T>*> next;
+		Set<Devs<X,T>*> prev;
 		// Model transition functions are evaluated from the bottom up!
 		struct bottom_to_top_depth_compare
 		{
-			bool operator()(const Network<X>* m1, const Network<X>* m2) const
+			bool operator()(const Network<X,T>* m1, const Network<X,T>* m2) const
 			{
 				unsigned long int d1 = 0, d2 = 0;
 				// Compute depth of m1
-				const Network<X>* m = m1->getParent();
+				const Network<X,T>* m = m1->getParent();
 				while (m != NULL) 
 				{
 					d1++;
@@ -191,11 +193,11 @@ template <class X> class Simulator:
 		};
 		struct top_to_bottom_depth_compare
 		{
-			bool operator()(const Devs<X>* m1, const Devs<X>* m2) const
+			bool operator()(const Devs<X,T>* m1, const Devs<X,T>* m2) const
 			{
 				unsigned long int d1 = 0, d2 = 0;
 				// Compute depth of m1
-				const Network<X>* m = m1->getParent();
+				const Network<X,T>* m = m1->getParent();
 				while (m != NULL) 
 				{
 					d1++;
@@ -214,53 +216,53 @@ template <class X> class Simulator:
 				return d1 < d2;
 			}
 		};
-		std::set<Network<X>*,bottom_to_top_depth_compare> model_func_eval_set;
-		std::set<Devs<X>*,top_to_bottom_depth_compare> sorted_removed;
+		std::set<Network<X,T>*,bottom_to_top_depth_compare> model_func_eval_set;
+		std::set<Devs<X,T>*,top_to_bottom_depth_compare> sorted_removed;
 		/**
 		 * Recursively add the model and its elements to the schedule 
 		 * using t as the time of last event.
 		 */
-		void schedule(Devs<X>* model, double t);
+		void schedule(Devs<X,T>* model, T t);
 		/// Route an event generated by the source model contained in the parent model.
-		void route(Network<X>* parent, Devs<X>* src, X& x);
+		void route(Network<X,T>* parent, Devs<X,T>* src, X& x);
 		/**	
 		 * Add an input to the input bag of an an atomic model. If the 
 		 * model's active flag is false, this method adds the model to
 		 * the activated bag and sets the active flag to true.
 		 */
-		void inject_event(Atomic<X>* model, X& value);
+		void inject_event(Atomic<X,T>* model, X& value);
 		/**
 		 * Recursively remove a model and its components from the schedule 
 		 * and the imminent/activated bags
 		 */
-		void unschedule_model(Devs<X>* model);
+		void unschedule_model(Devs<X,T>* model);
 		/**
 		 * Set the atomic model active flag to false, delete any thing in the
 		 * output bag, and return the input and output bags to the pools. 
 		 * Recursively clean up network model components.
 		 */
-		void clean_up(Devs<X>* model);
+		void clean_up(Devs<X,T>* model);
 		/**
 		 * Execute the state transition function using t to compute the
 		 * elapsed time as t-model->tL. This adds the model to the nx bag 
 		 * if it is a network executive and updates the added
 		 * and removed sets. 
 		 */
-		void exec_event(Atomic<X>* model, bool internal, double t);
+		void exec_event(Atomic<X,T>* model, bool internal, T t);
 		/**
 		 * Construct the complete descendant set of a network model and store it in s.
 		 */
-		void getAllChildren(Network<X>* model, Set<Devs<X>*>& s);
+		void getAllChildren(Network<X,T>* model, Set<Devs<X,T>*>& s);
 		/**
 		 * Update data structures needed for a reset of the simulator
 		 * following a speculative lookahead. Returns true if the
 		 * lookahead can be managed. False otherwise.
 		 */
-		bool manage_lookahead_data(Atomic<X>* model);
+		bool manage_lookahead_data(Atomic<X,T>* model);
 };
 
-template <class X>
-void Simulator<X>::computeNextOutput()
+template <class X, class T>
+void Simulator<X,T>::computeNextOutput()
 {
 	// If the imminent set is up to date, then just return
 	if (imm.empty() == false) return;
@@ -268,10 +270,10 @@ void Simulator<X>::computeNextOutput()
 	sched.getImminent(imm);
 	// Compute output functions and route the events. The bags of output
 	// are held for garbage collection at a later time.
-	for (typename Bag<Atomic<X>*>::iterator imm_iter = imm.begin(); 
+	for (typename Bag<Atomic<X,T>*>::iterator imm_iter = imm.begin(); 
 		imm_iter != imm.end(); imm_iter++)
 	{
-		Atomic<X>* model = *imm_iter;
+		Atomic<X,T>* model = *imm_iter;
 		// If the output for this model has already been computed, then skip it
 		if (model->y == NULL)
 		{
@@ -287,13 +289,13 @@ void Simulator<X>::computeNextOutput()
 	}
 }
 
-template <class X>
-void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
+template <class X, class T>
+void Simulator<X,T>::computeNextState(Bag<Event<X,T> >& input, T t)
 {
 	// Clean up if there was a previous IO calculation
 	if (t < sched.minPriority())
 	{
-		typename Bag<Atomic<X>*>::iterator iter;
+		typename Bag<Atomic<X,T>*>::iterator iter;
 		for (iter = activated.begin(); iter != activated.end(); iter++)
 		{
 			clean_up(*iter);
@@ -311,10 +313,10 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 		computeNextOutput();
 	}
 	// Apply the injected inputs
-	for (typename Bag<Event<X> >::iterator iter = input.begin(); 
+	for (typename Bag<Event<X,T> >::iterator iter = input.begin(); 
 	iter != input.end(); iter++)
 	{
-		Atomic<X>* amodel = (*iter).model->typeIsAtomic();
+		Atomic<X,T>* amodel = (*iter).model->typeIsAtomic();
 		if (amodel != NULL)
 		{
 			inject_event(amodel,(*iter).value);
@@ -330,12 +332,12 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 	special container that will be used when the structure changes are
 	computed (see exec_event(.)).
 	*/
-	for (typename Bag<Atomic<X>*>::iterator iter = imm.begin(); 
+	for (typename Bag<Atomic<X,T>*>::iterator iter = imm.begin(); 
 	iter != imm.end(); iter++)
 	{
 		exec_event(*iter,true,t); // Internal and confluent transitions
 	}
-	for (typename Bag<Atomic<X>*>::iterator iter = activated.begin(); 
+	for (typename Bag<Atomic<X,T>*>::iterator iter = activated.begin(); 
 	iter != activated.end(); iter++)
 	{
 		exec_event(*iter,false,t); // External transitions
@@ -350,7 +352,7 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 	{
 		while (!model_func_eval_set.empty())
 		{
-			Network<X>* network_model = *(model_func_eval_set.begin());
+			Network<X,T>* network_model = *(model_func_eval_set.begin());
 			getAllChildren(network_model,prev);
 			if (network_model->model_transition() &&
 					network_model->getParent() != NULL)
@@ -374,7 +376,7 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 		 * a higher level, then the models will not have been deleted when
 		 * trying to schedule them.
 		 */
-		for (typename Bag<Devs<X>*>::iterator iter = added.begin(); 
+		for (typename Bag<Devs<X,T>*>::iterator iter = added.begin(); 
 			iter != added.end(); iter++)
 		{
 			schedule(*iter,t);
@@ -382,7 +384,7 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 		// Done with the additions
 		added.clear();
 		// Remove the models that are in the removed set.
-		for (typename Bag<Devs<X>*>::iterator iter = removed.begin(); 
+		for (typename Bag<Devs<X,T>*>::iterator iter = removed.begin(); 
 			iter != removed.end(); iter++)
 		{
 			clean_up(*iter);
@@ -396,7 +398,7 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 		while (!sorted_removed.empty())
 		{
 			// Get the model to erase
-			Devs<X>* model_to_remove = *(sorted_removed.begin());
+			Devs<X,T>* model_to_remove = *(sorted_removed.begin());
 			/**
 			 * If this model has children, then remove them from the 
 			 * deletion set. This will avoid double delete problems.
@@ -404,7 +406,7 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 			if (model_to_remove->typeIsNetwork() != NULL)
 			{
 				getAllChildren(model_to_remove->typeIsNetwork(),prev);
-				for (typename Set<Devs<X>*>::iterator iter = prev.begin(); 
+				for (typename Set<Devs<X,T>*>::iterator iter = prev.begin(); 
 					iter != prev.end(); iter++)
 				{
 					sorted_removed.erase(*iter);
@@ -422,14 +424,14 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 	} // End of the structure change
 	// Cleanup and reschedule models that changed state in this iteration
 	// and survived the structure change phase.
-	for (typename Bag<Atomic<X>*>::iterator iter = imm.begin(); 
+	for (typename Bag<Atomic<X,T>*>::iterator iter = imm.begin(); 
 		iter != imm.end(); iter++) // Schedule the imminents
 	{
 		clean_up(*iter);
 		schedule(*iter,t);
 	}
 	// Schedule the activated
-	for (typename Bag<Atomic<X>*>::iterator iter = activated.begin(); 
+	for (typename Bag<Atomic<X,T>*>::iterator iter = activated.begin(); 
 		iter != activated.end(); iter++)
 	{
 		clean_up(*iter);
@@ -446,10 +448,10 @@ void Simulator<X>::computeNextState(Bag<Event<X> >& input, double t)
 	}
 }
 
-template <class X>
-void Simulator<X>::clean_up(Devs<X>* model)
+template <class X, class T>
+void Simulator<X,T>::clean_up(Devs<X,T>* model)
 {
-	Atomic<X>* amodel = model->typeIsAtomic();
+	Atomic<X,T>* amodel = model->typeIsAtomic();
 	if (amodel != NULL)
 	{
 		amodel->active = false;
@@ -469,9 +471,9 @@ void Simulator<X>::clean_up(Devs<X>* model)
 	}
 	else
 	{
-		Set<Devs<X>*> components;
+		Set<Devs<X,T>*> components;
 		model->typeIsNetwork()->getComponents(components);
-		for (typename Set<Devs<X>*>::iterator iter = components.begin();
+		for (typename Set<Devs<X,T>*>::iterator iter = components.begin();
 		iter != components.end(); iter++)
 		{
 			clean_up(*iter);
@@ -479,8 +481,8 @@ void Simulator<X>::clean_up(Devs<X>* model)
 	}
 }
 
-template <class X>
-void Simulator<X>::unschedule_model(Devs<X>* model)
+template <class X, class T>
+void Simulator<X,T>::unschedule_model(Devs<X,T>* model)
 {
 	if (model->typeIsAtomic() != NULL)
 	{
@@ -490,9 +492,9 @@ void Simulator<X>::unschedule_model(Devs<X>* model)
 	}
 	else
 	{
-		Set<Devs<X>*> components;
+		Set<Devs<X,T>*> components;
 		model->typeIsNetwork()->getComponents(components);
-		for (typename Set<Devs<X>*>::iterator iter = components.begin();
+		for (typename Set<Devs<X,T>*>::iterator iter = components.begin();
 		iter != components.end(); iter++)
 		{
 			unschedule_model(*iter);
@@ -500,29 +502,29 @@ void Simulator<X>::unschedule_model(Devs<X>* model)
 	}
 }
 
-template <class X>
-void Simulator<X>::schedule(Devs<X>* model, double t)
+template <class X, class T>
+void Simulator<X,T>::schedule(Devs<X,T>* model, T t)
 {
-	Atomic<X>* a = model->typeIsAtomic();
+	Atomic<X,T>* a = model->typeIsAtomic();
 	if (a != NULL)
 	{
 		a->tL = t;
-		double dt = a->ta();
+		T dt = a->ta();
 		if (dt < 0.0)
 		{
 			exception err("Negative time advance",a);
 			throw err;
 		}
-		if (dt == DBL_MAX)
-			sched.schedule(a,DBL_MAX);
+		if (dt == type_max<T>())
+			sched.schedule(a,type_max<T>());
 		else
 			sched.schedule(a,t+dt);
 	}
 	else
 	{
-		Set<Devs<X>*> components;
+		Set<Devs<X,T>*> components;
 		model->typeIsNetwork()->getComponents(components);
-		typename Set<Devs<X>*>::iterator iter = components.begin();
+		typename Set<Devs<X,T>*>::iterator iter = components.begin();
 		for (; iter != components.end(); iter++)
 		{
 			schedule(*iter,t);
@@ -530,8 +532,8 @@ void Simulator<X>::schedule(Devs<X>* model, double t)
 	}
 }
 
-template <class X>
-void Simulator<X>::inject_event(Atomic<X>* model, X& value)
+template <class X, class T>
+void Simulator<X,T>::inject_event(Atomic<X,T>* model, X& value)
 {
 	if (model->active == false)
 	{
@@ -545,8 +547,8 @@ void Simulator<X>::inject_event(Atomic<X>* model, X& value)
 	model->x->insert(value);
 }
 
-template <class X>
-void Simulator<X>::route(Network<X>* parent, Devs<X>* src, X& x)
+template <class X, class T>
+void Simulator<X,T>::route(Network<X,T>* parent, Devs<X,T>* src, X& x)
 {
 	// Notify event listeners if this is an output event
 	if (parent != src && (lps == NULL || lps->out_flag != RESTORING_OUTPUT))
@@ -554,11 +556,11 @@ void Simulator<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 	// No one to do the routing, so return
 	if (parent == NULL) return;
 	// Compute the set of receivers for this value
-	Bag<Event<X> >* recvs = recv_pool.make_obj();
+	Bag<Event<X,T> >* recvs = recv_pool.make_obj();
 	parent->route(x,src,*recvs);
 	// Deliver the event to each of its targets
-	Atomic<X>* amodel = NULL;
-	typename Bag<Event<X> >::iterator recv_iter = recvs->begin();
+	Atomic<X,T>* amodel = NULL;
+	typename Bag<Event<X,T> >::iterator recv_iter = recvs->begin();
 	for (; recv_iter != recvs->end(); recv_iter++)
 	{
 		// Check for self-influencing error condition
@@ -597,8 +599,8 @@ void Simulator<X>::route(Network<X>* parent, Devs<X>* src, X& x)
 	recv_pool.destroy_obj(recvs);
 }
 
-template <class X>
-void Simulator<X>::exec_event(Atomic<X>* model, bool internal, double t)
+template <class X, class T>
+void Simulator<X,T>::exec_event(Atomic<X,T>* model, bool internal, T t)
 {
 	if (!manage_lookahead_data(model)) return;
 	// Compute the state change
@@ -623,14 +625,14 @@ void Simulator<X>::exec_event(Atomic<X>* model, bool internal, double t)
 	}
 }
 
-template <class X>
-void Simulator<X>::getAllChildren(Network<X>* model, Set<Devs<X>*>& s)
+template <class X, class T>
+void Simulator<X,T>::getAllChildren(Network<X,T>* model, Set<Devs<X,T>*>& s)
 {
-	Set<Devs<X>*> tmp;
+	Set<Devs<X,T>*> tmp;
 	// Get the component set
 	model->getComponents(tmp);
 	// Find the components of type network and update s recursively
-	typename Set<Devs<X>*>::iterator iter;
+	typename Set<Devs<X,T>*>::iterator iter;
 	for (iter = tmp.begin(); iter != tmp.end(); iter++)
 	{
 		if ((*iter)->typeIsNetwork() != NULL)
@@ -645,11 +647,11 @@ void Simulator<X>::getAllChildren(Network<X>* model, Set<Devs<X>*>& s)
 	}
 }
 
-template <class X>
-Simulator<X>::~Simulator()
+template <class X, class T>
+Simulator<X,T>::~Simulator()
 {
 	// Clean up the models with stale IO
-	typename Bag<Atomic<X>*>::iterator imm_iter;
+	typename Bag<Atomic<X,T>*>::iterator imm_iter;
 	for (imm_iter = imm.begin(); imm_iter != imm.end(); imm_iter++)
 	{
 		clean_up(*imm_iter);
@@ -660,9 +662,9 @@ Simulator<X>::~Simulator()
 	}
 }
 
-template <class X>
-Simulator<X>::Simulator(LogicalProcess<X>* lp):
-	AbstractSimulator<X>()
+template <class X, class T>
+Simulator<X,T>::Simulator(LogicalProcess<X,T>* lp):
+	AbstractSimulator<X,T>()
 {
 	lps = new lp_support;
 	lps->lp = lp;
@@ -671,8 +673,8 @@ Simulator<X>::Simulator(LogicalProcess<X>* lp):
 	lps->out_flag = OUTPUT_OK;
 }
 
-template <class X>
-void Simulator<X>::beginLookahead()
+template <class X, class T>
+void Simulator<X,T>::beginLookahead()
 {
 	if (lps == NULL)
 	{
@@ -684,17 +686,17 @@ void Simulator<X>::beginLookahead()
 		lps->out_flag = OUTPUT_NOT_OK; 
 }
 
-template <class X>
-void Simulator<X>::lookNextEvent()
+template <class X, class T>
+void Simulator<X,T>::lookNextEvent()
 {
 	execNextEvent();
 }
 
-template <class X>
-void Simulator<X>::endLookahead()
+template <class X, class T>
+void Simulator<X,T>::endLookahead()
 {
 	if (lps == NULL) return;
-	typename Bag<Atomic<X>*>::iterator iter = lps->to_restore.begin();
+	typename Bag<Atomic<X,T>*>::iterator iter = lps->to_restore.begin();
 	for (; iter != lps->to_restore.end(); iter++)
 	{
 		(*iter)->endLookahead();
@@ -715,8 +717,8 @@ void Simulator<X>::endLookahead()
 	lps->stop_forced = false;
 }
 
-template <class X>
-bool Simulator<X>::manage_lookahead_data(Atomic<X>* model)
+template <class X, class T>
+bool Simulator<X,T>::manage_lookahead_data(Atomic<X,T>* model)
 {
 	if (lps == NULL) return true;
 	if (lps->look_ahead && model->tL_cp < 0.0)

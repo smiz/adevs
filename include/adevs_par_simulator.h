@@ -41,8 +41,8 @@ namespace adevs
  * be assigned randomly to a thread. Note that this simulator does not support dynamic
  * structure models.
  */
-template <class X> class ParSimulator:
-   public AbstractSimulator<X>	
+template <class X, class T = double> class ParSimulator:
+   public AbstractSimulator<X,T>	
 {
 	public:
 		/**
@@ -55,23 +55,23 @@ template <class X> class ParSimulator:
 		 * documentation). This constructor assumes all to all connection of the
 		 * processors.
 		 */
-		ParSimulator(Devs<X>* model, MessageManager<X>* msg_manager = NULL);
+		ParSimulator(Devs<X,T>* model, MessageManager<X>* msg_manager = NULL);
 		/**
 		 * This constructor accepts a directed graph whose edges tell the
 		 * simulator which processes feed input to which other processes.
 		 * For example, a simulator with processors 1, 2, and 3 where 1 -> 2
 		 * and 2 -> 3 would have two edges: 1->2 and 2->3.
 		 */
-		ParSimulator(Devs<X>* model, LpGraph& g,
+		ParSimulator(Devs<X,T>* model, LpGraph& g,
 			MessageManager<X>* msg_manager = NULL);
 		/// Get the model's next event time
-		double nextEventTime();
+		T nextEventTime();
 		/**
 		 * Execute the simulator until the next event time is greater
 		 * than the specified value. There is no global clock, 
 		 * so this must be the actual time that you want to stop.
 		 */
-		void execUntil(double stop_time);
+		void execUntil(T stop_time);
 		/**
 		 * Deletes the simulator, but leaves the model intact. The model must
 		 * exist when the simulator is deleted, so delete the model only after
@@ -79,16 +79,16 @@ template <class X> class ParSimulator:
 		 */
 		~ParSimulator();
 	private:
-		LogicalProcess<X>** lp;
+		LogicalProcess<X,T>** lp;
 		int lp_count;
 		MessageManager<X>* msg_manager;
-		void init(Devs<X>* model);
-		void init_sim(Devs<X>* model, LpGraph& g);
+		void init(Devs<X,T>* model);
+		void init_sim(Devs<X,T>* model, LpGraph& g);
 }; 
 
-template <class X>
-ParSimulator<X>::ParSimulator(Devs<X>* model, MessageManager<X>* msg_manager):
-	AbstractSimulator<X>(),msg_manager(msg_manager)
+template <class X, class T>
+ParSimulator<X,T>::ParSimulator(Devs<X,T>* model, MessageManager<X>* msg_manager):
+	AbstractSimulator<X,T>(),msg_manager(msg_manager)
 {
 	// Create an all to all coupling
 	lp_count = omp_get_max_threads();
@@ -107,16 +107,16 @@ ParSimulator<X>::ParSimulator(Devs<X>* model, MessageManager<X>* msg_manager):
 	init_sim(model,g);
 }
 
-template <class X>
-ParSimulator<X>::ParSimulator(Devs<X>* model, LpGraph& g,
+template <class X, class T>
+ParSimulator<X,T>::ParSimulator(Devs<X,T>* model, LpGraph& g,
 		MessageManager<X>* msg_manager):
-	AbstractSimulator<X>(),msg_manager(msg_manager)
+	AbstractSimulator<X,T>(),msg_manager(msg_manager)
 {
 	init_sim(model,g);
 }
 
-template <class X>
-void ParSimulator<X>::init_sim(Devs<X>* model, LpGraph& g)
+template <class X, class T>
+void ParSimulator<X,T>::init_sim(Devs<X,T>* model, LpGraph& g)
 {
 	if (msg_manager == NULL) msg_manager = new NullMessageManager<X>();
 	lp_count = g.getLPCount();
@@ -129,19 +129,19 @@ void ParSimulator<X>::init_sim(Devs<X>* model, LpGraph& g)
 		throw err;
 	}
 	omp_set_num_threads(lp_count);
-	lp = new LogicalProcess<X>*[lp_count];
+	lp = new LogicalProcess<X,T>*[lp_count];
 	for (int i = 0; i < lp_count; i++)
 	{
-		lp[i] = new LogicalProcess<X>(i,g.getI(i),g.getE(i),
+		lp[i] = new LogicalProcess<X,T>(i,g.getI(i),g.getE(i),
 			lp,this,msg_manager);
 	}
 	init(model);
 }
 
-template <class X>
-double ParSimulator<X>::nextEventTime()
+template <class X, class T>
+T ParSimulator<X,T>::nextEventTime()
 {
-	Time tN = Time::Inf();
+	Time<T> tN = Time<T>::Inf();
 	for (int i = 0; i < lp_count; i++)
 	{
 		if (lp[i]->getNextEventTime() < tN)
@@ -150,8 +150,8 @@ double ParSimulator<X>::nextEventTime()
 	return tN.t;
 }
 
-template <class X>
-ParSimulator<X>::~ParSimulator<X>()
+template <class X, class T>
+ParSimulator<X,T>::~ParSimulator()
 {
 	for (int i = 0; i < lp_count; i++)
 		delete lp[i];
@@ -159,8 +159,8 @@ ParSimulator<X>::~ParSimulator<X>()
    delete msg_manager;	
 }
 
-template <class X>
-void ParSimulator<X>::execUntil(double tstop)
+template <class X, class T>
+void ParSimulator<X,T>::execUntil(T tstop)
 {
 	#pragma omp parallel
 	{
@@ -168,15 +168,15 @@ void ParSimulator<X>::execUntil(double tstop)
 	}
 }
 
-template <class X>
-void ParSimulator<X>::init(Devs<X>* model)
+template <class X, class T>
+void ParSimulator<X,T>::init(Devs<X,T>* model)
 {
 	if (model->getProc() >= 0 && model->getProc() < lp_count)
 	{
 		lp[model->getProc()]->addModel(model);
 		return;
 	}
-	Atomic<X>* a = model->typeIsAtomic();
+	Atomic<X,T>* a = model->typeIsAtomic();
 	if (a != NULL)
 	{
 		int lp_assign = a->getProc();
@@ -187,9 +187,9 @@ void ParSimulator<X>::init(Devs<X>* model)
 	}
 	else
 	{
-		Set<Devs<X>*> components;
+		Set<Devs<X,T>*> components;
 		model->typeIsNetwork()->getComponents(components);
-		typename Set<Devs<X>*>::iterator iter = components.begin();
+		typename Set<Devs<X,T>*>::iterator iter = components.begin();
 		for (; iter != components.end(); iter++)
 		{
 			init(*iter);

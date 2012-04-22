@@ -25,15 +25,15 @@ namespace adevs
 /*
  * This is an empty class definition for compilers that do not support OpenMP.
  */
-template <typename X> struct LogicalProcess
+template <typename X, class T = double> struct LogicalProcess
 {
-	void addModel(Devs<X>*){}
-	Time getNextEventTime() { return Time::Inf(); } 
+	void addModel(Devs<X,T>*){}
+	Time<T> getNextEventTime() { return Time<T>::Inf(); } 
 	int getID() const { return 0; }
-	void run(double) {}
-	void outputEvent(Event<X>, double){}
-	void stateChange(Atomic<X>*, double){}
-	void notifyInput(Atomic<X>*, X&){}
+	void run(T) {}
+	void outputEvent(Event<X,T>, T){}
+	void stateChange(Atomic<X,T>*, T){}
+	void notifyInput(Atomic<X,T>*, X&){}
 };
 
 } // end of namespace 

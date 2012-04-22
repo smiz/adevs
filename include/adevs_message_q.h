@@ -28,14 +28,14 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 namespace adevs
 {
 
-template <typename X> class LogicalProcess;
+template <typename X, class T> class LogicalProcess;
 
-template <typename X> struct Message
+template <typename X, class T = double> struct Message
 {
 	typedef enum { OUTPUT, EIT } msg_type_t;
-	Time t;
-	LogicalProcess<X> *src;
-	Devs<X>* target;
+	Time<T> t;
+	LogicalProcess<X,T> *src;
+	Devs<X,T>* target;
 	X value;
 	msg_type_t type;
 	// Default constructor
@@ -52,7 +52,7 @@ template <typename X> struct Message
 	{
 	}
 	// Assignment operator
-	const Message<X>& operator=(const Message<X>& other)
+	const Message<X,T>& operator=(const Message<X,T>& other)
 	{
 		t = other.t;
 		src = other.src;
@@ -62,14 +62,14 @@ template <typename X> struct Message
 		return *this;
 	}
 	// Sort by time stamp, smallest time stamp first in the STL priority_queue
-	bool operator<(const Message<X>& other) const
+	bool operator<(const Message<X,T>& other) const
 	{
 		return other.t < t;
 	}
 	~Message(){}
 };
 
-template <class X> class MessageQ
+template <class X, class T = double> class MessageQ
 {
 	public:
 		MessageQ()
@@ -79,7 +79,7 @@ template <class X> class MessageQ
 			qsafe = &q1;
 			qshare = &q2;
 		}
-		void insert(const Message<X>& msg)
+		void insert(const Message<X,T>& msg)
 		{
 			omp_set_lock(&lock);
 			qshare->push_back(msg);
@@ -87,18 +87,18 @@ template <class X> class MessageQ
 			omp_unset_lock(&lock);
 		}
 		bool empty() const { return qsafe->empty() && qshare_empty; }
-		Message<X> remove()
+		Message<X,T> remove()
 		{
 			if (qsafe->empty())
 			{
-				std::list<Message<X> > *tmp = qshare;
+				std::list<Message<X,T> > *tmp = qshare;
 				omp_set_lock(&lock);
 				qshare = qsafe;
 				qshare_empty = true;
 				omp_unset_lock(&lock);
 				qsafe = tmp;
 			}
-			Message<X> msg(qsafe->front());
+			Message<X,T> msg(qsafe->front());
 			qsafe->pop_front();
 			return msg;
 		}
@@ -108,8 +108,8 @@ template <class X> class MessageQ
 		}
 	private:
 		omp_lock_t lock;
-		std::list<Message<X> > q1, q2;
-		std::list<Message<X> > *qsafe, *qshare;
+		std::list<Message<X,T> > q1, q2;
+		std::list<Message<X,T> > *qsafe, *qshare;
 		volatile bool qshare_empty;
 };
 

@@ -74,18 +74,18 @@ template <class VALUE, class PORT=int> class PortValue
  * The digraph model is used to build block-diagrams from network and atomic components.
  * Its components must have PortValue objects as their input/output type.
  */
-template <class VALUE, class PORT=int> class Digraph: 
-public Network<PortValue<VALUE,PORT> >
+template <class VALUE, class PORT=int, class T = double> class Digraph: 
+public Network<PortValue<VALUE,PORT>,T>
 {
 	public:
 		/// An input or output to a component model
 		typedef PortValue<VALUE,PORT> IO_Type;
 		/// A component of the Digraph model
-		typedef Devs<IO_Type> Component;
+		typedef Devs<IO_Type,T> Component;
 
 		/// Construct a network with no components.
 		Digraph():
-		Network<IO_Type>()
+		Network<IO_Type,T>()
 		{
 		}
 		/// Add a model to the network.
@@ -97,7 +97,7 @@ public Network<PortValue<VALUE,PORT> >
 		void getComponents(Set<Component*>& c);
 		/// Route an event based on the coupling information.
 		void route(const IO_Type& x, Component* model, 
-		Bag<Event<IO_Type> >& r);
+		Bag<Event<IO_Type,T> >& r);
 		/// Destructor.  Destroys all of the component models.
 		~Digraph();
 
@@ -137,16 +137,16 @@ public Network<PortValue<VALUE,PORT> >
 		std::map<node,Bag<node> > graph;
 };
 
-template <class VALUE, class PORT>
-void Digraph<VALUE,PORT>::add(Component* model)
+template <class VALUE, class PORT, class T>
+void Digraph<VALUE,PORT,T>::add(Component* model)
 {
 	assert(model != this);
 	models.insert(model);
 	model->setParent(this);
 }
 
-template <class VALUE, class PORT>
-void Digraph<VALUE,PORT>::couple(Component* src, PORT srcPort, 
+template <class VALUE, class PORT, class T>
+void Digraph<VALUE,PORT,T>::couple(Component* src, PORT srcPort, 
 Component* dst, PORT dstPort)
 {
 	if (src != this) add(src);
@@ -156,16 +156,16 @@ Component* dst, PORT dstPort)
 	graph[src_node].insert(dst_node);
 }
 
-template <class VALUE, class PORT>
-void Digraph<VALUE,PORT>::getComponents(Set<Component*>& c)
+template <class VALUE, class PORT, class T>
+void Digraph<VALUE,PORT,T>::getComponents(Set<Component*>& c)
 {
 	c = models;
 }
 
-template <class VALUE, class PORT>
-void Digraph<VALUE,PORT>::
+template <class VALUE, class PORT, class T>
+void Digraph<VALUE,PORT,T>::
 route(const IO_Type& x, Component* model, 
-Bag<Event<IO_Type> >& r)
+Bag<Event<IO_Type,T> >& r)
 {
 	// Find the list of target models and ports
 	node src_node(model,x.port);
@@ -185,8 +185,8 @@ Bag<Event<IO_Type> >& r)
 		r.insert(event);
 	}
 }
-template <class VALUE, class PORT>
-Digraph<VALUE,PORT>::~Digraph()
+template <class VALUE, class PORT, class T>
+Digraph<VALUE,PORT,T>::~Digraph()
 { 
 	typename Set<Component*>::iterator i;
 	for (i = models.begin(); i != models.end(); i++)

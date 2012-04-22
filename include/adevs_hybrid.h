@@ -395,8 +395,8 @@ template <typename X> class event_locator
  * methods of the ode_system. The time advance of the Hybrid class ensures that
  * its internal events coincide with state and time events in the ode_system.
  */
-template <typename X> class Hybrid:
-	public Atomic<X>
+template <typename X, class T = double> class Hybrid:
+	public Atomic<X,T>
 {
 	public:
 		/**
@@ -446,7 +446,7 @@ template <typename X> class Hybrid:
 		 * Do not override this method. It performs numerical integration and
 		 * invokes the ode_system for external events as needed.
 		 */
-		void delta_ext(double e, const Bag<X>& xb)
+		void delta_ext(T e, const Bag<X>& xb)
 		{
 			event_happened = true;
 			solver->advance(q,e); // Advance the state q by e
@@ -476,7 +476,7 @@ template <typename X> class Hybrid:
 			tentative_step(); // Take a tentative step 
 		}
 		/// Do not override.
-		double ta() { return sigma; }
+		T ta() { return sigma; }
 		/// Do not override. Invokes the ode_system output function as needed.
 		void output_func(Bag<X>& yb)
 		{

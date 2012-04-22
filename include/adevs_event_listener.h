@@ -29,7 +29,7 @@ namespace adevs
  * The EventListener interface is used to receive output events produced
  * by model and to be notified of state changes at Atomic models.
  */
-template <class X> class EventListener
+template <class X, class T = double> class EventListener
 {
 	public:
 		/**
@@ -38,7 +38,7 @@ template <class X> class EventListener
 		 * @param x The model that produced the output and the output's value
 		 * @param t The absolute time at which the output occurred
 		 */
-		virtual void outputEvent(Event<X> x, double t){}
+		virtual void outputEvent(Event<X,T> x, T t){}
 		/**
 		 * This callback is invoked by the simulator after an Atomic
 		 * model changes its state. This method has an empty default
@@ -46,7 +46,7 @@ template <class X> class EventListener
 		 * @param model The model that changed state
 		 * @param t The absolute time at which the state change occurred
 		 */
-		virtual void stateChange(Atomic<X>* model, double t){}
+		virtual void stateChange(Atomic<X,T>* model, T t){}
 		/// Destructor
 		virtual ~EventListener(){}
 };
