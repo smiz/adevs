@@ -65,11 +65,11 @@ template <class X> class CellEvent
  * events for the CellSpace model.  Similarly, CellEvent objects that are injected into the
  * CellSpace (i.e., external input events) will be delivered to the targeted cell.
  */
-template <class X> class CellSpace: public Network<CellEvent<X> >
+template <class X, class T = double> class CellSpace: public Network<CellEvent<X>,T>
 {
 	public:
 		/// A component model in the CellSpace
-		typedef Devs<CellEvent<X> > Cell;
+		typedef Devs<CellEvent<X>,T> Cell;
 		/// Create an Width x Height x Depth CellSpace with NULL entries in the cell locations.
 		CellSpace(long int width, long int height = 1, long int depth = 1);
 		/// Insert a model at the x,y,z position.
@@ -98,7 +98,7 @@ template <class X> class CellSpace: public Network<CellEvent<X> >
 		void getComponents(Set<Cell*>& c);
 		/// Route events within the Cellspace
 		void route(const CellEvent<X>& event, Cell* model, 
-		Bag<Event<CellEvent<X> > >& r);
+		Bag<Event<CellEvent<X>,T> >& r);
 		/// Destructor; this destroys the components as well.
 		~CellSpace();
 	private:	
@@ -107,9 +107,9 @@ template <class X> class CellSpace: public Network<CellEvent<X> >
 };
 
 // Implementation of constructor
-template <class X>
-CellSpace<X>::CellSpace(long int width, long int height, long int depth):
-Network<CellEvent<X> >()
+template <class X, class T>
+CellSpace<X,T>::CellSpace(long int width, long int height, long int depth):
+Network<CellEvent<X>,T>()
 {
 	w = width;
 	h = height;
@@ -131,8 +131,8 @@ Network<CellEvent<X> >()
 }
 
 // Implementation of destructor
-template <class X>
-CellSpace<X>::~CellSpace()
+template <class X, class T>
+CellSpace<X,T>::~CellSpace()
 {
 	for (long int x = 0; x < w; x++)
 	{
@@ -153,8 +153,8 @@ CellSpace<X>::~CellSpace()
 }
 
 // Implementation of the getComponents() method
-template <class X>
-void CellSpace<X>::getComponents(Set<Cell*>& c)
+template <class X, class T>
+void CellSpace<X,T>::getComponents(Set<Cell*>& c)
 {
 	// Add all non-null entries to the set c
 	for (long int x = 0; x < w; x++)
@@ -173,9 +173,9 @@ void CellSpace<X>::getComponents(Set<Cell*>& c)
 }
 
 // Event routing function for the net_exec
-template <class X>
-void CellSpace<X>::route(
-const CellEvent<X>& event, Cell* model, Bag<Event<CellEvent<X> > >& r)
+template <class X, class T>
+void CellSpace<X,T>::route(
+const CellEvent<X>& event, Cell* model, Bag<Event<CellEvent<X>,T> >& r)
 {
 	Cell* target = NULL;
 	// If the target cell is inside of the cellspace

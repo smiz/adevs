@@ -5,7 +5,7 @@ include make.common
 check: check_cpp check_par check_java check_modelica
 
 # Check cpp code only
-check_cpp: bag_test obj_pool sched atomic gcd_test gpt_test tokenring_test dyn_devs_test zero_time_test ode_test listener_test wrapper_test
+check_cpp: bag_test obj_pool sched atomic double_fcmp gcd_test gpt_test tokenring_test dyn_devs_test zero_time_test ode_test listener_test wrapper_test
 
 # Check OpenMP code
 check_par: optsim_test  
@@ -65,6 +65,10 @@ sched:
 
 atomic:
 	$(CC) $(CFLAGS) atomic_test.cpp 
+	$(TEST_EXEC)
+
+double_fcmp:
+	$(CC) $(CFLAGS) double_fcmp_test.cpp 
 	$(TEST_EXEC)
 
 clean_all:

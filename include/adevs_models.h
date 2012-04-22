@@ -31,10 +31,10 @@ namespace adevs
  * Declare network and atomic model so types can be used as the type of
  * parent in the basic Devs model and for type ID functions.  
  */
-template <class X> class Network;
-template <class X> class Atomic;
-template <class X> class Schedule;
-template <class X> class Simulator;
+template <class X, class T> class Network;
+template <class X, class T> class Atomic;
+template <class X, class T> class Schedule;
+template <class X, class T> class Simulator;
 
 /*
  * Constant indicating no processor assignment for the model. This is used by the
@@ -46,7 +46,7 @@ template <class X> class Simulator;
  * The Devs class provides basic operations for all devs models.
  * The model I/O type is set by the template argument.
  */
-template <class X> class Devs
+template <class X, class T = double> class Devs
 {
 	public:
 		/// Default constructor.
@@ -64,22 +64,22 @@ template <class X> class Devs
 		 * itself otherwise. This method is used to avoid a relatively expensive
 		 * dynamic cast.
 		 */
-		virtual Network<X>* typeIsNetwork() { return NULL; }
+		virtual Network<X,T>* typeIsNetwork() { return NULL; }
 		/// Returns NULL if this is not an atomic model; returns itself otherwise.
-		virtual Atomic<X>* typeIsAtomic() { return NULL; }
+		virtual Atomic<X,T>* typeIsAtomic() { return NULL; }
 		/**
 		 * Get the model that contains this model as a component.  Returns
 		 * NULL if this model is at the top of the hierarchy.
 		 */
-		const Network<X>* getParent() const { return parent; }
-		Network<X>* getParent() { return parent; }
+		const Network<X,T>* getParent() const { return parent; }
+		Network<X,T>* getParent() { return parent; }
 		/**
 		 * Assign a new parent to this model. Network model's should always
 		 * call this method to make themselves the parent of their components.
 		 * If the parent is not set correctly, then the event routing algorithm
 		 * in the simulator will fail.
 		 */
-		void setParent(Network<X>* parent) { this->parent = parent; }
+		void setParent(Network<X,T>* parent) { this->parent = parent; }
 		/**
 		 * This is the structure transition function.  It should return true
 		 * if a structure change is to occur, and false otherwise. False is the
@@ -100,7 +100,7 @@ template <class X> class Devs
 		 * can be predicted without knowledge of the input to that that. This method
 		 * returns zero by default.
 		 */
-		virtual double lookahead() { return 0.0; }
+		virtual T lookahead() { return 0.0; }
 		/**
 		 * This assigns the model to a processor on the parallel computer. If this is
 		 * a network model, then its assignment will override the assignment of its
@@ -115,7 +115,7 @@ template <class X> class Devs
 		int getProc() { return proc; }
 
 	private:
-		Network<X>* parent;
+		Network<X,T>* parent;
 		int proc;
 };
 
@@ -124,7 +124,7 @@ template <class X> class Devs
  * for notifying event listeners of output events, and for injecting
  * input into a running simulation.
  */
-template <class X> class Event
+template <class X, class T = double> class Event
 {
 	public:
 		/// Constructor.  Sets the model to NULL.
@@ -140,26 +140,26 @@ template <class X> class Event
 		 * In a callback to an event listener, the model is the
 		 * source of the output value. 
 		 */
-		Event(Devs<X>* model, const X& value):
+		Event(Devs<X,T>* model, const X& value):
 		model(model),
 		value(value)
 		{
 		}
 		/// Copy constructor.
-		Event(const Event<X>& src):
+		Event(const Event<X,T>& src):
 		model(src.model),
 		value(src.value)
 		{
 		}
 		/// Assignment operator.
-		const Event<X>& operator=(const Event<X>& src)
+		const Event<X,T>& operator=(const Event<X,T>& src)
 		{
 			model = src.model;
 			value = src.value;
 			return *this;
 		}
 		/// The model associated with the event.
-		Devs<X>* model;
+		Devs<X,T>* model;
 		/// The value associated with the event.
 		X value;
 		/// Destructor
@@ -171,12 +171,12 @@ template <class X> class Event
 /**
  * Base type for all atomic DEVS models.
  */
-template <class X> class Atomic: public Devs<X>
+template <class X, class T = double> class Atomic: public Devs<X,T>
 {
 	public:
 		/// The constructor should place the model into its initial state.
 		Atomic():
-		Devs<X>()
+		Devs<X,T>()
 		{
 			tL = 0.0;
 			tL_cp = -1.0;
@@ -191,7 +191,7 @@ template <class X> class Atomic: public Devs<X>
 		 * @param e Time elapsed since the last change of state
 		 * @param xb Input for the model.
 		 */  
-		virtual void delta_ext(double e, const Bag<X>& xb) = 0;
+		virtual void delta_ext(T e, const Bag<X>& xb) = 0;
 		/**
 		 * Confluent transition function.
 		 * @param xb Input for the model.
@@ -206,7 +206,7 @@ template <class X> class Atomic: public Devs<X>
 		 * Time advance function. DBL_MAX is used for infinity.
 		 * @return The time to the next internal event
 		 */
-		virtual double ta() = 0;
+		virtual T ta() = 0;
 		/**
 		 * Garbage collection function.  The objects in g are
 		 * no longer in use by the simulation engine and should be disposed of. 
@@ -238,7 +238,7 @@ template <class X> class Atomic: public Devs<X>
 		/// Destructor.
 		virtual ~Atomic(){}
 		/// Returns a pointer to this model.
-		Atomic<X>* typeIsAtomic() { return this; }
+		Atomic<X,T>* typeIsAtomic() { return this; }
 	protected:
 		/**
 		 * Get the last event time for this model. This is 
@@ -246,15 +246,15 @@ template <class X> class Atomic: public Devs<X>
 		 * module and should not be relied on. It is likely to be
 		 * removed in later versions of the code.
 		 */
-		double getLastEventTime() const { return tL; }
+		T getLastEventTime() const { return tL; }
 
 	private:
 
-		friend class Simulator<X>;
-		friend class Schedule<X>;
+		friend class Simulator<X,T>;
+		friend class Schedule<X,T>;
 
 		// Time of last event
-		double tL;
+		T tL;
 		// Index in the priority queue
 		unsigned int q_index;
 		// Input and output event bags
@@ -262,18 +262,18 @@ template <class X> class Atomic: public Devs<X>
 		// Has this model been activated?
 		bool active;
 		// When did the model start checkpointing?
-		double tL_cp;
+		T tL_cp;
 };
 
 /**
  * Base class for DEVS network models.
  */
-template <class X> class Network: public Devs<X>
+template <class X, class T = double> class Network: public Devs<X,T>
 {
 	public:
 		/// Constructor.
 		Network():
-		Devs<X>()
+		Devs<X,T>()
 		{
 		}
 		/**
@@ -282,7 +282,7 @@ template <class X> class Network: public Devs<X>
 		 * Network model itself.
 		 * @param c An empty set to the filled with the Network's components.
 		 */
-		virtual void getComponents(Set<Devs<X>*>& c) = 0;
+		virtual void getComponents(Set<Devs<X,T>*>& c) = 0;
 		/**
 		 * This method is called by the Simulator to route an output value
 		 * produced by a model. This method should fill the bag r
@@ -294,7 +294,7 @@ template <class X> class Network: public Devs<X>
 		 * @param value The output value produced by the model
 		 * @param r A bag to be filled with (target,value) pairs
 		 */
-		virtual void route(const X& value, Devs<X>* model, Bag<Event<X> >& r) = 0;
+		virtual void route(const X& value, Devs<X,T>* model, Bag<Event<X,T> >& r) = 0;
 		/**
 		 * Destructor.  This destructor does not delete any component models.
 		 * Any necessary cleanup should be done by the derived class.
@@ -303,7 +303,7 @@ template <class X> class Network: public Devs<X>
 		{
 		}
 		/// Returns a pointer to this model.
-		Network<X>* typeIsNetwork() { return this; }
+		Network<X,T>* typeIsNetwork() { return this; }
 };
 
 } // end of namespace

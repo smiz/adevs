@@ -1,10 +1,15 @@
 # Common macros
+UNAME := $(shell uname -s)
 COMPARE = tclsh $(PREFIX)/util/compare
 # GNU gcc compiler
 OPENMP = -fopenmp
 CFLAGS = $(OPENMP) -g -pedantic -Wall -I$(PREFIX)/include
 CC = g++
+ifeq ($(UNAME),CYGWIN_NT-6.1)
+TEST_EXEC=./a
+else
 TEST_EXEC=./a.out
+endif
 DEL = rm -f
 LIBS = -L$(PREFIX)/src -ladevs 
 CMD_SEP = ;

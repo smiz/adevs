@@ -31,7 +31,7 @@ namespace adevs
  * supported by all derived classes and provides some basic helper routines
  * for those derived classes.
  */
-template <class X> class AbstractSimulator 
+template <class X, class T = double> class AbstractSimulator 
 {
 	public:
 		AbstractSimulator(){}
@@ -39,46 +39,46 @@ template <class X> class AbstractSimulator
 		 * Add an event listener that will be notified of output events 
 		 * produced by the model.
 		 */
-		void addEventListener(EventListener<X>* l)
+		void addEventListener(EventListener<X,T>* l)
 		{
 			listeners.insert(l);
 		}
 		/// Remove an event listener
-		void removeEventListener(EventListener<X>* l)
+		void removeEventListener(EventListener<X,T>* l)
 		{
 			listeners.erase(l);
 		}
 		/// Get the model's next event time
-		virtual double nextEventTime() = 0;
+		virtual T nextEventTime() = 0;
 		/// Execute the simulator until the next event time is greater than tend
-		virtual void execUntil(double tend) = 0;
+		virtual void execUntil(T tend) = 0;
 		/// Destructor leaves the model intact.
 		virtual ~AbstractSimulator(){}
 		/// Notify listeners of an output event.
-		void notify_output_listeners(Devs<X>* model, const X& value, double t);
+		void notify_output_listeners(Devs<X,T>* model, const X& value, T t);
 		/// Notify listeners of a state change.
-		void notify_state_listeners(Atomic<X>* model, double t);
+		void notify_state_listeners(Atomic<X,T>* model, T t);
 	private:
 		/// Eternal event listeners
-		Bag<EventListener<X>*> listeners;
+		Bag<EventListener<X,T>*> listeners;
 
 };
 
-template <class X>
-void AbstractSimulator<X>::notify_output_listeners(Devs<X>* model, const X& value, double t)
+template <class X, class T>
+void AbstractSimulator<X,T>::notify_output_listeners(Devs<X,T>* model, const X& value, T t)
 {
-	Event<X> event(model,value);
-	typename Bag<EventListener<X>*>::iterator iter;
+	Event<X,T> event(model,value);
+	typename Bag<EventListener<X,T>*>::iterator iter;
 	for (iter = listeners.begin(); iter != listeners.end(); iter++)
 	{
 		(*iter)->outputEvent(event,t);
 	}
 }
 
-template <class X>
-void AbstractSimulator<X>::notify_state_listeners(Atomic<X>* model, double t)
+template <class X, class T>
+void AbstractSimulator<X,T>::notify_state_listeners(Atomic<X,T>* model, T t)
 {
-	typename Bag<EventListener<X>*>::iterator iter;
+	typename Bag<EventListener<X,T>*>::iterator iter;
 	for (iter = listeners.begin(); iter != listeners.end(); iter++)
 	{
 		(*iter)->stateChange(model,t);
