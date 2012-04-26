@@ -203,7 +203,7 @@ template <class X, class T = double> class Atomic: public Devs<X,T>
 		 */
 		virtual void output_func(Bag<X>& yb) = 0;
 		/**
-		 * Time advance function. DBL_MAX is used for infinity.
+		 * Time advance function. type_max<T>() is used for infinity.
 		 * @return The time to the next internal event
 		 */
 		virtual T ta() = 0;
