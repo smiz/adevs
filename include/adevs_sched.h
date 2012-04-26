@@ -71,7 +71,7 @@ template <class X, class T = double> class Schedule
 			T priority;
 			// Constructor initializes the item and priority
 			heap_element():
-				item(NULL),priority(DBL_MAX){}
+				item(NULL),priority(type_max<T>()){}
 		};
 		unsigned int capacity, size;
 		heap_element* heap;
@@ -108,10 +108,10 @@ void Schedule<X,T>::removeMinimum()
 	size--;
 	// Set index to 0 to show that this model is not in the schedule
 	heap[1].item->q_index = 0;
-	// If the schedule is empty, set the priority of the last element to DBL_MAX
+	// If the schedule is empty, set the priority of the last element to type_max
 	if (size == 0)
 	{
-		heap[1].priority = DBL_MAX;
+		heap[1].priority = type_max<T>();
 		heap[1].item = NULL;
 	}
 	// Otherwise fill the hole left by the deleted model

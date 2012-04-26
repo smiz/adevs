@@ -226,14 +226,8 @@ public:
     }
 };
 
-template <class T>
-inline T type_max()
-{
-    if (typeid(T) == typeid(double_fcmp)) {
-        return numeric_limits<double>::max();
-    }
-    return numeric_limits<T>::max();
-}
+template <> inline double type_max() { return DBL_MAX; }
+template <> inline double_fcmp type_max() { return DBL_MAX; }
 
 } // end namespace
 
