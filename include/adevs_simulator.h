@@ -54,7 +54,7 @@ template <class X, class T = double> class Simulator:
 		Simulator(Devs<X,T>* model):
 			AbstractSimulator<X,T>(),lps(NULL)
 		{
-			schedule(model,0.0);
+			schedule(model,adevs_zero<T>());
 		}
 		/**
 		 * Get the model's next event time
@@ -74,7 +74,7 @@ template <class X, class T = double> class Simulator:
 		void execUntil(T tend)
 		{
 			while (nextEventTime() <= tend 
-                   && nextEventTime() < type_max<T>()) {
+                   && nextEventTime() < adevs_inf<T>()) {
 				execNextEvent();
             }
 		}
@@ -105,7 +105,7 @@ template <class X, class T = double> class Simulator:
 		 */
 		void addModel(Atomic<X,T>* model) 
 		{
-			schedule(model,0.0);
+			schedule(model,adevs_zero<T>());
 		}
 		/**
 		 * Create a simulator that will be used by an LP as part of a parallel
@@ -486,7 +486,7 @@ void Simulator<X,T>::unschedule_model(Devs<X,T>* model)
 {
 	if (model->typeIsAtomic() != NULL)
 	{
-		sched.schedule(model->typeIsAtomic(),type_max<T>());
+		sched.schedule(model->typeIsAtomic(),adevs_inf<T>());
 		imm.erase(model->typeIsAtomic());
 		activated.erase(model->typeIsAtomic());
 	}
@@ -510,13 +510,13 @@ void Simulator<X,T>::schedule(Devs<X,T>* model, T t)
 	{
 		a->tL = t;
 		T dt = a->ta();
-		if (dt < 0.0)
+		if (dt < adevs_zero<T>())
 		{
 			exception err("Negative time advance",a);
 			throw err;
 		}
-		if (dt == type_max<T>())
-			sched.schedule(a,type_max<T>());
+		if (dt == adevs_inf<T>())
+			sched.schedule(a,adevs_inf<T>());
 		else
 			sched.schedule(a,t+dt);
 	}
@@ -701,7 +701,7 @@ void Simulator<X,T>::endLookahead()
 	{
 		(*iter)->endLookahead();
 		schedule(*iter,(*iter)->tL_cp);
-		(*iter)->tL_cp = -1.0;
+		(*iter)->tL_cp = adevs_sentinel<T>();
 		assert((*iter)->x == NULL);
 		assert((*iter)->y == NULL);
 	}
@@ -721,7 +721,7 @@ template <class X, class T>
 bool Simulator<X,T>::manage_lookahead_data(Atomic<X,T>* model)
 {
 	if (lps == NULL) return true;
-	if (lps->look_ahead && model->tL_cp < 0.0)
+	if (lps->look_ahead && model->tL_cp < adevs_zero<T>())
 	{
 		lps->to_restore.insert(model);
 		model->tL_cp = model->tL;
