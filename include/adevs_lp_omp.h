@@ -127,7 +127,7 @@ LogicalProcess<X,T>::LogicalProcess(int ID, const std::vector<int>& I,
 {
 	tL = tOut = tNow = eot = eit = Time<T>(0,0);
 	all_lps[ID] = this;
-	lookahead = type_max<T>();
+	lookahead = adevs_inf<T>();
 	looking_ahead = false;
 	for (typename std::vector<int>::const_iterator iter = I.begin();
 			iter != I.end(); iter++)
@@ -139,7 +139,7 @@ template <typename X, class T>
 void LogicalProcess<X,T>::addModel(Devs<X,T>* model)
 {
 	lookahead = std::min(model->lookahead(),lookahead);
-	assert(lookahead > 0.0);
+	assert(lookahead > adevs_zero<T>());
 	// Add it to the simulator and set the processor
 	// assignments for the sub-models
 	addToSimulator(model);
@@ -211,7 +211,7 @@ void LogicalProcess<X,T>::advanceState(T t_stop)
 		if (!xq.empty() && xq.top().t < tSelf) tNow = xq.top().t;
 		else tNow = tSelf;
 		// Are we done?
-		if (tNow.t == type_max<T>() || tStop < tNow ) return; 
+		if (tNow.t == adevs_inf<T>() || tStop < tNow ) return; 
 		// Send output if this is an internal or confluent event
 		if (tNow == tSelf) sim.computeNextOutput();
 		// Advance the output window if the state has caught up
@@ -229,7 +229,7 @@ void LogicalProcess<X,T>::advanceState(T t_stop)
 			xb.insert(input_event);
 		}
 		// Compute the next state
-		assert(tNow.t < type_max<T>());
+		assert(tNow.t < adevs_inf<T>());
 		sim.computeNextState(xb,tNow.t);
 		cleanup_xb();
 		// Remember the time of our last event
@@ -244,12 +244,12 @@ void LogicalProcess<X,T>::advanceOutput()
 	tNow = tNextEvent(tL);
 	// Project the output as far into the future 
 	// as possible
-	if (eit.t < type_max<T>() && lookahead < type_max<T>())
+	if (eit.t < adevs_inf<T>() && lookahead < adevs_inf<T>())
 	{
 		looking_ahead = true;
 		sim.beginLookahead();
 		// Try to advance the output trajectory
-		while (tNow.t < type_max<T>() && tNow < eit + lookahead)
+		while (tNow.t < adevs_inf<T>() && tNow < eit + lookahead)
 		{
 			bool ok = true;
 			try

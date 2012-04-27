@@ -19,6 +19,7 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 ***************/
 #ifndef __adevs_models_h_
 #define __adevs_models_h_
+#include "adevs_time.h"
 #include "adevs_bag.h"
 #include "adevs_set.h"
 #include "adevs_exception.h"
@@ -100,7 +101,7 @@ template <class X, class T = double> class Devs
 		 * can be predicted without knowledge of the input to that that. This method
 		 * returns zero by default.
 		 */
-		virtual T lookahead() { return 0.0; }
+		virtual T lookahead() { return adevs_zero<T>(); }
 		/**
 		 * This assigns the model to a processor on the parallel computer. If this is
 		 * a network model, then its assignment will override the assignment of its
@@ -178,8 +179,8 @@ template <class X, class T = double> class Atomic: public Devs<X,T>
 		Atomic():
 		Devs<X,T>()
 		{
-			tL = 0.0;
-			tL_cp = -1.0;
+			tL = adevs_zero<T>();
+			tL_cp = adevs_sentinel<T>();
 			x = y = NULL;
 			q_index = 0; // The Schedule requires this to be zero
 			active = false;
@@ -203,7 +204,7 @@ template <class X, class T = double> class Atomic: public Devs<X,T>
 		 */
 		virtual void output_func(Bag<X>& yb) = 0;
 		/**
-		 * Time advance function. type_max<T>() is used for infinity.
+		 * Time advance function. adevs_inf<T>() is used for infinity.
 		 * @return The time to the next internal event
 		 */
 		virtual T ta() = 0;

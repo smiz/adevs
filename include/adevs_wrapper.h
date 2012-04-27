@@ -115,7 +115,7 @@ ModelWrapper<ExternalType,InternalType,T>::ModelWrapper(Devs<InternalType,T>* mo
 	Atomic<ExternalType,T>(),
 	EventListener<InternalType,T>(),
 	model(model),
-	tL(0.0)
+	tL(adevs_zero<T>())
 {
 	sim = new Simulator<InternalType,T>(model);
 	sim->addEventListener(this);
@@ -161,8 +161,8 @@ void ModelWrapper<ExternalType,InternalType,T>::delta_conf(const Bag<ExternalTyp
 template <typename ExternalType, typename InternalType, class T> 
 T ModelWrapper<ExternalType,InternalType,T>::ta()
 {
-	if (sim->nextEventTime() < type_max<T>()) return sim->nextEventTime()-tL;
-	else return type_max<T>();
+	if (sim->nextEventTime() < adevs_inf<T>()) return sim->nextEventTime()-tL;
+	else return adevs_inf<T>();
 }
 
 template <typename ExternalType, typename InternalType, class T> 

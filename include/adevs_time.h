@@ -44,13 +44,17 @@ Bugs, comments, and questions can be sent to nutaro@gmail.com
 #include <iostream>
 #include <cmath>
 #include <limits>
-#include <typeinfo>
 using namespace std;
+
+/// Returns the maximum value for a time type
+template <class T> inline T adevs_inf();
+/// Returns the zero value for a time type
+template <class T> inline T adevs_zero(); 
+/// Returns a value less than adevs_zero()
+template <class T> inline T adevs_sentinel(); 
 
 namespace adevs
 {
-
-template <class T> inline T type_max(); // forward ref
 
 /// This is the super dense simulation clock
 template<class T = double> struct Time
@@ -58,7 +62,7 @@ template<class T = double> struct Time
 	T t;
 	unsigned int c;
 	/// Value for infinity
-	static adevs::Time<T> Inf() { return Time<T>(type_max<T>(),0); }
+	static adevs::Time<T> Inf() { return Time<T>(adevs_inf<T>(),0); }
 	/// Constructor. Default time is (0,0).
 	Time(T t = 0, unsigned int c = 0):t(t),c(c){}
 	/// Copy constructor
@@ -226,10 +230,22 @@ public:
     }
 };
 
-template <> inline double type_max() { return DBL_MAX; }
-template <> inline double_fcmp type_max() { return DBL_MAX; }
-
 } // end namespace
+
+template <> inline double adevs_inf() {
+	return numeric_limits<double>::max(); }
+template <> inline int adevs_inf() {
+	return numeric_limits<int>::max(); }
+template <> inline adevs::double_fcmp adevs_inf() {
+	return numeric_limits<double>::max(); }
+
+template <> inline double adevs_zero() { return 0.0; }
+template <> inline int adevs_zero() { return 0; }
+template <> inline adevs::double_fcmp adevs_zero() { return 0.0; }
+
+template <> inline double adevs_sentinel() { return -1.0; }
+template <> inline int adevs_sentinel() { return -1; }
+template <> inline adevs::double_fcmp adevs_sentinel() { return -1.0; }
 
 template<class T>
 std::ostream& operator<<(std::ostream& strm, const adevs::Time<T>& t);

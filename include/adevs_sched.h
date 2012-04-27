@@ -43,7 +43,7 @@ template <class X, class T = double> class Schedule
 		Schedule(unsigned int capacity = 100):
 		capacity(capacity),size(0),heap(new heap_element[capacity])
 		{
-			heap[0].priority = -1.0; // This is a sentinel value
+			heap[0].priority = adevs_sentinel<T>(); // This is a sentinel value
 		}
 		/// Get the model at the front of the queue.
 		Atomic<X,T>* getMinimum() const { return heap[1].item; }
@@ -71,7 +71,7 @@ template <class X, class T = double> class Schedule
 			T priority;
 			// Constructor initializes the item and priority
 			heap_element():
-				item(NULL),priority(type_max<T>()){}
+				item(NULL),priority(adevs_inf<T>()){}
 		};
 		unsigned int capacity, size;
 		heap_element* heap;
@@ -108,10 +108,10 @@ void Schedule<X,T>::removeMinimum()
 	size--;
 	// Set index to 0 to show that this model is not in the schedule
 	heap[1].item->q_index = 0;
-	// If the schedule is empty, set the priority of the last element to type_max
+	// If the schedule is empty, set the priority of the last element to adevs_inf
 	if (size == 0)
 	{
-		heap[1].priority = type_max<T>();
+		heap[1].priority = adevs_inf<T>();
 		heap[1].item = NULL;
 	}
 	// Otherwise fill the hole left by the deleted model
@@ -140,7 +140,7 @@ void Schedule<X,T>::schedule(Atomic<X,T>* model, T priority)
 	if (model->q_index != 0)
 	{
 		// Remove the model if the next event time is infinite
-		if (priority >= type_max<T>()) 
+		if (priority >= adevs_inf<T>()) 
 		{
 			// Move the item to the top of the heap
 			T min_priority = minPriority();
@@ -164,7 +164,7 @@ void Schedule<X,T>::schedule(Atomic<X,T>* model, T priority)
 	}
 	// If it is not in the schedule and the next event time is
 	// not at infinity, then add it to the schedule
-	else if (priority < type_max<T>())
+	else if (priority < adevs_inf<T>())
 	{
 		// Enlarge the heap to hold the new model
 		size++;
