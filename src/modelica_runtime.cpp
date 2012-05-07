@@ -33,12 +33,3 @@ void MODELICA_TERMINATE(const char* msg)
 	exit(-2);
 }
 
-void MODELICA_ASSERT(omc_fileInfo info, const char* msg)
-{
-	cerr << "ASSERT failed" << endl;
-	cerr << "File = " << info.filename << endl;
-	cerr << "Cols = " << info.colStart << " -> " << info.colEnd << endl;
-	cerr << "Lns = " << info.lineStart << " -> " << info.lineEnd << endl;
-	cerr << msg << endl;
-	exit(-1);
-}	

@@ -2,8 +2,5 @@ loadFile("BouncingBall.mo");
 getErrorString();
 simulate(BouncingBall, stopTime=3.0);
 getErrorString();
-// plotting height h and flying status
-plot2({v,h,flying});
-// plotting all variables
-// plotAll(BouncingBall);
+plot({v,h,flying});
 system("rm -rf BouncingBall.log BouncingBall.makefile BouncingBall BouncingBall.exe BouncingBall.libs BouncingBall.cpp BouncingBall_* output.log");

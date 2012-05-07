@@ -1,59 +1,88 @@
 # These are objects from the open modelica project
+MODELICA_RUNTIME_HOME=${MODELICA_HOME}/SimulationRuntime/c
 
-MODELICA_OBJS = \
-${MODELICA_HOME}/c_runtime/boolean_array.o \
-${MODELICA_HOME}/c_runtime/index_spec.o \
-${MODELICA_HOME}/c_runtime/integer_array.o \
-${MODELICA_HOME}/c_runtime/memory_pool.o \
-${MODELICA_HOME}/c_runtime/base_array.o \
-${MODELICA_HOME}/c_runtime/real_array.o \
-${MODELICA_HOME}/c_runtime/string_array.o \
-${MODELICA_HOME}/c_runtime/read_write.o \
-${MODELICA_HOME}/c_runtime/utility.o \
-${MODELICA_HOME}/c_runtime/modelica_string.o \
-${MODELICA_HOME}/c_runtime/bigden.o \
-${MODELICA_HOME}/c_runtime/ddasrt.o \
-${MODELICA_HOME}/c_runtime/dlinpk.o \
-${MODELICA_HOME}/c_runtime/enorm.o  \
-${MODELICA_HOME}/c_runtime/hybrd1.o \
-${MODELICA_HOME}/c_runtime/nelmead.o \
-${MODELICA_HOME}/c_runtime/qform.o \
-${MODELICA_HOME}/c_runtime/r1updt.o \
-${MODELICA_HOME}/c_runtime/biglag.o \
-${MODELICA_HOME}/c_runtime/ddassl.o \
-${MODELICA_HOME}/c_runtime/dogleg.o \
-${MODELICA_HOME}/c_runtime/fdjac1.o \
-${MODELICA_HOME}/c_runtime/hybrj.o \
-${MODELICA_HOME}/c_runtime/newuoa.o \
-${MODELICA_HOME}/c_runtime/qrfac.o \
-${MODELICA_HOME}/c_runtime/trsapp.o \
-${MODELICA_HOME}/c_runtime/daux.o \
-${MODELICA_HOME}/c_runtime/dlamch.o \
-${MODELICA_HOME}/c_runtime/dpmpar.o \
-${MODELICA_HOME}/c_runtime/hybrd.o \
-${MODELICA_HOME}/c_runtime/lsame.o \
-${MODELICA_HOME}/c_runtime/newuob.o \
-${MODELICA_HOME}/c_runtime/r1mpyq.o \
-${MODELICA_HOME}/c_runtime/update.o \
-${MODELICA_HOME}/c_runtime/division.o \
-${MODELICA_HOME}/c_runtime/java_interface.o \
-${MODELICA_HOME}/c_runtime/rtclock.o \
-${MODELICA_HOME}/c_runtime/ModelicaUtilities.o \
-${MODELICA_HOME}/c_runtime/simulation_varinfo.o \
-${MODELICA_HOME}/c_runtime/read_matlab4.o \
-${MODELICA_HOME}/c_runtime/read_csv.o \
-${MODELICA_HOME}/c_runtime/simulation_init.o \
-${MODELICA_HOME}/c_runtime/simulation_input.o \
-${MODELICA_HOME}/c_runtime/simulation_input_xml.o \
-${MODELICA_HOME}/c_runtime/linearize.o \
-${MODELICA_HOME}/c_runtime/solver_main.o \
-${MODELICA_HOME}/c_runtime/simulation_result_plt.o \
-${MODELICA_HOME}/c_runtime/simulation_result_csv.o \
-${MODELICA_HOME}/c_runtime/simulation_result_mat.o \
-${MODELICA_HOME}/c_runtime/simulation_delay.o \
-${MODELICA_HOME}/c_runtime/tables.o \
-${MODELICA_HOME}/c_runtime/options.o \
-${MODELICA_HOME}/c_runtime/dgesv_aux.o \
-${MODELICA_HOME}/c_runtime/simulation_modelinfo.o \
-${MODELICA_HOME}/c_runtime/newuoa.o \
-${MODELICA_HOME}/c_runtime/newuob.o 
+MODELICA_OBJS= \
+$(METAOBJSPATH) \
+$(UTILOBJSPATH) \
+$(MATHOBJSPATH) \
+$(SOLVEROBJSPATH) \
+$(RESULTSOBJSPATH) \
+$(SIMOBJSPATH)
+
+#Files for meta folder
+META_OBJS = \
+meta_modelica_builtin.o \
+meta_modelica_string_lit.o \
+realString.o \
+meta_modelica.o \
+meta_modelica_real.o \
+gc/gc.o \
+gc/common.o  \
+gc/roots.o \
+gc/generational.o  \
+gc/marksweep.o 
+
+META_HFILES = \
+rml_compatibility.h \
+meta_modelica_builtin.h \
+meta_modelica_builtin_boxptr.h \
+meta_modelica_real.h \
+meta_modelica_string_lit.h \
+meta_modelica.h \
+gc/gc.h \
+gc/common.h \
+gc/generational.h \
+gc/marksweep.h \
+gc/roots.h 
+
+
+# Files for util functions
+UTIL_OBJS = base_array.o boolean_array.o omc_error.o division.o index_spec.o integer_array.o java_interface.o list.o memory_pool.o modelica_string.o modelinfo.o read_write.o read_matlab4.o real_array.o ringbuffer.o rtclock.o string_array.o utility.o varinfo.o
+UTIL_HFILES = base_array.h boolean_array.h division.h omc_error.h index_spec.h integer_array.h java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h list.h memory_pool.h modelica.h modelica_string.h modelinfo.h read_write.h read_matlab4.h real_array.h ringbuffer.h rtclock.h string_array.h utility.h varinfo.h 
+
+# Files for math-support 
+MATH_OBJS = bigden.o biglag.o delay.o dgesv_aux.o dogleg.o dpmpar.o enorm.o fdjac1.o initialization.o hybrd.o hybrd1.o hybrj.o lsame.o model_help.o nelmead.o newuoa.o newuob.o  qform.o  qrfac.o r1mpyq.o r1updt.o trsapp.o update.o 
+MATH_HFILES = blaswrap.h delay.h initialization.h matrix.h model_help.h
+
+SOLVER_OBJS = daux.o ddasrt.o ddassl.o dassl.o dlamch.o dlinpk.o events.o solver_main.o
+SOLVER_HFILES = dassl.h events.h solver_main.h
+
+RESULTS_OBJS = read_csv.o simulation_result_csv.o simulation_result_mat.o simulation_result_plt.o
+RESULTS_HFILES = read_csv.h simulation_result_csv.h simulation_result_mat.h simulation_result_plt.h
+RESTULS_FILES = read_csv.cpp simulation_result_csv.cpp simulation_result_mat.cpp simulation_result_plt.cpp
+
+SIM_OBJS = options.o simulation_input_xml.o simulation_runtime.o ../linearization/linearize.o
+SIM_HFILES = options.h simulation_input_xml.h simulation_runtime.h ../linearization/linearize.h
+
+METAPATH = ${MODELICA_RUNTIME_HOME}/meta/
+METAOBJSPATH = $(META_OBJS:%=$(METAPATH)%)
+METAHFILESPATH = $(META_HFILES:%=$(METAPATH)%)
+
+UTILPATH = ${MODELICA_RUNTIME_HOME}/util/
+UTILOBJSPATH = $(UTIL_OBJS:%=$(UTILPATH)%)
+UTILHFILESPATH = $(UTIL_HFILES:%=$(UTILPATH)%)
+
+MATHPATH = ${MODELICA_RUNTIME_HOME}/math-support/
+MATHOBJSPATH = $(MATH_OBJS:%=$(MATHPATH)%)
+MATHHFILESPATH = $(MATH_HFILES:%=$(MATHPATH)%)
+
+SOLVERPATH = ${MODELICA_RUNTIME_HOME}/simulation/solver/
+SOLVEROBJSPATH = $(SOLVER_OBJS:%=$(SOLVERPATH)%)
+SOLVERHFILESPATH = $(SOLVER_HFILES:%=$(SOLVERPATH)%)
+
+RESULTSPATH = ${MODELICA_RUNTIME_HOME}/simulation/results/
+RESULTSOBJSPATH = $(RESULTS_OBJS:%=$(RESULTSPATH)%)
+RESULTSHFILESPATH = $(RESULTS_HFILES:%=$(RESULTSPATH)%)
+RESULTSFILESPATH = $(RESULTS_FILES:%=$(RESULTSPATH)%)
+
+SIMPATH = ${MODELICA_RUNTIME_HOME}/simulation/
+SIMOBJSPATH = $(SIM_OBJS:%=$(SIMPATH)%)
+SIMHFILESPATH = $(SIM_HFILES:%=$(SIMPATH)%)
+
+ALL_OBJS = $(METAOBJSPATH) $(UTILOBJSPATH) $(MATHOBJSPATH) $(SOLVEROBJSPATH) $(RESULTSOBJSPATH) $(SIMOBJSPATH) meta/meta_modelica_catch.o
+ALL_HEADERS = $(METAHFILESPATH) $(UTILHFILESPATH) $(MATHHFILESPATH) $(SOLVERHFILESPATH) $(RESULTSHFILESPATH) $(SIMHFILESPATH)
+ALL_PATHS = $(METAPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(RESULTSPATH) $(SIMPATH) linearization/
+ALL_PATHS_CLEAN_OBJS = $(ALL_PATHS:%=%*.o) $(ALL_PATHS:%=%*.a)
+
+COMMON_HEADERS = f2c.h omc_msvc.h openmodelica.h inline.h openmodelica_func.h simulation_data.h
+
