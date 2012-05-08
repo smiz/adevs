@@ -1,3 +1,2 @@
 loadFile("HelloWorld.mo");
-simulate(HelloWorld,startTime=0.0,stopTime=10.0);
-plot({x});
+simulate(HelloWorld,startTime=0.0,stopTime=10.0,outputFormat="csv");

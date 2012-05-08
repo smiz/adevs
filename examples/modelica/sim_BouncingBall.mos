@@ -1,6 +1,2 @@
 loadFile("BouncingBall.mo");
-getErrorString();
-simulate(BouncingBall, stopTime=3.0);
-getErrorString();
-plot({v,h,flying});
-system("rm -rf BouncingBall.log BouncingBall.makefile BouncingBall BouncingBall.exe BouncingBall.libs BouncingBall.cpp BouncingBall_* output.log");
+simulate(BouncingBall, stopTime=3.0, outputFormat="csv");

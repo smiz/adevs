@@ -1,6 +1,5 @@
 # These are objects from the open modelica project
 MODELICA_RUNTIME_HOME=${MODELICA_HOME}/SimulationRuntime/c
-
 MODELICA_OBJS= \
 $(METAOBJSPATH) \
 $(UTILOBJSPATH) \
@@ -8,6 +7,14 @@ $(MATHOBJSPATH) \
 $(SOLVEROBJSPATH) \
 $(RESULTSOBJSPATH) \
 $(SIMOBJSPATH)
+
+# Imported from OpenModelica
+METAPATH = ${MODELICA_RUNTIME_HOME}/meta/
+UTILPATH = ${MODELICA_RUNTIME_HOME}/util/
+MATHPATH = ${MODELICA_RUNTIME_HOME}/math-support/
+SOLVERPATH = ${MODELICA_RUNTIME_HOME}/simulation/solver/
+RESULTSPATH = ${MODELICA_RUNTIME_HOME}/simulation/results/
+SIMPATH = ${MODELICA_RUNTIME_HOME}/simulation/
 
 #Files for meta folder
 META_OBJS = \
@@ -41,11 +48,11 @@ UTIL_OBJS = base_array.o boolean_array.o omc_error.o division.o index_spec.o int
 UTIL_HFILES = base_array.h boolean_array.h division.h omc_error.h index_spec.h integer_array.h java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h list.h memory_pool.h modelica.h modelica_string.h modelinfo.h read_write.h read_matlab4.h real_array.h ringbuffer.h rtclock.h string_array.h utility.h varinfo.h 
 
 # Files for math-support 
-MATH_OBJS = bigden.o biglag.o delay.o dgesv_aux.o dogleg.o dpmpar.o enorm.o fdjac1.o initialization.o hybrd.o hybrd1.o hybrj.o lsame.o model_help.o nelmead.o newuoa.o newuob.o  qform.o  qrfac.o r1mpyq.o r1updt.o trsapp.o update.o 
-MATH_HFILES = blaswrap.h delay.h initialization.h matrix.h model_help.h
+MATH_OBJS = bigden.o biglag.o dgesv_aux.o dogleg.o dpmpar.o enorm.o fdjac1.o hybrd.o hybrd1.o hybrj.o lsame.o nelmead.o newuoa.o newuob.o  qform.o  qrfac.o r1mpyq.o r1updt.o trsapp.o update.o 
+MATH_HFILES = blaswrap.h matrix.h
 
-SOLVER_OBJS = daux.o ddasrt.o ddassl.o dassl.o dlamch.o dlinpk.o events.o solver_main.o
-SOLVER_HFILES = dassl.h events.h solver_main.h
+SOLVER_OBJS = daux.o ddasrt.o ddassl.o dassl.o delay.o dlamch.o dlinpk.o events.o initialization.o model_help.o solver_main.o
+SOLVER_HFILES = dassl.h delay.h events.h initialization.h model_help.h solver_main.h
 
 RESULTS_OBJS = read_csv.o simulation_result_csv.o simulation_result_mat.o simulation_result_plt.o
 RESULTS_HFILES = read_csv.h simulation_result_csv.h simulation_result_mat.h simulation_result_plt.h
@@ -54,28 +61,22 @@ RESTULS_FILES = read_csv.cpp simulation_result_csv.cpp simulation_result_mat.cpp
 SIM_OBJS = options.o simulation_input_xml.o simulation_runtime.o ../linearization/linearize.o
 SIM_HFILES = options.h simulation_input_xml.h simulation_runtime.h ../linearization/linearize.h
 
-METAPATH = ${MODELICA_RUNTIME_HOME}/meta/
 METAOBJSPATH = $(META_OBJS:%=$(METAPATH)%)
 METAHFILESPATH = $(META_HFILES:%=$(METAPATH)%)
 
-UTILPATH = ${MODELICA_RUNTIME_HOME}/util/
 UTILOBJSPATH = $(UTIL_OBJS:%=$(UTILPATH)%)
 UTILHFILESPATH = $(UTIL_HFILES:%=$(UTILPATH)%)
 
-MATHPATH = ${MODELICA_RUNTIME_HOME}/math-support/
 MATHOBJSPATH = $(MATH_OBJS:%=$(MATHPATH)%)
 MATHHFILESPATH = $(MATH_HFILES:%=$(MATHPATH)%)
 
-SOLVERPATH = ${MODELICA_RUNTIME_HOME}/simulation/solver/
 SOLVEROBJSPATH = $(SOLVER_OBJS:%=$(SOLVERPATH)%)
 SOLVERHFILESPATH = $(SOLVER_HFILES:%=$(SOLVERPATH)%)
 
-RESULTSPATH = ${MODELICA_RUNTIME_HOME}/simulation/results/
 RESULTSOBJSPATH = $(RESULTS_OBJS:%=$(RESULTSPATH)%)
 RESULTSHFILESPATH = $(RESULTS_HFILES:%=$(RESULTSPATH)%)
 RESULTSFILESPATH = $(RESULTS_FILES:%=$(RESULTSPATH)%)
 
-SIMPATH = ${MODELICA_RUNTIME_HOME}/simulation/
 SIMOBJSPATH = $(SIM_OBJS:%=$(SIMPATH)%)
 SIMHFILESPATH = $(SIM_HFILES:%=$(SIMPATH)%)
 
