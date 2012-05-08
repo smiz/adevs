@@ -1,3 +1,2 @@
 loadFile("Robot.mo");
-simulate(Robot,startTime=0.0,stopTime=5.0);
-plot({x,theta});
+simulate(Robot,startTime=0.0,stopTime=5.0,outputFormat="csv");

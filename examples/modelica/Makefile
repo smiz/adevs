@@ -77,7 +77,7 @@ nonlinearmixed:
 	omc sim_nonlinearmixed.mos
 
 clean:
-	rm -f a.out soln *.h *.c *.xml *.mat *.libs *.makefile *.log *.plt *.o
+	rm -f a.out soln *.h *.c *.xml *.mat *.libs *.makefile *.log *.plt *.o *.csv
 	rm -f Bounce.cpp Bounce 
 	rm -f Influenza.cpp Influenza 
 	rm -f HelloWorld.cpp HelloWorld 

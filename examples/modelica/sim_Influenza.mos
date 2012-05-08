@@ -1,3 +1,2 @@
 loadFile("Influenza.mo");
-simulate(Influenza,startTime=0.0,stopTime=4.0);
-plot({Infected_Popul.p,Sick_Popul.p,Non_Infected_Popul.p,Immune_Popul.p});
+simulate(Influenza,startTime=0.0,stopTime=4.0,outputFormat="csv");

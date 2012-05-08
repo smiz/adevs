@@ -6,22 +6,6 @@
 HOMEDIR=$PWD/openmodelica
 mkdir openmodelica
 cd $HOMEDIR
-# Build mico and put it in our path
-mkdir corba
-cd corba
-wget http://sourceforge.net/projects/mico/files/mico%202.3.13/mico-2.3.13.tar.gz
-tar xfvz mico-2.3.13.tar.gz
-cd mico
-./configure --prefix=$PWD/..
-sed '1i\#include <limits.h>' orb/fast_array.cc > tmp.cc
-mv tmp.cc orb/fast_array.cc 
-make
-make install
-export MICOHOME=$PWD/..
-export PATH=$PATH:$PWD/../bin
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/../lib
-export LD_LIBRARY64_PATH=$LD_LIBRARY64_PATH:$PWD/../lib
-cd $HOMEDIR
 # Build smlnj and put it in our path
 mkdir smlnj
 cd smlnj
@@ -50,11 +34,6 @@ then
 	autoconf
 fi
 # Configure and build omc
-./configure --without-paradiseo --with-CORBA=$MICOHOME
+./configure --without-paradiseo 
 make omc
-make mosh
-make qtclients
-# Make sure the runtime object files are available for use
-# cd $HOMEDIR/trunk/c_runtime
-# make
 # Done
