@@ -1,5 +1,6 @@
 #ifndef _ADEVS_SIMULATION_RUNTIME_H
 #define _ADEVS_SIMULATION_RUNTIME_H
+
 #include "modelica.h"
 #include "openmodelica.h"
 #include "openmodelica_func.h"
@@ -44,6 +45,13 @@ void newuoa_(
 void MODELICA_ASSERT(omc_fileInfo fileInfo, const char* msg);
 void MODELICA_TERMINATE(const char* msg);
 
+// Redefine solve_linear_equation_system. This is
+// copied from OpenModelica's matrix.h
+#ifdef solve_linear_equation_system
+#undef solve_linear_equation_system
+#endif
+void solve_linear_equation_system(double* A, double* b, int size, int id);
+
 #define $__start(x) x
 #ifdef DIVISION
 #undef DIVISION
@@ -87,4 +95,3 @@ void MODELICA_TERMINATE(const char* msg);
     } else var=((exp1) OpSym (exp2))
 
 #endif
-

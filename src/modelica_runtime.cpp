@@ -42,3 +42,25 @@ void MODELICA_ASSERT(omc_fileInfo fileInfo, const char* msg)
 	cerr << msg << endl;
 }
 
+void solve_linear_equation_system(double* A, double* b, int size, int id)
+{
+	int n = size; 
+	int nrhs = 1; /* number of righthand sides*/ 
+	int lda = n; /* Leading dimension of A */
+	int ldb = n; /* Leading dimension of b*/ 
+	int ipiv[n]; /* Pivott indices */ 
+	int info = 0; /* output */ 
+	assert(ipiv != 0); 
+	_omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); 
+ 	if (info < 0)
+	{ 
+		cerr << "Error solving linear system of equations (no. " << id <<
+		   	") . Argument " << info << "illegal." << endl; 
+	} 
+	else if (info > 0)
+	{ 
+		cerr << "Error solving linear system of equations (no. " << id <<
+			"), system is singular." << endl; 
+	}
+	assert(info == 0);
+}	
