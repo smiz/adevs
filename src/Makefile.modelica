@@ -58,8 +58,10 @@ RESULTS_OBJS = read_csv.o simulation_result_csv.o simulation_result_mat.o simula
 RESULTS_HFILES = read_csv.h simulation_result_csv.h simulation_result_mat.h simulation_result_plt.h
 RESTULS_FILES = read_csv.cpp simulation_result_csv.cpp simulation_result_mat.cpp simulation_result_plt.cpp
 
-SIM_OBJS = options.o simulation_input_xml.o simulation_runtime.o ../linearization/linearize.o
-SIM_HFILES = options.h simulation_input_xml.h simulation_runtime.h ../linearization/linearize.h
+SIM_OBJS = ../linearization/linearize.o
+SIM_HFILES = ../linearization/linearize.h
+#SIM_OBJS = options.o simulation_input_xml.o simulation_runtime.o ../linearization/linearize.o
+#SIM_HFILES = options.h simulation_input_xml.h simulation_runtime.h ../linearization/linearize.h
 
 METAOBJSPATH = $(META_OBJS:%=$(METAPATH)%)
 METAHFILESPATH = $(META_HFILES:%=$(METAPATH)%)

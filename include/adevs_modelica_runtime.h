@@ -1,24 +1,16 @@
 #ifndef _ADEVS_SIMULATION_RUNTIME_H
 #define _ADEVS_SIMULATION_RUNTIME_H
-
 #include "modelica.h"
 #include "openmodelica.h"
 #include "openmodelica_func.h"
+#include "omc_error.h"
+#include "adevs_public_modelica_runtime.h"
 
 typedef FILE_INFO omc_fileInfo;
+typedef EQUATION_INFO omc_equationInfo;
 
-extern int LOG_STATS;
-extern int LOG_INIT;
-extern int LOG_RES_INIT;
-extern int LOG_SOLVER;
-extern int LOG_EVENTS;
-extern int LOG_NONLIN_SYS;
-extern int LOG_ZEROCROSSINGS;
-extern int LOG_DEBUG;
-extern int sim_verbose;
-extern int modelErrorCode;
 extern int ERROR_NONLINSYS;
-extern int ERROR_LINSYS;
+extern int modelErrorCode;
 
 extern "C"
 {
@@ -45,13 +37,6 @@ void newuoa_(
 void MODELICA_ASSERT(omc_fileInfo fileInfo, const char* msg);
 void MODELICA_TERMINATE(const char* msg);
 
-// Redefine solve_linear_equation_system. This is
-// copied from OpenModelica's matrix.h
-#ifdef solve_linear_equation_system
-#undef solve_linear_equation_system
-#endif
-void solve_linear_equation_system(double* A, double* b, int size, int id);
-
 #define $__start(x) x
 #ifdef DIVISION
 #undef DIVISION
@@ -67,9 +52,6 @@ void solve_linear_equation_system(double* A, double* b, int size, int id);
 #undef check_discrete_values
 #define check_discrete_values(size,numValues) found_solution = 1
 #endif
-
-#define time timeValue
-#define localData this
 
 // undefine initial() (orig. defn. in omc's simulation_runtime.h)
 #ifdef initial

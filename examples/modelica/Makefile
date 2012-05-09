@@ -3,7 +3,8 @@ CFLAGS = -g -fopenmp -Wall -I../../include ${OMINCLUDE}
 CC = g++
 OMHOME=${HOME}/Code/openmodelica/trunk/build
 OMINCLUDE=-I${OMHOME}/include/omc
-OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevs -llapack /usr/local/lib/libf2c.a
+OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevs -lsundials_kinsol \
+	   -lsundials_nvecserial -llapack /usr/local/lib/libf2c.a
 
 circuit:
 	omc +s +simCodeTarget=Adevs Circuit.mo 
