@@ -3,7 +3,7 @@ include ../make.common
 # GNU gcc compiler
 OMHOME=$(HOME)/Code/openmodelica/trunk/build
 OMINCLUDE=-I$(OMHOME)/include/omc
-OMLIBS=-L$(OMHOME)/lib/omc -llapack /usr/local/lib/libf2c.a
+OMLIBS=-L$(OMHOME)/lib/omc -lsundials_kinsol -lsundials_nvecserial -llapack /usr/local/lib/libf2c.a
 CFLAGS += $(OMINCLUDE) 
 LIBS += $(OMLIBS)
 
