@@ -1,6 +1,10 @@
 #ifndef _ADEVS_SIMULATION_RUNTIME_H
 #define _ADEVS_SIMULATION_RUNTIME_H
+#include "modelica.h"
 #include "openmodelica.h"
+#include "openmodelica_func.h"
+
+typedef FILE_INFO omc_fileInfo;
 
 extern int LOG_STATS;
 extern int LOG_INIT;
@@ -33,7 +37,11 @@ void newuoa_(
 #ifdef MODELICA_TERMINATE
 #undef MODELICA_TERMINATE
 #endif
+#ifdef MODELICA_ASSERT
+#undef MODELICA_ASSERT
+#endif
 
+void MODELICA_ASSERT(omc_fileInfo fileInfo, const char* msg);
 void MODELICA_TERMINATE(const char* msg);
 
 #define $__start(x) x

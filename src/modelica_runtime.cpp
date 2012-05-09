@@ -33,3 +33,12 @@ void MODELICA_TERMINATE(const char* msg)
 	exit(-2);
 }
 
+void MODELICA_ASSERT(omc_fileInfo fileInfo, const char* msg)
+{
+    cerr << fileInfo.filename <<
+		"(col " << fileInfo.colStart << "-" << fileInfo.colEnd << ","
+		<< "ln " << fileInfo.lineStart << "-" << fileInfo.lineEnd << ")"
+		<< endl;
+	cerr << msg << endl;
+}
+
