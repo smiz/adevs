@@ -1,2 +1,3 @@
 loadFile("Pendulum.mo");
-simulate(Pendulum,stopTime=5.0,outputFormat="csv");
+setIndexReductionMethod("DynamicStateSelection");
+simulate(Pendulum,numberOfIntervals=300,stopTime=5.0,tolerance=1e-10,outputFormat="csv");
