@@ -66,10 +66,11 @@ tank:
 	omc sim_tank.mos
 
 pendulum:
-	omc +s +simCodeTarget=Adevs Pendulum.mo
+	omc +s +indexReductionMethod=DynamicStateSelection \
+		+simCodeTarget=Adevs Pendulum.mo
 	${CC} ${CFLAGS} Pendulum.cpp main_pendulum.cpp ${OMLIBS} 
 	./a.out > soln
-	omc sim_pendulum.mos
+#	omc sim_pendulum.mos
 
 nonlinearmixed:
 	omc +s +simCodeTarget=Adevs NonlinearMixed.mo

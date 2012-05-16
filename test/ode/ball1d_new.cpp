@@ -30,7 +30,6 @@ class bouncing_ball:
 		void der_func(const double* q, double* dq)
 		{
 			dq[0] = q[1];
-//			dq[1] = -9.8; // Real gravity
 			dq[1] = -2.0; // For test case
 			dq[2] = 1.0;
 		}
@@ -133,10 +132,14 @@ int main()
 	// Test corrected euler
 	bouncing_ball* ball = new bouncing_ball();
 	run_test(ball,new corrected_euler<PortValue<double> >(ball,1E-6,0.01),
-			new linear_event_locator<PortValue<double> >(ball,1E-7));
+			new linear_event_locator<PortValue<double> >(ball,1E-7)); 
 	// Test RK 45
 	ball = new bouncing_ball();
 	run_test(ball,new rk_45<PortValue<double> >(ball,1E-6,0.01),
 			new linear_event_locator<PortValue<double> >(ball,1E-7));
+	// Test bisection algorithm
+	ball = new bouncing_ball();
+	run_test(ball,new rk_45<PortValue<double> >(ball,1E-6,0.01),
+			new bisection_event_locator<PortValue<double> >(ball,1E-7));
 	return 0;
 }

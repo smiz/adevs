@@ -13,8 +13,8 @@ int main()
 	Hybrid<OMC_ADEVS_IO_TYPE>* hybrid_model =
 		new Hybrid<OMC_ADEVS_IO_TYPE>(
 		pendulum,
-		new corrected_euler<OMC_ADEVS_IO_TYPE>(pendulum,1E-5,0.01),
-		new linear_event_locator<OMC_ADEVS_IO_TYPE>(pendulum,1E-5));
+		new rk_45<OMC_ADEVS_IO_TYPE>(pendulum,1E-8,0.01),
+		new bisection_event_locator<OMC_ADEVS_IO_TYPE>(pendulum,1E-5));
         // Create the simulator
         Simulator<OMC_ADEVS_IO_TYPE>* sim =
 			new Simulator<OMC_ADEVS_IO_TYPE>(hybrid_model);
