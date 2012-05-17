@@ -64,20 +64,22 @@ bool bisection_event_locator<X>::find_events(bool* events,
 			events[i] = false;
 			if (z[1][i]*z[0][i] <= 0.0)
 			{
-				// There is an event in [0,h]
-				event_in_interval = true;
 				// There is an event at h
 				if (fabs(z[1][i]) <= err_tol)
 					events[i] = found_event = true; 
+				// There is an event prior to h
+				else event_in_interval = true;
 			}
 		}
-		// Done if there is no event in the interval or we found an event
-		if (!event_in_interval || found_event) return found_event;
-		// Otherwise, guess at a new h and calculate qend for that time
-		h /= 2.0;
-		for (int i = 0; i < this->sys->numVars(); i++)
-			qend[i] = qstart[i];
-		solver->advance(qend,h);
+		// Guess at a new h and calculate qend for that time
+		if (event_in_interval)
+		{
+			h /= 2.0;
+			for (int i = 0; i < this->sys->numVars(); i++)
+				qend[i] = qstart[i];
+			solver->advance(qend,h);
+		}
+		else return found_event;
 	}
 	// Will never reach this line
 	return false;
