@@ -2,7 +2,7 @@
  * Test case for builtin mathematical functions.
  */
 #define OMC_ADEVS_IO_TYPE double
-#define TOLERANCE 1E-16
+#define TOLERANCE 1E-10
 
 #include "adevs.h"
 #include "builtins.h"

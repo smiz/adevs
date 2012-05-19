@@ -55,7 +55,7 @@ class CircuitExt:
 			// Reinitialize the continuous model. This is really only necessary
 			// if your discrete event may result in new values for the 
 			// state variables (discrete or continuous) of the modelica model.
-			calc_vars(q,true);
+			update_vars(q,true);
 		}
 		void confluent_event(double* q, const bool * event_flags,
 			const Bag<double>& xb)

@@ -7,8 +7,7 @@ using namespace adevs;
 
 int main()
 {
-	dcmotor* dcm = new dcmotor();
-	dcm->setEventHysteresis(1E-6);
+	dcmotor* dcm = new dcmotor(0,1E-6);
 	Hybrid<OMC_ADEVS_IO_TYPE>* hybrid_model =
 		new Hybrid<OMC_ADEVS_IO_TYPE>(
 		dcm,

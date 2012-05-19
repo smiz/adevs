@@ -58,7 +58,7 @@ class test2Ext:
 	public test2
 {
 	public:
-		test2Ext():test2(),query(false){}
+		test2Ext():test2(0,0.0),query(false){}
 		double time_event_func(const double*)
 		{
 			if (query) return 0;
@@ -89,7 +89,7 @@ int main()
 		new Hybrid<OMC_ADEVS_IO_TYPE>(
 		pendulum,
 		new rk_45<OMC_ADEVS_IO_TYPE>(pendulum,1E-6,0.001),
-		new linear_event_locator<OMC_ADEVS_IO_TYPE>(pendulum,1E-6));
+		new bisection_event_locator<OMC_ADEVS_IO_TYPE>(pendulum,1E-6));
 	// Create the test oracle
 	oracle* test_oracle = new oracle();
 	Hybrid<OMC_ADEVS_IO_TYPE>* hybrid_model_oracle =

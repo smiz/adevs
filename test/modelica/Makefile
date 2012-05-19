@@ -22,7 +22,8 @@ t1:
 	$(DEL) test1.cpp test1.h
 
 t2:
-	omc +s +simCodeTarget=Adevs test2.mo 
+	omc +s +indexReductionMethod=DynamicStateSelection \
+		+simCodeTarget=Adevs test2.mo 
 	$(CC) $(CFLAGS) test2.cpp main_test2.cpp $(LIBS)
 	$(TEST_EXEC) > tmp
 	$(DEL) test2.cpp test2.h
