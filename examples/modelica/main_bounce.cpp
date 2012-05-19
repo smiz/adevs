@@ -7,8 +7,7 @@ using namespace adevs;
 
 int main()
 {
-	Bounce* bounce = new Bounce();
-	bounce->setEventHysteresis(1E-6);
+	Bounce* bounce = new Bounce(0,1E-6);
 	Hybrid<OMC_ADEVS_IO_TYPE>* hybrid_model =
 		new Hybrid<OMC_ADEVS_IO_TYPE>(
 		bounce,

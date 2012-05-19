@@ -7,8 +7,7 @@ using namespace adevs;
 
 int main()
 {
-	BouncingBall* ball = new BouncingBall();
-	ball->setEventHysteresis(1E-6);
+	BouncingBall* ball = new BouncingBall(0,1E-6);
 	Hybrid<OMC_ADEVS_IO_TYPE>* hybrid_model =
 		new Hybrid<OMC_ADEVS_IO_TYPE>(
 		ball,

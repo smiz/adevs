@@ -44,7 +44,7 @@ class RobotWithSensor:
 		{
 			Robot::external_event(q,e,xb);
 			set_$PFcontrol(*(xb.begin()));
-			calc_vars(q);
+			update_vars(q);
 		}
 		void confluent_event(double* q, const bool * event_flags,
 			const Bag<double>& xb)

@@ -79,7 +79,7 @@ class ExtendedTank:
 {
 	public:
 		ExtendedTank():
-			Tank()
+			Tank(0,1E-6)
 		{
 		}
 		void init(double* q)
@@ -96,7 +96,7 @@ class ExtendedTank:
 				if (!last_turning) 
 				{
 					set_$Phull$Pomega(q,0.0);
-					calc_vars(q);
+					update_vars(q);
 				}
 			}
 		}
@@ -111,7 +111,7 @@ class ExtendedTank:
 				else
 					set_$Pvin_right((*iter).v);
 			}
-			calc_vars(q);
+			update_vars(q);
 		}
 		void confluent_event(double* q, const bool * event_flags,
 			const Bag<OMC_ADEVS_IO_TYPE>& xb)
@@ -135,7 +135,6 @@ int main(int argc, char** argv)
 	double right_duty = atof(argv[2]);
 	// Build the model
 	ExtendedTank* tank = new ExtendedTank();
-	tank->setEventHysteresis(1E-3);
 	Hybrid<OMC_ADEVS_IO_TYPE>* tank_solver =
 		new Hybrid<OMC_ADEVS_IO_TYPE>(
 		tank,
