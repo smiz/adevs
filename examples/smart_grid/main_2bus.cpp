@@ -1,3 +1,7 @@
+/**
+ * This model is based on the power system example in Chapter 6
+ * of "Building Software for Simulation" by J. Nutaro.
+ */
 #include "adevs.h"
 #include <iostream>
 #include <fstream>
@@ -63,7 +67,7 @@ class twoBusAdjustableLoad:
 			}
 			set_$PLoad$Pimp$PR(
 				(1.0+load_adj_fraction+control_adj_fraction)*r0);
-			calc_vars(q,true); 
+			update_vars(q,true); 
 		}
 		void output_func(const double* q, const bool* state_event,
 			Bag<OMC_ADEVS_IO_TYPE>& yb)
@@ -228,7 +232,6 @@ class SmartGrid:
 			fout("soln")
 		{
 			pwr_sys = new twoBusAdjustableLoad();
-			pwr_sys->setEventHysteresis(1E-4);
 			Hybrid<OMC_ADEVS_IO_TYPE>* hybrid_model =
 				new Hybrid<OMC_ADEVS_IO_TYPE>(
 				pwr_sys,

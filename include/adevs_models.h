@@ -45,7 +45,9 @@ template <class X, class T> class Simulator;
 
 /**
  * The Devs class provides basic operations for all devs models.
- * The model I/O type is set by the template argument.
+ * The model I/O type is set by the template argument X. The 
+ * type to be used for time is set with the template argument
+ * T. The default type for time is double.
  */
 template <class X, class T = double> class Devs
 {

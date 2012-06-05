@@ -1,10 +1,9 @@
 /**
  * This is a modelica implementation of much of the Thyme simulation
- * library. It may be compiled with OpenModelica and integrated
- * directly with discrete event simulations using Adevs. Much of
- * this is copied from the ObjectStab library, though in all cases
- * the models have been greatly simplified and adjusted for the
- * quirks of the OpenModelica compiler and runtime system.
+ * library. Much of this is copied from the ObjectStab library,
+ * though in all cases the models have been greatly simplified,
+ * adjusted for the quirks of the OpenModelica compiler and runtime
+ * system, or both.
  */
 within;
 package Thyme
