@@ -18,33 +18,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 Bugs, comments, and questions can be sent to nutaro@gmail.com
 ***************/
 
-/* The fcmp() inline function is taken from fcmp.c (see the comment
-   below). */
-/*
- fcmp
- Copyright (c) 1998-2000 Theodore C. Belding
- University of Michigan Center for the Study of Complex Systems
- <mailto:Ted.Belding@umich.edu>
- <http://www-personal.umich.edu/~streak/>		
-
- This file is part of the fcmp distribution. fcmp is free software;
- you can redistribute and modify it under the terms of the GNU Library
- General Public License (LGPL), version 2 or later.  This software
- comes with absolutely no warranty. See the file COPYING for details
- and terms of copying.
-
- File: fcmp.c
-
- Description: see fcmp.h and README files.
-*/
-
 #ifndef __adevs_time_h_
 #define __adevs_time_h_
 #include <cfloat>
 #include <iostream>
 #include <cmath>
 #include <limits>
-using namespace std;
 
 /// Returns the maximum value for a time type
 template <class T> inline T adevs_inf();
@@ -56,7 +35,11 @@ template <class T> inline T adevs_sentinel();
 namespace adevs
 {
 
-/// This is the super dense simulation clock
+/**
+ * This is the super dense simulation clock that is used by
+ * the parallel simulator to properly manage simultaneous
+ * events.
+ */
 template<class T = double> struct Time
 {
 	T t;
@@ -132,7 +115,19 @@ template<class T = double> struct Time
 	}
 };
 
-// double_fcmp class for alternative double that is used for simulation clock
+/**
+ * <p>The fcmp() inline function is taken from fcmp.c, which is
+ * Copyright (c) 1998-2000 Theodore C. Belding,
+ * University of Michigan Center for the Study of Complex Systems,
+ * <mailto:Ted.Belding@umich.edu>,
+ * <http://www-personal.umich.edu/~streak/>,
+ * </p>
+ *
+ * <p>This code is part of the fcmp distribution. fcmp is free software;
+ * you can redistribute and modify it under the terms of the GNU Library
+ * General Public License (LGPL), version 2 or later.  This software
+ * comes with absolutely no warranty.</p>
+ */ 
 inline int fcmp(double x1, double x2, double epsilon) 
 {
     int exponent;
@@ -175,12 +170,23 @@ inline int fcmp(double x1, double x2, double epsilon)
         return 0;  /* x1 == x2 */
 }
 
+/**
+ * This is alternative double that may be used for the simulation clock
+ * (i.e., as the template parameter T for models and simulators). It
+ * uses the fcmp function to check for equality instead of the 
+ * default equality operator. Information on the fcmp function
+ * may be found at http://fcmp.sourceforge.net/
+ */
 class double_fcmp {
-    double d;
+
+private:
+	double d;
 
 public:
-    // User needs to instantiate this
-    // static double epsilon;
+    /**
+	 * The user must instantiate this static variable
+	 * and initialize as required by the fcmp function.
+	 */
     static double epsilon;
 
     double_fcmp(double rhs = 0) 
@@ -233,11 +239,11 @@ public:
 } // end namespace
 
 template <> inline double adevs_inf() {
-	return numeric_limits<double>::max(); }
+	return std::numeric_limits<double>::max(); }
 template <> inline int adevs_inf() {
-	return numeric_limits<int>::max(); }
+	return std::numeric_limits<int>::max(); }
 template <> inline adevs::double_fcmp adevs_inf() {
-	return numeric_limits<double>::max(); }
+	return std::numeric_limits<double>::max(); }
 
 template <> inline double adevs_zero() { return 0.0; }
 template <> inline int adevs_zero() { return 0; }

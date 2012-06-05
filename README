@@ -1,14 +1,13 @@
 This file contains build instructions for the C++ library, the C++
-library with support for OpenModelica, and Java the bindings.
+library with support for OpenModelica, and the Java bindings.
 
 ---- C++ -----
-The simulation is implemented primarily as a set of C++ header files,
-and for many applications it is sufficient to use just those. You can
-build the rest of the simulation library with the command by changing
-to the 'src' directory and running 'make'. The compiler options in the
-makefile should work for the GNU g++ compiler. You may need to set
-other options for other Unix based compilers. OpenMP support is
-assumed by default.
+The simulation engine is implemented primarily as a set of C++ header files,
+and for many applications those are sufficient. You can build the rest of
+the simulation library as a static file libadevs.a. To do this, go to
+the directory called 'src' and run 'make'. The default compiler options
+should work if you are using the GNU g++ compiler. For other compilers,
+you make set options, build commands, etc. by editing the Makefile.
 
 For Visual Studio and Windows, open a command shell, go the the 'src'
 directory, and run the batch file 'build.bat'. This will create a 
@@ -17,43 +16,27 @@ not include any OpenMP options, so those must be added to the compiler
 switches if you want it (the Express versions of Visual Studio don't
 support OpenMP in any case).
 
-
 ---- C++ with OpenModelica support ----
-Do everything described in the C++ instructions above, plus the following:
+First, you need to get and compile the OpenModelica compiler. In the 
+'util' directory of adevs there is a shell script called 'build-omc.sh'.
+Executing this script will do the following:
 
-1) Get the source code for OpenModelica from their svn repository. Instructions
-for doing this are at http://www.openmodelica.org/index.php/developer/source-code
+1) Create a directory called openmodelica. This directory will contain
+   everything else that the script downloads and compiles.
+2) Retrieve and compile rml, smlnj, and mmc.
+3) Retrieve and compile a bare-bones version of the OpenModelica compiler.
 
-2) Build the omc compiler from the source. To do this, you will need smlnj
-and rml. These are described in the instructions for building OpenModelica.
-You do not need any of the optional libraries for OpenModelica; just build
-the bare minimum. I build omc with the commands
-
-./configure --without-paradiseo --enable-omshell-terminal=no
-make omc
-
-This puts the compiler executable (called omc) into the build/bin directory
-of the OpenModelica source true.
+The OpenModelica compiler is called omc and it is located in
+the openmodelica/trunk/build/bin directory. After getting and
+compiling omc, you must do the following:
 
 3) Put the omc compiler into your executable PATH.
-
 4) Edit the Makefile for adevs to point MODELICA_HOME at your OpenModelica
-source tree.
-
+   source tree (i.e., at openmodelica/trunk).
 5) Run the command 'make adevs_with_modelica'.
 
-6) You can test out your new modelica compiler and runtime environment
-with the modelica examples in the adevs/examples directory.
-
-You will need a statically linkable f2c library for OpenModelica and
-its adevs runtime environment. I've had trouble using vanilla f2c
-libraries with OpenModelica, and suggest that you use the f2c library
-that comes with OpenModelica. This is located in the directory 
-c_runtime/libf2c directory of the OpenModelica source tree. From this
-directory, run the command 'make -f makefile.u'. This will create
-a library called libf2c.a that you want for statically linking with
-your simulation executables. Copy it to a convenient place (I use
-/usr/local/lib).
+You can test out your new modelica compiler and run-time environment
+with the modelica examples in the examples/modelica directory.
 
 ---- Java -----
 To build the java bindings, go the the 'src' directory and then edit 
@@ -63,18 +46,18 @@ the jar file adevs.jar. To use these, put the shared library into your
 LD_LIBRARY_PATH and the jar file into your CLASSPATH.
 
 To build the java bindings For Windows, follow the same instructions
-as for building the C++ library with respect to your C++ compiler, 
-be sure that your JAVA_HOME environment variable points to your jdk
-installation, and that the java compiler is in your executable PATH.
+as for building the C++ library with respect to your C++ compiler.
+Make sure that your JAVA_HOME environment variable points to your jdk
+installation and that the java compiler is in your executable PATH.
 The adevs_jni/build.bat script then has all of the commands needed to 
 build the adevs.jar (the Java jar file) and java_adevs.dll (the native 
 code needed by the jar file). You can use these by putting the former
 into your CLASSPATH and latter into your PATH.
 
----- TESTING -----
+---- Testing -----
 There are four sets of test cases, each of which can be run from
 the directory 'test'. The first set are for the C++ library without
-OpenMP support; these test are run with 'make check_cpp'. The parts
+OpenMP support; these tests are run with 'make check_cpp'. The parts
 of the C++ library that require OpenMP support can be tested by
 executing 'make check_par'. The java bindings can be tested by
 executing 'make check_java'. Be sure your PATH, LD_LIBRARY_PATH,
@@ -87,8 +70,7 @@ The make.common file contains platform specific settings for
 the test scripts. It is setup by default for a GNU/Linux type of
 environment. Change as needed for your environment, but if you are
 using a more or less typical Linux distribution then the defaults
-should work fine
+should work fine.
 
-You will need to set the maximum number of threads to at least
-4 for the OpenMP test suite to work (one of the test cases requires
-at least four threads). 
+For OpenMP test cases, you will need to set the maximum number of threads
+to at least four (one of the test cases requires at least four threads).
