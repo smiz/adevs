@@ -1,42 +1,39 @@
 \chapter{Network Models}
 \label{chapter:network_models}
-A network model comprises atomic models and other network models that are interconnected. Network models can be components of other network models, thereby enabling the construction of very large, multi-level systems. Unlike atomic models, network models do not directly define new dynamic behavior. The dynamics of a network model are determined by the dynamics of its component parts and their interactions. Atomic models define fundamental behaviors; network models define structure. 
+A network model comprises atomic models and other network models that are interconnected. Network models can be components of other network models, thereby enabling the construction of multi-level systems. Unlike atomic models, network models do not directly define new dynamic behavior. The dynamics of a network model are determined by the dynamics of its component parts and their interactions. Atomic models define fundamental behaviors; network models define structure. 
 
 \section{Parts of a Network Model}
 \label{section:parts_of_a_network_model}
-Network models are derived from the abstract \classname{Network} class. This class has two virtual methods: \methodname{route} and \methodname{getComponents}. The \methodname{route} method implements connections between the components of the \classname{Network} model and between those components and the inputs and outputs of the network itself. The \methodname{getComponents} method provides the set of components that constitute the network.
+Network models are derived from the \classname{Network} class. This class has two virtual methods: \methodname{route} and \methodname{getComponents}. The \methodname{route} method implements connections between the components of the network and between these components and the inputs and outputs of the network itself. The \methodname{getComponents} method provides the set of components that constitute the network.
 
-The \methodname{route} method is the primary workhorse of a \classname{Network} model. It realizes three types of connections. The first are connections between components of the network. The second are connections from the network's inputs to the inputs of its component models. The third are connections from the components' outputs to the outputs of the network.
-
-The signature of the \methodname{route} method is
+\subsection{The \methodname{route} method}
+The \methodname{route} method realizes three types of connections. The first are connections between components of the network. The second are connections from the network's inputs to the inputs of its component models. The third are connections from the component outputs to the outputs of the network. The signature of the \methodname{route} method is
 \begin{verbatim}
 void route(const X& value, Devs<X>* model, Bag<Event<X> >& r) 
 \end{verbatim}
-for which the value argument is the object being routed, the model argument is the \classname{Network} or \classname{Atomic} model that originated the event (i.e., the event's source), and the r argument is a bag to be filled with the targets of the event. Each target is described by an \classname{Event} object that carries two pieces of information: a pointer to the model that is the event's target and the object to be delivered to that target.
 
-The simulator uses these \classname{Event} objects in one of three ways, which depending on the relationship between the source of the event and its target. These uses are
+The value argument is the object to route, the model argument is the \classname{Network} or \classname{Atomic} model that is the source of the value object, and the r argument is a bag to be filled with models that should receive the value object as input. Each target is described by an \classname{Event} object that carries two pieces of information: a pointer to the model that is the target and the object to be delivered to that target. The simulator uses the \classname{Event} objects in one of three ways depending on the relationship between the source of the object and its target. These uses are
 \begin{enumerate}
-\item If the event's source is a component of the network and the target is the network itself, then the event's value becomes an output from the network.
-\item If the event's source is the network and the event's target is a component of the network, then the event's value becomes an input to that component.
-\item If the event's source and target are both components of the network, then the event's value becomes an input to the target.
+\item If the source is a component of the network and the target is the network itself, then the value becomes an output from the network.
+\item If the source is the network and the target is a component of the network, then the value becomes an input to that component.
+\item If the source and target are both components of the network, then the value becomes an input to the target.
 \end{enumerate}
-Any other relationship between the source and the target is illegal and will cause the simulator to raise an exception.
+Any other relationship between the source and the target is illegal and causes the simulator to raise an exception.
 
-The simplest example of how the route method is used converts output from one \classname{Atomic} component of a \classname{Network} into input for another \classname{Atomic} component of the same \classname{Network}. Figure \ref{fig:atomic_to_atomic_coupling} illustrates this case. 
 \begin{figure}[ht]
 \centering
 \epsfig{file=network_models_figs/connected_atomic_models.eps}
 \caption{Two connected \classname{Atomic} components in a single \classname{Network}.}
 \label{fig:atomic_to_atomic_coupling}
 \end{figure} 
-
-The simulator begins by invoking the output\_func method of \classname{Atomic} model $A$. Next, the simulator iterates through the elements of $A$'s output bag and calls the \classname{Network}'s route method for each one. The arguments passed to route at each call are
+The simplest example of the \methodname{route} method converts output from one \classname{Atomic} component into input for another \classname{Atomic} component. Figure \ref{fig:atomic_to_atomic_coupling} illustrates this case. The simulator begins by invoking the \methodname{output\_func} method of \classname{Atomic} model $A$. Next, the simulator iterates through the elements of $A$'s output bag, calling the \classname{Network}'s \methodname{route} method for each one. The arguments passed to \methodname{route} at each call are
 \begin{enumerate}
-\item the output object itself, which becomes the value argument,
+\item the output object itself, which is the value argument,
 \item a pointer to $A$, which is the model argument, and
 \item an empty \classname{Bag} for holding \classname{Event} objects.
 \end{enumerate} 
-Two things are done by the \methodname{route} method to cause \classname{Atomic} model $B$ to receive the output object from $A$. First, an \classname{Event} object is created that contains the output object and a pointer to $B$. Second, this \classname{Event} object is inserted into the \classname{Bag} r of receivers of the event. If we suppose, for the sake of illustration, that input and output objects have type int, then the route method for this example is
+
+Two things are done by the \methodname{route} method to cause \classname{Atomic} model $B$ to receive the output object from $A$. First, an \classname{Event} object is created that contains the output object and a pointer to $B$. Second, this \classname{Event} object is inserted into the \classname{Bag} r. If we suppose, for the sake of illustration, that input and output objects have type int, then the \methodname{route} method for this example is
 \begin{verbatim}
 void route(const int& value, Devs<int>* model, Bag<Event<int> >& r) {
    if (model == A) {
@@ -45,9 +42,9 @@ void route(const int& value, Devs<int>* model, Bag<Event<int> >& r) {
    }
 }
 \end{verbatim}
-where $A$ and $B$ are pointers to the respective components. This route method implements the network shown in Fig. \ref{fig:atomic_to_atomic_coupling}.
+where $A$ and $B$ are pointers to the respective models. This route method implements the network shown in Fig. \ref{fig:atomic_to_atomic_coupling}.
 
-A more complicated example is the network itself receiving input ultimately destined for one of its atomic components. This can happen, for instance, when the network is a component of another network. Suppose that input to our example network is to become input for \classname{Atomic} model $A$. Figure \ref{fig:eic_atomic_to_atomic_coupling} extends Fig. \ref{fig:atomic_to_atomic_coupling} to include this connection.
+A more complicated example is the network receiving input destined for one of its atomic components. This can happen, for instance, when the network is a component of another network. Suppose the input to the network is to become input for \classname{Atomic} model $A$. Figure \ref{fig:eic_atomic_to_atomic_coupling} extends Fig. \ref{fig:atomic_to_atomic_coupling} to include this connection.
 \begin{figure}[ht]
 \centering
 \epsfig{file=network_models_figs/eic_atomic_atomic_coupling.eps}
@@ -55,13 +52,13 @@ A more complicated example is the network itself receiving input ultimately dest
 \label{fig:eic_atomic_to_atomic_coupling}
 \end{figure} 
 
-When an event appears at the input of the network, the simulator calls the \classname{Network}'s route method with the following arguments:
+When an event appears at the input of the network, the simulator calls the \classname{Network}'s \methodname{route} method with the following arguments:
 \begin{enumerate}
-\item the input object itself, which becomes the value argument,
-\item a pointer to the \classname{Network} that is receiving the event, and
+\item the input object, which is the value argument,
+\item a pointer to the \classname{Network} that is receiving the input, and
 \item an empty \classname{Bag} for holding \classname{Event} objects.
 \end{enumerate} 
-As before, the \methodname{route} creates an \classname{Event} object that indicates the receiving model and the value of the event. This \classname{Event} object is put into the \classname{Bag} r of receivers. The code below implements the network shown in Fig. \ref{fig:eic_atomic_to_atomic_coupling}; note that the this pointer points to the \classname{Network} itself (i.e., to the network that is receiving the input initially).
+As before, \methodname{route} creates an \classname{Event} object that indicates the target model and value of the input. This \classname{Event} object is put into the \classname{Bag} r of receivers. The code below implements the network shown in Fig. \ref{fig:eic_atomic_to_atomic_coupling}; note that `this' points to the \classname{Network} itself (i.e., to the network that is receiving the initial input).
 \begin{verbatim}
 void route(const int& value, Devs<int>* model, Bag<Event<int> >& r) {
    if (model == A) {
@@ -74,14 +71,14 @@ void route(const int& value, Devs<int>* model, Bag<Event<int> >& r) {
    }
 }
 \end{verbatim}
+
 \begin{figure}[ht]
 \centering
 \epsfig{file=network_models_figs/big_coupled.eps}
-\caption{A two component network model with external input, external output, and internal coupling.}
+\caption{A network with external input, external output, and internal coupling.}
 \label{fig:big_coupling}
 \end{figure} 
-
-For a complete example, the network is extended again, as shown in Fig. \ref{fig:eic_atomic_to_atomic_coupling}, to include two more connections: a connection from the output of model $B$ to the output of the network and a feedback connection from $B$ to $A$. This configuration is shown in Fig. \ref{fig:big_coupling}. This new connection requires an additional case in the route method. This case checks for output from $B$ and, if such an output is found, directs it to both $A$ and the network itself. A \classname{Event} object is created for each target and added to the \classname{Bag} r of receivers: one of these \classname{Event}s results in an input to $A$ and the other in an output from the network. Here is the implementation.
+For a complete example, the network is extended to include two more connections: a connection from the output of model $B$ to the output of the network and a feedback connection from $B$ to $A$. This configuration is shown in Fig. \ref{fig:big_coupling}. These new connections require an additional case in the route method. This case checks for output from $B$ and, if such an output is found, directs it to both $A$ and the network. An \classname{Event} object is created for each target and added to the \classname{Bag} r of receivers: one of these \classname{Event}s results in an input to $A$ and the other in an output from the network. Here is the implementation.
 \begin{verbatim}
 void route(const int& value, Devs<int>* model, Bag<Event<int> >& r) {
    if (model == A) {
@@ -101,11 +98,14 @@ void route(const int& value, Devs<int>* model, Bag<Event<int> >& r) {
 }
 \end{verbatim}
 
-The getComponents method is the other virtual method that must be implemented by a \classname{Network}. The simulator passes to this method an empty \classname{Set} of pointers to models, and this must be filled with the network's components. The signature of the getComponents method is
+Though not demonstrated above, the \methodname{route} method is allowed to modify the value object before sending it to a target. This can be useful in some instances.
+
+\subsection{The \methodname{getComponents} method}
+The \methodname{getComponents} method is the other virtual method that must be implemented by any class that is derived from \classname{Network}. The simulator passes to this method an empty \classname{Set} of pointers to models, and this set must be filled with the network's components. The signature of the getComponents method is
 \begin{verbatim}
 void getComponents(Set<Devs<X>*>& c) 
 \end{verbatim}
-where c is the set to be filled. There isn't much else to say about this method. The code below shows how it is implemented for the two component network shown in Fig. \ref{fig:big_coupling}; this code, of course, also works for the networks shown in Figs. \ref{fig:eic_atomic_to_atomic_coupling} and \ref{fig:atomic_to_atomic_coupling}.
+where c is the set to be filled. The code below shows how this method is implemented for the two component network shown in Fig. \ref{fig:big_coupling}. This code, of course, also works for the networks shown in Figs. \ref{fig:eic_atomic_to_atomic_coupling} and \ref{fig:atomic_to_atomic_coupling}.
 \begin{verbatim}
 void getComponents(Set<Devs<int>*>& c) { 
    c.insert(A);
@@ -113,7 +113,8 @@ void getComponents(Set<Devs<int>*>& c) {
 }
 \end{verbatim}
 
-There are just three other items to mention in relation to \classname{Network} models. First, components cannot be connected to themselves. This means that direct feedback loops and connections direct through a network model are illegal. The former can always be replaced with an internal event and the latter by simply bypassing the network (which won't do anything with the input in any event). These two cases are illustrated in Fig. \ref{fig:bad_coupling}. Second, direct coupling can only occur between components belonging to the same network, and every component must belong to, at most, one network. Third, the \methodname{route} method is allowed to modify an output before sending it along; this can be useful in some cases.
+\subsection{Illegal networks}
+There are two rules that must be followed when building networks. First, components cannot be connected to themselves. This means that direct feedback loops and connections directly through a network model are illegal. The former can always be replaced with an internal event and the latter by simply bypassing the network. These two cases are illustrated in Fig. \ref{fig:bad_coupling}. Second, direct coupling can only occur between components belonging to the same network, and every component must belong to at most one network. 
 \begin{figure}[ht]
 \centering
 \epsfig{file=network_models_figs/bad_couplings.eps}
@@ -122,31 +123,40 @@ There are just three other items to mention in relation to \classname{Network} m
 \end{figure}
 
 \section{Simulating a Network Model}
-Each iteration of the simulator has four phases: 1) advance the simulation clock to the time of the next event, 2) compute the outputs from atomic models that will change state (i.e., that will undergo an internal or confluent event) and convert these outputs into inputs for other models, 3) calculate the next state of each model with events to process, and 4) cleanup garbage left over from the output calculations. These four phases are repeated until the time of the next event is at infinity (i.e., DBL\_MAX) or you decide to stop the simulation. 
+There are four steps in each iteration of the simulation algorithm. These are
+\begin{enumerate}
+\item Advance the simulation clock to the time of the next event.
+\item Compute the outputs from atomic models that will change state (i.e., that will undergo an internal or confluent event) and convert these outputs into inputs for other models.
+\item Calculate the next state of each model with events - internal, external, or both to process.
+\item Cleanup garbage left over from the output calculations.
+\end{enumerate}
+These four steps are repeated until the time of the next event is at infinity (i.e., DBL\_MAX) or you decide to stop the simulation. 
 
-Conveniently, there are no special rules for simulating networks of network models. The simulator considers the entire collection of atomic models when determining the next event time; output from atomic models are recursively routed to their atomic destinations; and the state transitions and garbage collection are performed over the complete set of active atomic components. Hierarchies of network models are a convenient organizing tool for the modeler, but the simulator treats (via its recursive routing of events) the multi-level network as a flat structure.
+There are no special rules for simulating hierarchical models. The simulator considers the entire collection of atomic models when determining the next event time, output from atomic models are recursively routed to their atomic destinations, and the state transitions and garbage collection are performed over the complete set of active atomic components. Hierarchies of network models are a convenient organizing tool for the modeler, but the simulator flattens (indirectly, via its recursive routing of events) multi-level networks during simulation.
 
-Algorithm \ref{alg:coupled_model} sketches the simulation procedure. Note that the procedure for simulating atomic models (see section \ref{section:atomic_models}) is embedded in the procedure for simulating network models. The rules for atomic models do not change in any way; each atomic model sees a sequence of input events and produces a sequence of output events just as before. The only difference here is that the input events are created by other atomic models, and so the input sequence for each atomic model is constructed as the simulation progresses.
+Algorithm \ref{alg:coupled_model} sketches the simulation procedure. Note that the procedure for simulating atomic models (see section \ref{section:atomic_models}) is embedded in the procedure for simulating network models. The rules for atomic models do not change: each atomic model sees a sequence of input events and produces a sequence of output events just as before. The only difference here is that the input events are created by other atomic models, and so the input sequence for each atomic model is constructed interatively as the simulation progresses.
 \begin{algorithm}
 \begin{algorithmic}
 \STATE Initialize the state of every \classname{Atomic} model 
 \STATE Set the time of last event $t_{l,i}$ of every \classname{Atomic} model $i$ to $0$
 \STATE Set the simulation time $t$ to $0$
+\STATE Set the time of next event for model $i$ to $t_{l,i}+ta_i()$
 \WHILE {The smallest time of next event for the \classname{Atomic} models is less than DBL\_MAX}
    \STATE Set $t$ to the smallest time of next event for the \classname{Atomic} models
    \STATE Find the set of \classname{Atomic} models whose next event time is equal to $t$. These are the imminent models.
    \STATE Get the output of each imminent model by calling its \methodname{output\_func}
    \
-   \STATE Convert output from imminent models to input for other models using the \classname{Network} models \methodname{route} methods (do this recursively if the network has more than one level)
+   \STATE Convert output from imminent models to input for other models using the \classname{Network}s' \methodname{route} methods (do this recursively if the network has more than one level)
    \FOR{each \classname{Atomic} model $i$ that is imminent or has input}
       \IF {$i$ is an imminent model and it does not have input}
-         \STATE Compute the next model state with delta\_int()
+         \STATE Compute the next model state with \methodname{delta\_int()}
       \ELSIF {$i$ is an imminent and it has input}
-         \STATE Compute the next model state with delta\_conf(xb), where xb is the model input
+         \STATE Compute the next model state with \methodname{delta\_conf($xb$)}, where $xb$ is the input
       \ELSIF {$i$ is not an imminent model and it has input}
-         \STATE Compute the next model state with delta\_ext($t-t_{l,i}$,xb), where xb is the model input
+         \STATE Compute the next model state with \methodname{delta\_ext($t-t_{l,i}$,$xb$)}, where $xb$ is the input
       \ENDIF
       \STATE Set $t_{l,i}$ to $t$
+      \STATE Set the time of next event for model $i$ to $t_{l,i}+ta_i()$
    \ENDFOR
 \ENDWHILE
 \end{algorithmic}
@@ -155,9 +165,9 @@ Algorithm \ref{alg:coupled_model} sketches the simulation procedure. Note that t
 \end{algorithm}
 
 \section{A complete example of a network model}
-I'll use the \adevs\ \classname{SimpleDigraph} class to illustrate the process of building a network model. The \classname{SimpleDigraph} models a network of components whose connections are represented with a directed graph. If, for example, component $A$ is connected to component $B$, then all output events generated by $A$ become input events to $B$.
+I'll use the \classname{SimpleDigraph} class to illustrate how to build a network model. The \classname{SimpleDigraph} models a network of components whose connections are represented with a directed graph. If, for example, component $A$ is connected to component $B$, then all output from $A$ becomes input to $B$.
 
-The \classname{SimpleDigraph} has two methods for building a network. The \methodname{add} method takes an \classname{Atomic} or \classname{Network} model and adds it to the set of components. The \methodname{couple} method accepts a pair of components and connects the first to the second. Below is the class definition for the model; note that it has a template parameter for setting its input and output type. The \classname{Network}, \classname{Devs}, \classname{Bag}, and \classname{Set} are in the adevs namespace, and \mbox{adevs::} must precede them unless the \classname{SimpleDigraph} is itself in the adevs namespace (which, in this case, it is). 
+The \classname{SimpleDigraph} has two methods for building a network. The \methodname{add} method takes an \classname{Atomic} or \classname{Network} model and adds it to the set of components. The \methodname{couple} method accepts a pair of components and connects the first to the second. Below is the class definition for the model. Note that it has a template parameter for setting its input and output type.  
 \begin{verbatim}
 template <class VALUE> class SimpleDigraph: public Network<VALUE> { 
    public:
@@ -184,11 +194,11 @@ template <class VALUE> class SimpleDigraph: public Network<VALUE> {
       std::map<Component*,Bag<Component*> > graph;
 };
 \end{verbatim}
-The \classname{SimpleDigraph} has two member variables. The first is a set of pointers to the components of the network; these are stored in the \classname{Set} models. The components can be \classname{Atomic} objects, \classname{Network} objects, or both. The \classname{SimpleDigraph} components are the nodes of the directed graph. The second member variable is a STL map that contains the network's links, or edges; these are stored in the \classname{map} graph.
+The \classname{SimpleDigraph} has two member variables. The first is a set of pointers to the components of the network. These are stored in the \classname{Set} called models. The components can be \classname{Atomic} objects, \classname{Network} objects, or both. These components of the \classname{SimpleDigraph} are the nodes of its directed graph. The second member variable is the network's links. These are stored in the \classname{map} called graph.
 
-The \classname{SimpleDigraph} has four methods beyond the required route and getComponents. One of these is the constructor, which creates an empty network. The other is the destructor, which deletes all of the network's components. The others are add and couple.
+The \classname{SimpleDigraph} has four methods plus the required \methodname{route} and \methodname{getComponents}. One of these is the constructor, which creates an empty network. Another is the destructor, which deletes all of the network's components. The remaining two are \methodname{add} and \methodname{couple}.
 
-The add method does three things. First, it checks that the network is not being added to itself; this is illegal and would cause no end of trouble for the simulator. Next, it adds the new component to its set of components. Last, the \classname{SimpleDigraph} sets the component's parent. The last step is needed so that the simulator can climb up and down the model tree. If it is omitted then the routing of events is likely fail. Here is the implementation of the \methodname{add} method.
+The \methodname{add} method does three things. First, it checks that the network is not being added to itself. This is illegal and would cause the simulator to throw an exception. Next, it adds the new component to its set of components. Last, the \classname{SimpleDigraph} makes itself the component's parent. The last step is needed so that the simulator can climb up and down the model tree. If this step is omitted then the recursive routing of events will fail. Here is the implementation of the \methodname{add} method.
 \begin{verbatim}
 template <class VALUE> 
 void SimpleDigraph<VALUE>::add(Component* model) {
