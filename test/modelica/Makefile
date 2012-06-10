@@ -39,3 +39,10 @@ t4:
 	$(CC) $(CFLAGS) Circuit.cpp main_test4.cpp $(LIBS)
 	$(TEST_EXEC) > tmp
 	$(DEL) Circuit.cpp Circuit.h
+
+tank:
+	omc +s +simCodeTarget=Adevs TankHybridPID.mo 
+	$(CC) $(CFLAGS) TankHybridPID.cpp main_tankPid.cpp $(LIBS)
+	$(TEST_EXEC) > tmp
+	$(DEL) TankHybridPID.cpp TankHybridPID.h
+

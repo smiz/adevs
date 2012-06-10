@@ -1,0 +1,18 @@
+\chapter{Alternate types for time}
+\label{section:time}
+The second template argument for the simulator and model classes is used to select an alternate representation of time for your simulation. The default type for time is double. This may be replaced with the primitive types int or the \adevs\ class \classname{double\_fcmp} by supplying those as the second template argument. If you want to use your own class for time, it must support the following:
+\begin{enumerate}
+\item Default constructor, copy constructor, and assignment operator.
+\item All addition and subtraction operators.
+\item All comparison operators.
+\item A method \methodname{adevs\_inf} that returns a value for infinity.
+\item A method \methodname{adevs\_zero} that returns a value for zero.
+\item A method \methodname{adevs\_sentinel} that returns a value less than zero.
+\end{enumerate}
+The three methods \methodname{adevs\_inf}, \methodname{adevs\_zero}, and \methodname{adevs\_sentinel} must be template functions defined as follows (these examples are for using the int primitive for time).
+\begin{verbatim}
+template <> inline int adevs_inf() {
+    return std::numeric_limits<double>::max(); }
+template <> inline int adevs_zero() { return 0; }
+template <> inline int adevs_sentinel() { return -1; }
+\end{verbatim}
