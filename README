@@ -78,7 +78,8 @@ should work fine.
 When testing the Java bindings, be sure your PATH, LD_LIBRARY_PATH,
 and CLASSPATH are setup properly before running the Java test
 cases. These need to include your DLL (for Windows) and Java binaries,
-shared object file (for Linux), and jar file respectively.
+shared object file (for Linux), and jar file and the '.' directory
+respectively.
 
 For OpenMP test cases, you will need to set the maximum number of threads
 to at least four (one of the test cases requires at least four threads).

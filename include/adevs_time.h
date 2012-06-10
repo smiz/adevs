@@ -171,7 +171,7 @@ inline int fcmp(double x1, double x2, double epsilon)
 }
 
 /**
- * This is alternative double that may be used for the simulation clock
+ * This is an alternative double that may be used for the simulation clock
  * (i.e., as the template parameter T for models and simulators). It
  * uses the fcmp function to check for equality instead of the 
  * default equality operator. Information on the fcmp function
