@@ -15,8 +15,6 @@
 using namespace std;
 
 int modelErrorCode;
-int ERROR_NONLINSYS = -1;
-int ERROR_LINSYS = -2;
 
 void MODELICA_TERMINATE(const char* msg)
 {
