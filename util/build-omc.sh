@@ -34,6 +34,6 @@ then
 	autoconf
 fi
 # Configure and build omc
-./configure --without-paradiseo 
+./configure --without-paradiseo --enable-modelica3d=no 
 make omc
 # Done

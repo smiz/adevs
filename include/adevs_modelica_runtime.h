@@ -9,7 +9,6 @@
 typedef FILE_INFO omc_fileInfo;
 typedef EQUATION_INFO omc_equationInfo;
 
-extern int ERROR_NONLINSYS;
 extern int modelErrorCode;
 
 extern "C"
