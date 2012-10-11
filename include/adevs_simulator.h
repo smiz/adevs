@@ -617,7 +617,7 @@ void Simulator<X,T>::exec_event(Atomic<X,T>* model, bool internal, T t)
 		model->delta_ext(t-model->tL,*(model->x));
 	}
 	// Notify any listeners
-	notify_state_listeners(model,t);
+	this->notify_state_listeners(model,t);
 	// Check for a model transition
 	if (model->model_transition() && model->getParent() != NULL)
 	{

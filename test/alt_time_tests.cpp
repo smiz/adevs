@@ -80,10 +80,10 @@ Model<T>::Model():
 	a(new PingPong<T>(true)),
 	b(new PingPong<T>())
 {
-	add(a);
-	add(b);
-	couple(a,b);
-	couple(b,a);
+	this->add(a);
+	this->add(b);
+	this->couple(a,b);
+	this->couple(b,a);
 }
 // Non-standard type for time
 class TimeType
