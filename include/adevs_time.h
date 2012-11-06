@@ -242,15 +242,19 @@ template <> inline double adevs_inf() {
 	return std::numeric_limits<double>::max(); }
 template <> inline int adevs_inf() {
 	return std::numeric_limits<int>::max(); }
+template <> inline long adevs_inf() {
+	return std::numeric_limits<long>::max(); }
 template <> inline adevs::double_fcmp adevs_inf() {
 	return std::numeric_limits<double>::max(); }
 
 template <> inline double adevs_zero() { return 0.0; }
 template <> inline int adevs_zero() { return 0; }
+template <> inline long adevs_zero() { return 0; }
 template <> inline adevs::double_fcmp adevs_zero() { return 0.0; }
 
 template <> inline double adevs_sentinel() { return -1.0; }
 template <> inline int adevs_sentinel() { return -1; }
+template <> inline long adevs_sentinel() { return -1; }
 template <> inline adevs::double_fcmp adevs_sentinel() { return -1.0; }
 
 template<class T>

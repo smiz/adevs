@@ -21,6 +21,7 @@ struct adevs_omc_data
 		delete [] localData;
 	}
 	adevs_omc_local_data** localData;
+	bool found_solution;
 };
 
 #endif
