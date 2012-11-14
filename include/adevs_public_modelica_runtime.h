@@ -1,5 +1,10 @@
 #ifndef _ADEVS_PUBLIC_SIMULATION_RUNTIME_H
 #define _ADEVS_PUBLIC_SIMULATION_RUNTIME_H
+#include <kinsol/kinsol.h>
+#include <kinsol/kinsol_dense.h>
+#include <nvector/nvector_serial.h>
+#include <sundials/sundials_types.h>
+#include <sundials/sundials_math.h>
 
 struct adevs_omc_local_data
 {
