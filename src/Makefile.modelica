@@ -48,44 +48,57 @@ UTIL_OBJS = base_array.o boolean_array.o omc_error.o division.o index_spec.o int
 UTIL_HFILES = base_array.h boolean_array.h division.h omc_error.h index_spec.h integer_array.h java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h list.h memory_pool.h modelica.h modelica_string.h modelinfo.h read_write.h read_matlab4.h real_array.h ringbuffer.h rtclock.h string_array.h utility.h varinfo.h 
 
 # Files for math-support 
-MATH_OBJS = bigden.o biglag.o dgesv_aux.o dogleg.o dpmpar.o enorm.o fdjac1.o hybrd.o hybrd1.o hybrj.o lsame.o nelmead.o newuoa.o newuob.o  qform.o  qrfac.o r1mpyq.o r1updt.o trsapp.o update.o 
-MATH_HFILES = blaswrap.h matrix.h
+MATH_OBJS = bigden.o biglag.o daux.o ddasrt.o ddassl.o dgesv_aux.o dlamch.o dlinpk.o dogleg.o dpmpar.o enorm.o fdjac1.o hybrd.o hybrd1.o hybrj.o lsame.o nelmead.o newuoa.o newuob.o  qform.o  qrfac.o r1mpyq.o r1updt.o trsapp.o update.o 
+MATH_HFILES = blaswrap.h matrix.h 
 
-SOLVER_OBJS = daux.o ddasrt.o ddassl.o dassl.o delay.o dlamch.o dlinpk.o events.o initialization.o model_help.o solver_main.o
-SOLVER_HFILES = dassl.h delay.h events.h initialization.h model_help.h solver_main.h
+SOLVER_OBJS = dassl.o delay.o events.o model_help.o nonlinearSystem.o nonlinearSolverHybrd.o solver_main.o
+SOLVER_HFILES = dassl.h delay.h events.h model_help.h solver_main.h nonlinearSystem.h
+
+INITIALIZATION_OBJS = initialization.o initialization_data.o method_ipopt.o method_kinsol.o method_newuoa.o method_simplex.o method_nelderMeadEx.o
+INITIALIZATION_HFILES = initialization.h initialization_data.h method_ipopt.h method_kinsol.h method_newuoa.h method_simplex.h method_nelderMeadEx.h
 
 RESULTS_OBJS = read_csv.o simulation_result_csv.o simulation_result_mat.o simulation_result_plt.o
 RESULTS_HFILES = read_csv.h simulation_result_csv.h simulation_result_mat.h simulation_result_plt.h
 RESTULS_FILES = read_csv.cpp simulation_result_csv.cpp simulation_result_mat.cpp simulation_result_plt.cpp
 
-SIM_OBJS = ../linearization/linearize.o
-SIM_HFILES = ../linearization/linearize.h
-#SIM_OBJS = options.o simulation_input_xml.o simulation_runtime.o ../linearization/linearize.o
-#SIM_HFILES = options.h simulation_input_xml.h simulation_runtime.h ../linearization/linearize.h
+SIM_OBJS = options.o simulation_input_xml.o simulation_runtime.o ../linearization/linearize.o
+SIM_HFILES = options.h simulation_input_xml.h simulation_runtime.h ../linearization/linearize.h
 
+#METAPATH = ./meta/
 METAOBJSPATH = $(META_OBJS:%=$(METAPATH)%)
 METAHFILESPATH = $(META_HFILES:%=$(METAPATH)%)
 
+#UTILPATH = ./util/
 UTILOBJSPATH = $(UTIL_OBJS:%=$(UTILPATH)%)
 UTILHFILESPATH = $(UTIL_HFILES:%=$(UTILPATH)%)
 
+#MATHPATH = ./math-support/
 MATHOBJSPATH = $(MATH_OBJS:%=$(MATHPATH)%)
 MATHHFILESPATH = $(MATH_HFILES:%=$(MATHPATH)%)
 
+#INITIALIZATIONPATH = ./simulation/solver/initialization/
+INITIALIZATIONOBJSPATH = $(INITIALIZATION_OBJS:%=$(INITIALIZATIONPATH)%)
+INITIALIZATIONHFILESPATH = $(INITIALIZATION_HFILES:%=$(INITIALIZATIONPATH)%)
+
+#SOLVERPATH = ./simulation/solver/
 SOLVEROBJSPATH = $(SOLVER_OBJS:%=$(SOLVERPATH)%)
 SOLVERHFILESPATH = $(SOLVER_HFILES:%=$(SOLVERPATH)%)
 
+#RESULTSPATH = ./simulation/results/
 RESULTSOBJSPATH = $(RESULTS_OBJS:%=$(RESULTSPATH)%)
 RESULTSHFILESPATH = $(RESULTS_HFILES:%=$(RESULTSPATH)%)
 RESULTSFILESPATH = $(RESULTS_FILES:%=$(RESULTSPATH)%)
 
+#SIMPATH = ./simulation/
 SIMOBJSPATH = $(SIM_OBJS:%=$(SIMPATH)%)
 SIMHFILESPATH = $(SIM_HFILES:%=$(SIMPATH)%)
 
-ALL_OBJS = $(METAOBJSPATH) $(UTILOBJSPATH) $(MATHOBJSPATH) $(SOLVEROBJSPATH) $(RESULTSOBJSPATH) $(SIMOBJSPATH) meta/meta_modelica_catch.o
-ALL_HEADERS = $(METAHFILESPATH) $(UTILHFILESPATH) $(MATHHFILESPATH) $(SOLVERHFILESPATH) $(RESULTSHFILESPATH) $(SIMHFILESPATH)
-ALL_PATHS = $(METAPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(RESULTSPATH) $(SIMPATH) linearization/
+ALL_OBJS = $(METAOBJSPATH) $(UTILOBJSPATH) $(MATHOBJSPATH) $(SOLVEROBJSPATH) $(INITIALIZATIONOBJSPATH) $(RESULTSOBJSPATH) $(SIMOBJSPATH) meta/meta_modelica_catch.o
+ALL_HEADERS = $(METAHFILESPATH) $(UTILHFILESPATH) $(MATHHFILESPATH) $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(RESULTSHFILESPATH) $(SIMHFILESPATH)
+ALL_PATHS = $(METAPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(INITIALIZATIONPATH) $(RESULTSPATH) $(SIMPATH) linearization/
 ALL_PATHS_CLEAN_OBJS = $(ALL_PATHS:%=%*.o) $(ALL_PATHS:%=%*.a)
 
-COMMON_HEADERS = f2c.h omc_msvc.h openmodelica.h inline.h openmodelica_func.h simulation_data.h
+BASE_OBJS = $(METAOBJSPATH) $(UTILOBJSPATH) $(RESULTSOBJSPATH) meta/meta_modelica_catch.o
+
+COMMON_HEADERS = simulation/libf2c/f2c.h omc_msvc.h openmodelica.h omc_inline.h openmodelica_func.h simulation_data.h
 
