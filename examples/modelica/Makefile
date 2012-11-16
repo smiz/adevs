@@ -1,9 +1,12 @@
 # GNU gcc compiler
-CFLAGS = -g -fopenmp -Wall -I../../include ${OMINCLUDE} 
+CFLAGS = -g -fopenmp -Wall -I../../include ${OMINCLUDE} \
+		 -I${SUNDIALS_PATH}/include
 CC = g++
+SUNDIALS_PATH=/usr/local/sundials
 OMHOME=${HOME}/Code/openmodelica/trunk/build
 OMINCLUDE=-I${OMHOME}/include/omc
 OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevs -lsundials_kinsol \
+	   -L${SUNDIALS_PATH}/lib \
 	   -lsundials_nvecserial -llapack /usr/local/lib/libf2c.a
 
 circuit:
@@ -66,7 +69,7 @@ tank:
 	omc sim_tank.mos
 
 pendulum:
-	omc +s +indexReductionMethod=DynamicStateSelection \
+	omc +s +indexReductionMethod=dynamicStateSelection \
 		+simCodeTarget=Adevs Pendulum.mo
 	${CC} ${CFLAGS} Pendulum.cpp main_pendulum.cpp ${OMLIBS} 
 	./a.out > soln

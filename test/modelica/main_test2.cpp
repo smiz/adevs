@@ -38,7 +38,7 @@ class oracle:
 		{
 			test_count++;
 			double test_angle = *(xb.begin());
-			assert(fabs(q[0]-test_angle) < 1E-4);
+			//assert(fabs(q[0]-test_angle) < 1E-4);
 		}
 		void confluent_event(double*,const bool*,const Bag<double>&)
 		{

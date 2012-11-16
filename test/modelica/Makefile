@@ -4,7 +4,7 @@ include ../make.common
 SUNDIALS=/usr/local/sundials
 OMHOME=$(HOME)/Code/openmodelica/trunk/build
 OMINCLUDE=-I$(OMHOME)/include/omc
-OMLIBS=-L$(OMHOME)/lib/omc -llapack -lf2c
+OMLIBS=-L$(OMHOME)/lib/omc -llapack /usr/local/lib/libf2c.a
 CFLAGS += $(OMINCLUDE) -I${SUNDIALS}/include
 LIBS += $(OMLIBS) -L${SUNDIALS}/lib -lsundials_kinsol -lsundials_nvecserial
 
@@ -23,14 +23,13 @@ t1:
 	$(DEL) test1.cpp test1.h
 
 t2:
-#	omc +s \
-#		+indexReductionMethod=dynamicStateSelection \
-#		+matchingAlgorithm=PFPlusExt \
-#		+simCodeTarget=Adevs test2.mo 
+	omc +s \
+		+indexReductionMethod=dynamicStateSelection \
+		+matchingAlgorithm=PFPlusExt \
+		+simCodeTarget=Adevs test2.mo 
 	$(CC) $(CFLAGS) test2.cpp main_test2.cpp $(LIBS)
-	$(TEST_EXEC)
-#	$(TEST_EXEC) > tmp
-#	$(DEL) test2.cpp test2.h
+	$(TEST_EXEC) > tmp
+	$(DEL) test2.cpp test2.h
 
 t3:
 	omc +s +simCodeTarget=Adevs test3.mo 
