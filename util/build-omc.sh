@@ -9,7 +9,7 @@ cd $HOMEDIR
 # Build smlnj and put it in our path
 mkdir smlnj
 cd smlnj
-wget http://smlnj.cs.uchicago.edu/dist/working/110.74/config.tgz
+wget http://smlnj.cs.uchicago.edu/dist/working/110.75/config.tgz
 tar xfvz config.tgz
 config/install.sh
 export SMLNJ_HOME=$PWD
