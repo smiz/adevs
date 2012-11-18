@@ -18,68 +18,71 @@ population:
 	omc +s +simCodeTarget=Adevs Population.mo 
 	${CC} ${CFLAGS} main_population.cpp Population.cpp ${OMLIBS}
 	./a.out > soln
-	omc sim_pop.mos
+#	omc sim_pop.mos
 
 hello:
 	omc +s +simCodeTarget=Adevs HelloWorld.mo 
 	${CC} ${CFLAGS} main_hello.cpp HelloWorld.cpp ${OMLIBS} 
 	./a.out > soln
-	omc sim_hello.mos
+#	omc sim_hello.mos
 
 influenza:
 	omc +s +simCodeTarget=Adevs Influenza.mo
 	${CC} ${CFLAGS} main_influenza.cpp Influenza.cpp ${OMLIBS} 
 	./a.out > soln
-	omc sim_Influenza.mos
+#	omc sim_Influenza.mos
 
 bounce:
 	omc +s +simCodeTarget=Adevs Bounce.mo
 	${CC} ${CFLAGS} main_bounce.cpp Bounce.cpp ${OMLIBS} 
 	./a.out > soln
-	omc sim_bounce.mos
+#	omc sim_bounce.mos
 
 ball:
 	omc +s +simCodeTarget=Adevs BouncingBall.mo
 	${CC} ${CFLAGS} main_bouncing_ball.cpp BouncingBall.cpp ${OMLIBS} 
 	./a.out > soln
-	omc sim_BouncingBall.mos
+#	omc sim_BouncingBall.mos
 
 vanderpol:
 	omc +s +simCodeTarget=Adevs VanDerPol.mo
 	${CC} ${CFLAGS} main_vanderpol.cpp VanDerPol.cpp ${OMLIBS} 
 	./a.out > soln
-	omc sim_van.mos
+#	omc sim_van.mos
 
 dcm:
 	omc +s +simCodeTarget=Adevs dcmotor.mo Modelica
 	${CC} ${CFLAGS} main_dcmotor.cpp dcmotor.cpp ${OMLIBS} 
 	./a.out > soln
-	omc sim_dcmotor.mos
+#	omc sim_dcmotor.mos
 
 robot:
 	omc +s +simCodeTarget=Adevs Robot.mo 
 	${CC} ${CFLAGS} Robot.cpp main_robot.cpp ${OMLIBS} 
 	./a.out > soln
-	omc sim_robot.mos
+#	omc sim_robot.mos
 
 tank:
 	omc +s +simCodeTarget=Adevs Tank.mo Modelica
 	${CC} ${CFLAGS} Tank.cpp main_tank.cpp ${OMLIBS} 
 	./a.out 1 1 > soln
-	omc sim_tank.mos
+#	omc sim_tank.mos
 
 pendulum:
 	omc +s +indexReductionMethod=dynamicStateSelection \
 		+simCodeTarget=Adevs Pendulum.mo
 	${CC} ${CFLAGS} Pendulum.cpp main_pendulum.cpp ${OMLIBS} 
 	./a.out > soln
-	omc sim_pendulum.mos
+#	omc sim_pendulum.mos
 
 nonlinearmixed:
 	omc +s +simCodeTarget=Adevs NonlinearMixed.mo
 	${CC} ${CFLAGS} NonlinearMixed.cpp main_nonlinearmixed.cpp ${OMLIBS} 
 	./a.out > soln
-	omc sim_nonlinearmixed.mos
+#	omc sim_nonlinearmixed.mos
+
+all: circuit population hello influenza bounce ball vanderpol \
+		dcm robot tank pendulum nonlinearmixed
 
 clean:
 	rm -f a.out soln *.h *.c *.xml *.mat *.libs *.makefile *.log *.plt *.o *.csv

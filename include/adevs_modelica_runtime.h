@@ -5,9 +5,13 @@
 #include "openmodelica_func.h"
 #include "omc_error.h"
 #include "adevs_public_modelica_runtime.h"
+#include <kinsol/kinsol.h>
+#include <kinsol/kinsol_dense.h>
+#include <nvector/nvector_serial.h>
+#include <sundials/sundials_types.h>
+#include <sundials/sundials_math.h>
 
 typedef FILE_INFO omc_fileInfo;
-typedef EQUATION_INFO omc_equationInfo;
 
 extern int modelErrorCode;
 
@@ -36,7 +40,6 @@ void newuoa_(
 void MODELICA_ASSERT(omc_fileInfo fileInfo, const char* msg);
 void MODELICA_TERMINATE(const char* msg);
 
-#define $__start(x) x
 #ifdef DIVISION
 #undef DIVISION
 #endif
