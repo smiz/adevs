@@ -18,15 +18,17 @@ int main()
         // Create the simulator
         Simulator<OMC_ADEVS_IO_TYPE>* sim =
 			new Simulator<OMC_ADEVS_IO_TYPE>(hybrid_model);
+		double tL = 0.0;
 		cout << "# time, xx, x, y, z" << endl;
         while (sim->nextEventTime() <= 5.0)
 		{
-			cout << sim->nextEventTime() << " ";
-			sim->execNextEvent();
+			cout << tL << " ";
 			cout << nonlinearmixed->get_$Pxx() << " "  
 				<< nonlinearmixed->get_$Px() << " "
 				<< nonlinearmixed->get_$Py() << " "
 				<< nonlinearmixed->get_$Pz() << endl;
+			tL = sim->nextEventTime();
+			sim->execNextEvent();
 		}
         delete sim;
 		delete hybrid_model;
