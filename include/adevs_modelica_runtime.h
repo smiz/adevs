@@ -42,16 +42,6 @@ void MODELICA_TERMINATE(const char* msg);
 #endif
 #define DIVISION(a,b,c) (a/b)
 
-#ifdef extraPolate
-#undef extraPolate
-#define extraPolate(v) v
-#endif
-
-#ifdef check_discrete_values
-#undef check_discrete_values
-#define check_discrete_values(size,numValues) found_solution = 1
-#endif
-
 // undefine initial() (orig. defn. in omc's simulation_runtime.h)
 #ifdef initial
 #undef initial
