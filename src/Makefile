@@ -23,7 +23,8 @@ CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 # adevs object library. Point MODELICA_HOME at your Open Modelica 
 # installation if you want to build the Modelica extensions for adevs.
 MODELICA_HOME = ${HOME}/Code/openmodelica/trunk
-CFLAGS += -I${MODELICA_HOME}/build/include/omc
+SUNDIALS_HOME = /usr/local/sundials
+CFLAGS += -I${MODELICA_HOME}/build/include/omc -I${SUNDIALS_HOME}/include
 include Makefile.modelica
 
 # These are generic options for the GNU C++ compiler.

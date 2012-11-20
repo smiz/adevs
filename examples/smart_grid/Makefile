@@ -6,7 +6,7 @@ OMHOME=${HOME}/Code/openmodelica/trunk/build
 OMINCLUDE=-I${OMHOME}/include/omc
 OMLIBS=-L${OMHOME}/lib/omc -L../../src -L${SUNDIALS}/lib \
 	   -ladevs -lsundials_kinsol -lsundials_nvecserial \
-	   /usr/local/lib/libf2c.a
+	   -lf2c
 
 sys2:
 	omc +s +simCodeTarget=Adevs twobus.mo Thyme.mo Modelica 

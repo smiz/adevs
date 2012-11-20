@@ -7,7 +7,7 @@ OMHOME=${HOME}/Code/openmodelica/trunk/build
 OMINCLUDE=-I${OMHOME}/include/omc
 OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevs -lsundials_kinsol \
 	   -L${SUNDIALS_PATH}/lib \
-	   -lsundials_nvecserial /usr/local/lib/libf2c.a
+	   -lsundials_nvecserial -lf2c
 
 circuit:
 	omc +s +simCodeTarget=Adevs Circuit.mo 
