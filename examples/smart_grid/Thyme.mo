@@ -266,11 +266,11 @@ initial equation
 	Pe = Pm;
 	Pe = Pg0;
 	V = V0;
-	Vref = V;
 initial algorithm
 	if Ef < 0 then
 		Ef := -Ef;
 	end if;
+	Vref := V0;
 end Generator;
 
 /**

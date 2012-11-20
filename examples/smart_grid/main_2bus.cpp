@@ -235,7 +235,7 @@ class SmartGrid:
 			Hybrid<OMC_ADEVS_IO_TYPE>* hybrid_model =
 				new Hybrid<OMC_ADEVS_IO_TYPE>(
 				pwr_sys,
-				new rk_45<OMC_ADEVS_IO_TYPE>(pwr_sys,1E-3,0.01),
+				new rk_45<OMC_ADEVS_IO_TYPE>(pwr_sys,1E-4,0.01),
 				new linear_event_locator<OMC_ADEVS_IO_TYPE>(pwr_sys,1E-5));
 			StepLoad* step_load = new StepLoad();
 			Control* control = new Control();
