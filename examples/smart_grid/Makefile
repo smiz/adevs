@@ -1,9 +1,12 @@
 # GNU gcc compiler
-CFLAGS = -O3 -fopenmp -Wall -I../../include ${OMINCLUDE} 
+CFLAGS = -O3 -fopenmp -Wall -I../../include ${OMINCLUDE} -I${SUNDIALS}/include
 CC = g++
+SUNDIALS=/usr/local/sundials
 OMHOME=${HOME}/Code/openmodelica/trunk/build
 OMINCLUDE=-I${OMHOME}/include/omc
-OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevs -llapack /usr/local/lib/libf2c.a
+OMLIBS=-L${OMHOME}/lib/omc -L../../src -L${SUNDIALS}/lib \
+	   -ladevs -lsundials_kinsol -lsundials_nvecserial \
+	   /usr/local/lib/libf2c.a
 
 sys2:
 	omc +s +simCodeTarget=Adevs twobus.mo Thyme.mo Modelica 

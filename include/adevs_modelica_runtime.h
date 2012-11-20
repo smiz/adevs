@@ -30,6 +30,8 @@ void newuoa_(
   );
 }
 
+#define $__start(x) x
+
 #ifdef MODELICA_TERMINATE
 #undef MODELICA_TERMINATE
 #endif
