@@ -13,10 +13,11 @@ void test_vars(EventTests* model)
 	cout <<
 		model->get_time() << " " <<
 		model->get_$Pcount() << " " <<
-		model->get_$Pv1() << " " <<
-		model->get_$Px1() << " " <<
 		model->get_$Px() << " " <<
+		model->get_$Py() << " " <<
 		endl;
+	assert(fabs(model->get_$Px()) <= 1.0+2.0*model->getEventEpsilon());
+	assert(fabs(model->get_$Py()) <= 1.0+2.0*model->getEventEpsilon());
 	// 2 x accounts for hysteresis
 	assert(model->get_$Pcount() >= floor(model->get_time()*2.0)+1);
 	if (model->get_$Px()-model->get_$Px1() > 2.0*model->getEventEpsilon())

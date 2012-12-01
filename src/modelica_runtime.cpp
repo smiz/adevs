@@ -34,12 +34,14 @@ void MODELICA_ASSERT(omc_fileInfo fileInfo, const char* msg)
 AdevsSampleData::AdevsSampleData(double tStart, double tInterval):
 	tStart(tStart),
 	tInterval(tInterval),
-	n(0)
+	n(0),
+	enabled(false)
 {
 }
 
 bool AdevsSampleData::atEvent(double tNow, double eps) const
 {
+	if (!enabled) return false;
 	double tEvent = tStart+double(n)*tInterval;
 	return fabs(tEvent-tNow) < eps;
 }
