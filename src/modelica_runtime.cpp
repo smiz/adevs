@@ -31,3 +31,30 @@ void MODELICA_ASSERT(omc_fileInfo fileInfo, const char* msg)
 	cerr << msg << endl;
 }
 
+AdevsSampleData::AdevsSampleData(double tStart, double tInterval):
+	tStart(tStart),
+	tInterval(tInterval),
+	n(0)
+{
+}
+
+bool AdevsSampleData::atEvent(double tNow, double eps) const
+{
+	double tEvent = tStart+double(n)*tInterval;
+	return fabs(tEvent-tNow) < eps;
+}
+
+double AdevsSampleData::timeToEvent(double tNow) const
+{
+	double tEvent = tStart+double(n)*tInterval;
+	double tToGo = tEvent-tNow;
+	if (tToGo < 0.0) return 0.0;
+	return tToGo;
+}
+
+void AdevsSampleData::update(double tNow, double eps)
+{
+	if (atEvent(tNow,eps))
+		n++;
+}
+
