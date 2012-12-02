@@ -8,7 +8,7 @@ OMLIBS=-L$(OMHOME)/lib/omc /usr/local/lib/libf2c.a
 CFLAGS += $(OMINCLUDE) -I${SUNDIALS}/include
 LIBS += $(OMLIBS) -L${SUNDIALS}/lib -lsundials_kinsol -lsundials_nvecserial
 
-check: t0 t1 t2 t3 t4 t5
+check: t0 t1 t2 t3 t4 t5 t6
 
 t0:
 	omc +s +simCodeTarget=Adevs builtins.mo 
@@ -48,3 +48,9 @@ t5:
 	$(CC) $(CFLAGS) EventTests.cpp main_test5.cpp $(LIBS)
 	$(TEST_EXEC) > tmp
 	$(DEL) EventTests.cpp EventTests.h
+
+t6:
+	omc +s +simCodeTarget=Adevs SimplePeriodicSampler.mo 
+	$(CC) $(CFLAGS) Sampler.cpp SimplePeriodicSampler_main.cpp $(LIBS)
+	$(TEST_EXEC) > tmp
+	$(DEL) Sampler.cpp Sampler.h
