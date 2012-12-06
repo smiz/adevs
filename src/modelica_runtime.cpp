@@ -31,6 +31,9 @@ void MODELICA_ASSERT(omc_fileInfo fileInfo, const char* msg)
 	cerr << msg << endl;
 }
 
+/**
+ * Implementation of the AdevsSampleData class.
+ */
 AdevsSampleData::AdevsSampleData(double tStart, double tInterval):
 	tStart(tStart),
 	tInterval(tInterval),
@@ -60,3 +63,43 @@ void AdevsSampleData::update(double tNow, double eps)
 		n++;
 }
 
+/**
+ * Implementation of the AdevsDelayData class.
+ */
+AdevsDelayData::AdevsDelayData(double maxDelay):
+	maxDelay(maxDelay)
+{
+}
+
+double AdevsDelayData::sample(double t)
+{
+	assert(t <= traj.back().t);
+	if (t <= traj.front().t)
+		return traj.front().v;
+	// Find two points that bracket t
+	list<point_t>::iterator p1, p2 = traj.begin();
+	while ((*p2).t <= t)
+	{
+		p1 = p2;
+		p2++;
+	}
+	assert((*p1).t < t);
+	assert((*p2).t >= t);
+	double h = (t-((*p1).t))/((*p2).t) - ((*p1).t);
+	return h*((*p2).v)+(1.0-h)*((*p1).v);
+}
+
+void AdevsDelayData::insert(double t, double v)
+{
+	point_t p;
+	p.t = t;
+	p.v = v;
+	assert(traj.empty() || p.t >= traj.back().t);
+	if (!traj.empty() &&
+		(traj.back().t - traj.front().t > maxDelay) &&
+		(t - traj.front().t > maxDelay))
+	{
+		traj.pop_front();
+	}
+	traj.push_back(p);
+}
