@@ -1,6 +1,7 @@
 #ifndef _ADEVS_PUBLIC_SIMULATION_RUNTIME_H
 #define _ADEVS_PUBLIC_SIMULATION_RUNTIME_H
 #include <nvector/nvector_serial.h>
+#include <list>
 
 class AdevsSampleData
 {
@@ -27,4 +28,36 @@ class AdevsSampleData
 		bool enabled;
 };
 
+class AdevsDelayData
+{
+	public:
+		/**
+		 * Store a trajectory of at most length
+		 * maxDelay.
+		 */
+		AdevsDelayData(double maxDelay);
+		/**
+		 * Sample the trajectory at the point t.
+		 * A point must be added to the trajectory before
+		 * this method is called.
+		 */
+		double sample(double t);
+		/**
+		 * Add a point to the trajectory.
+		 */
+		void insert(double t, double v);
+		/**
+		 * Get the maximum delay for this trajectory.
+		 */
+		double getMaxDelay() const { return maxDelay; } 
+		/**
+		 * Does this data have enough points to calculate
+		 * a value.
+		 */
+		bool isEnabled() const { return !traj.empty(); }
+	private:
+		struct point_t { double t, v; };
+		const double maxDelay;
+		std::list<point_t> traj;
+};
 #endif
