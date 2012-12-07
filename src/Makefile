@@ -36,7 +36,7 @@ CFLAGS += ${OMP} -fPIC -Wall -I../include -I./
 # Best bet for GNU compiler
 CXX = g++
 CC = gcc
-OPTFLAG = -O3
+OPTFLAG = -g
 
 #
 # SHOULD NOT NEED TO EDIT BELOW THIS LINE
