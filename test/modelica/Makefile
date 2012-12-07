@@ -4,11 +4,11 @@ include ../make.common
 SUNDIALS=/usr/local/sundials
 OMHOME=$(HOME)/Code/openmodelica/trunk/build
 OMINCLUDE=-I$(OMHOME)/include/omc
-OMLIBS=-L$(OMHOME)/lib/omc /usr/local/lib/libf2c.a 
+OMLIBS=-L$(OMHOME)/lib/omc -lf2c 
 CFLAGS += $(OMINCLUDE) -I${SUNDIALS}/include
 LIBS += $(OMLIBS) -L${SUNDIALS}/lib -lsundials_kinsol -lsundials_nvecserial
 
-check: t0 t1 t2 t3 t4 t5 t6
+check: t0 t1 t2 t3 t4 t5 t6 t7
 
 t0:
 	omc +s +simCodeTarget=Adevs builtins.mo 
@@ -54,3 +54,9 @@ t6:
 	$(CC) $(CFLAGS) Sampler.cpp SimplePeriodicSampler_main.cpp $(LIBS)
 	$(TEST_EXEC) > tmp
 	$(DEL) Sampler.cpp Sampler.h
+	
+t7:
+	omc +s +simCodeTarget=Adevs Delay.mo 
+	$(CC) $(CFLAGS) Delay.cpp main_delay.cpp $(LIBS)
+	$(TEST_EXEC) > tmp
+	$(DEL) Delay.cpp Delay.h
