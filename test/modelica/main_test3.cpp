@@ -25,9 +25,6 @@ class CircuitExt:
 		{
 			cout << get_time() << " " << 
 				get_$PVsrc$PT$Pv() << " " << 
-				get_$PRbridge$PT1$Pv() << " " <<
-				get_$PRbridge$PT2$Pv() << " " <<
-				get_$PRbridge$PT2$Pi() << " " <<
 				endl;
 		}
 		void test_state()
@@ -42,9 +39,9 @@ class CircuitExt:
 			{
 				assert(fabs(v-get_$PVsrc$PT$Pv()) < 1E-6);
 			}
-			assert(fabs(get_$PRbridge$PT1$Pv()-get_$PRbridge$PT2$Pv())<1E-6);
-			assert(fabs(get_$PRbridge$PT1$Pv()-v/2.0)<1E-6);
-			assert(fabs(get_$PRbridge$PT2$Pi()) < 1E-6);
+			assert(fabs(get_$PR2$PT2$Pv()-v/2.0)<1E-6);
+			assert(fabs(get_$PR1$PT2$Pv()-v/2.0)<1E-6);
+			assert(fabs(get_$PRbridge$PT1$Pi()) < 1E-6);
 		}
 	private:
 		double start_time;

@@ -23,7 +23,6 @@ meta_modelica_string_lit.o \
 realString.o \
 meta_modelica.o \
 meta_modelica_real.o \
-gc/gc.o \
 gc/common.o  \
 gc/roots.o \
 gc/generational.o  \
