@@ -12,6 +12,24 @@
 using namespace std;
 using namespace adevs;
 
+void print(double tL, Delay* test_model)
+{
+	double errx = fabs(1.0-test_model->get_$Px());
+	if (tL > 2.5)
+		errx = fabs((sin(tL-2.5)+1.0) - test_model->get_$Px());
+	double errz = fabs(1.0+test_model->get_$Pz());
+	if (tL > 0.5)
+		errz = fabs((sin(tL-0.5)-1.0) - test_model->get_$Pz());
+	cout << tL << " "
+		<< test_model->get_$Pz() << " " 
+		<< test_model->get_$Py() << " " 
+		<< test_model->get_$Px() << " " 
+		<< errx << " " << errz 
+		<< endl;
+	assert(errx < 1E-8);
+	assert(errz < 1E-8);
+}
+
 int main()
 {
 	Delay* test_model = new Delay();
@@ -27,21 +45,11 @@ int main()
 		double tL = 0.0;
         while (sim->nextEventTime() <= 10.0)
 		{
-			double errx = fabs(1.0-test_model->get_$Px());
-			if (tL > 2.5)
-				errx = fabs((sin(tL-2.5)+1.0) - test_model->get_$Px());
-			double errz = fabs(1.0-test_model->get_$Pz());
-			if (tL > 0.5)
-				errz = fabs((sin(tL-0.5)-1.0) - test_model->get_$Pz());
-			cout << tL << " "
-				<< test_model->get_$Py() << " " 
-				<< test_model->get_$Px() << " " 
-				<< test_model->get_$Pz() << " " 
-				<< errx << " " << errz 
-				<< endl; 
+			print(tL,test_model);
 			tL = sim->nextEventTime();
 			sim->execNextEvent();
 		}
+		print(tL,test_model);
         delete sim;
 		delete hybrid_model;
         return 0;

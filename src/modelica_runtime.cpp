@@ -85,7 +85,7 @@ double AdevsDelayData::sample(double t)
 	}
 	assert((*p1).t <= t);
 	assert((*p2).t > t);
-	double h = (t-((*p1).t))/((*p2).t) - ((*p1).t);
+	double h = (t-((*p1).t))/(((*p2).t) - ((*p1).t));
 	return h*((*p2).v)+(1.0-h)*((*p1).v);
 }
 

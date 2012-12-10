@@ -5,7 +5,7 @@
 #define TOLERANCE 1E-10
 
 #include "adevs.h"
-#include "builtins.h"
+#include "builtins_noevents.h"
 #include <cmath>
 #include <iostream>
 
@@ -14,7 +14,7 @@ using namespace adevs;
 
 int main()
 {
-	builtins* test_model = new builtins();
+	builtins_noevents* test_model = new builtins_noevents();
 	Hybrid<OMC_ADEVS_IO_TYPE>* hybrid_model =
 		new Hybrid<OMC_ADEVS_IO_TYPE>(
 		test_model,
@@ -101,14 +101,7 @@ int main()
 			// misc. functions that should not be sensitive to the
 			// floating point hardware
 			assert(test_model->get_$Py_abs()==abs(test_model->get_$Px()));
-			assert(test_model->get_$Py_ceil()==ceil(test_model->get_$Px()));
-			assert(test_model->get_$Py_floor()==floor(test_model->get_$Px()));
 			assert(test_model->get_$Py_sign()==1);
-			assert(fabs(test_model->get_$Py_div()-floor(1.0/test_model->get_$Px()) < 1E-5));
-			assert(fabs(test_model->get_$Py_mod()-
-						(2.0-floor(2.0/test_model->get_$Px())*test_model->get_$Px()) < 1E-5));
-			assert(fabs(test_model->get_$Py_rem()-0.0) < 1E-5);
-			assert(test_model->get_$Py_int() == floor(test_model->get_$Px()));
 		}
         delete sim;
 		delete hybrid_model;
