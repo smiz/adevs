@@ -4,11 +4,17 @@ include ../make.common
 SUNDIALS=/usr/local/sundials
 OMHOME=$(HOME)/Code/openmodelica/trunk/build
 OMINCLUDE=-I$(OMHOME)/include/omc
-OMLIBS=-L$(OMHOME)/lib/omc /usr/local/lib/libf2c.a 
+OMLIBS=-L$(OMHOME)/lib/omc -lf2c
 CFLAGS += $(OMINCLUDE) -I${SUNDIALS}/include
 LIBS += $(OMLIBS) -L${SUNDIALS}/lib -lsundials_kinsol -lsundials_nvecserial
 
-check: t0 t1 t2 t3 t4 t5 t6 t7
+check: te tg t0 t1 t2 t3 t4 t5 t6 t7
+
+tg:
+	omc +s +simCodeTarget=Adevs builtins-events-algs.mo 
+	$(CC) $(CFLAGS) builtins_events.cpp main_builtins_algs.cpp $(LIBS)
+	$(TEST_EXEC) > tmp
+	$(DEL) builtins_events.cpp builtins_events.h
 
 te:
 	omc +s +simCodeTarget=Adevs builtins-events.mo 

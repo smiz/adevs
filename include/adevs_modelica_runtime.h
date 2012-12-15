@@ -5,6 +5,7 @@
 #include "openmodelica_func.h"
 #include "omc_error.h"
 #include "adevs_public_modelica_runtime.h"
+#include <cmath>
 #include <kinsol/kinsol.h>
 #include <kinsol/kinsol_dense.h>
 #include <nvector/nvector_serial.h>
@@ -69,5 +70,35 @@ void MODELICA_TERMINATE(const char* msg);
         if (zc[index] == -1) zc[index]=((exp1) OpSym (exp2)); \
         var=zc[index]; \
     } else var=((exp1) OpSym (exp2))
+
+class AdevsFloorFunc:
+	public AdevsMathEventFunc
+{
+	public:
+		AdevsFloorFunc(double eps):AdevsMathEventFunc(eps){}
+		virtual double calcValue(double expr);
+		virtual double getZUp(double expr);
+		virtual double getZDown(double expr);
+		virtual void goUp();
+		virtual void goDown();
+		virtual ~AdevsFloorFunc(){}
+	private:
+		double above, below, now;
+};
+
+class AdevsCeilFunc:
+	public AdevsMathEventFunc
+{
+	public:
+		AdevsCeilFunc(double eps):AdevsMathEventFunc(eps){}
+		virtual double calcValue(double expr);
+		virtual double getZUp(double expr);
+		virtual double getZDown(double expr);
+		virtual void goUp();
+		virtual void goDown();
+		virtual ~AdevsCeilFunc(){}
+	private:
+		double above, below, now;
+};
 
 #endif
