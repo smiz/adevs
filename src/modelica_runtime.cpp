@@ -103,3 +103,79 @@ void AdevsDelayData::insert(double t, double v)
 	}
 	traj.push_back(p);
 }
+
+/*
+ * Implementation of the floor function.
+ */
+double AdevsFloorFunc::calcValue(double expr)
+{
+	if (isInInit())
+	{
+		now = floor(expr);
+		below = now - eps;
+		above = now + 1.0;
+	}
+	return now;
+}
+
+void AdevsFloorFunc::goUp()
+{
+	now += 1.0;
+	above = now + 1.0;
+	below = now - eps;
+}
+
+void AdevsFloorFunc::goDown()
+{
+	above = now + eps;
+	now -= 1.0;
+	below = now - eps;
+}
+
+double AdevsFloorFunc::getZUp(double expr)
+{
+	return above-expr;
+}
+
+double AdevsFloorFunc::getZDown(double expr)
+{
+	return expr-below;
+}
+
+/*
+ * Implementation of the ceiling function.
+ */
+double AdevsCeilFunc::calcValue(double expr)
+{
+	if (isInInit())
+	{
+		now = ceil(expr);
+		above = now + eps;
+		below = now - 1.0;
+	}
+	return now;
+}
+
+void AdevsCeilFunc::goUp()
+{
+	below = now - eps;
+	now += 1.0;
+	above = now + eps; 
+}
+
+void AdevsCeilFunc::goDown()
+{
+	now -= 1.0;
+	above = now + eps;
+	below = now - 1.0;
+}
+
+double AdevsCeilFunc::getZUp(double expr)
+{
+	return above-expr;
+}
+
+double AdevsCeilFunc::getZDown(double expr)
+{
+	return expr-below;
+}

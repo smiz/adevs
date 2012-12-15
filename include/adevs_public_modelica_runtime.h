@@ -60,4 +60,28 @@ class AdevsDelayData
 		const double maxDelay;
 		std::list<point_t> traj;
 };
+
+class AdevsMathEventFunc
+{
+	public:
+		AdevsMathEventFunc(double eps):init(true),eps(eps){}
+		virtual double calcValue(double expr) = 0;
+		/**
+		 * Zero crossing functions are positive if
+		 * their is no event and negative of expr
+		 * has crossed the event threshold.
+		 */
+		virtual double getZUp(double expr) = 0;
+		virtual double getZDown(double expr) = 0;
+		virtual void goUp() = 0;
+		virtual void goDown() = 0;
+		void setInit(bool inInit) { init = inInit; }
+		bool isInInit() const { return init; }
+		virtual ~AdevsMathEventFunc(){}
+	private:
+		bool init;
+	protected:
+		const double eps;
+};
+
 #endif
