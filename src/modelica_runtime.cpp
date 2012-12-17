@@ -179,3 +179,57 @@ double AdevsCeilFunc::getZDown(double expr)
 {
 	return expr-below;
 }
+
+/*
+ * Implementation of the div function.
+ */
+double AdevsDivFunc::calcValue(double expr)
+{
+	if (isInInit())
+	{
+		now = trunc(expr);
+		calc_above_below();
+	}
+	return now;
+}
+
+void AdevsDivFunc::goUp()
+{
+	now += 1.0;
+	calc_above_below();
+}
+
+void AdevsDivFunc::goDown()
+{
+	now -= 1.0;
+	calc_above_below();
+}
+
+void AdevsDivFunc::calc_above_below()
+{
+	if (now >= 1.0)
+	{
+		above = now + 1.0;
+		below = now - eps;
+	}
+	else if (now <= -1.0)
+	{
+		above = now + eps;
+		below = now - 1.0;
+	}
+	else // now == 0.0
+	{
+		above = 1.0;
+		below = -1.0;
+	}
+}
+
+double AdevsDivFunc::getZUp(double expr)
+{
+	return above-expr;
+}
+
+double AdevsDivFunc::getZDown(double expr)
+{
+	return expr-below;
+}
