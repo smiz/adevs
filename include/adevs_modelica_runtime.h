@@ -101,4 +101,20 @@ class AdevsCeilFunc:
 		double above, below, now;
 };
 
+class AdevsDivFunc:
+	public AdevsMathEventFunc
+{
+	public:
+		AdevsDivFunc(double eps):AdevsMathEventFunc(eps){}
+		virtual double calcValue(double expr);
+		virtual double getZUp(double expr);
+		virtual double getZDown(double expr);
+		virtual void goUp();
+		virtual void goDown();
+		virtual ~AdevsDivFunc(){}
+	private:
+		double above, below, now;
+		void calc_above_below();
+};
+
 #endif

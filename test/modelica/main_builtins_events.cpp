@@ -38,6 +38,8 @@ int main()
 				model->get_$Py_mod1_compare() << " " <<
 				model->get_$Py_mod2() << " " <<
 				model->get_$Py_mod2_compare() << " " <<
+				model->get_$Py_div() << " " <<
+				model->get_$Py_div_expr() << 
 				endl;
 			assert(model->get_$Py_floor() <= model->get_$Py()+
 					model->getEventEpsilon());
@@ -50,6 +52,8 @@ int main()
 			assert(model->get_$Py_mod1()==model->get_$Py_mod1_compare());
 			assert(model->get_$Py_mod2()==model->get_$Py_mod2_compare());
 			assert(model->get_$Py_int()==model->get_$Py_floor());
+			assert(fabs(model->get_$Py_div()-trunc(model->get_$Py_div_expr()))
+					<= 1.0+model->getEventEpsilon());
 		}
         delete sim;
 		delete hybrid_model;
