@@ -80,7 +80,6 @@ class CircuitExt:
 		cout <<
 			get_time() << " " << // Print the time
 			get_$PV$PT$Pv() << " " << // The voltage
-			get_$PGnd$PT$Pi() << " " << // Current through the resistor
 			endl;
 	}
 	private:
