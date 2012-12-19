@@ -67,26 +67,37 @@ void AdevsSampleData::update(double tNow, double eps)
  * Implementation of the AdevsDelayData class.
  */
 AdevsDelayData::AdevsDelayData(double maxDelay):
-	maxDelay(maxDelay)
+	maxDelay(maxDelay),
+	start(0),
+	num_els(0),
+	size(1024)
 {
+	traj = new point_t[size];
 }
 
 double AdevsDelayData::sample(double t)
 {
-	assert(t <= traj.back().t);
-	if (t <= traj.front().t)
-		return traj.front().v;
+	assert(t <= traj[get_index(num_els-1)].t);
+	if (t <= traj[get_index(0)].t)
+		return traj[get_index(0)].v;
 	// Find two points that bracket t
-	list<point_t>::iterator p1, p2 = traj.begin();
-	while ((*p2).t <= t)
+	int i = 0, j = num_els-1, k;
+	while (i+1 != j)
 	{
-		p1 = p2;
-		p2++;
+		k = (i+j)/2;	
+		if (t < traj[get_index(k)].t)
+			j = k;
+		else i = k;
 	}
-	assert((*p1).t <= t);
-	assert((*p2).t > t);
-	double h = (t-((*p1).t))/(((*p2).t) - ((*p1).t));
-	return h*((*p2).v)+(1.0-h)*((*p1).v);
+	assert(i < j);
+	assert(i >= 0);
+	assert(j < num_els);
+	point_t &p2 = traj[get_index(j)];
+	point_t &p1 = traj[get_index(i)];
+	assert(t < p2.t);
+	assert(p1.t <= t);
+	double h = (t-p1.t)/(p2.t-p1.t);
+	return h*p2.v+(1.0-h)*p1.v;
 }
 
 void AdevsDelayData::insert(double t, double v)
@@ -94,14 +105,33 @@ void AdevsDelayData::insert(double t, double v)
 	point_t p;
 	p.t = t;
 	p.v = v;
-	assert(traj.empty() || p.t >= traj.back().t);
-	if (!traj.empty() &&
-		(traj.back().t - traj.front().t > maxDelay) &&
-		(t - traj.front().t > maxDelay))
+	assert(num_els == 0 || p.t >= traj[get_index(num_els-1)].t);
+	if (num_els > 1 && (t - traj[get_index(1)].t > maxDelay))
 	{
-		traj.pop_front();
+		// Remove the outdated element
+		num_els--;
+		start = (start+1)%size;
 	}
-	traj.push_back(p);
+	// Expand the array if needed
+	if (num_els + 1 == size)
+	{
+		int new_size = size*2;
+		point_t* tmp = new point_t[new_size];
+		for (int i = 0; i < num_els; i++)
+			tmp[i] = traj[get_index(i)];
+		start = 0;
+		size = new_size;
+		delete [] traj;
+		traj = tmp;
+	}
+	// Add the new element
+	traj[get_index(num_els)] = p;
+	num_els++;
+}
+
+AdevsDelayData::~AdevsDelayData()
+{
+	delete [] traj;
 }
 
 /*
