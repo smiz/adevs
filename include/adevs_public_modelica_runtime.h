@@ -36,6 +36,7 @@ class AdevsDelayData
 		 * maxDelay.
 		 */
 		AdevsDelayData(double maxDelay);
+		~AdevsDelayData();
 		/**
 		 * Sample the trajectory at the point t.
 		 * A point must be added to the trajectory before
@@ -54,11 +55,14 @@ class AdevsDelayData
 		 * Does this data have enough points to calculate
 		 * a value.
 		 */
-		bool isEnabled() const { return !traj.empty(); }
+		bool isEnabled() const { return num_els != 0; }
 	private:
 		struct point_t { double t, v; };
 		const double maxDelay;
-		std::list<point_t> traj;
+		point_t* traj;
+		int start, num_els, size;
+
+		int get_index(int i) const { return (start+i)%size; }
 };
 
 class AdevsMathEventFunc
