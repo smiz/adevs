@@ -377,7 +377,9 @@ template <typename X> class event_locator
 		 * setting the events flags to true if the corresponding z entry in
 		 * the state_event_func above triggered the event. The value of
 		 * h is overwritten with the event time, and the state of the model
-		 * at that time is copied to qend.
+		 * at that time is copied to qend. The event finding method should
+		 * select an instant of time when the zero crossing function is zero or
+		 * has changed sign to trigger an event.
 		 */
 		virtual bool find_events(bool* events, const double *qstart, 
 				double* qend, ode_solver<X>* solver, double& h) = 0;
@@ -430,6 +432,11 @@ template <typename X, class T = double> class Hybrid:
 		 */
 		void delta_int()
 		{
+			if (!missedOutput.empty())
+			{
+				missedOutput.clear();
+				return;
+			}
 			e_accum += ta();
 			// Execute any discrete events
 			event_happened = event_exists;
@@ -448,12 +455,33 @@ template <typename X, class T = double> class Hybrid:
 		 */
 		void delta_ext(T e, const Bag<X>& xb)
 		{
+			bool state_event_exists = false;
 			event_happened = true;
-			solver->advance(q,e); // Advance the state q by e
-			// Let the model adjust algebraic variables, etc. for the new state
-			sys->postStep(q);
-			// Process the discrete input
-			sys->external_event(q,e+e_accum,xb);
+			// Check that we have not missed a state event
+			if (event_exists)
+			{
+				for (int i = 0; i < sys->numVars(); i++)
+					q_trial[i] = q[i];
+				solver->advance(q_trial,e);
+				state_event_exists =
+					event_finder->find_events(event,q,q_trial,solver,e);
+				// We missed an event
+				if (state_event_exists)
+				{
+					output_func(missedOutput);
+					sys->confluent_event(q_trial,event,xb); 
+					for (int i = 0; i < sys->numVars(); i++)
+						q[i] = q_trial[i];
+				}
+			}
+			if (!state_event_exists)// We didn't miss an event
+			{
+				solver->advance(q,e); // Advance the state q by e
+				// Let the model adjust algebraic variables, etc. for the new state
+				sys->postStep(q);
+				// Process the discrete input
+				sys->external_event(q,e+e_accum,xb);
+			}
 			e_accum = 0.0;
 			// Copy the new state to the trial solution 
 			for (int i = 0; i < sys->numVars(); i++) q_trial[i] = q[i];
@@ -465,9 +493,14 @@ template <typename X, class T = double> class Hybrid:
 		 */
 		void delta_conf(const Bag<X>& xb)
 		{
+			if (!missedOutput.empty())
+			{
+				missedOutput.clear();
+				if (sigma > 0.0) event_exists = false;
+			}
 			// Execute any discrete events
 			event_happened = true;
-			if (event_exists) // Execute the confluent or external event
+			if (event_exists) 
 				sys->confluent_event(q_trial,event,xb); 
 			else sys->external_event(q_trial,e_accum+ta(),xb);
 			e_accum = 0.0;
@@ -476,14 +509,29 @@ template <typename X, class T = double> class Hybrid:
 			tentative_step(); // Take a tentative step 
 		}
 		/// Do not override.
-		T ta() { return sigma; }
+		T ta()
+		{
+			if (missedOutput.empty()) return sigma;
+			else return 0.0;
+		}
 		/// Do not override. Invokes the ode_system output function as needed.
 		void output_func(Bag<X>& yb)
 		{
-			// Let the model adjust algebraic variables, etc. for the new state
-			sys->postStep(q_trial);
-			if (event_exists)
-				sys->output_func(q_trial,event,yb);
+			if (!missedOutput.empty())
+			{
+				typename Bag<X>::iterator iter = missedOutput.begin();
+				for (; iter != missedOutput.end(); iter++)
+					yb.insert(*iter);
+				if (sigma == 0.0) // Confluent event
+					sys->output_func(q_trial,event,yb);
+			}
+			else
+			{
+				// Let the model adjust algebraic variables, etc. for the new state
+				sys->postStep(q_trial);
+				if (event_exists)
+					sys->output_func(q_trial,event,yb);
+			}
 		}
 		/// Do not override. Invokes the ode_system gc_output method as needed.
 		void gc_output(Bag<X>& gb) { sys->gc_output(gb); }
@@ -503,6 +551,7 @@ template <typename X, class T = double> class Hybrid:
 		bool event_exists; // True if there is at least one event
 		bool event_happened; // True if a discrete event in the ode_system took place
 		double e_accum; // Accumlated time between discrete events
+		Bag<X> missedOutput; // Output missed at an external event
 		// Execute a tentative step and calculate the time advance function
 		void tentative_step()
 		{

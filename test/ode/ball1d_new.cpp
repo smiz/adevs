@@ -83,7 +83,7 @@ class bouncing_ball:
 	private:
 		bool sample;
 		double last_event_time;
-		enum { CLIMB, FALL } phase;
+		enum { CLIMB = 0, FALL = 1} phase;
 };
 
 class SolutionChecker:
@@ -129,16 +129,19 @@ void run_test(ode_system<PortValue<double> >* b,
 
 int main()
 {
-	// Test corrected euler
+	// Test linear algorithm
 	bouncing_ball* ball = new bouncing_ball();
 	run_test(ball,new corrected_euler<PortValue<double> >(ball,1E-6,0.01),
 			new linear_event_locator<PortValue<double> >(ball,1E-7)); 
 	// Test RK 45
-	ball = new bouncing_ball();
+	ball = new bouncing_ball(); 
 	run_test(ball,new rk_45<PortValue<double> >(ball,1E-6,0.01),
 			new linear_event_locator<PortValue<double> >(ball,1E-7));
-	// Test bisection algorithm
-	ball = new bouncing_ball();
+	// Test bisection algorithm 
+	ball = new bouncing_ball(); 
+	run_test(ball,new corrected_euler<PortValue<double> >(ball,1E-6,0.01),
+			new bisection_event_locator<PortValue<double> >(ball,1E-7));
+	ball = new bouncing_ball(); 
 	run_test(ball,new rk_45<PortValue<double> >(ball,1E-6,0.01),
 			new bisection_event_locator<PortValue<double> >(ball,1E-7));
 	return 0;
