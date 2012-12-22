@@ -79,8 +79,6 @@ class AdevsFloorFunc:
 		virtual double calcValue(double expr);
 		virtual double getZUp(double expr);
 		virtual double getZDown(double expr);
-		virtual void goUp();
-		virtual void goDown();
 		virtual ~AdevsFloorFunc(){}
 	private:
 		double above, below, now;
@@ -94,8 +92,6 @@ class AdevsCeilFunc:
 		virtual double calcValue(double expr);
 		virtual double getZUp(double expr);
 		virtual double getZDown(double expr);
-		virtual void goUp();
-		virtual void goDown();
 		virtual ~AdevsCeilFunc(){}
 	private:
 		double above, below, now;
@@ -109,8 +105,6 @@ class AdevsDivFunc:
 		virtual double calcValue(double expr);
 		virtual double getZUp(double expr);
 		virtual double getZDown(double expr);
-		virtual void goUp();
-		virtual void goDown();
 		virtual ~AdevsDivFunc(){}
 	private:
 		double above, below, now;

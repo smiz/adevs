@@ -77,8 +77,6 @@ class AdevsMathEventFunc
 		 */
 		virtual double getZUp(double expr) = 0;
 		virtual double getZDown(double expr) = 0;
-		virtual void goUp() = 0;
-		virtual void goDown() = 0;
 		void setInit(bool inInit) { init = inInit; }
 		bool isInInit() const { return init; }
 		virtual ~AdevsMathEventFunc(){}
