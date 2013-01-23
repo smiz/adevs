@@ -1,6 +1,6 @@
 class test1
 	Real x(start = 0);
-	parameter Real a(start = -1);
+	parameter Real a = -1;
 	Boolean goUp(start = false);
 	Boolean goDown(start = false);
 	Boolean xAbove(start=false);

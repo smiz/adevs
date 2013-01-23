@@ -13,7 +13,7 @@ partial model TwoPin
 end TwoPin;
 
 class Resistor extends TwoPin;
-	parameter Real R(start=1);
+	parameter Real R = 1;
 equation
 	T1.v-T2.v = T1.i*R;
 	T1.i + T2.i = 0;
@@ -25,7 +25,7 @@ equation
 end Ground;
 
 class VoltageSource extends OnePin;
-	parameter Real Vref(start=0);
+	parameter Real Vref = 0;
 equation
 	der(T.v) = 
 		if Vref > T.v then (abs(Vref-T.v))^(1.0/3.0)

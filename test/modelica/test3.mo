@@ -10,7 +10,7 @@ equation
 end Ground;
 
 class Resistor
-	parameter Real R(start=1);
+	parameter Real R = 1;
 	Pin T1;
 	Pin T2;
 equation
@@ -19,7 +19,7 @@ equation
 end Resistor;
 
 class VoltageSource
-	parameter Real Vref(start=1);
+	parameter Real Vref =1;
 	Pin T;
 equation
 	der(T.v) = Vref-T.v;
