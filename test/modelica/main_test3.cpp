@@ -19,12 +19,12 @@ class CircuitExt:
 		void external_event(double* q, double e, const Bag<double>& xb)
 		{
 			start_time = e;
-			set_$PVsrc$PVref(0.0);
+			set_Vsrc_Vref(0.0);
 		}
 		void print_state()
 		{
 			cout << get_time() << " " << 
-				get_$PVsrc$PT$Pv() << " " << 
+				get_Vsrc_T_v() << " " << 
 				endl;
 		}
 		void test_state()
@@ -33,15 +33,15 @@ class CircuitExt:
 			if (get_time() > start_time)
 			{
 				v = exp(start_time-get_time());
-				assert(fabs(v-get_$PVsrc$PT$Pv()) < 1E-6);
+				assert(fabs(v-get_Vsrc_T_v()) < 1E-6);
 			}
 			else
 			{
-				assert(fabs(v-get_$PVsrc$PT$Pv()) < 1E-6);
+				assert(fabs(v-get_Vsrc_T_v()) < 1E-6);
 			}
-			assert(fabs(get_$PR2$PT2$Pv()-v/2.0)<1E-6);
-			assert(fabs(get_$PR1$PT2$Pv()-v/2.0)<1E-6);
-			assert(fabs(get_$PRbridge$PT1$Pi()) < 1E-6);
+			assert(fabs(get_R2_T2_v()-v/2.0)<1E-6);
+			assert(fabs(get_R1_T2_v()-v/2.0)<1E-6);
+			assert(fabs(get_Rbridge_T1_i()) < 1E-6);
 		}
 	private:
 		double start_time;

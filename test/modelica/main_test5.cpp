@@ -12,44 +12,44 @@ void test_vars(EventTests* model)
 {
 	cout <<
 		model->get_time() << " " <<
-		model->get_$Pcount() << " " <<
-		model->get_$Px() << " " <<
-		model->get_$Py() << " " <<
+		model->get_count() << " " <<
+		model->get_x() << " " <<
+		model->get_y() << " " <<
 		endl;
-	assert(fabs(model->get_$Px()) <= 1.0+2.0*model->getEventEpsilon());
-	assert(fabs(model->get_$Py()) <= 1.0+2.0*model->getEventEpsilon());
+	assert(fabs(model->get_x()) <= 1.0+2.0*model->getEventEpsilon());
+	assert(fabs(model->get_y()) <= 1.0+2.0*model->getEventEpsilon());
 	// 2 x accounts for hysteresis
-	assert(model->get_$Pcount() >= floor(model->get_time()*2.0)+1);
-	if (model->get_$Px()-model->get_$Px1() > 2.0*model->getEventEpsilon())
+	assert(model->get_count() >= floor(model->get_time()*2.0)+1);
+	if (model->get_x()-model->get_x1() > 2.0*model->getEventEpsilon())
 	{
-		assert(model->get_$Pv1());
-		assert(model->get_$Pv2());
-		assert(!model->get_$Pv3());
-		assert(!model->get_$Pv3());
+		assert(model->get_v1());
+		assert(model->get_v2());
+		assert(!model->get_v3());
+		assert(!model->get_v3());
 	}
 	// 2 x accounts for hysteresis
-	else if (model->get_$Px()-model->get_$Px1() < -2.0*model->getEventEpsilon())
+	else if (model->get_x()-model->get_x1() < -2.0*model->getEventEpsilon())
 	{
-		assert(!model->get_$Pv1());
-		assert(!model->get_$Pv2());
-		assert(model->get_$Pv3());
-		assert(model->get_$Pv3());
+		assert(!model->get_v1());
+		assert(!model->get_v2());
+		assert(model->get_v3());
+		assert(model->get_v3());
 	}
 	// 2 x accounts for hysteresis
-	if (model->get_$Px()-model->get_$Py() > 2.0*model->getEventEpsilon())
+	if (model->get_x()-model->get_y() > 2.0*model->getEventEpsilon())
 	{
-		assert(model->get_$Pw1());
-		assert(model->get_$Pw2());
-		assert(!model->get_$Pw3());
-		assert(!model->get_$Pw3());
+		assert(model->get_w1());
+		assert(model->get_w2());
+		assert(!model->get_w3());
+		assert(!model->get_w3());
 	}
 	// 2 x accounts for hysteresis
-	else if (model->get_$Px()-model->get_$Py() < -2.0*model->getEventEpsilon())
+	else if (model->get_x()-model->get_y() < -2.0*model->getEventEpsilon())
 	{
-		assert(!model->get_$Pw1());
-		assert(!model->get_$Pw2());
-		assert(model->get_$Pw3());
-		assert(model->get_$Pw3());
+		assert(!model->get_w1());
+		assert(!model->get_w2());
+		assert(model->get_w3());
+		assert(model->get_w3());
 	}
 }
 

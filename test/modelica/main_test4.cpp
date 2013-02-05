@@ -27,7 +27,7 @@ class CircuitExt:
 		void extra_state_event_funcs(double* z)
 		{
 			if (!atVref)
-				z[0] = get_$PV$PT$Pv()-get_$PV$PVref();
+				z[0] = get_V_T_v()-get_V_Vref();
 			else
 				z[0] = 1.0;
 		}
@@ -51,7 +51,7 @@ class CircuitExt:
 			Circuit::external_event(q,e,xb);
 			// Set the reference voltage and indicate that we are no longer
 			// at the reference.
-			set_$PV$PVref(*(xb.begin()));
+			set_V_Vref(*(xb.begin()));
 			atVref = false;
 			// Reinitialize the continuous model. This is really only necessary
 			// if your discrete event may result in new values for the 
@@ -71,8 +71,8 @@ class CircuitExt:
 			// output the current value of the voltage.
 			if (event_flags[numStateEvents()])
 			{
-				yb.insert(get_$PV$PT$Pv());
-				cerr << "Reached Vref=" << (vstop=get_$PV$PT$Pv())
+				yb.insert(get_V_T_v());
+				cerr << "Reached Vref=" << (vstop=get_V_T_v())
 					<< " @ t=" << (tstop=get_time()) << endl;
 			}
 		}
@@ -80,7 +80,7 @@ class CircuitExt:
 	{
 		cout <<
 			get_time() << " " << // Print the time
-			get_$PV$PT$Pv() << " " << // The voltage
+			get_V_T_v() << " " << // The voltage
 			endl;
 	}
 	void check()
