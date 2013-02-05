@@ -14,16 +14,16 @@ using namespace adevs;
 
 void print(double tL, Delay* test_model)
 {
-	double errx = fabs(1.0-test_model->get_$Px());
+	double errx = fabs(1.0-test_model->get_x());
 	if (tL > 2.5)
-		errx = fabs((sin(tL-2.5)+1.0) - test_model->get_$Px());
-	double errz = fabs(1.0+test_model->get_$Pz());
+		errx = fabs((sin(tL-2.5)+1.0) - test_model->get_x());
+	double errz = fabs(1.0+test_model->get_z());
 	if (tL > 0.5)
-		errz = fabs((sin(tL-0.5)-1.0) - test_model->get_$Pz());
+		errz = fabs((sin(tL-0.5)-1.0) - test_model->get_z());
 	cout << tL << " "
-		<< test_model->get_$Pz() << " " 
-		<< test_model->get_$Py() << " " 
-		<< test_model->get_$Px() << " " 
+		<< test_model->get_z() << " " 
+		<< test_model->get_y() << " " 
+		<< test_model->get_x() << " " 
 		<< errx << " " << errz 
 		<< endl;
 	assert(errx < 1E-8);

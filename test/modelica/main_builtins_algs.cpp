@@ -24,46 +24,46 @@ int main()
         // Create the simulator
         Simulator<OMC_ADEVS_IO_TYPE>* sim =
 			new Simulator<OMC_ADEVS_IO_TYPE>(hybrid_model);
-		int n = model->get_$Pn();
+		int n = model->get_n();
 		// Run the simulation, testing the solution as we go
         while (sim->nextEventTime() <= 10.0)
 		{
 			double t = sim->nextEventTime();
 			sim->execNextEvent();
 			cout << t << " " <<
-				model->get_$Px() << " " <<
-				model->get_$Py() << " " <<
-				model->get_$Py_floor() << " " <<
-				model->get_$Py_int() << " " <<
-				model->get_$Py_ceil() << " " <<
-				model->get_$Py_mod1() << " " <<
-				model->get_$Py_mod1_compare() << " " <<
-				model->get_$Py_mod2() << " " <<
-				model->get_$Py_mod2_compare() << " " <<
-				model->get_$Py_div1() << " " <<
-				model->get_$Py_div2() << " " <<
-				model->get_$Py_rem1() << " " <<
-				model->get_$Py_rem2() << " " <<
-				model->get_$Pn() << " " << 
+				model->get_x() << " " <<
+				model->get_y() << " " <<
+				model->get_y_floor() << " " <<
+				model->get_y_int() << " " <<
+				model->get_y_ceil() << " " <<
+				model->get_y_mod1() << " " <<
+				model->get_y_mod1_compare() << " " <<
+				model->get_y_mod2() << " " <<
+				model->get_y_mod2_compare() << " " <<
+				model->get_y_div1() << " " <<
+				model->get_y_div2() << " " <<
+				model->get_y_rem1() << " " <<
+				model->get_y_rem2() << " " <<
+				model->get_n() << " " << 
 				endl;
 
-			if (n != model->get_$Pn())
+			if (n != model->get_n())
 			{
 				cerr << t << " Check!" << endl;
-				n = model->get_$Pn();
-				assert(model->get_$Py_div1() ==
-					trunc(model->get_$Py()/model->get_$Px()));
-				assert(model->get_$Py_div2() ==
-					trunc(model->get_$Px()/model->get_$Py()));
-				assert(model->get_$Py_floor() == floor(model->get_$Py()));
-				assert(model->get_$Py_ceil() == ceil(model->get_$Py()));
-				assert(model->get_$Py_mod1()==model->get_$Py_mod1_compare());
-				assert(model->get_$Py_mod2()==model->get_$Py_mod2_compare());
-				assert(model->get_$Py_int()==model->get_$Py_floor());
-				assert(model->get_$Py_rem1()==
-						modelica_rem_real(model->get_$Px(),model->get_$Py()));
-				assert(model->get_$Py_rem2()==
-						modelica_rem_real(model->get_$Py(),model->get_$Px()));
+				n = model->get_n();
+				assert(model->get_y_div1() ==
+					trunc(model->get_y()/model->get_x()));
+				assert(model->get_y_div2() ==
+					trunc(model->get_x()/model->get_y()));
+				assert(model->get_y_floor() == floor(model->get_y()));
+				assert(model->get_y_ceil() == ceil(model->get_y()));
+				assert(model->get_y_mod1()==model->get_y_mod1_compare());
+				assert(model->get_y_mod2()==model->get_y_mod2_compare());
+				assert(model->get_y_int()==model->get_y_floor());
+				assert(model->get_y_rem1()==
+						modelica_rem_real(model->get_x(),model->get_y()));
+				assert(model->get_y_rem2()==
+						modelica_rem_real(model->get_y(),model->get_x()));
 			}
 		}
 		delete sim;

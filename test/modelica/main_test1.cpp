@@ -22,27 +22,27 @@ class test1Ext:
 			// Apply internal event function of the super class
 			test1::internal_event(q,state_event);
 			// Change the direction as needed
-			if (get_$PgoUp())
+			if (get_goUp())
 			{
 				bounce++;
-				set_$Pa(1.0);
+				set_a(1.0);
 				resetTime = get_time();
 			}
-			else if (get_$PgoDown())
+			else if (get_goDown())
 			{
 				bounce++;
-			   	set_$Pa(-1.0);
+			   	set_a(-1.0);
 				resetTime = get_time();
 			}
 		}
 		void print_state()
 		{
 			cout << get_time() << " " << 
-				get_$Px() << " " << 
-				get_$P$DER$Px() << " " << 
-				get_$Pa() << " " <<
-				get_$PgoUp() << " " <<
-				get_$PgoDown() << " " <<
+				get_x() << " " << 
+				get_DER_x() << " " << 
+				get_a() << " " <<
+				get_goUp() << " " <<
+				get_goDown() << " " <<
 				endl;
 		}
 		void test_state()
@@ -52,7 +52,7 @@ class test1Ext:
 				x = 2.0*exp(resetTime-get_time());
 			else
 				x = exp(get_time()-resetTime);
-			assert(fabs(x-get_$Px()) < 1E-4);
+			assert(fabs(x-get_x()) < 1E-4);
 		}
 	private:
 		int bounce;
@@ -72,10 +72,12 @@ int main()
 			new Simulator<OMC_ADEVS_IO_TYPE>(hybrid_model);
 		// Check initial values
 		assert(test_model->get_time() == 0.0);
-		assert(fabs(test_model->get_$Px()-2.0)<1E-6);
-		assert(fabs(test_model->get_$P$DER$Px()+2.0)<1E-6);
-		assert(test_model->get_$PgoUp() == false);
-		assert(test_model->get_$PgoDown() == false);
+		cout << test_model->get_x() << " " <<
+			test_model->get_DER_x() << endl;
+		assert(fabs(test_model->get_x()-2.0)<1E-6);
+		assert(fabs(test_model->get_DER_x()+2.0)<1E-6);
+		assert(test_model->get_goUp() == false);
+		assert(test_model->get_goDown() == false);
 		test_model->print_state();
 		// Run the simulation, testing the solution as we go
         while (sim->nextEventTime() <= 2.0)

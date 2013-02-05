@@ -11,14 +11,14 @@ void test_vars(Sampler* model)
 	static int n = 0, nn = 0;
 	cout <<
 		model->get_time() << " " <<
-		model->get_$Px() << " " <<
-		model->get_$Py() << " " <<
-		model->get_$Psample_interval() << " " <<
+		model->get_x() << " " <<
+		model->get_y() << " " <<
+		model->get_sample_interval() << " " <<
 		endl;
-	if (fabs(model->get_time()-n*model->get_$Psample_interval()) <
+	if (fabs(model->get_time()-n*model->get_sample_interval()) <
 				model->getEventEpsilon())
 	{
-		assert(n == nn || model->get_$Px()==model->get_$Py());
+		assert(n == nn || model->get_x()==model->get_y());
 		n++;
 	}
 	else n = nn;

@@ -29,30 +29,30 @@ int main()
 			double t = sim->nextEventTime();
 			sim->execNextEvent();
 			cout << t << " " <<
-				model->get_$Px() << " " <<
-				model->get_$Py() << " " <<
-				model->get_$Py_floor() << " " <<
-				model->get_$Py_int() << " " <<
-				model->get_$Py_ceil() << " " <<
-				model->get_$Py_mod1() << " " <<
-				model->get_$Py_mod1_compare() << " " <<
-				model->get_$Py_mod2() << " " <<
-				model->get_$Py_mod2_compare() << " " <<
-				model->get_$Py_div() << " " <<
-				model->get_$Py_div_expr() << 
+				model->get_x() << " " <<
+				model->get_y() << " " <<
+				model->get_y_floor() << " " <<
+				model->get_y_int() << " " <<
+				model->get_y_ceil() << " " <<
+				model->get_y_mod1() << " " <<
+				model->get_y_mod1_compare() << " " <<
+				model->get_y_mod2() << " " <<
+				model->get_y_mod2_compare() << " " <<
+				model->get_y_div() << " " <<
+				model->get_y_div_expr() << 
 				endl;
-			assert(model->get_$Py_floor() <= model->get_$Py()+
+			assert(model->get_y_floor() <= model->get_y()+
 					model->getEventEpsilon());
-			assert(fabs(model->get_$Py_floor()-model->get_$Py())
+			assert(fabs(model->get_y_floor()-model->get_y())
 					<= 1.0+model->getEventEpsilon());
-			assert(model->get_$Py_ceil() >= model->get_$Py()-
+			assert(model->get_y_ceil() >= model->get_y()-
 					model->getEventEpsilon());
-			assert(fabs(model->get_$Py_ceil()-model->get_$Py())
+			assert(fabs(model->get_y_ceil()-model->get_y())
 					<= 1.0+model->getEventEpsilon());
-			assert(model->get_$Py_mod1()==model->get_$Py_mod1_compare());
-			assert(model->get_$Py_mod2()==model->get_$Py_mod2_compare());
-			assert(model->get_$Py_int()==model->get_$Py_floor());
-			assert(fabs(model->get_$Py_div()-trunc(model->get_$Py_div_expr()))
+			assert(model->get_y_mod1()==model->get_y_mod1_compare());
+			assert(model->get_y_mod2()==model->get_y_mod2_compare());
+			assert(model->get_y_int()==model->get_y_floor());
+			assert(fabs(model->get_y_div()-trunc(model->get_y_div_expr()))
 					<= 1.0+model->getEventEpsilon());
 		}
         delete sim;
