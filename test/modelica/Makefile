@@ -9,7 +9,13 @@ CFLAGS += $(OMINCLUDE) -I${SUNDIALS}/include
 LIBS += $(OMLIBS) -L${SUNDIALS}/lib -lsundials_kinsol -lsundials_nvecserial
 
 #check: te tg t0 t1 t2 t3 t4 t5 t6 t7
-check: te tg t0 t1 t3 t4 t5 t6 t7
+check: te tg t0 t1 t3 t4 t5 t6 t7 linsys
+
+linsys:
+	omc +s +simCodeTarget=Adevs Linsys.mo 
+	$(CC) $(CFLAGS) Linsys.cpp Linsys_main.cpp $(LIBS)
+	$(TEST_EXEC) > tmp
+#	$(DEL) Linsys.cpp Linsys.h
 
 tg:
 	omc +s +simCodeTarget=Adevs builtins-events-algs.mo 

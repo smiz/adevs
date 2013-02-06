@@ -1,5 +1,5 @@
 model Linsys
-	parameter Real [2,2] A = { { 0.5, 1.0 }, { 0.5, 0.0 } };
+	parameter Real [2,2] A = { { -0.5, 0.0 }, { 0.0, -1.0 } };
 	Real [2] x;
 equation
 	der(x) = A*x;
