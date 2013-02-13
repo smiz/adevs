@@ -36,9 +36,18 @@ class oracle:
 		}
 		void external_event(double* q, double e, const Bag<double>& xb)
 		{
+			static const double pi = 3.141592653589793;
 			test_count++;
 			double test_angle = *(xb.begin());
-			assert(fabs(q[0]-test_angle) < 1E-4);
+			double diff = fabs(q[0]-test_angle);
+			// Rotate by a full circle?
+			if (diff > 1E-4) diff -= 2.0*pi;
+			if (!(fabs(diff) < 1E-4))
+			{
+				cerr << "AGGGH: " << q[0] << "," << test_angle << "," 
+					<< diff << endl;
+			}
+			assert(fabs(diff) < 1E-4);
 		}
 		void confluent_event(double*,const bool*,const Bag<double>&)
 		{
@@ -75,7 +84,7 @@ class test2Ext:
 		}
 		void output_func(const double*,const bool*, Bag<double>& yb)
 		{
-			yb.insert(get_$Ptheta());
+			yb.insert(get_theta());
 		}
 	private:
 		bool query;
@@ -88,14 +97,14 @@ int main()
 	Hybrid<OMC_ADEVS_IO_TYPE>* hybrid_model =
 		new Hybrid<OMC_ADEVS_IO_TYPE>(
 		pendulum,
-		new rk_45<OMC_ADEVS_IO_TYPE>(pendulum,1E-6,0.001),
+		new rk_45<OMC_ADEVS_IO_TYPE>(pendulum,1E-8,0.001),
 		new bisection_event_locator<OMC_ADEVS_IO_TYPE>(pendulum,1E-6));
 	// Create the test oracle
 	oracle* test_oracle = new oracle();
 	Hybrid<OMC_ADEVS_IO_TYPE>* hybrid_model_oracle =
 		new Hybrid<OMC_ADEVS_IO_TYPE>(
 		test_oracle,
-		new rk_45<OMC_ADEVS_IO_TYPE>(test_oracle,1E-6,0.001),
+		new rk_45<OMC_ADEVS_IO_TYPE>(test_oracle,1E-8,0.001),
 		new linear_event_locator<OMC_ADEVS_IO_TYPE>(test_oracle,1E-6));
 	// Combine them
 	SimpleDigraph<double>* model = new SimpleDigraph<double>();
@@ -106,15 +115,15 @@ int main()
 	// Create the simulator
 	Simulator<OMC_ADEVS_IO_TYPE>* sim =
 		new Simulator<OMC_ADEVS_IO_TYPE>(model);
-	assert(fabs(pendulum->get_$Ptheta()) < 1E-6);
+	assert(fabs(pendulum->get_theta()) < 1E-6);
 	cout << "# time, x, y" << endl;
-	while (sim->nextEventTime() <= 2.5)
+	while (sim->nextEventTime() <= 25.0)
 	{
 		cout << sim->nextEventTime() << " ";
 		sim->execNextEvent();
-		cout << pendulum->get_$Px() << " "  
-		<< pendulum->get_$Py() << " "
-		<< pendulum->get_$Ptheta() << " " 
+		cout << pendulum->get_x() << " "  
+		<< pendulum->get_y() << " "
+		<< pendulum->get_theta() << " " 
 		<< hybrid_model_oracle->getState(0) << endl;
 	}
 	assert(test_oracle->getTestCount() > 0);

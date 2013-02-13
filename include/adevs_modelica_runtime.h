@@ -111,4 +111,9 @@ class AdevsDivFunc:
 		void calc_above_below();
 };
 
+namespace adevs
+{
+	bool selectDynamicStates(double*,const long int,const long int,long int*);
+}
+
 #endif

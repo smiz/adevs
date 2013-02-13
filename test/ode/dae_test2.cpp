@@ -46,7 +46,7 @@ class dae:
 		{
 			assert(false);
 		}
-		void postStep(const double* q, const double* a)
+		void postStep(double* q, double* a)
 		{
 			check_soln(q,a);
 		}

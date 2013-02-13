@@ -223,3 +223,50 @@ double AdevsDivFunc::getZDown(double expr)
 {
 	return expr-below;
 }
+
+/**
+ * This function selects state variables in models with
+ * dynamic state selection. REF HERE.
+ *
+ * S is the array of selected states. Chosen states are 1, 
+ * deselected states are 0. The length of S is numStates.
+ * J has numCandidates-numStates rows and numCandidates
+ * columns.
+ */
+
+// From pivot.c
+extern "C" {
+int pivot(
+	double *A,
+	modelica_integer n_rows,
+	modelica_integer n_cols,
+	modelica_integer *rowInd,
+	modelica_integer *colInd
+	);
+};
+
+bool adevs::selectDynamicStates(
+	double* J,
+	const long int numStates,
+	const long int numCandidates,
+	long int* colInd
+	)
+{
+	long int oldColInd[numCandidates];
+	long int rowInd[numStates];
+	for (int col = 0; col < numCandidates; col++)
+	{
+		oldColInd[col] = colInd[col];
+	}
+	for (int row = 0; row < numStates; row++)
+	{
+		rowInd[row] = row;
+	}
+	pivot(J,numStates,numCandidates,rowInd,colInd);
+	for (int col = 0; col < numCandidates; col++)
+	{
+		if (oldColInd[col] != colInd[col])
+			return true;
+	}
+	return false;
+}
