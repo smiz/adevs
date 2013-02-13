@@ -35,7 +35,7 @@ template <typename X> class ode_system
 		 * continuous state variables. The main use of this callback is to
 		 * update algberaic variables. The default implementation does nothing.
 		 */
-		virtual void postStep(const double* q){};
+		virtual void postStep(double* q){};
 		/// The internal transition function
 		virtual void internal_event(double* q,
 				const bool* state_event) = 0;
@@ -128,7 +128,7 @@ template <typename X> class dae_se1_system:
 		 * This is called both when postStep(q) would be called and also immediately
 		 * after the execution a discrete state transition.
 		 */
-		virtual void postStep(const double* q, const double* a) = 0;
+		virtual void postStep(double* q, double* a) = 0;
 		/// The internal transition function
 		virtual void internal_event(double* q, double* a,
 				const bool* state_event) = 0;
@@ -185,7 +185,7 @@ template <typename X> class dae_se1_system:
 			return time_event_func(q,a);
 		}
 		/// Do not override
-		void postStep(const double* q)
+		void postStep(double* q)
 		{
 			solve(q);
 			postStep(q,a);
