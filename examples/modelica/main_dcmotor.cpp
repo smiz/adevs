@@ -21,8 +21,8 @@ int main()
 		{
 			cout << sim->nextEventTime() << " ";
 			sim->execNextEvent();
-			cout << dcm->get_$Pinductor1$Pi() << " " << dcm->get_$Pload$Pphi() <<
-				" " << dcm->get_$Pload$Pw() << endl;
+			cout << dcm->get_inductor1_i() << " " << dcm->get_load_phi() <<
+				" " << dcm->get_load_w() << endl;
 		}
         delete sim;
 		delete hybrid_model;

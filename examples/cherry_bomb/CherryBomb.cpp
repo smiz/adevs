@@ -54,7 +54,7 @@ class CherryBomb: public ode_system<string> {
 			if (state_event[1] && phase == FUSE_LIT)
 				yb.insert("BOOM!"); // Explode!
 		}
-		void postStep(const double* q) {
+		void postStep(double* q) {
 			// Write the current state to std out
 			cout << q[T] << " " << q[H] << " " << q[V] << " " << phase << endl;
 		}

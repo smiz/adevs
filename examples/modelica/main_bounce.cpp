@@ -21,7 +21,7 @@ int main()
 		{
 			cout << sim->nextEventTime() << " ";
 			sim->execNextEvent();
-			cout << bounce->get_$Px() << " " << bounce->get_$Py() << endl;
+			cout << bounce->get_x() << " " << bounce->get_y() << endl;
 		}
         delete sim;
 		delete hybrid_model;

@@ -21,9 +21,9 @@ int main()
 		{
 			cout << sim->nextEventTime() << " ";
 			sim->execNextEvent();
-			cout << ball->get_$Ph() << " " <<
-				ball->get_$Pv() << " " <<
-				ball->get_$Pflying() << endl;
+			cout << ball->get_h() << " " <<
+				ball->get_v() << " " <<
+				ball->get_flying() << endl;
 		}
         delete sim;
 		delete hybrid_model;

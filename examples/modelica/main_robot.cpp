@@ -27,12 +27,12 @@ class RobotWithSensor:
 		void init(double* q)
 		{
 			Robot::init(q);
-			k = int(get_$Ptheta()/mAngle);
+			k = int(get_theta()/mAngle);
 		}
 		void extra_state_event_funcs(double* z)
 		{
-			z[0] = get_$Ptheta()-mAngle*(k-1);
-			z[1] = get_$Ptheta()-mAngle*(k+1);
+			z[0] = get_theta()-mAngle*(k-1);
+			z[1] = get_theta()-mAngle*(k+1);
 		}
 		void internal_event(double* q, const bool* event_flags)
 		{
@@ -43,7 +43,7 @@ class RobotWithSensor:
 		void external_event(double* q, double e, const Bag<double>& xb)
 		{
 			Robot::external_event(q,e,xb);
-			set_$PFcontrol(*(xb.begin()));
+			set_Fcontrol(*(xb.begin()));
 			update_vars(q);
 		}
 		void confluent_event(double* q, const bool * event_flags,
@@ -132,7 +132,7 @@ int main()
 	{
 		cout << sim->nextEventTime() << " ";
 		sim->execNextEvent();
-		cout << robot->get_$Px() << " " << robot->get_$Ptheta() << 
+		cout << robot->get_x() << " " << robot->get_theta() << 
 			" " << robot->getSensorAngle() << endl;
 	}
 	delete sim;
