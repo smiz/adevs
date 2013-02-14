@@ -1,7 +1,7 @@
 class GeneratorWithSensor extends Thyme.Generator;
 	output Integer n(start=0);
-	public parameter Real freqInterval(start=0.002);
-	public parameter Real nomFreq(start=60.0);
+	public parameter Real freqInterval = 0.002;
+	public parameter Real nomFreq = 60.0;
 algorithm
 	when nomFreq*w > (n+1)*freqInterval then
 		n := n+1;

@@ -33,8 +33,8 @@ class twoBusAdjustableLoad:
 		void init(double* q)
 		{
 			twobus::init(q);
-			r0 = get_$PLoad$Pimp$PR();
-			n = get_$PGenr$Pn(); 
+			r0 = get_Load_imp_R();
+			n = get_Genr_n(); 
 			output_event = false;
 		}
 		double time_event_func(const double* q)
@@ -45,8 +45,8 @@ class twoBusAdjustableLoad:
 		void internal_event(double* q, const bool* state_event)
 		{
 			twobus::internal_event(q,state_event);
-			output_event = n != get_$PGenr$Pn();
-			n = get_$PGenr$Pn();
+			output_event = n != get_Genr_n();
+			n = get_Genr_n();
 		}
 		void confluent_event(double* q, const bool* state_event,
 			Bag<OMC_ADEVS_IO_TYPE>& xb)
@@ -65,7 +65,7 @@ class twoBusAdjustableLoad:
 				else
 					control_adj_fraction = (*iter).value;
 			}
-			set_$PLoad$Pimp$PR(
+			set_Load_imp_R(
 				(1.0+load_adj_fraction+control_adj_fraction)*r0);
 			update_vars(q,true); 
 		}
@@ -75,7 +75,7 @@ class twoBusAdjustableLoad:
 			if (output_event)
 			{
 				yb.insert(OMC_ADEVS_IO_TYPE(sensor_event,
-					n*get_$PGenr$PfreqInterval()/get_$PGenr$PnomFreq()));
+					n*get_Genr_freqInterval()/get_Genr_nomFreq()));
 			}
 		}
 
@@ -267,16 +267,16 @@ void SmartGrid::print_vars(double t)
 		fout << "# t,w,Pm,Pe,Ef,theta,,T1.va,T1.vb,V,V0" << endl;
 	}
 	fout << t << " " 
-		<< pwr_sys->get_$PGenr$Pw()*pwr_sys->get_$PGenr$PnomFreq() << " "
-		<< pwr_sys->get_$PGenr$Pn()*pwr_sys->get_$PGenr$PfreqInterval() << " "
-		<< pwr_sys->get_$PGenr$PPm() << " "
-		<< pwr_sys->get_$PGenr$PPe() << " "
-		<< pwr_sys->get_$PGenr$PEf() << " "
-		<< pwr_sys->get_$PGenr$Ptheta() << " "
-		<< pwr_sys->get_$PL12$PT1$Pva() << " "
-		<< pwr_sys->get_$PL12$PT1$Pvb() << " "
-		<< pwr_sys->get_$PGenr$PV() << " "
-		<< pwr_sys->get_$PGenr$PV0() << " "
+		<< pwr_sys->get_Genr_w()*pwr_sys->get_Genr_nomFreq() << " "
+		<< pwr_sys->get_Genr_n()*pwr_sys->get_Genr_freqInterval() << " "
+		<< pwr_sys->get_Genr_Pm() << " "
+		<< pwr_sys->get_Genr_Pe() << " "
+		<< pwr_sys->get_Genr_Ef() << " "
+		<< pwr_sys->get_Genr_theta() << " "
+		<< pwr_sys->get_L12_T1_va() << " "
+		<< pwr_sys->get_L12_T1_vb() << " "
+		<< pwr_sys->get_Genr_V() << " "
+		<< pwr_sys->get_Genr_V0() << " "
 		<< endl;
 }
 

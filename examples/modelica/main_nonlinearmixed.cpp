@@ -23,10 +23,10 @@ int main()
         while (sim->nextEventTime() <= 5.0)
 		{
 			cout << tL << " ";
-			cout << nonlinearmixed->get_$Pxx() << " "  
-				<< nonlinearmixed->get_$Px() << " "
-				<< nonlinearmixed->get_$Py() << " "
-				<< nonlinearmixed->get_$Pz() << endl;
+			cout << nonlinearmixed->get_xx() << " "  
+				<< nonlinearmixed->get_x() << " "
+				<< nonlinearmixed->get_y() << " "
+				<< nonlinearmixed->get_z() << endl;
 			tL = sim->nextEventTime();
 			sim->execNextEvent();
 		}

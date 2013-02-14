@@ -21,11 +21,11 @@ int main()
 		cout << "# time, computed soln, actual soln, error" << endl;
         while (sim->nextEventTime() <= 10.0)
 		{
-			double actual = exp(hello->get_$Pa()*sim->nextEventTime());
+			double actual = exp(hello->get_a()*sim->nextEventTime());
 			cout << sim->nextEventTime() << " ";
 			sim->execNextEvent();
-			cout << hello->get_$Px() << " " << actual << " "
-				<< hello->get_$Px()-actual << endl;
+			cout << hello->get_x() << " " << actual << " "
+				<< hello->get_x()-actual << endl;
 		}
         delete sim;
 		delete hybrid_model;

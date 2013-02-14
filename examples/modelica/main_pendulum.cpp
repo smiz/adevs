@@ -23,8 +23,8 @@ int main()
 		{
 			cout << sim->nextEventTime() << " ";
 			sim->execNextEvent();
-			cout << pendulum->get_$Px() << " "  
-				<< pendulum->get_$Py() << endl;
+			cout << pendulum->get_x() << " "  
+				<< pendulum->get_y() << endl;
 		}
         delete sim;
 		delete hybrid_model;

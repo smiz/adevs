@@ -130,8 +130,8 @@ end ImComplexMult;
  * A complex resistor for general use.
  */
 class Impedance extends TwoPin;
-	parameter Real R(start=1);
-	parameter Real X(start=0);
+	parameter Real R = 1;
+	parameter Real X = 0;
 equation
 	[T1.va - T2.va; T1.vb - T2.vb] = [R, -X; X, R]*[T1.ia; T1.ib];
 	[T1.ia; T1.ib] + [T2.ia; T2.ib] = [0; 0];
@@ -150,8 +150,8 @@ end Ground;
  * This is a shunt at a bus.
  */
 class Shunt extends OnePin;
-	parameter Real G(start=0);
-	parameter Real B(start=0);
+	parameter Real G = 0;
+	parameter Real B = 0;
 equation
 	T.va = Thyme.ReComplexDiv(T.ia,T.ib,G,B);
 	T.vb = Thyme.ImComplexDiv(T.ia,T.ib,G,B);
@@ -221,18 +221,18 @@ end CalcInitTheta;
  */
 class Generator extends OnePin;
 	// Starting values
-	parameter Real Pg0(start=1);
-	parameter Real Qg0(start=0);
-	parameter Real V0(start=1);
-	parameter Real Theta0(start=0);
+	parameter Real Pg0 = 1;
+	parameter Real Qg0 = 0;
+	parameter Real V0 = 1;
+	parameter Real Theta0 = 0;
 	// Machine parameters
-	parameter Real H(start=3);
-	parameter Real Te(start=10);
-	parameter Real Tm(start=20);
-	parameter Real D(start=1);
-	parameter Real Xd(start=0);
-	parameter Real Xq(start=0.1);
-	protected parameter Real Vref(start=V0);
+	parameter Real H = 3;
+	parameter Real Te = 10;
+	parameter Real Tm = 20;
+	parameter Real D = 1;
+	parameter Real Xd = 0;
+	parameter Real Xq = 0.1;
+	protected parameter Real Vref = V0;
 	// State variables
 	protected Real w(start=0);
 	protected Real theta(start=Thyme.CalcInitTheta(Pg0,Qg0,V0,Theta0,Xd,Xq));
@@ -277,10 +277,10 @@ end Generator;
  * This is a transmission line model.
  */
 class Pilink extends TwoPin;
-	parameter Real R(start=1) "Series resistance";
-	parameter Real X(start=0) "Series reactance";
-	parameter Real B(start=0) "Series susceptance";
-	parameter Real G(start=0) "Series conductance";
+	parameter Real R = 1 "Series resistance";
+	parameter Real X = 0 "Series reactance";
+	parameter Real B = 0 "Series susceptance";
+	parameter Real G = 0 "Series conductance";
 equation
 	[T1.ia; T1.ib] =
 		[G, -B; B, G]/2*[T1.va; T1.vb] + [R, X; -X, R]/(R^2 +
@@ -316,12 +316,12 @@ end VoltageSource;
  * A constant impedance load.
  */
 class ConstImpLoad extends OnePin;
-	parameter Real R(start=1);
-	parameter Real X(start=0);
-	parameter Real P0(start=1);
-	parameter Real Q0(start=0);
-	parameter Real V0(start=1);
-	parameter Real Theta0(start =0);
+	parameter Real R = 1;
+	parameter Real X = 0;
+	parameter Real P0 = 1;
+	parameter Real Q0 = 0;
+	parameter Real V0 = 1;
+	parameter Real Theta0 = 0;
 	protected Thyme.Impedance imp(R=R,X=X);
 	protected Thyme.Ground gnd;
 equation

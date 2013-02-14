@@ -85,17 +85,17 @@ class ExtendedTank:
 		void init(double* q)
 		{
 			Tank::init(q);
-			last_turning = get_$Phull$Pturning();	
+			last_turning = get_hull_turning();	
 		}
 		void internal_event(double* q, const bool* event_flags)
 		{
 			Tank::internal_event(q,event_flags);
-			if (get_$Phull$Pturning() != last_turning)
+			if (get_hull_turning() != last_turning)
 			{
-				last_turning = get_$Phull$Pturning();
+				last_turning = get_hull_turning();
 				if (!last_turning) 
 				{
-					set_$Phull$Pomega(q,0.0);
+					set_hull_omega(q,0.0);
 					update_vars(q);
 				}
 			}
@@ -107,9 +107,9 @@ class ExtendedTank:
 			for (; iter != xb.end(); iter++)
 			{
 				if ((*iter).which == sig_t::Left)
-					set_$Pvin_left((*iter).v);
+					set_vin_left((*iter).v);
 				else
-					set_$Pvin_right((*iter).v);
+					set_vin_right((*iter).v);
 			}
 			update_vars(q);
 		}
@@ -156,11 +156,11 @@ int main(int argc, char** argv)
 		double t = sim->nextEventTime();
 		sim->execNextEvent();
 		cout << t << " "
-			<< tank->get_$Phull$Pv() << " "
-	    	<< tank->get_$Phull$Pomega() << " "
-	    	<< tank->get_$Phull$Ptheta() << " "
-	    	<< tank->get_$Phull$Px() << " "
-	    	<< tank->get_$Phull$Py() << " "
+			<< tank->get_hull_v() << " "
+	    	<< tank->get_hull_omega() << " "
+	    	<< tank->get_hull_theta() << " "
+	    	<< tank->get_hull_x() << " "
+	    	<< tank->get_hull_y() << " "
 	    	<< endl;
 	}
 	delete sim;

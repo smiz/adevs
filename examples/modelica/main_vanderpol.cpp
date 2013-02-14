@@ -21,7 +21,7 @@ int main()
 		{
 			cout << sim->nextEventTime() << " ";
 			sim->execNextEvent();
-			cout << vanderpol->get_$Px() << " " << vanderpol->get_$Py() << endl;
+			cout << vanderpol->get_x() << " " << vanderpol->get_y() << endl;
 		}
         delete sim;
 		delete hybrid_model;
