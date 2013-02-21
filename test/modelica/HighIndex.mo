@@ -1,13 +1,14 @@
 model Robot
 	// Position and position derivatives
-	Real x(start=0), z(start=-0.6),
-		dx(start=0,fixed=true),
-		dz(start=0,fixed=true);
+	Real x(start=0);
+	Real z(start=-0.6);
+	Real dx(start=0);
+	Real dz(start=0);
 	// Joint angles and angle derivatives
-	Real q1(start=0,fixed=true),
-		q2(start=0,fixed=true),
-		dq1(start=0,fixed=true),
-		dq2(start=0,fixed=true);
+	Real q1(start=45.0*3.14/180.0);
+	Real q2(start=45.0*3.14/180.0);
+	Real dq1(start=0);
+	Real dq2(start=0);
 	// Motor x coordinate 
 	parameter Real xp = 0.1;
 	// Lengths 
@@ -32,7 +33,9 @@ model Robot
 	// Control inputs
 	parameter Real T[2] = {0,0};
 	// Mass and inertia matrices
-	Real JxT[2,2], JqInv[2,2], M[2];
+	Real [2,2] JxT;
+	Real [2,2] JqInv;
+	Real M[2];
 equation
 	// Position and angle contraints (Eqn 4)
 	0 = (x-xp-L*cos(q1))^2+(z+L*sin(q1))^2-l^2;
@@ -53,16 +56,16 @@ equation
 	Tfarm[1] = 0.5*m2*L*(L*der(dq1)-g*cos(q1));
 	Tfarm[2] = 0.5*m2*L*(L*der(dq2)-g*cos(q2));
 	// Torques (Eqn 10)
-	JxT[1,1] = 2*(x-xp-L*cos(q1))*dx;
-	JxT[1,2] = 2*(x+xp+L*cos(q2))*dx;
-	JxT[2,1] = 2*(z+L*sin(q1))*dz;
-	JxT[2,2] = 2*(z+L*sin(q2))*dz;
-	JqInv[1,1] = 1/(2*(x-xp-L*cos(q1))*L*dq1*sin(q1)+
-			2*(z+L*sin(q1))*L*dq1*cos(q1));
+	JxT[1,1] = 2*(x-xp-L*cos(q1));
+	JxT[1,2] = 2*(x+xp+L*cos(q2));
+	JxT[2,1] = 2*(z+L*sin(q1));
+	JxT[2,2] = 2*(z+L*sin(q2));
+	JqInv[1,1] = 1/(2*(x-xp-L*cos(q1))*L*sin(q1)+
+			2*(z+L*sin(q1))*L*cos(q1));
 	JqInv[1,2] = 0;
 	JqInv[2,1] = 0;
-	JqInv[2,2] = 1/(2*(x+xp+L*cos(q2))*(-L*dq2*sin(q2))+
-			2*(z+L*sin(q2))*L*dq2*cos(q2));
+	JqInv[2,2] = 1/(2*(x+xp+L*cos(q2))*(-L*sin(q2))+
+			2*(z+L*sin(q2))*L*cos(q2));
 	M = (JxT*JqInv)*Ttplate;
 	0 = (m2+m3+ml)*der(dx)+M[1];
 	0 = (m2+m3+ml)*(der(dz)-g)+M[2];
@@ -70,4 +73,8 @@ initial equation
 	// Conditions for variables that are not fixed
 	x = 0.0;
 	z = -0.6;
+	dx = 0.0;
+	dz = 0.0;
+	dq1 = 0.0;
+	dq2 = 0.0;
 end Robot;

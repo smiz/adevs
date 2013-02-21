@@ -4,11 +4,17 @@ include ../make.common
 SUNDIALS=/usr/local/sundials
 OMHOME=$(HOME)/Code/openmodelica/trunk/build
 OMINCLUDE=-I$(OMHOME)/include/omc
-OMLIBS=-L$(OMHOME)/lib/omc /usr/local/lib/libf2c.a
+OMLIBS=-L$(OMHOME)/lib/omc -lf2c -lgc 
 CFLAGS += $(OMINCLUDE) -I${SUNDIALS}/include
 LIBS += $(OMLIBS) -L${SUNDIALS}/lib -lsundials_kinsol -lsundials_nvecserial
 
 check: te tg t0 t1 t2 t3 t4 t5 t6 t7 linsys linsys2
+
+hi:
+	omc +s +simCodeTarget=Adevs HighIndex.mo 
+	$(CC) $(CFLAGS) Robot.cpp main_highIndex.cpp $(LIBS)
+	$(TEST_EXEC) > tmp
+#	$(DEL) Robot.cpp Robot.h
 
 linsys2:
 	omc +s +simCodeTarget=Adevs Linsys2.mo 
