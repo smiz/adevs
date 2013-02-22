@@ -1,0 +1,2 @@
+res[2] = _$STATESET2_x[0] - (_z*_$STATESET2_A[0][0]+_q1*_$STATESET2_A[0][1]+_x*_$STATESET2_A[0][2]+_q2*_$STATESET2_A[0][3]);
+     res[3] = _$STATESET2_x[1] - (_z*_$STATESET2_A[1][0]+_q1*_$STATESET2_A[1][1]+_x*_$STATESET2_A[1][2]+_q2*_$STATESET2_A[1][3]);
