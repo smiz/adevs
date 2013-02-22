@@ -5,8 +5,8 @@ model Robot
 	Real dx(start=0);
 	Real dz(start=0);
 	// Joint angles and angle derivatives
-	Real q1(start=45.0*3.14/180.0);
-	Real q2(start=45.0*3.14/180.0);
+	Real q1(start=0);
+	Real q2(start=0);
 	Real dq1(start=0);
 	Real dq2(start=0);
 	// Motor x coordinate 

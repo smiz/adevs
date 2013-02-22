@@ -113,7 +113,8 @@ class AdevsDivFunc:
 
 namespace adevs
 {
-	bool selectDynamicStates(double*,const long int,const long int,long int*);
+	bool selectDynamicStates(double*,const long int,
+		const long int,long int*,long int*);
 }
 
 #endif
