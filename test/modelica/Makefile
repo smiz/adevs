@@ -4,7 +4,7 @@ include ../make.common
 SUNDIALS=/usr/local/sundials
 OMHOME=$(HOME)/Code/openmodelica/trunk/build
 OMINCLUDE=-I$(OMHOME)/include/omc
-OMLIBS=-L$(OMHOME)/lib/omc /usr/local/lib/libf2c.a -lgc 
+OMLIBS=-L$(OMHOME)/lib/omc $(OMHOME)/lib/omc/libf2c.a -lgc 
 CFLAGS += $(OMINCLUDE) -I${SUNDIALS}/include
 LIBS += $(OMLIBS) -L${SUNDIALS}/lib -lsundials_kinsol -lsundials_nvecserial
 

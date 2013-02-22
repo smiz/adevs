@@ -73,8 +73,4 @@ initial equation
 	// Conditions for variables that are not fixed
 	x = 0.0;
 	z = -0.6;
-	dx = 0.0;
-	dz = 0.0;
-	dq1 = 0.0;
-	dq2 = 0.0;
 end Robot;
