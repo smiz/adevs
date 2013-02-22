@@ -249,23 +249,29 @@ bool adevs::selectDynamicStates(
 	double* J,
 	const long int numStates,
 	const long int numCandidates,
+	long int* rowInd,
 	long int* colInd
 	)
 {
 	long int oldColInd[numCandidates];
-	long int rowInd[numStates];
+	long int oldRowInd[numStates];
 	for (int col = 0; col < numCandidates; col++)
 	{
 		oldColInd[col] = colInd[col];
 	}
 	for (int row = 0; row < numStates; row++)
 	{
-		rowInd[row] = row;
+		oldRowInd[row] = rowInd[row];
 	}
 	pivot(J,numStates,numCandidates,rowInd,colInd);
 	for (int col = 0; col < numCandidates; col++)
 	{
 		if (oldColInd[col] != colInd[col])
+			return true;
+	}
+	for (int row = 0; row < numStates; row++)
+	{
+		if (oldRowInd[row] != rowInd[row])
 			return true;
 	}
 	return false;
