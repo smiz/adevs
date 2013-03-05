@@ -121,7 +121,7 @@ class ControlExt:
 				T[i] = 2000.0*(err[i]+0.05*derr[i]+ierr[i]/300.0);
 				assert(fabs(err[i]) < 0.01);
 			}
-			cerr << err[0] << " " << err[1] << endl;
+			// cerr << err[0] << " " << err[1] << endl;
 			doCmd = true;
 		}
 };
