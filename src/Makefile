@@ -5,7 +5,7 @@
 #
 # This target builds the java language bindings to the adevs simulator.
 # Point this at your java installation if you want to build the Java bindings.
-JAVA_HOME = /usr/local/jdk1.7.0_07
+JAVA_HOME = /usr/local/jdk1.6.0_26
 CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 #
 # 2) adevs
@@ -36,7 +36,7 @@ CFLAGS += ${OMP} -fPIC -Wall -I../include -I./
 # Best bet for GNU compiler
 CXX = g++
 CC = gcc
-OPTFLAG = -g
+OPTFLAG = -O3
 
 #
 # SHOULD NOT NEED TO EDIT BELOW THIS LINE

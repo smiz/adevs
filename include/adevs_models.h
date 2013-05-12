@@ -185,7 +185,6 @@ template <class X, class T = double> class Atomic: public Devs<X,T>
 			tL_cp = adevs_sentinel<T>();
 			x = y = NULL;
 			q_index = 0; // The Schedule requires this to be zero
-			active = false;
 		}
 		/// Internal transition function.
 		virtual void delta_int() = 0;
@@ -262,8 +261,6 @@ template <class X, class T = double> class Atomic: public Devs<X,T>
 		unsigned int q_index;
 		// Input and output event bags
 		Bag<X> *x, *y;
-		// Has this model been activated?
-		bool active;
 		// When did the model start checkpointing?
 		T tL_cp;
 };
