@@ -174,10 +174,6 @@ void test9()
 		q.schedule(&(m[i]),2.0);
 	}
 	assert(q.minPriority() == 1.0);
-	q.removeImminent();
-	assert(q.minPriority() == 2.0);
-	q.removeImminent();
-	assert(q.empty());
 }
 
 void test10()

@@ -31,8 +31,7 @@ namespace adevs
 /**
  * This is a binary heap for scheduling Atomic models. The Schedule uses 
  * the q_index attribute of the Atomic model to keep track of the object's
- * position in the heap and the active flag is set to indicate its 
- * imminent status. Therefore, a model can be put into only one Schedule.
+ * position in the heap. Therefore, a model can be put into only one Schedule.
  * Please observe that the q_index value for a model must be initialized
  * to zero before it is placed into the heap for the first time.
  */
@@ -49,12 +48,10 @@ template <class X, class T = double> class Schedule
 		Atomic<X,T>* getMinimum() const { return heap[1].item; }
 		/// Get the time of the next event.
 		T minPriority() const { return heap[1].priority; }
-		/// Get the imminent models and set their active flags to true.
+		/// Get the imminent models.
 		void getImminent(Bag<Atomic<X,T>*>& imm) const { getImminent(imm,1); }
 		/// Remove the model at the front of the queue.
 		void removeMinimum();
-		/// Remove the imminent models from the queue.
-		void removeImminent();
 		/// Add, remove, or move a model as required by its priority.
 		void schedule(Atomic<X,T>* model, T priority);
 		/// Returns true if the queue is empty, and false otherwise.
@@ -91,8 +88,6 @@ void Schedule<X,T>::getImminent(Bag<Atomic<X,T>*>& imm, unsigned int root) const
 	// Stop if the bottom is reached or the next priority is not equal to the minimum
 	if (root > size || heap[1].priority < heap[root].priority)
 		return;
-	// Put the model into the imminent set
-	heap[root].item->active = true;
 	imm.insert(heap[root].item);
 	// Look for more imminent models in the left sub-tree
 	getImminent(imm,root*2);
@@ -122,15 +117,6 @@ void Schedule<X,T>::removeMinimum()
 		heap[i].item->q_index = i;
 		heap[size+1].item = NULL;
 	}
-}
-
-template <class X, class T>
-void Schedule<X,T>::removeImminent()
-{
-	if (size == 0) return;
-	T tN = minPriority();
-	while (minPriority() <= tN)
-		removeMinimum();
 }
 
 template <class X, class T>

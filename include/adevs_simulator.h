@@ -227,8 +227,8 @@ template <class X, class T = double> class Simulator:
 		void route(Network<X,T>* parent, Devs<X,T>* src, X& x);
 		/**	
 		 * Add an input to the input bag of an an atomic model. If the 
-		 * model's active flag is false, this method adds the model to
-		 * the activated bag and sets the active flag to true.
+		 * model is not already active , then this method adds the model to
+		 * the activated bag.
 		 */
 		void inject_event(Atomic<X,T>* model, X& value);
 		/**
@@ -237,8 +237,8 @@ template <class X, class T = double> class Simulator:
 		 */
 		void unschedule_model(Devs<X,T>* model);
 		/**
-		 * Set the atomic model active flag to false, delete any thing in the
-		 * output bag, and return the input and output bags to the pools. 
+		 * Delete any thing in the output bag, and return the input
+		 * and output bags to the pools.
 		 * Recursively clean up network model components.
 		 */
 		void clean_up(Devs<X,T>* model);
@@ -266,25 +266,29 @@ void Simulator<X,T>::computeNextOutput()
 {
 	// If the imminent set is up to date, then just return
 	if (imm.empty() == false) return;
-	// Get the imminent models from the schedule. This sets the active flags.
+	// Get the imminent models from the schedule. 
 	sched.getImminent(imm);
+	// Indicate that the models are already in the imminent set.
+	for (typename Bag<Atomic<X,T>*>::iterator imm_iter = imm.begin(); 
+		imm_iter != imm.end(); imm_iter++)
+	{
+		Atomic<X,T>* model = *imm_iter;
+		assert(model->y == NULL);
+		assert(model->x == NULL);
+		model->y = io_pool.make_obj();
+	}
 	// Compute output functions and route the events. The bags of output
 	// are held for garbage collection at a later time.
 	for (typename Bag<Atomic<X,T>*>::iterator imm_iter = imm.begin(); 
 		imm_iter != imm.end(); imm_iter++)
 	{
 		Atomic<X,T>* model = *imm_iter;
-		// If the output for this model has already been computed, then skip it
-		if (model->y == NULL)
-		{
-			model->y = io_pool.make_obj();
-			model->output_func(*(model->y));
-			// Route each event in y
-			for (typename Bag<X>::iterator y_iter = model->y->begin(); 
+		model->output_func(*(model->y));
+		// Route each event in y
+		for (typename Bag<X>::iterator y_iter = model->y->begin(); 
 			y_iter != model->y->end(); y_iter++)
-			{
-				route(model->getParent(),model,*y_iter);
-			}
+		{
+			route(model->getParent(),model,*y_iter);
 		}
 	}
 }
@@ -454,7 +458,6 @@ void Simulator<X,T>::clean_up(Devs<X,T>* model)
 	Atomic<X,T>* amodel = model->typeIsAtomic();
 	if (amodel != NULL)
 	{
-		amodel->active = false;
 		if (amodel->x != NULL)
 		{
 			amodel->x->clear();
@@ -535,13 +538,10 @@ void Simulator<X,T>::schedule(Devs<X,T>* model, T t)
 template <class X, class T>
 void Simulator<X,T>::inject_event(Atomic<X,T>* model, X& value)
 {
-	if (model->active == false)
-	{
-		model->active = true;
-		activated.insert(model);
-	}
 	if (model->x == NULL)
 	{
+		if (model->y == NULL)
+			activated.insert(model);
 		model->x = io_pool.make_obj();
 	}
 	model->x->insert(value);
