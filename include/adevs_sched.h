@@ -38,6 +38,16 @@ namespace adevs
 template <class X, class T = double> class Schedule
 {
 	public:
+		/**
+		 * An interface for objects that want to visit the imminent models
+		 * in the schedule.
+		 */
+		class ImminentVisitor
+		{
+			public:
+				virtual void visit(Atomic<X,T>* model) = 0;
+				virtual ~ImminentVisitor(){}
+		};
 		/// Creates a scheduler with the default or specified initial capacity.
 		Schedule(unsigned int capacity = 100):
 		capacity(capacity),size(0),heap(new heap_element[capacity])
@@ -48,8 +58,8 @@ template <class X, class T = double> class Schedule
 		Atomic<X,T>* getMinimum() const { return heap[1].item; }
 		/// Get the time of the next event.
 		T minPriority() const { return heap[1].priority; }
-		/// Get the imminent models.
-		void getImminent(Bag<Atomic<X,T>*>& imm) const { getImminent(imm,1); }
+		/// Visit the imminent models.
+		void visitImminent(ImminentVisitor* visitor) const { visitImminent(visitor,1); }
 		/// Remove the model at the front of the queue.
 		void removeMinimum();
 		/// Add, remove, or move a model as required by its priority.
@@ -78,21 +88,21 @@ template <class X, class T = double> class Schedule
 		unsigned int percolate_down(unsigned int index, T priority);
 		/// Move the item at index up and return its new position
 		unsigned int percolate_up(unsigned int index, T priority);
-		/// Construct the imminent set recursively
-		void getImminent(Bag<Atomic<X,T>*>& imm, unsigned int root) const;
+		/// Visit the imminent set recursively
+		void visitImminent(ImminentVisitor* visitor, unsigned int root) const;
 };
 
 template <class X, class T>
-void Schedule<X,T>::getImminent(Bag<Atomic<X,T>*>& imm, unsigned int root) const
+void Schedule<X,T>::visitImminent(Schedule<X,T>::ImminentVisitor* visitor, unsigned int root) const
 {
 	// Stop if the bottom is reached or the next priority is not equal to the minimum
 	if (root > size || heap[1].priority < heap[root].priority)
 		return;
-	imm.insert(heap[root].item);
+	visitor->visit(heap[root].item);
 	// Look for more imminent models in the left sub-tree
-	getImminent(imm,root*2);
+	visitImminent(visitor,root*2);
 	// Look in the right sub-tree
-	getImminent(imm,root*2+1);
+	visitImminent(visitor,root*2+1);
 }
 
 template <class X, class T>

@@ -176,20 +176,37 @@ void test9()
 	assert(q.minPriority() == 1.0);
 }
 
+class test10visitor:
+	public Schedule<char>::ImminentVisitor
+{
+	public:
+		test10visitor(Bag<Atomic<char>*>& imm):imm(imm){}
+		void visit(Atomic<char>* model)
+		{
+			imm.insert(model);
+		}
+	private:
+		Bag<Atomic<char>*>& imm;
+};
+
 void test10()
 {
 	int i;
 	bogus_atomic m[20];
 	Schedule<char> q;
 	Bag<Atomic<char>*> imm;
-	q.getImminent(imm);
+	test10visitor* visitor = new test10visitor(imm);
+	q.visitImminent(visitor);
+	delete visitor;
 	assert(imm.empty());
 	for (i = 0; i < 10; i++)
 	{
 		q.schedule(&(m[i]),1.0);
 	}
 	assert(q.minPriority() == 1.0);
-	q.getImminent(imm);
+	visitor = new test10visitor(imm);
+	q.visitImminent(visitor);
+	delete visitor;
 	assert(imm.size() == 10);
 	for (i = 0; i < 10; i++)
 	{
@@ -200,7 +217,9 @@ void test10()
 	{
 		q.schedule(&(m[i]),2.0);
 	}
-	q.getImminent(imm);
+	visitor = new test10visitor(imm);
+	q.visitImminent(visitor);
+	delete visitor;
 	assert(imm.size() == 10);
 	for (i = 0; i < 10; i++)
 	{

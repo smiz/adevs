@@ -116,17 +116,30 @@ void reset_flags(SimpleNetwork* model)
 	}
 }
 
+void doTest()
+{
+	SimpleNetwork* model = new SimpleNetwork();
+	Simulator<SimpleIO>* sim = new Simulator<SimpleIO>(model);
+	while (sim->nextEventTime() < 1000.0)
+	{
+		reset_flags(model);
+		sim->execNextEvent();
+	}
+	delete sim;
+	delete model;
+}
+
 int main()
 {
 	unsigned long seed = (unsigned long)time(NULL);
 	cout << seed << endl;
 	srand(seed);
-	SimpleNetwork* model = new SimpleNetwork();
-	Simulator<SimpleIO>* sim = new Simulator<SimpleIO>(model);
-	while (sim->nextEventTime() < DBL_MAX)
+	for (int i = 0; i < 100; i++)
 	{
-		reset_flags(model);
-		sim->execNextEvent();
+		cout << "\r" << i << "\t";
+		cout.flush();
+		doTest();
 	}
+	cout << "\rdone\t" << endl;
 	return 0;
 }

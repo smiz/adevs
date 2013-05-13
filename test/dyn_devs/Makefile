@@ -18,11 +18,3 @@ moved:
 complex:
 	$(CC) $(CFLAGS) SimpleAtomic.cpp complex_test.cpp 
 	$(TEST_EXEC)
-	$(TEST_EXEC)
-	$(TEST_EXEC)
-	$(TEST_EXEC)
-	$(TEST_EXEC)
-	$(TEST_EXEC)
-	$(TEST_EXEC)
-	$(TEST_EXEC)
-	$(TEST_EXEC)
