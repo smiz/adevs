@@ -42,7 +42,8 @@ namespace adevs
  * attempting to send an input directly to itself).
  */
 template <class X, class T = double> class Simulator:
-	public AbstractSimulator<X,T>
+	public AbstractSimulator<X,T>,
+	private Schedule<X,T>::ImminentVisitor
 {
 	public:
 		/**
@@ -52,7 +53,9 @@ template <class X, class T = double> class Simulator:
 		 * @param model The model to simulate
 		 */
 		Simulator(Devs<X,T>* model):
-			AbstractSimulator<X,T>(),lps(NULL)
+			AbstractSimulator<X,T>(),
+			Schedule<X,T>::ImminentVisitor(),
+			lps(NULL)
 		{
 			schedule(model,adevs_zero<T>());
 		}
@@ -153,9 +156,7 @@ template <class X, class T = double> class Simulator:
 		Bag<Event<X,T> > bogus_input;
 		// The event schedule
 		Schedule<X,T> sched;
-		// List of imminent models
-		Bag<Atomic<X,T>*> imm;
-		// List of models activated by input
+		// List of models that are imminent or activated by input
 		Bag<Atomic<X,T>*> activated;
 		// Pools of preallocated, commonly used objects
 		object_pool<Bag<X> > io_pool;
@@ -248,7 +249,7 @@ template <class X, class T = double> class Simulator:
 		 * if it is a network executive and updates the added
 		 * and removed sets. 
 		 */
-		void exec_event(Atomic<X,T>* model, bool internal, T t);
+		void exec_event(Atomic<X,T>* model, T t);
 		/**
 		 * Construct the complete descendant set of a network model and store it in s.
 		 */
@@ -259,38 +260,38 @@ template <class X, class T = double> class Simulator:
 		 * lookahead can be managed. False otherwise.
 		 */
 		bool manage_lookahead_data(Atomic<X,T>* model);
+		/**
+		 * Visit method inhereted from ImminentVisitor
+		 */
+		void visit(Atomic<X,T>* model);
 };
+
+template <class X, class T>
+void Simulator<X,T>::visit(Atomic<X,T>* model)
+{
+	assert(model->y == NULL);
+	model->y = io_pool.make_obj();
+	// Put it in the active list if it is not already there
+	if (model->x == NULL)
+		activated.insert(model);
+	// Compute output functions and route the events. The bags of output
+	// are held for garbage collection at a later time.
+	model->output_func(*(model->y));
+	// Route each event in y
+	for (typename Bag<X>::iterator y_iter = model->y->begin(); 
+		y_iter != model->y->end(); y_iter++)
+	{
+		route(model->getParent(),model,*y_iter);
+	}
+}
 
 template <class X, class T>
 void Simulator<X,T>::computeNextOutput()
 {
 	// If the imminent set is up to date, then just return
-	if (imm.empty() == false) return;
+	if (activated.empty() == false) return;
 	// Get the imminent models from the schedule. 
-	sched.getImminent(imm);
-	// Indicate that the models are already in the imminent set.
-	for (typename Bag<Atomic<X,T>*>::iterator imm_iter = imm.begin(); 
-		imm_iter != imm.end(); imm_iter++)
-	{
-		Atomic<X,T>* model = *imm_iter;
-		assert(model->y == NULL);
-		assert(model->x == NULL);
-		model->y = io_pool.make_obj();
-	}
-	// Compute output functions and route the events. The bags of output
-	// are held for garbage collection at a later time.
-	for (typename Bag<Atomic<X,T>*>::iterator imm_iter = imm.begin(); 
-		imm_iter != imm.end(); imm_iter++)
-	{
-		Atomic<X,T>* model = *imm_iter;
-		model->output_func(*(model->y));
-		// Route each event in y
-		for (typename Bag<X>::iterator y_iter = model->y->begin(); 
-			y_iter != model->y->end(); y_iter++)
-		{
-			route(model->getParent(),model,*y_iter);
-		}
-	}
+	sched.visitImminent(this);
 }
 
 template <class X, class T>
@@ -305,14 +306,9 @@ void Simulator<X,T>::computeNextState(Bag<Event<X,T> >& input, T t)
 			clean_up(*iter);
 		}
 		activated.clear();
-		for (iter = imm.begin(); iter != imm.end(); iter++)
-		{
-			clean_up(*iter);
-		}
-		imm.clear();
 	}
 	// Otherwise, if the internal IO needs to be computed, do it
-	else if (t == sched.minPriority() && imm.empty())
+	else if (t == sched.minPriority())
 	{
 		computeNextOutput();
 	}
@@ -331,20 +327,15 @@ void Simulator<X,T>::computeNextState(Bag<Event<X,T> >& input, T t)
 		}
 	}
 	/*
-	Compute the states of atomic models.  Store Network models that 
-	need to have their model transition function evaluated in a
-	special container that will be used when the structure changes are
-	computed (see exec_event(.)).
-	*/
-	for (typename Bag<Atomic<X,T>*>::iterator iter = imm.begin(); 
-	iter != imm.end(); iter++)
-	{
-		exec_event(*iter,true,t); // Internal and confluent transitions
-	}
+	 * Compute the states of atomic models.  Store Network models that 
+	 * need to have their model transition function evaluated in a
+	 * special container that will be used when the structure changes are
+	 * computed (see exec_event(.)).
+	 */
 	for (typename Bag<Atomic<X,T>*>::iterator iter = activated.begin(); 
-	iter != activated.end(); iter++)
+		iter != activated.end(); iter++)
 	{
-		exec_event(*iter,false,t); // External transitions
+		exec_event(*iter,t); 
 	}
 	/**
 	 * Compute model transitions and build up the prev (pre-transition)
@@ -428,13 +419,6 @@ void Simulator<X,T>::computeNextState(Bag<Event<X,T> >& input, T t)
 	} // End of the structure change
 	// Cleanup and reschedule models that changed state in this iteration
 	// and survived the structure change phase.
-	for (typename Bag<Atomic<X,T>*>::iterator iter = imm.begin(); 
-		iter != imm.end(); iter++) // Schedule the imminents
-	{
-		clean_up(*iter);
-		schedule(*iter,t);
-	}
-	// Schedule the activated
 	for (typename Bag<Atomic<X,T>*>::iterator iter = activated.begin(); 
 		iter != activated.end(); iter++)
 	{
@@ -442,7 +426,6 @@ void Simulator<X,T>::computeNextState(Bag<Event<X,T> >& input, T t)
 		schedule(*iter,t);
 	}
 	// Empty the bags
-	imm.clear();
 	activated.clear();
 	// If we are looking ahead, throw an exception if a stop was forced
 	if (lps != NULL && lps->stop_forced)
@@ -490,7 +473,6 @@ void Simulator<X,T>::unschedule_model(Devs<X,T>* model)
 	if (model->typeIsAtomic() != NULL)
 	{
 		sched.schedule(model->typeIsAtomic(),adevs_inf<T>());
-		imm.erase(model->typeIsAtomic());
 		activated.erase(model->typeIsAtomic());
 	}
 	else
@@ -570,9 +552,9 @@ void Simulator<X,T>::route(Network<X,T>* parent, Devs<X,T>* src, X& x)
 			throw err;
 		}
 		/**
-		if the destination is an atomic model, add the event to the IO bag
-		for that model and add model to the list of activated models
-		*/
+		 * If the destination is an atomic model, add the event to the IO bag
+		 * for that model and add model to the list of activated models
+		 */
 		amodel = (*recv_iter).model->typeIsAtomic();
 		if (amodel != NULL)
 		{
@@ -600,22 +582,18 @@ void Simulator<X,T>::route(Network<X,T>* parent, Devs<X,T>* src, X& x)
 }
 
 template <class X, class T>
-void Simulator<X,T>::exec_event(Atomic<X,T>* model, bool internal, T t)
+void Simulator<X,T>::exec_event(Atomic<X,T>* model, T t)
 {
 	if (!manage_lookahead_data(model)) return;
-	// Compute the state change
+	// Internal event
 	if (model->x == NULL)
-	{
 		model->delta_int();
-	}
-	else if (internal)
-	{
+	// Confluent event
+	else if (model->y != NULL)
 		model->delta_conf(*(model->x));
-	}
+	// External event
 	else
-	{
 		model->delta_ext(t-model->tL,*(model->x));
-	}
 	// Notify any listeners
 	this->notify_state_listeners(model,t);
 	// Check for a model transition
@@ -651,14 +629,10 @@ template <class X, class T>
 Simulator<X,T>::~Simulator()
 {
 	// Clean up the models with stale IO
-	typename Bag<Atomic<X,T>*>::iterator imm_iter;
-	for (imm_iter = imm.begin(); imm_iter != imm.end(); imm_iter++)
+	typename Bag<Atomic<X,T>*>::iterator iter;
+	for (iter = activated.begin(); iter != activated.end(); iter++)
 	{
-		clean_up(*imm_iter);
-	}
-	for (imm_iter = activated.begin(); imm_iter != activated.end(); imm_iter++)
-	{
-		clean_up(*imm_iter);
+		clean_up(*iter);
 	}
 }
 
@@ -682,7 +656,7 @@ void Simulator<X,T>::beginLookahead()
 		throw err;
 	}
 	lps->look_ahead = true;
-	if (!imm.empty())
+	if (!activated.empty())
 		lps->out_flag = OUTPUT_NOT_OK; 
 }
 
@@ -706,7 +680,7 @@ void Simulator<X,T>::endLookahead()
 		assert((*iter)->y == NULL);
 	}
 	lps->to_restore.clear();
-	assert(imm.empty());
+	assert(activated.empty());
 	if (lps->out_flag == OUTPUT_NOT_OK)
 	{
 		lps->out_flag = RESTORING_OUTPUT;
