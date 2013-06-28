@@ -47,7 +47,7 @@ template<class T = double> struct Time
 	/// Value for infinity
 	static adevs::Time<T> Inf() { return Time<T>(adevs_inf<T>(),0); }
 	/// Constructor. Default time is (0,0).
-	Time(T t = 0, unsigned int c = 0):t(t),c(c){}
+	Time(T t = adevs_zero<T>(), unsigned int c = 0):t(t),c(c){}
 	/// Copy constructor
 	Time(const Time& t2):t(t2.t),c(t2.c){}
 	/// Assignment operator

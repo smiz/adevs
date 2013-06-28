@@ -13,8 +13,7 @@ pdf_manual:
 	cd tex-files; latex manual; latex manual; latex manual; dvipdf manual.dvi; mv manual.pdf .. 
 
 html_manual:
-	cd tex-files; latex2html -split 3 -no_math -html_version 3.2 -dir ../${MANUAL_DIR} -mkdir -contents_in_navigation manual
-
+	cd tex-files; latex2html -local_icons -split 3 -no_math -html_version 3.2 -dir ../${MANUAL_DIR} -mkdir -contents_in_navigation manual
 
 java_docs:
 	javadoc -sourcepath ../src/adevs_jni -d ${JAVADOC_DIR} adevs
