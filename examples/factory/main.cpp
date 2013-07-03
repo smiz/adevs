@@ -59,7 +59,10 @@ int main(int argc, char** argv)
 {
 	// Create the model
 	Factory* factory = new Factory();
-	Genr* genr = new Genr(atoi(argv[1])); // Seed from command line argument
+	long seed = 0;
+	if (argc > 1)
+		seed = atoi(argv[1]); // Seed from command line argument
+	Genr* genr = new Genr(seed); 
 	SimpleDigraph<int>* model = new SimpleDigraph<int>();
 	model->add(factory);
 	model->add(genr);

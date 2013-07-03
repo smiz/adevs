@@ -15,7 +15,7 @@ static library do the following: 1) open a command shell, 2) go the
 'src' directory, and 3) run the batch file 'build.bat'. This 
 creates a static library to link with your simulation applications.
 Note that the Windows build script does not include any OpenMP options
-, so those must be added to the compiler switches if you want to
+and so those must be added to the compiler switches if you want to
 use the OpenMP enabled parts of the simulation engine. Note that
 the Express versions of Visual Studio don't support OpenMP in any case.
 
@@ -35,15 +35,25 @@ The OpenModelica compiler is called omc and it is located in
 the openmodelica/trunk/build/bin directory. After building omc
 you must do the following:
 
-A) Put the omc compiler into your executable PATH.
-B) Edit the Makefile for adevs so that MODELICA_HOME points at your
-    OpenModelica source tree (i.e., at openmodelica/trunk).
-C) Go to the 'src' directory of adevs and run the command
+A) Get and install KINSOL from
+          http://computation.llnl.gov/casc/sundials/download/download.html
+B) Put the omc compiler into your executable PATH. The compiler is
+   in the directory openmodelica/trunk/build/bin
+C) Edit the Makefile for adevs so that MODELICA_HOME points at your
+   OpenModelica source tree (i.e., at openmodelica/trunk) and SUNDIALS_HOME
+   points to the directory where you installed KINSOL.
+D) Go to the 'src' directory of adevs and run the command
    'make adevs_with_modelica'.
 
 You can test your new Modelica compiler and run-time environment
 with the modelica examples in the examples/modelica directory of
 adevs.
+
+To run a Modelica model, you will need to link your code with the KINSOL
+library, the f2c library (which is available with most linux distros),
+and the OpenModelica libgc library (this is located in the directory
+openmodelica/trunk/build/lib/omc). It is usually best to link statically
+to the f2c library. 
 
 ---- Java -----
 To build the java bindings for Linux, go the the 'src' directory and  
@@ -85,5 +95,5 @@ For OpenMP test cases, you will need to set the maximum number of threads
 to at least four (one of the test cases requires at least four threads).
 
 When testing the OpenModelica support, make sure that the omc compiler
-is in your executable PATH.
+is in your executable PATH (see the OpenModelica instructions above).
 
