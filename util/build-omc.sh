@@ -34,6 +34,6 @@ then
 	autoconf
 fi
 # Configure and build omc
-./configure --without-paradiseo --enable-modelica3d=no 
+./configure --without-paradiseo --enable-modelica3d=no --enable-omnotebook=no --with-omniORB=/usr
 make omc
 # Done
