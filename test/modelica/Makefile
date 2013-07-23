@@ -8,7 +8,14 @@ OMLIBS=-L$(OMHOME)/lib/omc /usr/local/lib/libf2c.a -lgc
 CFLAGS += $(OMINCLUDE) -I${SUNDIALS}/include
 LIBS += $(OMLIBS) -L${SUNDIALS}/lib -lsundials_kinsol -lsundials_nvecserial
 
-check: te tg t0 t1 t2 t3 t4 t5 t6 t7 linsys linsys2 hi event_iter
+check: te tg t0 t1 t2 t3 t4 t5 t6 t7 linsys linsys2 hi event_iter delayed_sir
+
+delayed_sir:
+	omc +s +simCodeTarget=Adevs DelayedSIR.mo
+	$(CC) $(CFLAGS) main_influenza.cpp Influenza.cpp $(LIBS)
+	$(TEST_EXEC) > tmp
+	diff tmp delayed_sir.ok
+	$(DEL) Influenza.cpp Influenza.h
 
 event_iter:
 	omc +s +simCodeTarget=Adevs eventIter.mo 
