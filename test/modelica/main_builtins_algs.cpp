@@ -13,6 +13,11 @@
 using namespace std;
 using namespace adevs;
 
+static double modelica_rem_real(double x, double y)
+{
+	return x-(trunc(x/y)*y);
+}
+
 int main()
 {
 	builtins_events* model = new builtins_events();
