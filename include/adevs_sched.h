@@ -59,7 +59,9 @@ template <class X, class T = double> class Schedule
 		/// Get the time of the next event.
 		T minPriority() const { return heap[1].priority; }
 		/// Visit the imminent models.
-		void visitImminent(ImminentVisitor* visitor) const { visitImminent(visitor,1); }
+		void visitImminent(ImminentVisitor* visitor) const {
+			visitImminent(visitor,1);
+		}
 		/// Remove the model at the front of the queue.
 		void removeMinimum();
 		/// Add, remove, or move a model as required by its priority.
@@ -93,7 +95,8 @@ template <class X, class T = double> class Schedule
 };
 
 template <class X, class T>
-void Schedule<X,T>::visitImminent(Schedule<X,T>::ImminentVisitor* visitor, unsigned int root) const
+void Schedule<X,T>::visitImminent(typename Schedule<X,T>::ImminentVisitor* visitor,
+		unsigned int root) const
 {
 	// Stop if the bottom is reached or the next priority is not equal to the minimum
 	if (root > size || heap[1].priority < heap[root].priority)
