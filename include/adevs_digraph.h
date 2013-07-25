@@ -174,7 +174,7 @@ Bag<Event<IO_Type,T> >& r)
 	// If no target, just return
 	if (graph_iter == graph.end()) return;
 	// Otherwise, add the targets to the event bag
-	Event<IO_Type> event;
+	Event<IO_Type,T> event;
 	typename Bag<node>::iterator node_iter;
 	for (node_iter = (*graph_iter).second.begin();
 	node_iter != (*graph_iter).second.end(); node_iter++)
