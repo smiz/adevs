@@ -1,5 +1,6 @@
 This file contains instructions for building the C++ library, the C++
-library with support for OpenModelica, and the Java bindings.
+library with support for OpenModelica, and the Java bindings. Development
+versions of this library are available from SourceForge and github.
 
 ---- C++ -----
 Adevs is implemented primarily as a set of C++ header files,
