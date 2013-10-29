@@ -90,7 +90,9 @@ class random_seq
 
 /**
  * The crand class provides random number sequences using the standard
- * C rand_r() function. 
+ * C rand_r() function. Each instance of crand generates its own random
+ * number sequence, and the clone method saves the state of the random
+ * number generator. This class can be used in parallel simulations. 
  */
 class crand: public random_seq 
 {
