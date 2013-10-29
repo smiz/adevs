@@ -1,22 +1,33 @@
-/***************
-Copyright (C) 2000-2006 by James Nutaro
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2 of the License, or (at your option) any later version.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-Bugs, comments, and questions can be sent to nutaro@gmail.com
-***************/
+/**
+ * Copyright (c) 2013, James Nutaro
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met: 
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer. 
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution. 
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies, 
+ * either expressed or implied, of the FreeBSD Project.
+ *
+ * Bugs, comments, and questions can be sent to nutaro@gmail.com
+ */
 #ifndef __adevs_rand_h_
 #define __adevs_rand_h_
 #include "adevs.h"
@@ -71,79 +82,42 @@ class random_seq
 		virtual double next_dbl() = 0;
 		/// Copy the random number generator
 		virtual random_seq* copy() const = 0;
+		/// Get the next unsigned long
 		virtual unsigned long next_long() = 0;
 		/// Destructor
 		virtual ~random_seq(){}
 };
 
 /**
- * The mtrand class is a random number generator based on a GNU implementation
- * of the Mersenne Twister (see mtrand.cpp for more info).  Each copy
- * of the object has its own state, and so multiple copies
- * will produce independent random number streams.
- */
-class mtrand: public random_seq 
-{
-	public:
-		/// Create a generator with an unsigned long seed 
-		mtrand(unsigned long seed = 1);
-		/// Create a generator with an arbitrary length seed
-		mtrand(const unsigned long* seed_array); 
-		/// Copy constructor performs a deep copy
-		mtrand(const mtrand& src);
-		/// Assignment operator does a deep copy
-		const mtrand& operator=(const mtrand& src);
-		/// Set the seed
-		void set_seed(unsigned long seed);
-		/// Create a copy of this mtrand
-		random_seq* copy() const;
-		/// Get the next unsigned long value.
-		unsigned long next_long();
-		/// Get the next value in the range [0,1]
-		double next_dbl();
-		/// Destructor
-		~mtrand ();
-	private:	
-		// Wrappers around the original function calls
-		void sgenrand(unsigned long);
-		void lsgenrand(const unsigned long*);
-		unsigned long genrand();
-		// The array for the state vector
-		unsigned long* mt;
-		int mti;
-		unsigned long init_seed;
-};
-
-/**
  * The crand class provides random number sequences using the standard
- * C rand() function.  Since the underlying stream generator is rand(),
- * the state of the random number generator can not be captured with
- * a call to copy.  Also, each instance of the object samples the same
- * random number sequence.
+ * C rand_r() function. 
  */
 class crand: public random_seq 
 {
 	public:
 		/// Create a generator with the default seed
-		crand(){}
+		crand():seedp(0){}
+		/// Copy constructor
+		crand(const crand& src):seedp(src.seedp){}
 		/// Create a generator with the given seed
-		crand(unsigned long seed) { srand (seed); }
+		crand(unsigned long seed):seedp((unsigned int)seed){}
 		/// Set the seed for the random number generator
-		void set_seed(unsigned long seed) { srand (seed); }
+		void set_seed(unsigned long seed) { seedp = (unsigned int)seed; }
 		/// Get the next double uniformly distributed in [0, 1]
-		double next_dbl() { return (double)rand()/(double)RAND_MAX; } 
+		double next_dbl() { return (double)rand_r(&seedp)/(double)RAND_MAX; } 
+		/// Get the next unsigned long
+		unsigned long next_long() { return (unsigned long)rand_r(&seedp); }
 		/// Copy the random number generator
-		unsigned long next_long() { return (unsigned long)rand(); }
-
-		random_seq* copy() const { return new crand (); }
+		random_seq* copy() const { return new crand(*this); }
 		/// Destructor
 		~crand(){}
+	private:
+		unsigned int seedp;
 };
 
 /**
  * The rv class provides a random variable based on a selectable
- * implementation.  By default, this implementation is the Mersenne
- * Twister (see mtrand).
+ * implementation.  By default, this implementation is crand.
  */
 class rv 
 {

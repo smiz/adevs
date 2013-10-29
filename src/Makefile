@@ -45,7 +45,6 @@ OPTFLAG = -O3
 
 ADEVS_OBJS = \
 	rv.o \
-	mtrand.o \
 	poly.o \
 	time.o
 

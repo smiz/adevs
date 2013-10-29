@@ -1,0 +1,5 @@
+This directory has a collection of simple examples. At present, this include
+
+qss.cpp                     Quantized state simulation (QSS1) of a simple chemical reaction.
+proportional_control.cpp    Digital control simulation using the Hybrid class.
+
