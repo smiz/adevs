@@ -30,10 +30,9 @@
  */
 #ifndef _ADEVS_SIMULATION_RUNTIME_H
 #define _ADEVS_SIMULATION_RUNTIME_H
-//#include "modelica.h"
-//#include "openmodelica.h"
-//#include "openmodelica_func.h"
-//#include "omc_error.h"
+#include "modelica.h"
+#include "openmodelica.h"
+#include "openmodelica_func.h"
 #include "adevs_public_modelica_runtime.h"
 #include <cmath>
 #include <kinsol/kinsol.h>
@@ -41,12 +40,6 @@
 #include <nvector/nvector_serial.h>
 #include <sundials/sundials_types.h>
 #include <sundials/sundials_math.h>
-
-typedef double modelica_real;
-typedef long int modelica_integer;
-typedef bool modelica_boolean;
-
-extern int modelErrorCode;
 
 extern "C"
 {
@@ -62,9 +55,6 @@ int newuoa_(
   void (*leastSquare) (long *nz, double *z, double *funcValue)
   );
 }
-
-modelica_real modelica_mod_real(modelica_real x, modelica_real y);
-modelica_real sign(modelica_real x);
 
 #define $__start(x) x
 

@@ -24,7 +24,10 @@ java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 # adevs object library. Point MODELICA_HOME at your Open Modelica 
 # installation if you want to build the Modelica extensions for adevs.
 SUNDIALS_HOME = /usr/local/sundials
+MODELICA_HOME = ${HOME}/Code/openmodelica/trunk
 adevs_with_modelica: CFLAGS += -I${MODELICA_HOME}/build/include/omc -I${SUNDIALS_HOME}/include 
+
+include Makefile.modelica
 
 # These are generic options for the GNU C++ compiler.
 
@@ -53,15 +56,7 @@ JAVA_OBJS = \
 	adevs_jni/JavaNetwork.o \
 	adevs_jni/JavaSimulator.o
 
-MODELICA_OBJS =\
-	modelica_runtime.o \
-	pivot.o \
-	newuoa.o \
-	newuob.o \
-	bigden.o \
-	biglag.o \
-	trsapp.o \
-	update.o
+MODELICA_OBJS += modelica_runtime.o
 
 .SUFFIXES: .cpp .c
 .cpp.o:

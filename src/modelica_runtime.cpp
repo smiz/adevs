@@ -48,18 +48,6 @@ using namespace std;
 
 int modelErrorCode;
 
-modelica_real modelica_mod_real(modelica_real x, modelica_real y)
-{
-	return (x-(floor(x/y)*y));
-}
-
-modelica_real sign(modelica_real x)
-{
-	if (x < 0.0) return -1.0;
-	if (x > 0.0) return 1.0;
-	return 0.0;
-}
-
 void MODELICA_TERMINATE(const char* msg)
 {
 	cerr << msg << endl;
@@ -276,6 +264,7 @@ double AdevsDivFunc::getZDown(double expr)
  */
 
 // From pivot.c
+extern "C" {
 int pivot(
 	double *A,
 	modelica_integer n_rows,
@@ -283,6 +272,7 @@ int pivot(
 	modelica_integer *rowInd,
 	modelica_integer *colInd
 	);
+}
 
 bool adevs::selectDynamicStates(
 	double* J,
