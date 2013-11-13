@@ -43,9 +43,22 @@
 #include "adevs_modelica_runtime.h"
 #include <iostream>
 #include <cstdlib>
+#include <cassert>
 using namespace std;
 
 int modelErrorCode;
+
+modelica_real modelica_mod_real(modelica_real x, modelica_real y)
+{
+	return (x-(floor(x/y)*y));
+}
+
+modelica_real sign(modelica_real x)
+{
+	if (x < 0.0) return -1.0;
+	if (x > 0.0) return 1.0;
+	return 0.0;
+}
 
 void MODELICA_TERMINATE(const char* msg)
 {
@@ -53,13 +66,10 @@ void MODELICA_TERMINATE(const char* msg)
 	exit(-2);
 }
 
-void MODELICA_ASSERT(omc_fileInfo fileInfo, const char* msg)
+void MODELICA_ASSERT(const char* file, int line, const char* msg)
 {
-    cerr << fileInfo.filename <<
-		"(col " << fileInfo.colStart << "-" << fileInfo.colEnd << ","
-		<< "ln " << fileInfo.lineStart << "-" << fileInfo.lineEnd << ")"
-		<< endl;
-	cerr << msg << endl;
+	cerr << file << ":" << line << " " << msg << endl;
+	exit(-1);
 }
 
 /**
@@ -266,7 +276,6 @@ double AdevsDivFunc::getZDown(double expr)
  */
 
 // From pivot.c
-extern "C" {
 int pivot(
 	double *A,
 	modelica_integer n_rows,
@@ -274,7 +283,6 @@ int pivot(
 	modelica_integer *rowInd,
 	modelica_integer *colInd
 	);
-};
 
 bool adevs::selectDynamicStates(
 	double* J,
@@ -307,3 +315,4 @@ bool adevs::selectDynamicStates(
 	}
 	return false;
 }
+

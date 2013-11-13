@@ -30,10 +30,10 @@
  */
 #ifndef _ADEVS_SIMULATION_RUNTIME_H
 #define _ADEVS_SIMULATION_RUNTIME_H
-#include "modelica.h"
-#include "openmodelica.h"
-#include "openmodelica_func.h"
-#include "omc_error.h"
+//#include "modelica.h"
+//#include "openmodelica.h"
+//#include "openmodelica_func.h"
+//#include "omc_error.h"
 #include "adevs_public_modelica_runtime.h"
 #include <cmath>
 #include <kinsol/kinsol.h>
@@ -42,13 +42,15 @@
 #include <sundials/sundials_types.h>
 #include <sundials/sundials_math.h>
 
-typedef FILE_INFO omc_fileInfo;
+typedef double modelica_real;
+typedef long int modelica_integer;
+typedef bool modelica_boolean;
 
 extern int modelErrorCode;
 
 extern "C"
 {
-void newuoa_(
+int newuoa_(
   long *nz,
   long *NPT,
   double *z,
@@ -61,16 +63,12 @@ void newuoa_(
   );
 }
 
+modelica_real modelica_mod_real(modelica_real x, modelica_real y);
+modelica_real sign(modelica_real x);
+
 #define $__start(x) x
 
-#ifdef MODELICA_TERMINATE
-#undef MODELICA_TERMINATE
-#endif
-#ifdef MODELICA_ASSERT
-#undef MODELICA_ASSERT
-#endif
-
-void MODELICA_ASSERT(omc_fileInfo fileInfo, const char* msg);
+void MODELICA_ASSERT(const char* file, int line, const char* msg);
 void MODELICA_TERMINATE(const char* msg);
 
 #ifdef DIVISION

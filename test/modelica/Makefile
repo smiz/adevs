@@ -3,12 +3,12 @@ include ../make.common
 # GNU gcc compiler
 SUNDIALS=/usr/local/sundials
 OMHOME=$(HOME)/Code/openmodelica/trunk/build
-OMINCLUDE=-I$(OMHOME)/include/omc
-OMLIBS=-L$(OMHOME)/lib/omc /usr/local/lib/libf2c.a -lgc 
-CFLAGS += $(OMINCLUDE) -I${SUNDIALS}/include
-LIBS += $(OMLIBS) -L${SUNDIALS}/lib -lsundials_kinsol -lsundials_nvecserial
+OMLIB=$(OMHOME)/lib/omc/libf2c.a
+CFLAGS += -I${SUNDIALS}/include
+LIBS += $(OMLIB) -L${SUNDIALS}/lib -lsundials_kinsol -lsundials_nvecserial
 
-check: te tg t0 t1 t2 t3 t4 t5 t6 t7 linsys linsys2 hi event_iter delayed_sir
+#check: te tg t0 t1 t2 t3 t4 t5 t6 t7 linsys linsys2 hi event_iter delayed_sir
+check: te tg t0 t1 t2 t3 t4 t5 t6 t7 linsys linsys2 event_iter delayed_sir
 
 delayed_sir:
 	omc +s +simCodeTarget=Adevs DelayedSIR.mo

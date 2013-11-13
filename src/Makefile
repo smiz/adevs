@@ -23,10 +23,8 @@ java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 # and have the object files from that available for linking into the
 # adevs object library. Point MODELICA_HOME at your Open Modelica 
 # installation if you want to build the Modelica extensions for adevs.
-MODELICA_HOME = ${HOME}/Code/openmodelica/trunk
 SUNDIALS_HOME = /usr/local/sundials
 adevs_with_modelica: CFLAGS += -I${MODELICA_HOME}/build/include/omc -I${SUNDIALS_HOME}/include 
-include Makefile.modelica
 
 # These are generic options for the GNU C++ compiler.
 
@@ -55,6 +53,16 @@ JAVA_OBJS = \
 	adevs_jni/JavaNetwork.o \
 	adevs_jni/JavaSimulator.o
 
+MODELICA_OBJS =\
+	modelica_runtime.o \
+	pivot.o \
+	newuoa.o \
+	newuob.o \
+	bigden.o \
+	biglag.o \
+	trsapp.o \
+	update.o
+
 .SUFFIXES: .cpp .c
 .cpp.o:
 	${CXX} ${CFLAGS} ${OPTFLAG} -o $@ -c $<
@@ -68,9 +76,9 @@ adevs: ${ADEVS_OBJS}
 	${CXX} -shared -Wl,-soname,libadevs.so.2 -o libadevs.so.2.6 ${ADEVS_OBJS}
 
 # This adds the modelica extensions to the adevs library
-adevs_with_modelica: ${ADEVS_OBJS} modelica_runtime.o 
-	ar -r libadevs.a ${ADEVS_OBJS} ${MODELICA_OBJS} modelica_runtime.o
-	${CXX} -shared -Wl,-soname,libadevs.so.2 -o libadevs.so.2.6 ${ADEVS_OBJS} ${MODELICA_OBJS} modelica_runtime.o
+adevs_with_modelica: ${ADEVS_OBJS} ${MODELICA_OBJS}
+	ar -r libadevs.a ${ADEVS_OBJS} ${MODELICA_OBJS} 
+	${CXX} -shared -Wl,-soname,libadevs.so.2 -o libadevs.so.2.6 ${ADEVS_OBJS} ${MODELICA_OBJS} 
 
 # This builds the Java bindings to the simulator
 java_adevs: ${JAVA_OBJS}
