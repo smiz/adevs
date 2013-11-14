@@ -18,8 +18,10 @@ class CircuitExt:
 		}
 		void external_event(double* q, double e, const Bag<double>& xb)
 		{
+			Circuit::external_event(q,e,xb);
 			start_time = e;
 			set_Vsrc_Vref(0.0);
+			update_vars();
 		}
 		void print_state()
 		{
@@ -53,7 +55,7 @@ int main()
 	Hybrid<OMC_ADEVS_IO_TYPE>* hybrid_model =
 		new Hybrid<OMC_ADEVS_IO_TYPE>(
 		test_model,
-		new rk_45<OMC_ADEVS_IO_TYPE>(test_model,1E-7,0.01),
+		new rk_45<OMC_ADEVS_IO_TYPE>(test_model,1E-7,0.001),
 		new linear_event_locator<OMC_ADEVS_IO_TYPE>(test_model,1E-7));
         // Create the simulator
         Simulator<OMC_ADEVS_IO_TYPE>* sim =

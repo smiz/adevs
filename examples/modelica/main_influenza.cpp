@@ -21,10 +21,10 @@ int main()
 		{
 			cout << sim->nextEventTime() << " ";
 			sim->execNextEvent();
-			cout << influenza->get_$PSick_Popul$Pp()
-				<< " " << influenza->get_$PInfected_Popul$Pp()
-				<< " " << influenza->get_$PNon_Infected_Popul$Pp()
-				<< " " << influenza->get_$PImmune_Popul$Pp()
+			cout << influenza->get_Sick_Popul_p()
+				<< " " << influenza->get_Infected_Popul_p()
+				<< " " << influenza->get_Non_Infected_Popul_p()
+				<< " " << influenza->get_Immune_Popul_p()
 				<< endl;
 		}
         delete sim;

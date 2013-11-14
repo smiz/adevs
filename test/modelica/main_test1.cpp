@@ -19,21 +19,18 @@ class test1Ext:
 		}
 		void internal_event(double* q, const bool* state_event)
 		{
+			cout << "internal" << endl;
 			// Apply internal event function of the super class
 			test1::internal_event(q,state_event);
 			// Change the direction as needed
-			if (get_goUp())
-			{
-				bounce++;
-				set_a(1.0);
-				resetTime = get_time();
-			}
-			else if (get_goDown())
-			{
-				bounce++;
-			   	set_a(-1.0);
-				resetTime = get_time();
-			}
+			bounce++;
+			set_a(-get_a());
+			resetTime = get_time();
+			update_vars();
+			assert((get_a() > 0.0) == get_aAbove());
+			assert((get_x() > 1.5) == get_xAbove());
+			assert(get_goUp() == (!get_aAbove() && !get_xAbove()));
+			assert(get_goDown() == (get_aAbove() && get_xAbove()));
 		}
 		void print_state()
 		{
@@ -43,6 +40,8 @@ class test1Ext:
 				get_a() << " " <<
 				get_goUp() << " " <<
 				get_goDown() << " " <<
+				get_aAbove() << " " <<
+				get_xAbove() << " " <<
 				endl;
 		}
 		void test_state()

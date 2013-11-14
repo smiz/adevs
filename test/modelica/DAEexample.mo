@@ -12,8 +12,6 @@ model DAEexample
 equation
   (1 + 0.5*sin(y))*der(x) + der(y) = a*sin(time);
   x-y = exp(-0.9*x)*cos(y);
-initial equation
-	x = 0.9;
 end DAEexample;
 
 // class DAEexample
