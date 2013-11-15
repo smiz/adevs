@@ -106,9 +106,12 @@ class crand: public random_seq
 		/// Set the seed for the random number generator
 		void set_seed(unsigned long seed) { seedp = (unsigned int)seed; }
 		/// Get the next double uniformly distributed in [0, 1]
-		double next_dbl() { return (double)rand_r(&seedp)/(double)RAND_MAX; } 
+		double next_dbl()
+		{
+			return ((double)next_long()/(double)RAND_MAX);
+		}
 		/// Get the next unsigned long
-		unsigned long next_long() { return (unsigned long)rand_r(&seedp); }
+		unsigned long next_long();
 		/// Copy the random number generator
 		random_seq* copy() const { return new crand(*this); }
 		/// Destructor

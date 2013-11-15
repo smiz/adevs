@@ -68,7 +68,7 @@ MODELICA_OBJS += modelica_runtime.o
 # to C++ simulations
 adevs: ${ADEVS_OBJS} 
 	ar -r libadevs.a ${ADEVS_OBJS}
-	${CXX} -shared -Wl,-soname,libadevs.so.2 -o libadevs.so.2.6 ${ADEVS_OBJS}
+	${CXX} -shared -Wl,-soname,libadevs.so.2 -o libadevs.so.2.8 ${ADEVS_OBJS}
 
 # This adds the modelica extensions to the adevs library
 adevs_with_modelica: ${ADEVS_OBJS} ${MODELICA_OBJS}
@@ -83,9 +83,9 @@ java_adevs: ${JAVA_OBJS}
 
 install:
 	mkdir -p "${DESTDIR}"
-	install -m 755 -p libadevs.so.2.6 "${DESTDIR}"
-	ln -f -s libadevs.so.2.6 "${DESTDIR}/libadevs.so.2"
-	ln -f -s libadevs.so.2.6 "${DESTDIR}/libadevs.so"
+	install -m 755 -p libadevs.so.2.8 "${DESTDIR}"
+	ln -f -s libadevs.so.2.8 "${DESTDIR}/libadevs.so.2"
+	ln -f -s libadevs.so.2.8 "${DESTDIR}/libadevs.so"
 
 clean:
 	rm -f *.o core *.a *.so adevs_jni/*.o adevs_jni/adevs/*.class *.jar rm libadevs.so.*

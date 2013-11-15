@@ -28,7 +28,9 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
-#include "adevs.h"
+#define _CRT_RAND_S
+#include <cstdlib>
+#include "adevs_rand.h"
 #include <cmath>
 using namespace adevs;
 
@@ -45,6 +47,17 @@ static double cof[6] =
 	0.120858003e-2, 
 	-0.536382e-5
 };
+
+// crand random number generator
+unsigned long crand::next_long() 
+{
+	#ifdef _WIN32
+	rand_s(&seedp);
+	return seedp;
+	#else
+	return rand_r(&seedp);
+	#endif
+}
 
 // constructor, taking the seeds of the stream
 adevs::rv::rv(unsigned long seed) 
