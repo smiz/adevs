@@ -38,8 +38,8 @@ class SISOPlantEqns:
 			SISOPlantEqns* plant = new SISOPlantEqns(a,b,sampleFreq);
 			return new adevs::Hybrid<double>(
 					plant,
-					new adevs::corrected_euler<double>(plant,1E-4,0.001),
-					new adevs::linear_event_locator<double>(plant,1E-4));
+					new adevs::corrected_euler<double>(plant,1E-8,0.001),
+					new adevs::linear_event_locator<double>(plant,1E-8));
 		}
 		void init(double* q)
 		{

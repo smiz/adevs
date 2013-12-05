@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Wall -fopenmp 
+CFLAGS = -O3 -Wall -fopenmp 
 PREFIX = ../..
 INCLUDE = -I${PREFIX}/include
 
@@ -7,7 +7,10 @@ INCLUDE = -I${PREFIX}/include
 # Should not need to edit anything below this line
 ##
 
-all: 
+inv:
+	${CC} ${INCLUDE} ${CFLAGS} -o inverter inverter.cpp
+
+all: inverter
 	${CC} ${INCLUDE} ${CFLAGS} -o qss qss.cpp
 	${CC} ${INCLUDE} ${CFLAGS} -o pc proportional_control.cpp
 
