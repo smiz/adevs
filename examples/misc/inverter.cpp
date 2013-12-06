@@ -1,3 +1,12 @@
+/**
+ * This program simulates the inverter and control logic described in
+ * Jun Chai and Ricardo Sanfelice, A Robust Hybrid Control Algorithm
+ * for a Single-Phase DC/AC Inverter with Variable Input Voltage,
+ * Technical Report No. UA/AME/HDC-2013-001, Hybrid Dynamics and Control
+ * Laboratory, Department of Aerospace and Mechanical Engineering,
+ * University of Arizona, Tucson, Arizona. Unpublished.
+ * http://www.u.arizona.edu/!sricardo/index.php?n=Main.TechnicalReports
+ */
 #include "adevs.h"
 #include <iostream>
 using namespace std;
