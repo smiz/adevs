@@ -32,10 +32,10 @@ public:
 		R(0.6), // Resistor in Ohms
 		L(0.1), // Inductor in H
 		C(0.04), // Capacitor in C
-		Vdc(5.0), // DC Voltage in V
+		Vdc(7.0), // DC Voltage in V
 		c(1.0), // Center of reference band
-		ci(0.9*c), // Inner limit of reference band
-		co(1.1*c), // Outer limit of reference band
+		ci(0.98*c), // Inner limit of reference band
+		co(1.02*c), // Outer limit of reference band
 		w(100.0*pi), // Reference frequency 
 		a(0.15), // Shape of ref. band
 		b(a/(C*w)), // Shape of ref. band
@@ -127,10 +127,10 @@ protected:
 		else if (Vz <= ci && i <= 0.0)
 			return -1;
 		// Rule (v)
-		else if (Vz >= co && 0.0 <= i && i <= eps && v < 0.0 && q == 1)
+		else if (Vz >= co && 0.0 <= i && i <= eps && v < 0.0 && q != 0)
 			return 0;
 		// Rule (vi)
-		else if (Vz >= co && 0.0 >= i && i >= -eps && v > 0.0 && q == -1)
+		else if (Vz >= co && 0.0 >= i && i >= -eps && v > 0.0 && q != 0)
 			return 0;
 		// No change otherwise
 		else
