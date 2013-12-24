@@ -60,9 +60,9 @@ INITIALIZATION_HFILES = initialization.h initialization_data.h method_ipopt.h me
 OPTIMIZATION_OBJS = initialOptimizer/allocate_ipopt$(OBJ_EXT) initialOptimizer/initial_guess$(OBJ_EXT) goal/evalF$(OBJ_EXT) constraints/evalfDiffG$(OBJ_EXT) constraints/evalfG$(OBJ_EXT) mainOptimizer/ipoptODE$(OBJ_EXT) lagrangeFun/ipopt_hessian.o
 OPTIMIZATION_HFILES = interfaceOptimization.h
 
-RESULTS_OBJS = read_csv$(OBJ_EXT) simulation_result$(OBJ_EXT) simulation_result_csv$(OBJ_EXT) simulation_result_mat$(OBJ_EXT) simulation_result_plt$(OBJ_EXT)
-RESULTS_HFILES = read_csv.h simulation_result.h simulation_result_csv.h simulation_result_mat.h simulation_result_plt.h
-RESTULS_FILES = read_csv.c simulation_result_csv.c simulation_result_mat.c simulation_result_plt.c
+RESULTS_OBJS = simulation_result$(OBJ_EXT) simulation_result_csv$(OBJ_EXT) simulation_result_mat$(OBJ_EXT) simulation_result_plt$(OBJ_EXT)
+RESULTS_HFILES = simulation_result.h simulation_result_csv.h simulation_result_mat.h simulation_result_plt.h
+RESTULS_FILES = simulation_result_csv.c simulation_result_mat.c simulation_result_plt.c
 
 SIM_OBJS = simulation_input_xml$(OBJ_EXT) simulation_runtime$(OBJ_EXT) ../linearization/linearize$(OBJ_EXT)
 SIM_OBJS_C = modelinfo$(OBJ_EXT) simulation_info_xml$(OBJ_EXT) options$(OBJ_EXT)
