@@ -135,6 +135,13 @@ void AdevsDelayData::insert(double t, double v)
 	p.t = t;
 	p.v = v;
 	assert(num_els == 0 || p.t >= traj[get_index(num_els-1)].t);
+	// Do not keep duplicate timepoints
+	if (num_els > 1 && p.t == traj[get_index(num_els-1)].t)
+	{
+		traj[get_index(num_els-1)].v = p.v;
+		return;
+	}
+	// Remove outdated elements
 	if (num_els > 1 && (t - traj[get_index(1)].t > maxDelay))
 	{
 		// Remove the outdated element
