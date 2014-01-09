@@ -95,7 +95,8 @@ template <class X, class T = double> class Devs
 		 */
 		void setParent(Network<X,T>* parent) { this->parent = parent; }
 		/**
-		 * This is the structure transition function.  It should return true
+		 * This is the structure transition function, which is evaluated following
+		 * every change of the model's state. It should return true
 		 * if a structure change is to occur, and false otherwise. False is the
 		 * default return value.
 		 * This method is used by the simulator to limit the execution
