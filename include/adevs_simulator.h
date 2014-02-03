@@ -359,6 +359,7 @@ void Simulator<X,T>::computeNextState(Bag<Event<X,T> >& input, T t)
 		while (!model_func_eval_set.empty())
 		{
 			Network<X,T>* network_model = *(model_func_eval_set.begin());
+			model_func_eval_set.erase(model_func_eval_set.begin());
 			getAllChildren(network_model,prev);
 			if (network_model->model_transition() &&
 					network_model->getParent() != NULL)
@@ -366,7 +367,6 @@ void Simulator<X,T>::computeNextState(Bag<Event<X,T> >& input, T t)
 				model_func_eval_set.insert(network_model->getParent());
 			}
 			getAllChildren(network_model,next);
-			model_func_eval_set.erase(network_model);
 		}
 		// Find the set of models that were added.
 		set_assign_diff(added,next,prev);
@@ -405,6 +405,8 @@ void Simulator<X,T>::computeNextState(Bag<Event<X,T> >& input, T t)
 		{
 			// Get the model to erase
 			Devs<X,T>* model_to_remove = *(sorted_removed.begin());
+			// Remove the model
+			sorted_removed.erase(sorted_removed.begin());
 			/**
 			 * If this model has children, then remove them from the 
 			 * deletion set. This will avoid double delete problems.
@@ -412,15 +414,11 @@ void Simulator<X,T>::computeNextState(Bag<Event<X,T> >& input, T t)
 			if (model_to_remove->typeIsNetwork() != NULL)
 			{
 				getAllChildren(model_to_remove->typeIsNetwork(),prev);
-				for (typename Set<Devs<X,T>*>::iterator iter = prev.begin(); 
-					iter != prev.end(); iter++)
-				{
+				typename Set<Devs<X,T>*>::iterator iter = prev.begin();
+				for (; iter != prev.end(); iter++)
 					sorted_removed.erase(*iter);
-				}
 				prev.clear();
 			}
-			// Remove the model
-			sorted_removed.erase(sorted_removed.begin());
 			// Delete the model and its children
 			delete model_to_remove;
 		}
@@ -620,6 +618,8 @@ void Simulator<X,T>::getAllChildren(Network<X,T>* model, Set<Devs<X,T>*>& s)
 	Set<Devs<X,T>*> tmp;
 	// Get the component set
 	model->getComponents(tmp);
+	// Add all of the local level elements to s
+	s.insert(tmp.begin(),tmp.end());
 	// Find the components of type network and update s recursively
 	typename Set<Devs<X,T>*>::iterator iter;
 	for (iter = tmp.begin(); iter != tmp.end(); iter++)
@@ -628,11 +628,6 @@ void Simulator<X,T>::getAllChildren(Network<X,T>* model, Set<Devs<X,T>*>& s)
 		{
 			getAllChildren((*iter)->typeIsNetwork(),s);
 		}
-	}
-	// Add all of the local level elements to s
-	for (iter = tmp.begin(); iter != tmp.end(); iter++)
-	{
-		s.insert(*iter);
 	}
 }
 
