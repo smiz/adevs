@@ -89,9 +89,10 @@ void adevs::rv::set_seed(unsigned long seed)
 
 double adevs::rv::triangular(double a, double b, double c)
 {
-	double x = _impl->next_dbl ();
-	if (x <= 0.5) return (2.0*(b-a)*x + a);
-	return (2.0*(b-c)*(x-0.5) + c);
+	double x = _impl->next_dbl();
+	double Fc = (c-a)/(b-a);
+	if (x < Fc) return a+sqrt(x*(b-a)*(c-a));
+	else return b-sqrt((1.0-x)*(b-a)*(b-c));
 }
 
 

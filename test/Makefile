@@ -5,9 +5,9 @@ include make.common
 check: check_cpp check_par check_java check_modelica
 
 # Check cpp code only
-check_cpp: bag_test obj_pool sched atomic double_fcmp gcd_test gpt_test \
+check_cpp: rvtest bag_test obj_pool sched atomic double_fcmp gcd_test gpt_test \
 tokenring_test dyn_devs_test zero_time_test ode_test listener_test \
-wrapper_test alt_time
+wrapper_test alt_time 
 
 # Check OpenMP code
 check_par: optsim_test  
@@ -21,7 +21,7 @@ check_modelica:
 
 java_test:
 	cd java $(CMD_SEP) $(MAKE) check
-
+:
 optsim_test:
 	cd optsim $(CMD_SEP) $(MAKE) check
 
@@ -48,6 +48,10 @@ gcd_test:
 
 tokenring_test:
 	cd tokenring $(CMD_SEP) $(MAKE) check
+
+rvtest:
+	$(CC) $(CFLAGS) rv_test.cpp $(LIBS)
+	$(TEST_EXEC)
 
 bag_test:
 	$(CC) $(CFLAGS) bagtst.cpp

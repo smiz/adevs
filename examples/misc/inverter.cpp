@@ -20,7 +20,7 @@ using namespace adevs;
  */
 double i0 = 0.1;
 double v0 = 0.009;
-int q0 = 0;
+int q0 = 1;
 
 /**
  * PI
@@ -41,11 +41,11 @@ public:
 		R(0.6), // Resistor in Ohms
 		L(0.1), // Inductor in H
 		C(0.04), // Capacitor in C
-		Vdc(7.0), // DC Voltage in V
+		Vdc(5.0), // DC Voltage in V
 		c(1.0), // Center of reference band
-		ci(0.98*c), // Inner limit of reference band
-		co(1.02*c), // Outer limit of reference band
-		w(100.0*pi), // Reference frequency 
+		ci(0.99*c), // Inner limit of reference band
+		co(1.1*c), // Outer limit of reference band
+		w(2.0*50.0*pi), // Reference frequency 
 		a(0.15), // Shape of ref. band
 		b(a/(C*w)), // Shape of ref. band
 		eps(1E-5) // Hysteresis on i
@@ -150,19 +150,14 @@ protected:
 int main(int argc, char** argv)
 {
 	// Get the initial conditions from the command line
-	if (argc < 4)
-	{
-		cout << "Needs i0, v0, and q0" << endl;
-		return 0;
-	}
-	else
+	if (argc >= 4)
 	{
 		i0 = atof(argv[1]);
 		v0 = atof(argv[2]);
 		q0 = atoi(argv[3]);
 	}
 	// Set the number of inverter cycles to simulate
-	const int sim_cycles = 10;
+	const int sim_cycles = 50;
 	// Create the model
 	inverter_with_control* model = new inverter_with_control();
 	// Calculate the ending time for the simulation
@@ -170,7 +165,7 @@ int main(int argc, char** argv)
 	// Attach a numerical solver to the model
 	Hybrid<IO_Type>* solver = new Hybrid<IO_Type>(
 		model,
-		new corrected_euler<IO_Type>(model,1E-8,0.001),
+		new corrected_euler<IO_Type>(model,1E-5,1E-5),
 		new linear_event_locator<IO_Type>(model,1E-8));
 	// Create the simulator
 	Simulator<IO_Type>* sim = new Simulator<IO_Type>(solver);
