@@ -25,7 +25,7 @@ java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 # installation if you want to build the Modelica extensions for adevs.
 SUNDIALS_HOME = /usr/local/sundials
 MODELICA_HOME = ${HOME}/Code/openmodelica/trunk
-adevs_with_modelica: CFLAGS += -I${MODELICA_HOME}/build/include/omc -I${SUNDIALS_HOME}/include 
+adevs_with_modelica: CFLAGS += -I${MODELICA_HOME}/build/include/omc/c -I${SUNDIALS_HOME}/include 
 
 include Makefile.modelica
 

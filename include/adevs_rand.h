@@ -142,7 +142,8 @@ class rv
 		void set_seed(unsigned long seed);
 		/// Get a raw value from the underlying random number generator
 		unsigned long next_long();
-		/// Sample a triangular distribution with (a, b, c)
+		/// Sample a triangular distribution with minimum a, maximum b,
+		/// and mode c.
 		double triangular(double a, double b, double c);
 		/// Sample a uniform distribution in the range [a, b]
 		double uniform(double a, double b);

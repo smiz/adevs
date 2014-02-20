@@ -30,7 +30,6 @@
  */
 #ifndef _ADEVS_SIMULATION_RUNTIME_H
 #define _ADEVS_SIMULATION_RUNTIME_H
-#include "modelica.h"
 #include "openmodelica.h"
 #include "openmodelica_func.h"
 #include "adevs_public_modelica_runtime.h"
@@ -64,7 +63,7 @@ void MODELICA_TERMINATE(const char* msg);
 #ifdef DIVISION
 #undef DIVISION
 #endif
-#define DIVISION(a,b,c) (a/b)
+#define DIVISION(a,b) (a/b)
 
 // undefine initial() (orig. defn. in omc's simulation_runtime.h)
 #ifdef initial

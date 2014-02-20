@@ -4,11 +4,10 @@ include ../make.common
 SUNDIALS=/usr/local/sundials
 OMHOME=$(HOME)/Code/openmodelica/trunk/build
 OMLIB=$(OMHOME)/lib/omc/libf2c.a -L$(OMHOME)/lib/omc
-CFLAGS += -I${SUNDIALS}/include -I$(OMHOME)/include/omc
+CFLAGS += -I${SUNDIALS}/include -I$(OMHOME)/include/omc/c
 LIBS += $(OMLIB) -L${SUNDIALS}/lib -lgc -lsundials_kinsol -lsundials_nvecserial
 
-#check: te tg t0 t1 t2 t3 t4 t5 t6 t7 linsys linsys2 dae1 event_iter delayed_sir hi
-check: tg t0 t1 t2 t3 t4 t5 t6 t7 linsys linsys2 dae1 event_iter delayed_sir hi
+check: te tg t0 t1 t2 t3 t4 t5 t6 t7 linsys linsys2 dae1 event_iter delayed_sir hi
 
 dae1:
 	omc +s +simCodeTarget=Adevs DAEexample.mo
@@ -19,9 +18,8 @@ dae1:
 delayed_sir:
 	omc +s +simCodeTarget=Adevs DelayedSIR.mo
 	$(CC) $(CFLAGS) main_influenza.cpp Influenza.cpp $(LIBS)
-	$(TEST_EXEC) > tmp
-	diff tmp delayed_sir.ok
-	$(DEL) Influenza.cpp Influenza.h
+	$(TEST_EXEC) 
+	$(DEL) Influenza.cpp Influenza.h delayed_sir.txt
 
 event_iter:
 	omc +s +simCodeTarget=Adevs eventIter.mo 

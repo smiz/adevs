@@ -52,7 +52,7 @@ int main()
 			assert(model->get_y_mod2()==model->get_y_mod2_compare());
 			assert(model->get_y_int()==model->get_y_floor());
 			assert(fabs(model->get_y_div()-trunc(model->get_y_div_expr()))
-					<= 1.0+model->getEventEpsilon());
+					<= 1.0+model->getEventEpsilon()); 
 		}
         delete sim;
 		delete hybrid_model;

@@ -5,13 +5,13 @@ class builtins_events
 	Real y;
 	output Real y_ceil(start = 0);
 	output Real y_floor(start = 0);
-	output Integer y_div(start = 0);
+	output Real y_div(start = 0);
 	output Real y_div_expr(start=0);
 	output Real y_mod1(start = 0);
 	output Real y_mod1_compare(start = 0);
 	output Real y_mod2(start = 0);
 	output Real y_mod2_compare(start = 0);
-	output Integer y_rem(start = 0);
+	output Real y_rem(start = 0);
 	output Integer y_int(start = 0);
 	output Integer y_mod_int(start = 0);
 equation
