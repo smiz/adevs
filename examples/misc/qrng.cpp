@@ -11,17 +11,14 @@ typedef double io_type;
 static adevs::rv rand_var;
 
 static const double theta_t = 9.16E5;
-static const double t_a = 1E-6; // 1E-7; // 1E-7; 5E-8;
-static const double n_s = 0.0; // 1E-8;
+static const double t_a = 5E-8;
+static const double n_s = 1E-8;
+static const int N = 5; // Number of bins for qrng output
 
-static const bool accept(double tau)
+static const int bin(double tau)
 {
-	// Old method
-//	double p = exp(theta_t*t_a)-exp(theta_t*(t_a-tau));
-	// New method
-	double p = exp(-theta_t*t_a)-exp(-theta_t*tau)
-		+ 0.5*(-exp(-theta_t*t_a)+1.0);
-	return (p <= 0.5);
+	double p = 1.0-exp(theta_t*(t_a-tau));
+	return (double(N)*p);
 }
 
 /**
@@ -125,7 +122,7 @@ class DetectorRecorder:
 			double tau = *(xb.begin());
 			t += e;
 			count++;
-			cout << t << " " << count << " " << tau << " " << accept(tau) << endl;
+			cout << t << " " << count << " " << tau << " " << bin(tau) << endl;
 		}
 		void delta_conf(const Bag<io_type>& xb){}
 		void output_func(Bag<io_type>& yb){}
@@ -150,7 +147,7 @@ int main()
 	model->couple(m2,m3);
 	Simulator<io_type>* sim = new Simulator<io_type>(model);
 	double tL = 0.0;
-	while (m3->getCount() < 10000000)
+	while (m3->getCount() < 100000)
 	{
 		tL = sim->nextEventTime();
 		sim->execNextEvent();
