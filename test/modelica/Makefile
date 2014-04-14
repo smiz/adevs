@@ -2,10 +2,9 @@ PREFIX=../..
 include ../make.common
 # GNU gcc compiler
 SUNDIALS=/usr/local/sundials
-OMHOME=$(HOME)/Code/openmodelica/trunk/build
-OMLIB=$(OMHOME)/lib/omc/libf2c.a -L$(OMHOME)/lib/omc
-CFLAGS += -I${SUNDIALS}/include -I$(OMHOME)/include/omc/c
-LIBS += $(OMLIB) -L${SUNDIALS}/lib -lgc -lsundials_kinsol -lsundials_nvecserial
+F2C=${HOME}/Code/openmodelica/trunk/build/lib/omc/libf2c.a
+CFLAGS += -I${SUNDIALS}/include 
+LIBS += ${F2C} -L${SUNDIALS}/lib -lsundials_kinsol -lsundials_nvecserial -llapack 
 
 check: te tg t0 t1 t2 t3 t4 t5 t6 t7 linsys linsys2 dae1 event_iter delayed_sir hi
 

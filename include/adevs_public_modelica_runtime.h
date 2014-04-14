@@ -31,6 +31,9 @@
 #ifndef _ADEVS_PUBLIC_SIMULATION_RUNTIME_H
 #define _ADEVS_PUBLIC_SIMULATION_RUNTIME_H
 #include <list>
+#include <vector>
+#include <cstdarg>
+#include <cstdlib>
 
 class AdevsSampleData
 {
@@ -114,5 +117,101 @@ class AdevsMathEventFunc
 	protected:
 		const double eps;
 };
+
+template <typename T>
+class modelica_array
+{
+	public:
+		modelica_array():dim(),_total_size(0),data(NULL){}
+		int num_dims() const { return dim.size(); }
+		int dim_size(int which_dim) const { return dim[which_dim]; }
+		int total_size() const { return _total_size; }
+		void push_dim(int size)
+		{
+			if (_total_size == 0)
+				_total_size = size;
+			else 
+				_total_size *= size;
+			dim.push_back(size);
+		}
+		void done_dims()
+		{
+			data = new T[_total_size];
+		}
+		~modelica_array() { if (data != NULL) delete [] data; }
+		T& get(int i1, ...) const;
+		void assign(T v1, ...);
+	private:
+		std::vector<int> dim;
+		int _total_size;
+		T* data;
+};
+
+
+/* Allocate array */
+template <typename T>
+void alloc_array(modelica_array<T>& array, int ndims, ...)
+{
+	va_list vl;
+	va_start(vl,ndims);
+    for (int i = 0; i < ndims; ++i)
+	{
+		int dim = va_arg(vl,int);
+		array.push_dim(dim);
+    }
+	va_end(vl);
+	array.done_dims();
+}
+
+/* Index into an array */
+template <typename T>
+T& modelica_array<T>::get(int i1, ...) const
+{
+	int* indices = new int[num_dims()];
+	int index = 0;
+	va_list vl;
+	va_start(vl,i1);
+	indices[0] = i1;
+	for(int i = 1; i < num_dims(); i++)
+	{
+		indices[i] = va_arg(vl,int);
+    }
+	va_end(vl);
+	for (int k = 0; k < num_dims(); k++)
+	{
+		int prod = 1;
+		for (int l = 0; l < k; l++)
+		{
+			prod *= dim_size(l);
+		}
+		index += prod*indices[k];
+	}
+	delete [] indices;
+	return data[index];
+}
+
+/* Assign values to an array. This assumes the assignments
+ * are in column major order
+ */
+template <typename T>
+void modelica_array<T>::assign(T v1, ...) 
+{
+	va_list vl;
+	va_start(vl,v1);
+	data[0] = v1;
+	for (int i = 1; i < _total_size; i++)
+	{
+		data[i] = va_arg(vl,T);
+    }
+	va_end(vl);
+}
+
+/* Copy an array */
+template <typename T>
+void copy_array(modelica_array<T>& dst, modelica_array<T>& src)
+{
+	for (int k = 0; k < dst.total_size(); k++)
+		dst[k] = src[k];
+}
 
 #endif

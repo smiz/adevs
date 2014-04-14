@@ -17,7 +17,9 @@ check_java: java_test
 
 # Check the modelica runtime system and compiler
 check_modelica:
-	cd modelica $(CMD_SEP) $(MAKE) check
+	$(CC) $(CFLAGS) modelica_array.cpp $(LIBS)
+	$(TEST_EXEC)
+#	cd modelica $(CMD_SEP) $(MAKE) check
 
 java_test:
 	cd java $(CMD_SEP) $(MAKE) check

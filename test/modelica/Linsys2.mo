@@ -5,9 +5,11 @@ model Linsys
 	Real [2] x;
 	input Real [2] u;
 	output Real [2] y;
+	output Real z;
 equation
 	der(x) = A*x+B*u;
 	y = C*x;
+	z = x[1];
 initial equation
 	x[1] = 1.0;
 	x[2] = 2.0;

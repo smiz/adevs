@@ -30,8 +30,6 @@
  */
 #ifndef _ADEVS_SIMULATION_RUNTIME_H
 #define _ADEVS_SIMULATION_RUNTIME_H
-#include "openmodelica.h"
-#include "openmodelica_func.h"
 #include "adevs_public_modelica_runtime.h"
 #include <cmath>
 #include <kinsol/kinsol.h>
@@ -39,6 +37,10 @@
 #include <nvector/nvector_serial.h>
 #include <sundials/sundials_types.h>
 #include <sundials/sundials_math.h>
+
+typedef bool modelica_boolean;
+typedef double modelica_real;
+typedef long modelica_integer;
 
 extern "C"
 {
@@ -130,8 +132,20 @@ class AdevsDivFunc:
 
 namespace adevs
 {
-	bool selectDynamicStates(double*,const long int,
-		const long int,long int*,long int*);
+	bool selectDynamicStates(double*,const long,
+		const long,long*,long*);
+	void GETRF(double*,long,long*);
+	void GETRS(double*,long,long*,double*);
+	/** These are from OpenModelica's c runtime */
+	modelica_real modelica_div(modelica_real x, modelica_real y);
+	modelica_real modelica_mod_real(modelica_real x, modelica_real y);
+	modelica_integer modelica_mod_integer(modelica_integer x, modelica_integer y);
+	modelica_integer modelica_integer_min(modelica_integer x,modelica_integer y);
+	modelica_integer modelica_integer_max(modelica_integer x,modelica_integer y);
+	modelica_real modelica_real_min(modelica_real x,modelica_real y);
+	modelica_real modelica_real_max(modelica_real x,modelica_real y);
+	modelica_real sign(modelica_real x);
+	modelica_integer sign(modelica_integer x);
 }
 
 #endif

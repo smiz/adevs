@@ -18,14 +18,10 @@ java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 #
 # This builds adevs as above and adds to the vanilla library some
 # additional object files that are needed to use adevs models 
-# produced by the Open Modelica compiler. To build this this target
-# you need to have compiled a recent version of the omc compiler
-# and have the object files from that available for linking into the
-# adevs object library. Point MODELICA_HOME at your Open Modelica 
-# installation if you want to build the Modelica extensions for adevs.
+# produced by the Open Modelica compiler. To build this you need
+# to have the SUNDIALS package installed. 
 SUNDIALS_HOME = /usr/local/sundials
-MODELICA_HOME = ${HOME}/Code/openmodelica/trunk
-adevs_with_modelica: CFLAGS += -I${MODELICA_HOME}/build/include/omc/c -I${SUNDIALS_HOME}/include 
+adevs_with_modelica: CFLAGS += -I${SUNDIALS_HOME}/include 
 
 include Makefile.modelica
 
@@ -73,7 +69,7 @@ adevs: ${ADEVS_OBJS}
 # This adds the modelica extensions to the adevs library
 adevs_with_modelica: ${ADEVS_OBJS} ${MODELICA_OBJS}
 	ar -r libadevs.a ${ADEVS_OBJS} ${MODELICA_OBJS} 
-	${CXX} -shared -Wl,-soname,libadevs.so.2 -o libadevs.so.2.6 ${ADEVS_OBJS} ${MODELICA_OBJS} 
+	${CXX} -shared -Wl,-soname,libadevs.so.2 -o libadevs.so.2.8 ${ADEVS_OBJS} ${MODELICA_OBJS} 
 
 # This builds the Java bindings to the simulator
 java_adevs: ${JAVA_OBJS}
@@ -88,4 +84,4 @@ install:
 	ln -f -s libadevs.so.2.8 "${DESTDIR}/libadevs.so"
 
 clean:
-	rm -f *.o core *.a *.so adevs_jni/*.o adevs_jni/adevs/*.class *.jar rm libadevs.so.*
+	rm -f *.o core *.a *.so adevs_jni/*.o adevs_jni/adevs/*.class *.jar rm libadevs.so.* ${MODELICA_OBJS}

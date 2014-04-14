@@ -270,46 +270,112 @@ double AdevsDivFunc::getZDown(double expr)
  * columns.
  */
 
-// From pivot.c
 extern "C" {
+// From pivot.c
 int pivot(
 	double *A,
-	modelica_integer n_rows,
-	modelica_integer n_cols,
-	modelica_integer *rowInd,
-	modelica_integer *colInd
+	long n_rows,
+	long n_cols,
+	long *rowInd,
+	long *colInd
 	);
+// From lapack 
+void dgetrf_(long*,long*,double*,long*,long*,long*);
+void dgetrs_(char*,long*,long*,double*,long*,long*,double*,long*,long*);
 }
 
 bool adevs::selectDynamicStates(
 	double* J,
-	const long int numStates,
-	const long int numCandidates,
-	long int* rowInd,
-	long int* colInd
+	const long numStates,
+	const long numCandidates,
+	long* rowInd,
+	long* colInd
 	)
 {
-	long int oldColInd[numCandidates];
-	long int oldRowInd[numStates];
-	for (int col = 0; col < numCandidates; col++)
+	long oldColInd[numCandidates];
+	long oldRowInd[numStates];
+	for (long col = 0; col < numCandidates; col++)
 	{
 		oldColInd[col] = colInd[col];
 	}
-	for (int row = 0; row < numStates; row++)
+	for (long row = 0; row < numStates; row++)
 	{
 		oldRowInd[row] = rowInd[row];
 	}
 	pivot(J,numStates,numCandidates,rowInd,colInd);
-	for (int col = 0; col < numCandidates; col++)
+	for (long col = 0; col < numCandidates; col++)
 	{
 		if (oldColInd[col] != colInd[col])
 			return true;
 	}
-	for (int row = 0; row < numStates; row++)
+	for (long row = 0; row < numStates; row++)
 	{
 		if (oldRowInd[row] != rowInd[row])
 			return true;
 	}
 	return false;
+}
+
+/**
+ * LAPACK wrappers
+ */
+void adevs::GETRF(double* A, long size, long* p)
+{
+	long ok = 0;
+	dgetrf_(&size,&size,A,&size,p,&ok);
+	assert(ok==0);
+}
+
+void adevs::GETRS(double* A, long size, long* p, double* B)
+{
+	long ok = 0;
+	long nrhs = 1;
+	char N = 'N';
+	dgetrs_(&N,&size,&nrhs,A,&size,p,B,&size,&ok);
+	assert(ok==0);
+}
+
+/**
+ * Modelica builting functions
+ */
+modelica_real adevs::modelica_div(modelica_real x, modelica_real y)
+{
+	return (modelica_real)((modelica_integer)(x/y));
+}
+modelica_real adevs::modelica_mod_real(modelica_real x, modelica_real y)
+{
+	return (x - (floor(x/y) * y));
+}
+modelica_integer adevs::modelica_mod_integer(modelica_integer x, modelica_integer y)
+{
+	return x % y;
+}
+modelica_integer adevs::modelica_integer_min(modelica_integer x,modelica_integer y)
+{
+	return (x < y) ? x : y;
+}
+modelica_integer adevs::modelica_integer_max(modelica_integer x,modelica_integer y)
+{
+	return (x > y) ? x : y;
+}
+modelica_real adevs::modelica_real_min(modelica_real x,modelica_real y)
+{
+	return (x < y) ? x : y;
+}
+modelica_real adevs::modelica_real_max(modelica_real x,modelica_real y)
+{
+	return (x > y) ? x : y;
+}
+modelica_real adevs::sign(modelica_real x)
+{
+	if (x < 0.0) return -1.0;
+	if (x > 0.0) return 1.0;
+	return 0.0;
+}
+modelica_integer adevs::sign(modelica_integer x)
+{
+	if (x < 0) return -1;
+	if (x > 0) return 1;
+	return 0;
 }
 
