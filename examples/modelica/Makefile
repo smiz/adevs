@@ -8,6 +8,7 @@ OMINCLUDE=-I${OMHOME}/include/omc
 OMLIBS=-L${OMHOME}/lib/omc -L../../src -ladevs -lsundials_kinsol \
 	   -L${SUNDIALS_PATH}/lib \
 	   -lsundials_nvecserial \
+	   -llapack \
 	   /usr/local/lib/libf2c.a
 
 circuit:
