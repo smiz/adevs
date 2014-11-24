@@ -5,7 +5,7 @@
 #
 # This target builds the java language bindings to the adevs simulator.
 # Point this at your java installation if you want to build the Java bindings.
-JAVA_HOME = /usr/local/jdk1.7.0_25
+JAVA_HOME = /usr/local/jdk1.7.0_51
 java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux 
 
 #
@@ -73,7 +73,7 @@ adevs_with_modelica: ${ADEVS_OBJS} ${MODELICA_OBJS}
 
 # This builds the Java bindings to the simulator
 java_adevs: ${JAVA_OBJS}
-	${CXX} ${OMP} -shared -Wl,-soname,java_adevs -o libjava_adevs.so ${JAVA_OBJS}
+	${CXX} ${OMP} ${OPTFLAG} -shared -Wl,-soname,java_adevs -o libjava_adevs.so ${JAVA_OBJS}
 	javac adevs_jni/adevs/*.java
 	cd adevs_jni ; jar cfv ../adevs.jar adevs/*.class
 

@@ -1,0 +1,2 @@
+loadFile("test1.mo");
+translateModelFMU(test1,"2.0");

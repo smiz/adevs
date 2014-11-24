@@ -1,0 +1,2 @@
+loadFile("EventTests.mo");
+translateModelFMU(EventTests,"2.0");
