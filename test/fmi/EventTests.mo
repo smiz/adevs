@@ -22,9 +22,8 @@ equation
  when sample(1,1) then 
   a = pre(a)*(-1);
  end when;
-algorithm
  when sample(0,0.5) then
-   count := count + 1;
+   count = pre(count) + 1;
  end when;
 end EventTests;
 

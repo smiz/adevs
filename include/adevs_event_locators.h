@@ -51,7 +51,7 @@ template <typename X> class event_locator_impl:
 		 * at the first instant t' >= t where z(t)*z(t') <= 0 and
 		 * |z(t')| < err_tol.
 		 */
-		enum Mode { INTERPOLATE, BISECTION };
+		enum Mode { INTERPOLATE, BISECTION, DISCONTINUOUS };
 		event_locator_impl(ode_system<X>* sys, double err_tol, Mode mode);
 		~event_locator_impl();
 		bool find_events(bool* events, const double* qstart, double* qend,
@@ -106,7 +106,12 @@ bool event_locator_impl<X>::find_events(bool* events,
 			if (sign(z[1][i]) != sign(z[0][i]))
 			{
 				// Event at h > 0
-				if (fabs(z[1][i]) <= err_tol)
+				if (
+						// End condition when z is continuous
+						((mode != DISCONTINUOUS) && (fabs(z[1][i]) <= err_tol)) ||
+						// End condition when z is discontinuous
+						((mode == DISCONTINUOUS) && (h <= err_tol))
+					)
 				{
 					events[i] = found_event = true; 
 				}
@@ -127,7 +132,7 @@ bool event_locator_impl<X>::find_events(bool* events,
 		// Guess at a new h and calculate qend for that time
 		if (event_in_interval)
 		{
-			if (mode == BISECTION) h /= 2.0;
+			if (mode == BISECTION || mode == DISCONTINUOUS) h /= 2.0;
 			else h = tguess;
 			for (int i = 0; i < this->sys->numVars(); i++)
 				qend[i] = qstart[i];
@@ -163,6 +168,19 @@ class linear_event_locator:
 		linear_event_locator(ode_system<X>* sys, double err_tol):
 			event_locator_impl<X>(
 					sys,err_tol,event_locator_impl<X>::INTERPOLATE){}
+};
+
+/**
+ * Locate events using bisection assuming discontinuous z functions.
+ */
+template <typename X>
+class discontinuous_event_locator:
+	public event_locator_impl<X>
+{
+	public:
+		discontinuous_event_locator(ode_system<X>* sys, double err_tol):
+			event_locator_impl<X>(
+					sys,err_tol,event_locator_impl<X>::DISCONTINUOUS){}
 };
 
 } // end of namespace 

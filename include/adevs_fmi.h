@@ -127,6 +127,10 @@ template <typename X> class FMI:
 		double get_time() const { return t_now; }
 		// Get the value of a real variable
 		double get_real(int k);
+		// Get the value of an integer variable
+		int get_int(int k);
+		// Get the value of a boolean variable
+		bool get_bool(int k);
 
 	private:
 		// Reference to the FMI
@@ -164,18 +168,18 @@ template <typename X> class FMI:
 		// Current time
 		double t_now;
 
-
+		static void fmilogger(
+			fmi2ComponentEnvironment componentEnvironment,
+			fmi2String instanceName,
+			fmi2Status status,
+			fmi2String category,
+			fmi2String message, ...)
+		{
+			std::cerr << message << std::endl;
+		}
 };
 
-static void fmilogger(
-	fmi2ComponentEnvironment componentEnvironment,
-	fmi2String instanceName,
-	fmi2Status status,
-	fmi2String category,
-	fmi2String message, ...)
-{
-	std::cerr << message << std::endl;
-}
+
 
 /**
  * Macro for invoking the constructor of an FMI with pointers too all the FMI
@@ -269,7 +273,7 @@ FMI<X>::FMI(const char* modelname,
 	t_now(0.0)
 {
 	// Create the FMI component
-	callbackFuncs.logger = adevs::fmilogger;
+	callbackFuncs.logger = adevs::FMI<X>::fmilogger;
 	callbackFuncs.allocateMemory = calloc;
 	callbackFuncs.freeMemory = free;
 	callbackFuncs.stepFinished = NULL;
@@ -304,9 +308,6 @@ void FMI<X>::der_func(const double* q, double* dq)
 	_fmi2SetContinuousStates(c,q,this->numVars()-1);
 	_fmi2GetDerivatives(c,dq,this->numVars()-1);
 	dq[this->numVars()-1] = 1.0;
-	for (int i = 0; i < this->numVars(); i++)
-		cout << q[i] << " " << dq[i] << " ";
-	cout << endl;
 }
 
 template <typename X>
@@ -315,39 +316,44 @@ void FMI<X>::state_event_func(const double* q, double* z)
 	_fmi2SetTime(c,q[this->numVars()-1]);
 	_fmi2SetContinuousStates(c,q,this->numVars()-1);
 	_fmi2GetEventIndicators(c,z,this->numEvents());
-	cout << "Z: ";
-	for (int i = 0; i < this->numEvents(); i++)
-		cout << z[i] << " ";
-	cout << endl;
 }
 
 template <typename X>
 double FMI<X>::time_event_func(const double* q)
 {
-	cout << (next_time_event - q[this->numVars()-1]) << endl;
 	return next_time_event-q[this->numVars()-1];
 }
 
 template <typename X>
 void FMI<X>::postStep(double* q)
 {
+	fmi2Boolean enterEventMode;
+	fmi2Boolean terminateSimulation;
 	t_now = q[this->numVars()-1];
 	_fmi2SetTime(c,t_now);
 	_fmi2SetContinuousStates(c,q,this->numVars()-1);
+	_fmi2CompletedIntegratorStep(c,fmi2True,&enterEventMode,&terminateSimulation);
+	if (enterEventMode == fmi2True)
+		next_time_event = t_now;
 }
 
 template <typename X>
 void FMI<X>::internal_event(double* q, const bool* state_event)
 {
-	std::cout << "dint" << std::endl;
 	t_now = q[this->numVars()-1];
 	_fmi2SetTime(c,t_now);
 	_fmi2SetContinuousStates(c,q,this->numVars()-1);
 	_fmi2EnterEventMode(c);
 	fmi2EventInfo eventInfo;
-	_fmi2NewDiscreteStates(c,&eventInfo);
+	do
+	{
+		_fmi2NewDiscreteStates(c,&eventInfo);
+	}
+	while(eventInfo.newDiscreteStatesNeeded == fmi2True);
 	if (eventInfo.nextEventTimeDefined == fmi2True)
+	{
 		next_time_event = eventInfo.nextEventTime;
+	}
 	else next_time_event = adevs_inf<double>();
 	_fmi2GetContinuousStates(c,q,this->numVars()-1);
 	_fmi2EnterContinuousTimeMode(c);
@@ -386,6 +392,24 @@ double FMI<X>::get_real(int k)
 	fmi2Real val;
 	_fmi2GetReal(c,&ref,1,&val);
 	return val;
+}
+
+template <typename X>
+int FMI<X>::get_int(int k)
+{
+	const fmi2ValueReference ref = k;
+	fmi2Integer val;
+	_fmi2GetInteger(c,&ref,1,&val);
+	return val;
+}
+
+template <typename X>
+bool FMI<X>::get_bool(int k)
+{
+	const fmi2ValueReference ref = k;
+	fmi2Boolean val;
+	_fmi2GetBoolean(c,&ref,1,&val);
+	return (val == fmi2True);
 }
 
 } // end of namespace
