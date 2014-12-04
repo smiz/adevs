@@ -69,7 +69,8 @@ template <typename X> class FMI:
 			const char* guid,
 			int num_state_variables,
 			int num_event_indicators,
-			const char* shared_lib_name);
+			const char* shared_lib_name,
+			const double tolerance = 1E-8);
 		/// Copy the initial state of the model to q
 		virtual void init(double* q);
 		/// Compute the derivative for state q and put it in dq
@@ -121,6 +122,8 @@ template <typename X> class FMI:
 		double get_time() const { return t_now; }
 		// Get the value of a real variable
 		double get_real(int k);
+		// Set the value of a real variable
+		void set_real(int k, double val);
 		// Get the value of an integer variable
 		int get_int(int k);
 		// Get the value of a boolean variable
@@ -177,12 +180,15 @@ template <typename X> class FMI:
 		}
 };
 
+#define LOAD_SO_FUNCTION(funcName) *(void**)(&_ ## funcName) = dlsym(so_hndl,#funcName )
+
 template <typename X>
 FMI<X>::FMI(const char* modelname,
 			const char* guid,
 			int num_state_variables,
 			int num_event_indicators,
-			const char* so_file_name):
+			const char* so_file_name,
+			const double tolerance):
 	// One extra variable at the end for time
 	ode_system<X>(num_state_variables+1,num_event_indicators),
 	next_time_event(adevs_inf<double>()),
@@ -191,32 +197,33 @@ FMI<X>::FMI(const char* modelname,
 	cont_time_mode(false)
 {
 	so_hndl = dlopen(so_file_name, RTLD_LAZY);
-	if (!handle)
+	if (!so_hndl)
 	{
 		throw adevs::exception("Could not load so file",this);
     }
-	_fmi2Instantiate = dlsym(so_hndl,"fmi2Instantiate");
-	_fmi2FreeInstance = dlsym(so_hndl,"fmi2FreeInstance");
-	_fmi2SetupExperiment = dlsym(so_hndl,"fmi2SetupExperiment");
-	_fmi2EnterInitializationMode = dlsym(so_hndl,"fmi2EnterInitializationMode");
-	_fmi2ExitInitializationMode= dlsym(so_hndl,"fmi2ExitInitializationMode");
-	_fmi2GetReal = dlsym(so_hndl,"fmi2GetReal");
-	_fmi2GetInteger = dlsym(so_hndl,"fmi2GetInteger");
-	_fmi2GetBoolean = dlsym(so_hndl,"fmi2GetBoolean");
-	_fmi2GetString = dlsym(so_hndl,"fmi2GetString");
-	_fmi2SetReal = dlsym(so_hndl,"fmi2SetReal");
-	_fmi2SetInteger = dlsym(so_hndl,"fmi2SetInteger");
-	_fmi2SetBoolean = dlsym(so_hndl,"fmi2SetBoolean");
-	_fmi2SetString = dlsym(so_hndl,"fmi2SetString");
-	_fmi2EnterEventMode = dlsym(so_hndl,"fmi2EnterEventMode");
-	_fmi2NewDiscreteStates = dlsym(so_hndl,"fmi2NewDiscreteStates");
-	_fmi2EnterContinuousTimeMode = dlsym(so_hndl,"fmi2EnterContinuousTimeMode");
-	_fmi2CompletedIntegratorStep = dlsym(so_hndl,"fmi2CompletedIntegratorStep");
-	_fmi2SetTime = dlsym(so_hndl,"fmi2SetTime");
-	_fmi2SetContinuousStates = dlsym(so_hndl,"fmi2SetContinuousStates");
-	_fmi2GetDerivatives = dlsym(so_hndl,"fmi2GetDerivatives");
-	_fmi2GetEventIndicators = dlsym(so_hndl,"fmi2GetEventIndicators");
-	_fmi2GetContinuousStates = dysym(so_hndl,"fmi2GetContinuousStates");
+	LOAD_SO_FUNCTION(fmi2Instantiate);
+	LOAD_SO_FUNCTION(fmi2Instantiate);
+	LOAD_SO_FUNCTION(fmi2FreeInstance);
+	LOAD_SO_FUNCTION(fmi2SetupExperiment);
+	LOAD_SO_FUNCTION(fmi2EnterInitializationMode);
+	LOAD_SO_FUNCTION(fmi2ExitInitializationMode);
+	LOAD_SO_FUNCTION(fmi2GetReal);
+	LOAD_SO_FUNCTION(fmi2GetInteger);
+	LOAD_SO_FUNCTION(fmi2GetBoolean);
+	LOAD_SO_FUNCTION(fmi2GetString);
+	LOAD_SO_FUNCTION(fmi2SetReal);
+	LOAD_SO_FUNCTION(fmi2SetInteger);
+	LOAD_SO_FUNCTION(fmi2SetBoolean);
+	LOAD_SO_FUNCTION(fmi2SetString);
+	LOAD_SO_FUNCTION(fmi2EnterEventMode);
+	LOAD_SO_FUNCTION(fmi2NewDiscreteStates);
+	LOAD_SO_FUNCTION(fmi2EnterContinuousTimeMode);
+	LOAD_SO_FUNCTION(fmi2CompletedIntegratorStep);
+	LOAD_SO_FUNCTION(fmi2SetTime);
+	LOAD_SO_FUNCTION(fmi2SetContinuousStates);
+	LOAD_SO_FUNCTION(fmi2GetDerivatives);
+	LOAD_SO_FUNCTION(fmi2GetEventIndicators);
+	LOAD_SO_FUNCTION(fmi2GetContinuousStates);
 	// Create the FMI component
 	callbackFuncs.logger = adevs::FMI<X>::fmilogger;
 	callbackFuncs.allocateMemory = calloc;
@@ -225,7 +232,7 @@ FMI<X>::FMI(const char* modelname,
 	callbackFuncs.componentEnvironment = NULL;
 	c = _fmi2Instantiate(modelname,fmi2ModelExchange,guid,"",&callbackFuncs,fmi2False,fmi2False);
 	assert(c != NULL);
-	_fmi2SetupExperiment(c,fmi2False,-1.0,-1.0,fmi2False,-1.0);
+	_fmi2SetupExperiment(c,fmi2True,tolerance,-1.0,fmi2False,-1.0);
 }
 
 template <typename X>
@@ -386,6 +393,13 @@ double FMI<X>::get_real(int k)
 	fmi2Real val;
 	_fmi2GetReal(c,&ref,1,&val);
 	return val;
+}
+
+template <typename X>
+void FMI<X>::set_real(int k, double val)
+{
+	const fmi2ValueReference ref = k;
+	_fmi2SetReal(c,&ref,1,&val);
 }
 
 template <typename X>

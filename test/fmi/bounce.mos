@@ -1,0 +1,2 @@
+loadFile("bounce.mo");
+translateModelFMU(bounce,"2.0");

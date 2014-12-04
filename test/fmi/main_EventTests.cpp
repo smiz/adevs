@@ -33,7 +33,7 @@ void test_vars(adevs::FMI<int>* model)
 		assert(model->get_bool(v1_ref));
 		assert(model->get_bool(v2_ref));
 		assert(!model->get_bool(v3_ref));
-		assert(!model->get_bool(v3_ref));
+		assert(!model->get_bool(v4_ref));
 	}
 	// 2 x accounts for hysteresis
 	else if (model->get_real(x_ref)-model->get_real(x1_ref) < -epsilon)
@@ -41,7 +41,7 @@ void test_vars(adevs::FMI<int>* model)
 		assert(!model->get_bool(v1_ref));
 		assert(!model->get_bool(v2_ref));
 		assert(model->get_bool(v3_ref));
-		assert(model->get_bool(v3_ref));
+		assert(model->get_bool(v4_ref));
 	}
 	// 2 x accounts for hysteresis
 	if (model->get_real(x_ref)-model->get_real(y_ref) > epsilon)
@@ -49,7 +49,7 @@ void test_vars(adevs::FMI<int>* model)
 		assert(model->get_bool(w1_ref));
 		assert(model->get_bool(w2_ref));
 		assert(!model->get_bool(w3_ref));
-		assert(!model->get_bool(w3_ref));
+		assert(!model->get_bool(w4_ref));
 	}
 	// 2 x accounts for hysteresis
 	else if (model->get_real(x_ref)-model->get_real(y_ref) < -epsilon)
@@ -57,16 +57,22 @@ void test_vars(adevs::FMI<int>* model)
 		assert(!model->get_bool(w1_ref));
 		assert(!model->get_bool(w2_ref));
 		assert(model->get_bool(w3_ref));
-		assert(model->get_bool(w3_ref));
+		assert(model->get_bool(w4_ref));
 	} 
 }
 
 int main()
 {
 	adevs::FMI<int>* fmi =
-		new ADEVS_FMI_CONSTRUCTOR("EventTests","{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",2,8,int);
-	adevs::corrected_euler<int>* solver1 = new adevs::corrected_euler<int>(fmi,1E-6,0.01);
-	adevs::discontinuous_event_locator<int>* solver2 = new adevs::discontinuous_event_locator<int>(fmi,1E-6);
+		new adevs::FMI<int>(
+				"EventTests",
+				"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
+				2,8,
+				"event_tests/binaries/linux64/EventTests.so",
+				epsilon/10.0);
+	adevs::corrected_euler<int>* solver1 = new adevs::corrected_euler<int>(fmi,epsilon/10.0,0.01);
+	adevs::discontinuous_event_locator<int>* solver2 =
+		new adevs::discontinuous_event_locator<int>(fmi,epsilon/10.0);
 	adevs::Hybrid<int>* model =
 		new adevs::Hybrid<int>(fmi,solver1,solver2);
 	adevs::Simulator<int>* sim = new adevs::Simulator<int>(model);
