@@ -33,6 +33,8 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <dlfcn.h>
+#include <cstdlib>
 #include "adevs_hybrid.h"
 #include "fmi2Functions.h"
 #include "fmi2FunctionTypes.h"
@@ -60,39 +62,14 @@ template <typename X> class FMI:
 		/**
 		 * This constructs a wrapper around an FMI. The constructor
 		 * must be provided with the number of state variables,
-		 * number of event indicators, and pointers to the FMI functions
-		 * that are indicated as arguments.
+		 * number of event indicators, and the path to the .so file
+		 * that contains the FMI functions for this model.
 		 */
 		FMI(const char* modelname,
 			const char* guid,
 			int num_state_variables,
 			int num_event_indicators,
-			fmi2Component (*_fmi2Instantiate)(fmi2String, fmi2Type,
-				fmi2String, fmi2String, const fmi2CallbackFunctions*,
-				fmi2Boolean, fmi2Boolean),
-			void (*_fmi2FreeInstance)(fmi2Component),
-			fmi2Status (*_fmi2SetupExperiment)(fmi2Component, fmi2Boolean,
-				fmi2Real, fmi2Real, fmi2Boolean, fmi2Real),
-			fmi2Status (*_fmi2EnterInitializationMode)(fmi2Component),
-			fmi2Status (*_fmi2ExitInitializationMode)(fmi2Component),
-			fmi2Status (*_fmi2GetReal)(fmi2Component, const fmi2ValueReference*, size_t, fmi2Real*),
-			fmi2Status (*_fmi2GetInteger)(fmi2Component, const fmi2ValueReference*, size_t, fmi2Integer*),
-			fmi2Status (*_fmi2GetBoolean)(fmi2Component, const fmi2ValueReference*, size_t, fmi2Boolean*),
-			fmi2Status (*_fmi2GetString)(fmi2Component, const fmi2ValueReference*, size_t, fmi2String*),
-			fmi2Status (*_fmi2SetReal)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2Real*),
-			fmi2Status (*_fmi2SetInteger)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2Integer*),
-			fmi2Status (*_fmi2SetBoolean)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2Boolean*),
-			fmi2Status (*_fmi2SetString)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2String*),
-			fmi2Status (*_fmi2EnterEventMode)(fmi2Component),
-			fmi2Status (*_fmi2NewDiscreteStates)(fmi2Component,fmi2EventInfo*),
-			fmi2Status (*_fmi2EnterContinuousTimeMode)(fmi2Component),
-			fmi2Status (*_fmi2CompletedIntegratorStep)(fmi2Component, fmi2Boolean, fmi2Boolean*, fmi2Boolean*),
-			fmi2Status (*_fmi2SetTime)(fmi2Component, fmi2Real),
-			fmi2Status (*_fmi2SetContinuousStates)(fmi2Component, const fmi2Real*, size_t),
-			fmi2Status (*_fmi2GetDerivatives)(fmi2Component, fmi2Real*, size_t),
-			fmi2Status (*_fmi2GetEventIndicators)(fmi2Component, fmi2Real*, size_t),
-			fmi2Status (*_fmi2GetContinuousStates)(fmi2Component, fmi2Real*, size_t)
-		);
+			const char* shared_lib_name);
 		/// Copy the initial state of the model to q
 		virtual void init(double* q);
 		/// Compute the derivative for state q and put it in dq
@@ -103,23 +80,40 @@ template <typename X> class FMI:
 		virtual double time_event_func(const double* q);
 		/**
 		 * This method is invoked immediately following an update of the
-		 * continuous state variables. The main use of this callback is to
-		 * update algberaic variables. The default implementation does nothing.
+		 * continuous state variables and signal to the FMI the end
+		 * of an integration state.
 		 */
 		virtual void postStep(double* q);
-		/// The internal transition function
+		/**
+		 * The internal transition function. This function will process all events
+		 * required by the FMI. Any derived class should call this method for the
+		 * parent class, then set or get any variables as appropriate, and then
+		 * call the base class method again to account for these changes. 
+		 */
 		virtual void internal_event(double* q,
 				const bool* state_event);
-		/// The external transition function
+		/**
+		 * The external transition See the notes on the internal_event function for
+		 * derived classes.
+		 */
 		virtual void external_event(double* q, double e,
 				const Bag<X>& xb);
-		/// The confluent transition function
+		/**
+		 * The confluent transition function. See the notes on the internal_event function for
+		 * derived classes.
+		 */
 		virtual void confluent_event(double *q, const bool* state_event,
 				const Bag<X>& xb);
-		/// The output function
+		/**
+		 * The output function. This can read variables for the FMI, but should
+		 * not make any modifications to those variables.
+		 */
 		virtual void output_func(const double *q, const bool* state_event,
 				Bag<X>& yb);
-		/// Garbage collection function. This works just like the Atomic gc_output method.
+		/**
+		 * Garbage collection function. This works just like the Atomic gc_output method.
+		 * The default implementation does nothing.
+		 */
 		virtual void gc_output(Bag<X>& gb);
 		/// Destructor
 		virtual ~FMI();
@@ -167,6 +161,10 @@ template <typename X> class FMI:
 		double next_time_event;
 		// Current time
 		double t_now;
+		// so library handle
+		void* so_hndl;
+		// Are we in continuous time mode?
+		bool cont_time_mode;
 
 		static void fmilogger(
 			fmi2ComponentEnvironment componentEnvironment,
@@ -179,99 +177,46 @@ template <typename X> class FMI:
 		}
 };
 
-
-
-/**
- * Macro for invoking the constructor of an FMI with pointers too all the FMI
- * functions for the target model.
- */
-#define ADEVS_FMI_CONSTRUCTOR(modelname,guid,num_state_vars,num_event_funcs,X) \
-	adevs::FMI<X>( \
-		modelname, \
-		guid, \
-		num_state_vars, \
-		num_event_funcs, \
-		fmi2Instantiate, \
-		fmi2FreeInstance, \
-		fmi2SetupExperiment, \
-		fmi2EnterInitializationMode, \
-		fmi2ExitInitializationMode, \
-		fmi2GetReal, \
-		fmi2GetInteger, \
-		fmi2GetBoolean, \
-		fmi2GetString, \
-		fmi2SetReal, \
-		fmi2SetInteger, \
-		fmi2SetBoolean, \
-		fmi2SetString, \
-		fmi2EnterEventMode, \
-		fmi2NewDiscreteStates, \
-		fmi2EnterContinuousTimeMode, \
-		fmi2CompletedIntegratorStep, \
-		fmi2SetTime, \
-		fmi2SetContinuousStates, \
-		fmi2GetDerivatives, \
-		fmi2GetEventIndicators, \
-		fmi2GetContinuousStates)
-
 template <typename X>
 FMI<X>::FMI(const char* modelname,
 			const char* guid,
 			int num_state_variables,
 			int num_event_indicators,
-			fmi2Component (*_fmi2Instantiate)(fmi2String, fmi2Type,
-				fmi2String, fmi2String, const fmi2CallbackFunctions*,
-				fmi2Boolean, fmi2Boolean),
-			void (*_fmi2FreeInstance)(fmi2Component),
-			fmi2Status (*_fmi2SetupExperiment)(fmi2Component, fmi2Boolean,
-				fmi2Real, fmi2Real, fmi2Boolean, fmi2Real),
-			fmi2Status (*_fmi2EnterInitializationMode)(fmi2Component),
-			fmi2Status (*_fmi2ExitInitializationMode)(fmi2Component),
-			fmi2Status (*_fmi2GetReal)(fmi2Component, const fmi2ValueReference*, size_t, fmi2Real*),
-			fmi2Status (*_fmi2GetInteger)(fmi2Component, const fmi2ValueReference*, size_t, fmi2Integer*),
-			fmi2Status (*_fmi2GetBoolean)(fmi2Component, const fmi2ValueReference*, size_t, fmi2Boolean*),
-			fmi2Status (*_fmi2GetString)(fmi2Component, const fmi2ValueReference*, size_t, fmi2String*),
-			fmi2Status (*_fmi2SetReal)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2Real*),
-			fmi2Status (*_fmi2SetInteger)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2Integer*),
-			fmi2Status (*_fmi2SetBoolean)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2Boolean*),
-			fmi2Status (*_fmi2SetString)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2String*),
-			fmi2Status (*_fmi2EnterEventMode)(fmi2Component),
-			fmi2Status (*_fmi2NewDiscreteStates)(fmi2Component,fmi2EventInfo*),
-			fmi2Status (*_fmi2EnterContinuousTimeMode)(fmi2Component),
-			fmi2Status (*_fmi2CompletedIntegratorStep)(fmi2Component, fmi2Boolean, fmi2Boolean*, fmi2Boolean*),
-			fmi2Status (*_fmi2SetTime)(fmi2Component, fmi2Real),
-			fmi2Status (*_fmi2SetContinuousStates)(fmi2Component, const fmi2Real*, size_t),
-			fmi2Status (*_fmi2GetDerivatives)(fmi2Component, fmi2Real*, size_t),
-			fmi2Status (*_fmi2GetEventIndicators)(fmi2Component, fmi2Real*, size_t),
-			fmi2Status (*_fmi2GetContinuousStates)(fmi2Component, fmi2Real*, size_t)
-		):
+			const char* so_file_name):
 	// One extra variable at the end for time
 	ode_system<X>(num_state_variables+1,num_event_indicators),
-	_fmi2Instantiate(_fmi2Instantiate),
-	_fmi2FreeInstance(_fmi2FreeInstance),
-	_fmi2SetupExperiment(_fmi2SetupExperiment),
-	_fmi2EnterInitializationMode(_fmi2EnterInitializationMode),
-	_fmi2ExitInitializationMode(_fmi2ExitInitializationMode),
-	_fmi2GetReal(_fmi2GetReal),
-	_fmi2GetInteger(_fmi2GetInteger),
-	_fmi2GetBoolean(_fmi2GetBoolean),
-	_fmi2GetString(_fmi2GetString),
-	_fmi2SetReal(_fmi2SetReal),
-	_fmi2SetInteger(_fmi2SetInteger),
-	_fmi2SetBoolean(_fmi2SetBoolean),
-	_fmi2SetString(_fmi2SetString),
-	_fmi2EnterEventMode(_fmi2EnterEventMode),
-	_fmi2NewDiscreteStates(_fmi2NewDiscreteStates),
-	_fmi2EnterContinuousTimeMode(_fmi2EnterContinuousTimeMode),
-	_fmi2CompletedIntegratorStep(_fmi2CompletedIntegratorStep),
-	_fmi2SetTime(_fmi2SetTime),
-	_fmi2SetContinuousStates(_fmi2SetContinuousStates),
-	_fmi2GetDerivatives(_fmi2GetDerivatives),
-	_fmi2GetEventIndicators(_fmi2GetEventIndicators),
-	_fmi2GetContinuousStates(_fmi2GetContinuousStates),
 	next_time_event(adevs_inf<double>()),
-	t_now(0.0)
+	t_now(0.0),
+	so_hndl(NULL),
+	cont_time_mode(false)
 {
+	so_hndl = dlopen(so_file_name, RTLD_LAZY);
+	if (!handle)
+	{
+		throw adevs::exception("Could not load so file",this);
+    }
+	_fmi2Instantiate = dlsym(so_hndl,"fmi2Instantiate");
+	_fmi2FreeInstance = dlsym(so_hndl,"fmi2FreeInstance");
+	_fmi2SetupExperiment = dlsym(so_hndl,"fmi2SetupExperiment");
+	_fmi2EnterInitializationMode = dlsym(so_hndl,"fmi2EnterInitializationMode");
+	_fmi2ExitInitializationMode= dlsym(so_hndl,"fmi2ExitInitializationMode");
+	_fmi2GetReal = dlsym(so_hndl,"fmi2GetReal");
+	_fmi2GetInteger = dlsym(so_hndl,"fmi2GetInteger");
+	_fmi2GetBoolean = dlsym(so_hndl,"fmi2GetBoolean");
+	_fmi2GetString = dlsym(so_hndl,"fmi2GetString");
+	_fmi2SetReal = dlsym(so_hndl,"fmi2SetReal");
+	_fmi2SetInteger = dlsym(so_hndl,"fmi2SetInteger");
+	_fmi2SetBoolean = dlsym(so_hndl,"fmi2SetBoolean");
+	_fmi2SetString = dlsym(so_hndl,"fmi2SetString");
+	_fmi2EnterEventMode = dlsym(so_hndl,"fmi2EnterEventMode");
+	_fmi2NewDiscreteStates = dlsym(so_hndl,"fmi2NewDiscreteStates");
+	_fmi2EnterContinuousTimeMode = dlsym(so_hndl,"fmi2EnterContinuousTimeMode");
+	_fmi2CompletedIntegratorStep = dlsym(so_hndl,"fmi2CompletedIntegratorStep");
+	_fmi2SetTime = dlsym(so_hndl,"fmi2SetTime");
+	_fmi2SetContinuousStates = dlsym(so_hndl,"fmi2SetContinuousStates");
+	_fmi2GetDerivatives = dlsym(so_hndl,"fmi2GetDerivatives");
+	_fmi2GetEventIndicators = dlsym(so_hndl,"fmi2GetEventIndicators");
+	_fmi2GetContinuousStates = dysym(so_hndl,"fmi2GetContinuousStates");
 	// Create the FMI component
 	callbackFuncs.logger = adevs::FMI<X>::fmilogger;
 	callbackFuncs.allocateMemory = calloc;
@@ -299,11 +244,17 @@ void FMI<X>::init(double* q)
 	_fmi2EnterContinuousTimeMode(c);
 	_fmi2GetContinuousStates(c,q,this->numVars()-1);
 	q[this->numVars()-1] = t_now;
+	cont_time_mode = true;
 }
 
 template <typename X>
 void FMI<X>::der_func(const double* q, double* dq)
 {
+	if (!cont_time_mode)
+	{
+		_fmi2EnterContinuousTimeMode(c);
+		cont_time_mode = true;
+	}
 	_fmi2SetTime(c,q[this->numVars()-1]);
 	_fmi2SetContinuousStates(c,q,this->numVars()-1);
 	_fmi2GetDerivatives(c,dq,this->numVars()-1);
@@ -313,6 +264,11 @@ void FMI<X>::der_func(const double* q, double* dq)
 template <typename X>
 void FMI<X>::state_event_func(const double* q, double* z)
 {
+	if (!cont_time_mode)
+	{
+		_fmi2EnterContinuousTimeMode(c);
+		cont_time_mode = true;
+	}
 	_fmi2SetTime(c,q[this->numVars()-1]);
 	_fmi2SetContinuousStates(c,q,this->numVars()-1);
 	_fmi2GetEventIndicators(c,z,this->numEvents());
@@ -327,6 +283,7 @@ double FMI<X>::time_event_func(const double* q)
 template <typename X>
 void FMI<X>::postStep(double* q)
 {
+	assert(cont_time_mode);
 	fmi2Boolean enterEventMode;
 	fmi2Boolean terminateSimulation;
 	t_now = q[this->numVars()-1];
@@ -340,10 +297,10 @@ void FMI<X>::postStep(double* q)
 template <typename X>
 void FMI<X>::internal_event(double* q, const bool* state_event)
 {
-	t_now = q[this->numVars()-1];
-	_fmi2SetTime(c,t_now);
-	_fmi2SetContinuousStates(c,q,this->numVars()-1);
+	// postStep will have updated the continuous variables, so 
+	// we just process discrete events here.
 	_fmi2EnterEventMode(c);
+	cont_time_mode = false;
 	fmi2EventInfo eventInfo;
 	do
 	{
@@ -356,17 +313,53 @@ void FMI<X>::internal_event(double* q, const bool* state_event)
 	}
 	else next_time_event = adevs_inf<double>();
 	_fmi2GetContinuousStates(c,q,this->numVars()-1);
-	_fmi2EnterContinuousTimeMode(c);
 }
 				
 template <typename X>
 void FMI<X>::external_event(double* q, double e, const Bag<X>& xb)
 {
+	// Go to event mode if we have not yet done so
+	if (cont_time_mode)
+	{
+		_fmi2EnterEventMode(c);
+	}
+	// Otherwise, process any events that need processing
+	else
+	{
+		fmi2EventInfo eventInfo;
+		do
+		{
+			_fmi2NewDiscreteStates(c,&eventInfo);
+		}
+		while(eventInfo.newDiscreteStatesNeeded == fmi2True);
+		if (eventInfo.nextEventTimeDefined == fmi2True)
+		{
+			next_time_event = eventInfo.nextEventTime;
+		}
+		else next_time_event = adevs_inf<double>();
+		_fmi2GetContinuousStates(c,q,this->numVars()-1);
+	}
 }
 				
 template <typename X>
 void FMI<X>::confluent_event(double *q, const bool* state_event, const Bag<X>& xb)
 {
+	// postStep will have updated the continuous variables, so 
+	// we just process discrete events here.
+	_fmi2EnterEventMode(c);
+	cont_time_mode = false;
+	fmi2EventInfo eventInfo;
+	do
+	{
+		_fmi2NewDiscreteStates(c,&eventInfo);
+	}
+	while(eventInfo.newDiscreteStatesNeeded == fmi2True);
+	if (eventInfo.nextEventTimeDefined == fmi2True)
+	{
+		next_time_event = eventInfo.nextEventTime;
+	}
+	else next_time_event = adevs_inf<double>();
+	_fmi2GetContinuousStates(c,q,this->numVars()-1);
 }
 				
 template <typename X>
@@ -382,7 +375,8 @@ void FMI<X>::gc_output(Bag<X>& gb)
 template <typename X>
 FMI<X>::~FMI()
 {
-	fmi2FreeInstance(c);
+	_fmi2FreeInstance(c);
+	dlclose(so_hndl);
 }
 
 template <typename X>
