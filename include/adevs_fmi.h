@@ -202,7 +202,6 @@ FMI<X>::FMI(const char* modelname,
 		throw adevs::exception("Could not load so file",this);
     }
 	LOAD_SO_FUNCTION(fmi2Instantiate);
-	LOAD_SO_FUNCTION(fmi2Instantiate);
 	LOAD_SO_FUNCTION(fmi2FreeInstance);
 	LOAD_SO_FUNCTION(fmi2SetupExperiment);
 	LOAD_SO_FUNCTION(fmi2EnterInitializationMode);
@@ -238,18 +237,25 @@ FMI<X>::FMI(const char* modelname,
 template <typename X>
 void FMI<X>::init(double* q)
 {
+	fmi2Status status;
 	// Set initial value for time
-	_fmi2SetTime(c,t_now);
+	status = _fmi2SetTime(c,t_now);
+	assert(status == fmi2OK);
 	// Initialize all variables
-	_fmi2EnterInitializationMode(c);
-	_fmi2ExitInitializationMode(c);
+	status = _fmi2EnterInitializationMode(c);
+	assert(status == fmi2OK);
+	status = _fmi2ExitInitializationMode(c);
+	assert(status == fmi2OK);
 	// Put into consistent initial state
 	fmi2EventInfo eventInfo;
-	_fmi2NewDiscreteStates(c,&eventInfo);
+	status = _fmi2NewDiscreteStates(c,&eventInfo);
+	assert(status == fmi2OK);
 	if (eventInfo.nextEventTimeDefined == fmi2True)
 		next_time_event = eventInfo.nextEventTime;
-	_fmi2EnterContinuousTimeMode(c);
-	_fmi2GetContinuousStates(c,q,this->numVars()-1);
+	status = _fmi2EnterContinuousTimeMode(c);
+	assert(status == fmi2OK);
+	status = _fmi2GetContinuousStates(c,q,this->numVars()-1);
+	assert(status == fmi2OK);
 	q[this->numVars()-1] = t_now;
 	cont_time_mode = true;
 }
@@ -257,28 +263,38 @@ void FMI<X>::init(double* q)
 template <typename X>
 void FMI<X>::der_func(const double* q, double* dq)
 {
+	fmi2Status status;
 	if (!cont_time_mode)
 	{
-		_fmi2EnterContinuousTimeMode(c);
+		status = _fmi2EnterContinuousTimeMode(c);
+		assert(status == fmi2OK);
 		cont_time_mode = true;
 	}
-	_fmi2SetTime(c,q[this->numVars()-1]);
-	_fmi2SetContinuousStates(c,q,this->numVars()-1);
-	_fmi2GetDerivatives(c,dq,this->numVars()-1);
+	status =_fmi2SetTime(c,q[this->numVars()-1]);
+	assert(status == fmi2OK);
+	status = _fmi2SetContinuousStates(c,q,this->numVars()-1);
+	assert(status == fmi2OK);
+	status = _fmi2GetDerivatives(c,dq,this->numVars()-1);
+	assert(status == fmi2OK);
 	dq[this->numVars()-1] = 1.0;
 }
 
 template <typename X>
 void FMI<X>::state_event_func(const double* q, double* z)
 {
+	fmi2Status status;
 	if (!cont_time_mode)
 	{
-		_fmi2EnterContinuousTimeMode(c);
+		status = _fmi2EnterContinuousTimeMode(c);
+		assert(status == fmi2OK);
 		cont_time_mode = true;
 	}
-	_fmi2SetTime(c,q[this->numVars()-1]);
-	_fmi2SetContinuousStates(c,q,this->numVars()-1);
-	_fmi2GetEventIndicators(c,z,this->numEvents());
+	status = _fmi2SetTime(c,q[this->numVars()-1]);
+	assert(status == fmi2OK);
+	status = _fmi2SetContinuousStates(c,q,this->numVars()-1);
+	assert(status == fmi2OK);
+	status = _fmi2GetEventIndicators(c,z,this->numEvents());
+	assert(status == fmi2OK);
 }
 
 template <typename X>
@@ -291,12 +307,22 @@ template <typename X>
 void FMI<X>::postStep(double* q)
 {
 	assert(cont_time_mode);
+	// Don't advance the FMI state by zero units of time
+	// when in continuous mode
+	if (q[this->numVars()-1] <= t_now)
+		return;
+	// Try to complete the integration step
+	fmi2Status status;
 	fmi2Boolean enterEventMode;
 	fmi2Boolean terminateSimulation;
 	t_now = q[this->numVars()-1];
-	_fmi2SetTime(c,t_now);
-	_fmi2SetContinuousStates(c,q,this->numVars()-1);
-	_fmi2CompletedIntegratorStep(c,fmi2True,&enterEventMode,&terminateSimulation);
+	status = _fmi2SetTime(c,t_now);
+	assert(status == fmi2OK);
+	status = _fmi2SetContinuousStates(c,q,this->numVars()-1);
+	assert(status == fmi2OK);
+	status = _fmi2CompletedIntegratorStep(c,fmi2True,&enterEventMode,&terminateSimulation);
+	assert(status == fmi2OK);
+	// Force an event if one is indicated
 	if (enterEventMode == fmi2True)
 		next_time_event = t_now;
 }
@@ -304,69 +330,70 @@ void FMI<X>::postStep(double* q)
 template <typename X>
 void FMI<X>::internal_event(double* q, const bool* state_event)
 {
+	fmi2Status status;
 	// postStep will have updated the continuous variables, so 
 	// we just process discrete events here.
-	_fmi2EnterEventMode(c);
-	cont_time_mode = false;
+	if (cont_time_mode)
+	{
+		status = _fmi2EnterEventMode(c);
+		assert(status == fmi2OK);
+		cont_time_mode = false;
+	}
 	fmi2EventInfo eventInfo;
-	do
-	{
-		_fmi2NewDiscreteStates(c,&eventInfo);
-	}
-	while(eventInfo.newDiscreteStatesNeeded == fmi2True);
+	status = _fmi2NewDiscreteStates(c,&eventInfo);
+	assert(status == fmi2OK);
 	if (eventInfo.nextEventTimeDefined == fmi2True)
-	{
 		next_time_event = eventInfo.nextEventTime;
-	}
 	else next_time_event = adevs_inf<double>();
-	_fmi2GetContinuousStates(c,q,this->numVars()-1);
+	status = _fmi2GetContinuousStates(c,q,this->numVars()-1);
+	assert(status == fmi2OK);
 }
 				
 template <typename X>
 void FMI<X>::external_event(double* q, double e, const Bag<X>& xb)
 {
+	fmi2Status status;
 	// Go to event mode if we have not yet done so
 	if (cont_time_mode)
 	{
-		_fmi2EnterEventMode(c);
+		status = _fmi2EnterEventMode(c);
+		assert(status == fmi2OK);
+		cont_time_mode = false;
 	}
 	// Otherwise, process any events that need processing
 	else
 	{
 		fmi2EventInfo eventInfo;
-		do
-		{
-			_fmi2NewDiscreteStates(c,&eventInfo);
-		}
-		while(eventInfo.newDiscreteStatesNeeded == fmi2True);
+		status = _fmi2NewDiscreteStates(c,&eventInfo);
+		assert(status == fmi2OK);
 		if (eventInfo.nextEventTimeDefined == fmi2True)
-		{
 			next_time_event = eventInfo.nextEventTime;
-		}
 		else next_time_event = adevs_inf<double>();
-		_fmi2GetContinuousStates(c,q,this->numVars()-1);
+		status = _fmi2GetContinuousStates(c,q,this->numVars()-1);
+		assert(status == fmi2OK);
 	}
 }
 				
 template <typename X>
 void FMI<X>::confluent_event(double *q, const bool* state_event, const Bag<X>& xb)
 {
+	fmi2Status status;
 	// postStep will have updated the continuous variables, so 
 	// we just process discrete events here.
-	_fmi2EnterEventMode(c);
-	cont_time_mode = false;
+	if (cont_time_mode)
+	{
+		status = _fmi2EnterEventMode(c);
+		assert(status == fmi2OK);
+		cont_time_mode = false;
+	}
 	fmi2EventInfo eventInfo;
-	do
-	{
-		_fmi2NewDiscreteStates(c,&eventInfo);
-	}
-	while(eventInfo.newDiscreteStatesNeeded == fmi2True);
+	status = _fmi2NewDiscreteStates(c,&eventInfo);
+	assert(status == fmi2OK);
 	if (eventInfo.nextEventTimeDefined == fmi2True)
-	{
 		next_time_event = eventInfo.nextEventTime;
-	}
 	else next_time_event = adevs_inf<double>();
-	_fmi2GetContinuousStates(c,q,this->numVars()-1);
+	status = _fmi2GetContinuousStates(c,q,this->numVars()-1);
+	assert(status == fmi2OK);
 }
 				
 template <typename X>
@@ -391,7 +418,8 @@ double FMI<X>::get_real(int k)
 {
 	const fmi2ValueReference ref = k;
 	fmi2Real val;
-	_fmi2GetReal(c,&ref,1,&val);
+	fmi2Status status = _fmi2GetReal(c,&ref,1,&val);
+	assert(status == fmi2OK);
 	return val;
 }
 
@@ -399,7 +427,8 @@ template <typename X>
 void FMI<X>::set_real(int k, double val)
 {
 	const fmi2ValueReference ref = k;
-	_fmi2SetReal(c,&ref,1,&val);
+	fmi2Status status = _fmi2SetReal(c,&ref,1,&val);
+	assert(status == fmi2OK);
 }
 
 template <typename X>
@@ -407,7 +436,8 @@ int FMI<X>::get_int(int k)
 {
 	const fmi2ValueReference ref = k;
 	fmi2Integer val;
-	_fmi2GetInteger(c,&ref,1,&val);
+	fmi2Status status = _fmi2GetInteger(c,&ref,1,&val);
+	assert(status == fmi2OK);
 	return val;
 }
 
@@ -416,7 +446,8 @@ bool FMI<X>::get_bool(int k)
 {
 	const fmi2ValueReference ref = k;
 	fmi2Boolean val;
-	_fmi2GetBoolean(c,&ref,1,&val);
+	fmi2Status status = _fmi2GetBoolean(c,&ref,1,&val);
+	assert(status == fmi2OK);
 	return (val == fmi2True);
 }
 

@@ -5,6 +5,8 @@ FMI_HOME = $(HOME)/Code/FMI_for_ModelExchange_and_CoSimulation_v2.0
 CFLAGS += -I$(FMI_HOME)
 check: t1
 
+all: t1 te tb tp
+
 te:
 	rm -rf event_tests; mkdir event_tests; cd event_tests; cp ../EventTests.mo .; cp ../EventTests.mos .; omc EventTests.mos; unzip -o -qq EventTests.fmu
 	$(CC) $(CFLAGS) main_EventTests.cpp $(LIBS) event_tests/binaries/linux64/EventTests.so 
@@ -20,7 +22,19 @@ tb:
 	$(CC) $(CFLAGS) main_bounce.cpp $(LIBS) -ldl
 	$(TEST_EXEC)
 
+tp:
+	rm -rf pendulum; mkdir pendulum; cd pendulum; cp ../pendulum.mo .; cp ../pendulum.mos .; omc pendulum.mos; unzip -o -qq pendulum.fmu
+	$(CC) $(CFLAGS) main_pendulum.cpp $(LIBS) -ldl
+	$(TEST_EXEC)
+
+tc:
+	rm -rf circuit; mkdir circuit; cd circuit; cp ../circuit.mo .; cp ../circuit.mos .; omc circuit.mos; unzip -o -qq Circuit.fmu
+	$(CC) $(CFLAGS) main_circuit.cpp $(LIBS) -ldl
+	$(TEST_EXEC)
+
 clean_all: clean
 	rm -rf bounce
 	rm -rf event_tests
 	rm -rf test1
+	rm -rf pendulum
+	rm -rf circuit
