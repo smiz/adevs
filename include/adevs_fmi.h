@@ -158,8 +158,6 @@ template <typename X> class FMI:
 		fmi2Status (*_fmi2GetDerivatives)(fmi2Component, fmi2Real*, size_t);
 		fmi2Status (*_fmi2GetEventIndicators)(fmi2Component, fmi2Real*, size_t);
 		fmi2Status (*_fmi2GetContinuousStates)(fmi2Component, fmi2Real*, size_t);
-		// Callback functions for the FMI
-		fmi2CallbackFunctions callbackFuncs;
 		// Instant of the next time event
 		double next_time_event;
 		// Current time
@@ -178,6 +176,8 @@ template <typename X> class FMI:
 		{
 			std::cerr << message << std::endl;
 		}
+
+		fmi2CallbackFunctions* callbackFuncs;
 };
 
 #define LOAD_SO_FUNCTION(funcName) *(void**)(&_ ## funcName) = dlsym(so_hndl,#funcName )
@@ -196,6 +196,8 @@ FMI<X>::FMI(const char* modelname,
 	so_hndl(NULL),
 	cont_time_mode(false)
 {
+	fmi2CallbackFunctions tmp = {adevs::FMI<X>::fmilogger,calloc,free,NULL,NULL};
+	callbackFuncs = new fmi2CallbackFunctions(tmp);
 	so_hndl = dlopen(so_file_name, RTLD_LAZY);
 	if (!so_hndl)
 	{
@@ -224,12 +226,7 @@ FMI<X>::FMI(const char* modelname,
 	LOAD_SO_FUNCTION(fmi2GetEventIndicators);
 	LOAD_SO_FUNCTION(fmi2GetContinuousStates);
 	// Create the FMI component
-	callbackFuncs.logger = adevs::FMI<X>::fmilogger;
-	callbackFuncs.allocateMemory = calloc;
-	callbackFuncs.freeMemory = free;
-	callbackFuncs.stepFinished = NULL;
-	callbackFuncs.componentEnvironment = NULL;
-	c = _fmi2Instantiate(modelname,fmi2ModelExchange,guid,"",&callbackFuncs,fmi2False,fmi2False);
+	c = _fmi2Instantiate(modelname,fmi2ModelExchange,guid,"",callbackFuncs,fmi2False,fmi2False);
 	assert(c != NULL);
 	_fmi2SetupExperiment(c,fmi2True,tolerance,-1.0,fmi2False,-1.0);
 }
@@ -340,8 +337,12 @@ void FMI<X>::internal_event(double* q, const bool* state_event)
 		cont_time_mode = false;
 	}
 	fmi2EventInfo eventInfo;
-	status = _fmi2NewDiscreteStates(c,&eventInfo);
-	assert(status == fmi2OK);
+	do
+	{
+		status = _fmi2NewDiscreteStates(c,&eventInfo);
+		assert(status == fmi2OK);
+	}
+	while(eventInfo.newDiscreteStatesNeeded == fmi2True);
 	if (eventInfo.nextEventTimeDefined == fmi2True)
 		next_time_event = eventInfo.nextEventTime;
 	else next_time_event = adevs_inf<double>();
@@ -410,6 +411,7 @@ template <typename X>
 FMI<X>::~FMI()
 {
 	_fmi2FreeInstance(c);
+	delete callbackFuncs;
 	dlclose(so_hndl);
 }
 
