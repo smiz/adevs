@@ -178,6 +178,8 @@ template <typename X> class FMI:
 		}
 
 		fmi2CallbackFunctions* callbackFuncs;
+
+		void iterate_events();
 };
 
 #define LOAD_SO_FUNCTION(funcName) *(void**)(&_ ## funcName) = dlsym(so_hndl,#funcName )
@@ -232,6 +234,24 @@ FMI<X>::FMI(const char* modelname,
 }
 
 template <typename X>
+void FMI<X>::iterate_events()
+{
+	fmi2Status status;
+	// Put into consistent initial state
+	fmi2EventInfo eventInfo;
+	do
+	{
+		status = _fmi2NewDiscreteStates(c,&eventInfo);
+		assert(status == fmi2OK);
+	}
+	// The terminating condition look wrong. Why does it work?
+	while (eventInfo.newDiscreteStatesNeeded == fmi2False);
+	if (eventInfo.nextEventTimeDefined == fmi2True)
+		next_time_event = eventInfo.nextEventTime;
+	assert(status == fmi2OK);
+}
+
+template <typename X>
 void FMI<X>::init(double* q)
 {
 	fmi2Status status;
@@ -244,11 +264,8 @@ void FMI<X>::init(double* q)
 	status = _fmi2ExitInitializationMode(c);
 	assert(status == fmi2OK);
 	// Put into consistent initial state
-	fmi2EventInfo eventInfo;
-	status = _fmi2NewDiscreteStates(c,&eventInfo);
-	assert(status == fmi2OK);
-	if (eventInfo.nextEventTimeDefined == fmi2True)
-		next_time_event = eventInfo.nextEventTime;
+	iterate_events();
+	// Enter continuous time mode to start integration
 	status = _fmi2EnterContinuousTimeMode(c);
 	assert(status == fmi2OK);
 	status = _fmi2GetContinuousStates(c,q,this->numVars()-1);
@@ -336,16 +353,9 @@ void FMI<X>::internal_event(double* q, const bool* state_event)
 		assert(status == fmi2OK);
 		cont_time_mode = false;
 	}
-	fmi2EventInfo eventInfo;
-	do
-	{
-		status = _fmi2NewDiscreteStates(c,&eventInfo);
-		assert(status == fmi2OK);
-	}
-	while(eventInfo.newDiscreteStatesNeeded == fmi2True);
-	if (eventInfo.nextEventTimeDefined == fmi2True)
-		next_time_event = eventInfo.nextEventTime;
-	else next_time_event = adevs_inf<double>();
+	// Process events
+	iterate_events();
+	// Update the state variable array
 	status = _fmi2GetContinuousStates(c,q,this->numVars()-1);
 	assert(status == fmi2OK);
 }
@@ -361,18 +371,10 @@ void FMI<X>::external_event(double* q, double e, const Bag<X>& xb)
 		assert(status == fmi2OK);
 		cont_time_mode = false;
 	}
-	// Otherwise, process any events that need processing
-	else
-	{
-		fmi2EventInfo eventInfo;
-		status = _fmi2NewDiscreteStates(c,&eventInfo);
-		assert(status == fmi2OK);
-		if (eventInfo.nextEventTimeDefined == fmi2True)
-			next_time_event = eventInfo.nextEventTime;
-		else next_time_event = adevs_inf<double>();
-		status = _fmi2GetContinuousStates(c,q,this->numVars()-1);
-		assert(status == fmi2OK);
-	}
+	// process any events that need processing
+	iterate_events();
+	status = _fmi2GetContinuousStates(c,q,this->numVars()-1);
+	assert(status == fmi2OK);
 }
 				
 template <typename X>
@@ -387,12 +389,7 @@ void FMI<X>::confluent_event(double *q, const bool* state_event, const Bag<X>& x
 		assert(status == fmi2OK);
 		cont_time_mode = false;
 	}
-	fmi2EventInfo eventInfo;
-	status = _fmi2NewDiscreteStates(c,&eventInfo);
-	assert(status == fmi2OK);
-	if (eventInfo.nextEventTimeDefined == fmi2True)
-		next_time_event = eventInfo.nextEventTime;
-	else next_time_event = adevs_inf<double>();
+	iterate_events();
 	status = _fmi2GetContinuousStates(c,q,this->numVars()-1);
 	assert(status == fmi2OK);
 }

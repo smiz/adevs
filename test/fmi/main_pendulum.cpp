@@ -33,18 +33,18 @@ class oracle:
 		}
 		void external_event(double* q, double e, const Bag<double>& xb)
 		{
-			static const double pi = 3.141592653589793;
+			static const double pi = 3.1415926535897931;
 			test_count++;
 			double test_angle = *(xb.begin());
 			double diff = fabs(q[0]-test_angle);
-			// Rotate by a full circle?
-			if (diff > 1E-4) diff -= 2.0*pi;
-			if (!(fabs(diff) < 1E-4))
+			if (diff < -1E-3) diff += 2.0*pi;
+			if (diff > 1E-3) diff -= 2.0*pi;
+			if ((fabs(diff) > 1E-3))
 			{
 				cerr << "AGGGH: " << q[0] << "," << test_angle << "," 
 					<< diff << endl;
 			}
-			assert(fabs(diff) < 1E-4);
+			assert(fabs(diff) < 1E-3);
 		}
 		void confluent_event(double*,const bool*,const Bag<double>&)
 		{
@@ -70,7 +70,7 @@ class pendulum:
 					"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
 					2,0,
 					"pendulum/binaries/linux64/pendulum.so",
-					1E-8),
+					1E-10),
 			query(false)
 		{
 		}
@@ -123,7 +123,7 @@ int main()
 	Hybrid<double>* hybrid_model_oracle =
 		new Hybrid<double>(
 		test_oracle,
-		new rk_45<double>(test_oracle,1E-8,0.01),
+		new corrected_euler<double>(test_oracle,1E-8,0.01),
 		new linear_event_locator<double>(test_oracle,1E-6));
 	// Combine them
 	SimpleDigraph<double>* dig_model = new SimpleDigraph<double>();
@@ -136,7 +136,7 @@ int main()
 		new Simulator<double>(dig_model);
 	assert(fabs(model->get_theta()) < 1E-6);
 	cout << "# time, x, y" << endl;
-	while (sim->nextEventTime() <= 25.0)
+	while (sim->nextEventTime() <= 15.0)
 	{
 		cout << sim->nextEventTime() << " ";
 		sim->execNextEvent();

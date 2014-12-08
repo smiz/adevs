@@ -35,7 +35,7 @@ void print(TestModel* model)
 	assert(model->get_floorc() == cfloor);
 	assert(cfloor <= 0.5+epsilon);
 	assert(cfloor <= 0.25+epsilon || model->get_high()==1);
-	//assert(cfloor >= 0.25+epsilon || model->get_high()==0);
+	assert(cfloor >= 0.25+epsilon || model->get_high()==0);
 }
 
 int main()

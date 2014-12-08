@@ -5,7 +5,7 @@ FMI_HOME = $(HOME)/Code/FMI_for_ModelExchange_and_CoSimulation_v2.0
 CFLAGS += -I$(FMI_HOME)
 LIBS += -ldl
 
-all: t1 te tb tp
+all: t1 te tb tp tei
 
 tei:
 	rm -rf event_tests; mkdir event_tests; cd event_tests; cp ../eventIter.mo .; cp ../eventIter.mos .; omc eventIter.mos; unzip -o -qq eventIter.fmu
