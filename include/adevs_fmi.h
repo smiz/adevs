@@ -244,8 +244,12 @@ void FMI<X>::iterate_events()
 		status = _fmi2NewDiscreteStates(c,&eventInfo);
 		assert(status == fmi2OK);
 	}
-	// The terminating condition look wrong. Why does it work?
+	// For the broken openmodelica 
+	#ifdef WITH_OPENMODELICA
 	while (eventInfo.newDiscreteStatesNeeded == fmi2False);
+	#else
+	while (eventInfo.newDiscreteStatesNeeded == fmi2True);
+	#endif
 	if (eventInfo.nextEventTimeDefined == fmi2True)
 		next_time_event = eventInfo.nextEventTime;
 	assert(status == fmi2OK);
