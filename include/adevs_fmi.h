@@ -53,7 +53,6 @@ namespace adevs
  * explicitly by the end-user, but you probably need to know
  * this information regardless if you are using the FMI inside
  * of a larger discrete event simulation.
- *
  */
 template <typename X> class FMI:
 	public ode_system<X>
@@ -61,7 +60,7 @@ template <typename X> class FMI:
 	public:
 		/**
 		 * This constructs a wrapper around an FMI. The constructor
-		 * must be provided with the number of state variables,
+		 * must be provided with the FMI's GUID, the number of state variables,
 		 * number of event indicators, and the path to the .so file
 		 * that contains the FMI functions for this model.
 		 */
