@@ -49,11 +49,19 @@ class App:
 const int App::data_out = 0;
 adevs::rv App::randVar(new crand());
 
-class ControlExt: public Control {
+class ControlExt:
+	public FMI<IO_Type>
+{
 	public:
 		static const int sample;
 		static const int command;
-		ControlExt():Control(),doCmd(false) {
+
+		ControlExt():
+			FMI<IO_Type>
+			(
+
+
+		Control(),doCmd(false) {
 			for (int i = 0; i < 2; i++)
 				T[i] = err[i] = ierr[i] = 0.0;
 		}
@@ -126,15 +134,37 @@ const int ControlExt::sample = 0;
 const int ControlExt::command = 1;
 
 class RobotExt:
-	public Robot
+	public FMI<IO_Type>
 {
 	public:
 
 		static const int sample;
 		static const int command;
 
+		int get_sampleNumber() { return get_int(16); }
+		double get_q1() { return get_real(37); }
+		double get_q1_sample() { return get_real(38); }
+		double get_q2() { return get_real(39); }
+		double get_q2_sample() { return get_real(40); }
+		double get_x() { return get_real(41); }
+		double get_xd() { return get_real(42); }
+		double get_z() { return get_real(43); }
+		double get_zd() { return get_real(44); }
+		void set_T(double val, int which)
+		{
+			if (which == 0) set_real(val,51);
+			else set_real(val,52);
+		}
+
 		RobotExt():
-			Robot(0,1E-8),
+			FMI<IO_Type>
+			(
+			 	"Robot",
+				"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
+				4, // Number of state variables
+				0, // Number of event indicators
+				"robot/linux64/Robot.so"
+			),
 			numSteps(0),
 			lastSampleNumber(get_sampleNumber()),
 			doSample(true)
@@ -142,34 +172,36 @@ class RobotExt:
 		}
 		double time_event_func(const double* q)
 		{
-			double tSup = Robot::time_event_func(q);
+			double tSup = FMI<IO_Type>::time_event_func(q);
 			if (doSample) return 0.0;
 			else return tSup;
 		}
 		void internal_event(double* q, const bool* state_event)
 		{
-			Robot::internal_event(q,state_event);
+			FMI<IO_Type>::internal_event(q,state_event);
 			doSample = lastSampleNumber != get_sampleNumber();
 			lastSampleNumber = get_sampleNumber();
+			FMI<IO_Type>::internal_event(q,state_event);
 		}
 		void external_event(double* q, double e,
 			const adevs::Bag<OMC_ADEVS_IO_TYPE>& xb)
 		{
-			Robot::external_event(q,e,xb);
+			FMI<IO_Type>::external_event(q,e,xb);
 			process_input_data(xb);
+			FMI<IO_Type>::external_event(q,e,xb);
 		}
 		void confluent_event(double *q, const bool* state_event,
-			const adevs::Bag<OMC_ADEVS_IO_TYPE>& xb)
+			const adevs::Bag<IO_Type>& xb)
 		{
-			Robot::confluent_event(q,state_event,xb);
+			FMI<IO_Type>::confluent_event(q,state_event,xb);
 			doSample = lastSampleNumber != get_sampleNumber();
 			lastSampleNumber = get_sampleNumber();
 			process_input_data(xb);
+			FMI<IO_Type>::confluent_event(q,state_event,xb);
 		}
 		void output_func(const double *q, const bool* state_event,
-           adevs::Bag<OMC_ADEVS_IO_TYPE>& yb)
+           adevs::Bag<IO_Type>& yb)
 		{
-			Robot::output_func(q,state_event,yb);
 			if (doSample)
 			{
 				numSteps++;
@@ -180,9 +212,9 @@ class RobotExt:
 				yb.insert(msg);
 			}
 		}
-		void gc_output(adevs::Bag<OMC_ADEVS_IO_TYPE>& g)
+		void gc_output(adevs::Bag<IO_Type>& g)
 		{
-			adevs::Bag<OMC_ADEVS_IO_TYPE>::iterator iter = g.begin();
+			adevs::Bag<IO_Type>::iterator iter = g.begin();
 			for (; iter != g.end(); iter++)
 				delete (*iter).value;
 		}
@@ -210,7 +242,6 @@ class RobotExt:
 		{
 			set_T(T1,0);
 			set_T(T2,1);
-			update_vars();
 		}
 };
 
