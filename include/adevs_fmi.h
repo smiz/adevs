@@ -125,8 +125,12 @@ template <typename X> class FMI:
 		void set_real(int k, double val);
 		// Get the value of an integer variable
 		int get_int(int k);
+		// Set the value of an integer variable
+		void set_int(int k, int val);
 		// Get the value of a boolean variable
 		bool get_bool(int k);
+		// Set the value of a boolean variable
+		void set_bool(int k, bool val);
 
 	private:
 		// Reference to the FMI
@@ -424,7 +428,8 @@ template <typename X>
 void FMI<X>::set_real(int k, double val)
 {
 	const fmi2ValueReference ref = k;
-	fmi2Status status = _fmi2SetReal(c,&ref,1,&val);
+	fmi2Real fmi_val = val;
+	fmi2Status status = _fmi2SetReal(c,&ref,1,&fmi_val);
 	assert(status == fmi2OK);
 }
 
@@ -439,6 +444,15 @@ int FMI<X>::get_int(int k)
 }
 
 template <typename X>
+void FMI<X>::set_int(int k, int val)
+{
+	const fmi2ValueReference ref = k;
+	fmi2Integer fmi_val = val;
+	fmi2Status status = _fmi2SetInteger(c,&ref,1,&fmi_val);
+	assert(status == fmi2OK);
+}
+
+template <typename X>
 bool FMI<X>::get_bool(int k)
 {
 	const fmi2ValueReference ref = k;
@@ -446,6 +460,16 @@ bool FMI<X>::get_bool(int k)
 	fmi2Status status = _fmi2GetBoolean(c,&ref,1,&val);
 	assert(status == fmi2OK);
 	return (val == fmi2True);
+}
+
+template <typename X>
+void FMI<X>::set_bool(int k, bool val)
+{
+	const fmi2ValueReference ref = k;
+	fmi2Boolean fmi_val = fmi2False;
+	if (val) fmi_val = fmi2True;
+	fmi2Status status = _fmi2SetBoolean(c,&ref,1,&fmi_val);
+	assert(status == fmi2OK);
 }
 
 } // end of namespace

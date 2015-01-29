@@ -1,0 +1,2 @@
+loadFile("CherryBomb.mo");
+translateModelFMU(CherryBomb,"2.0");

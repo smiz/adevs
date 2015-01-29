@@ -1,13 +1,9 @@
 #include "io.h"
 #include "adevs.h"
-#define OMC_ADEVS_IO_TYPE IO_Type
-#include "Robot.h"
-#include "Control.h"
+#include "adevs_fmi.h"
 #include "Ethernet.h"
-#include "adevs_modelica_runtime.h"
 #include <cmath>
 #include <iostream>
-
 using namespace std;
 using namespace adevs;
 
@@ -59,35 +55,42 @@ class ControlExt:
 		ControlExt():
 			FMI<IO_Type>
 			(
-
-
-		Control(),doCmd(false) {
+				"Control",
+				"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
+				0,
+				0,
+				"control/linux64,Control.so"
+			),
+			doCmd(false)
+		{
 			for (int i = 0; i < 2; i++)
 				T[i] = err[i] = ierr[i] = 0.0;
 		}
 		double time_event_func(const double* q) {
-			double tSup = Control::time_event_func(q);
+			double tSup = FMI<IO_Type>::time_event_func(q);
 			if (doCmd) return 0.0;
 			else return tSup;
 		}
 		void internal_event(double* q, const bool* state_event) {
-			Control::internal_event(q,state_event);
+			FMI<IO_Type>::internal_event(q,state_event);
 			doCmd = false;
 		}
 		void external_event(double* q, double e,
-			const adevs::Bag<OMC_ADEVS_IO_TYPE>& xb) {
-			Control::external_event(q,e,xb);
+			const adevs::Bag<IO_Type>& xb) {
+			FMI<IO_Type>::external_event(q,e,xb);
 			process_input_data(e,xb);
+			FMI<IO_Type>::external_event(q,e,xb);
 		}
 		void confluent_event(double *q, const bool* state_event,
-			const adevs::Bag<OMC_ADEVS_IO_TYPE>& xb) {
+			const adevs::Bag<IO_Type>& xb) {
 			double h = time_event_func(q);
-			Control::confluent_event(q,state_event,xb);
+			FMI<IO_Type>::confluent_event(q,state_event,xb);
 			process_input_data(h,xb);
+			FMI<IO_Type>::confluent_event(q,state_event,xb);
 		}
 		void output_func(const double *q, const bool* state_event,
-           adevs::Bag<OMC_ADEVS_IO_TYPE>& yb) {
-			Control::output_func(q,state_event,yb);
+           adevs::Bag<IO_Type>& yb) {
+			FMI<IO_Type>::output_func(q,state_event,yb);
 			CommandSig* sig = new CommandSig(T[0],T[1]);
 			IO_Type msg;
 			msg.port = command;
@@ -95,11 +98,16 @@ class ControlExt:
 				new NetworkData(NetworkData::APP_DATA,robotAddr,100,sig);
 			yb.insert(msg);
 		}
-		void gc_output(adevs::Bag<OMC_ADEVS_IO_TYPE>& g) {
-			adevs::Bag<OMC_ADEVS_IO_TYPE>::iterator iter = g.begin();
+		void gc_output(adevs::Bag<IO_Type>& g) {
+			adevs::Bag<IO_Type>::iterator iter = g.begin();
 			for (; iter != g.end(); iter++)
 				delete (*iter).value;
 		}
+
+		double get_qd1() { return get_real(0); }
+		double get_qd2() { return get_real(1); }
+		double get_xd() { return get_real(2); }
+		double get_zd() { return get_real(3); }
 
 	private:
 		bool doCmd;
@@ -150,6 +158,8 @@ class RobotExt:
 		double get_xd() { return get_real(42); }
 		double get_z() { return get_real(43); }
 		double get_zd() { return get_real(44); }
+		double get_error() { return get_real(36); }
+
 		void set_T(double val, int which)
 		{
 			if (which == 0) set_real(val,51);
@@ -166,7 +176,7 @@ class RobotExt:
 				"robot/linux64/Robot.so"
 			),
 			numSteps(0),
-			lastSampleNumber(get_sampleNumber()),
+			lastSampleNumber(0),
 			doSample(true)
 		{
 		}
@@ -184,7 +194,7 @@ class RobotExt:
 			FMI<IO_Type>::internal_event(q,state_event);
 		}
 		void external_event(double* q, double e,
-			const adevs::Bag<OMC_ADEVS_IO_TYPE>& xb)
+			const adevs::Bag<IO_Type>& xb)
 		{
 			FMI<IO_Type>::external_event(q,e,xb);
 			process_input_data(xb);
@@ -285,24 +295,24 @@ int main(int argc, char** argv)
 	if (argc == 2)
 		numApps = atoi(argv[1]);
 	RobotExt* arm = new RobotExt();
-	Hybrid<OMC_ADEVS_IO_TYPE>* hybrid_arm =
-		new Hybrid<OMC_ADEVS_IO_TYPE>(
+	Hybrid<IO_Type>* hybrid_arm =
+		new Hybrid<IO_Type>(
 		arm,
-		new rk_45<OMC_ADEVS_IO_TYPE>(arm,1E-5,0.001),
-		new bisection_event_locator<OMC_ADEVS_IO_TYPE>(arm,1E-7));
+		new rk_45<IO_Type>(arm,1E-5,0.001),
+		new bisection_event_locator<IO_Type>(arm,1E-7));
 	ControlExt* ctrl = new ControlExt();
-	Hybrid<OMC_ADEVS_IO_TYPE>* hybrid_ctrl =
-		new Hybrid<OMC_ADEVS_IO_TYPE>(
+	Hybrid<IO_Type>* hybrid_ctrl =
+		new Hybrid<IO_Type>(
 		ctrl,
-		new rk_45<OMC_ADEVS_IO_TYPE>(ctrl,1E-5,0.001),
-		new bisection_event_locator<OMC_ADEVS_IO_TYPE>(ctrl,1E-7));
+		new rk_45<IO_Type>(ctrl,1E-5,0.001),
+		new bisection_event_locator<IO_Type>(ctrl,1E-7));
 	Digraph<SimObject*>* model = new Digraph<SimObject*>();
 	model->add(hybrid_ctrl);
 	model->add(hybrid_arm);
 	makeEtherNetwork(model,hybrid_ctrl,hybrid_arm);
 	// Create the simulator
-	Simulator<OMC_ADEVS_IO_TYPE>* sim =
-		new Simulator<OMC_ADEVS_IO_TYPE>(model);
+	Simulator<IO_Type>* sim =
+		new Simulator<IO_Type>(model);
 	// Run the simulation, testing the solution as we go
 	double tReport = 0.0;
 	double maxError = 0.0;
