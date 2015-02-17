@@ -188,7 +188,7 @@ Figure \ref{fig:cherry_bomb_trajectory} shows the cherry bomb's trajectory from 
 
 \section{Modeling hybrid systems with the Functional Mockup Interface}
 \label{sect:fmi}
-The Functional Mockup Interface (FMI) is a standard API for encapulating a piecewise continuous models. The intent of this standard is to allow model developers to exchange their components in a way that is ameniable to accurate simulation. This interface specification can be found at \url{http://www.fmistandard.org}. The practical advantage of this standard for modelers using adevs is that all major Modelica compilers can export their models in this form, and these can be wrapped in an ode\_system object just as described above.
+The Functional Mockup Interface (FMI) is a standard API for encapulating piecewise continuous models. The intent of this standard is to allow model developers to exchange their models in a way that is ameniable to accurate simulation. The FMI interface specification can be found at \url{http://www.fmistandard.org}. The practical advantage of this standard for modelers using adevs is that all major Modelica compilers can export their models in this form, and these can be wrapped in an ode\_system object.
 
 You will need three things to use this capability:
 \begin{enumerate}
@@ -197,7 +197,276 @@ You will need three things to use this capability:
 \end{enumerate}
 It is also helpful to have a passing familiarity with the FMI markup language for describing a model. Documentation for this markup language can be found in the FMI standard.
 
-The cherry bomb from the previous section will illustrate how the FMI import feature is used. This example can be found in the examples/fmi/Example3 directory. We will create a bomb that begins at its initial height of 1 meter and remains there until it is dropped. Dropping the ball also starts the fuse. The falling and bouncing behavior of the bomb and its explosion after 2 seconds are implemented as a Modelica model. For this example we will omit the dousing. The source code for this model is shown below.
+The cherry bomb from the previous section will illustrate how the FMI import feature is used. This example can be found in the examples/fmi/Example3 directory. We will create a bomb that begins at its initial height of 1 meter and remains there until it is dropped. Dropping the ball also starts the fuse. The falling and bouncing behavior of the bomb and its explosion after 2 seconds are implemented as a Modelica model. For this example we will omit the dousing. The Modelica code for this model is shown below.
+\begin{verbatim}
+model CherryBomb
+   Real h(start=1); // Height of the bomb
+   Real v(start=0); // Velocity of the bomb
+   parameter Real g = 9.8; // Gravity
+   Real fuseTime(start=2.0); // Fuse duration
+   input Boolean dropped(start=false); 
+   output Boolean exploded(start=false);
+equation
+   // Accelerate downward if we have been lit
+   der(v) = if (not dropped) then 0 else -g;
+   der(h) = v;
+   // Burn the fuse
+   der(fuseTime) = if (not dropped) then 0 else -1;
+   when {h <= 0} then
+      reinit(v,-pre(v));
+   end when;
+   when {fuseTime <= 0} then
+      exploded = true;
+   end when;
+end CherryBomb;
+\end{verbatim}
+
+I will use the OpenModelica compiler to demostrate how this is converted to an FMI compliant object file that can be used with adevs. Assume that the compiler \verbatim{omc} is in our path. We begin by creating a Modelica script file called \verbatim{makefmi.mos} and put into this file the following commands.
+\begin{verbatim}
+loadFile("CherryBomb.mo");
+translateModelFMU(CherryBomb,"2.0");
+\end{verbatim}
+The first line loads the CherryBomb model that is listed above. The second line generates and FMI object from this model that is compliant with the FMI v2 standard. This FMI object will be packed with several other files in a zipped file called \verbatim{CherryBomb.fmu}. The OpenModelica compiler will also produce a bunch of other junk that you don't need, and these extra files can be deleted with the following set of command.
+\begin{verbatim}
+rm -f CherryBomb_*
+rm -f CherryBomb.c
+\end{verbatim}
+To get at the files you need, uncompress the zip file with the command
+\begin{verbatim}
+unzip -o -qq CherryBomb.fmu
+\end{verbatim}
+This will create directory called \verbatim{sources}, which you can delete, a file called \verbatim{modelDescription.xml}, which you will need, and a file \verbatim{CherryBomb.so}, which you will need. This shared object file will be in the directory called \verbatim{binaries/linux64}.
+
+The file \verbatim{modeDescription.xml} contains all of the information you will need to program your simulator to access the variables of the Modelica model. The listing of the description file for the cherry bomb is shown below. The significance of the data in this file will become apparent as we construct the rest of the simulation software that will interact with this model.
+\begin{verbatim}
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+  fmiVersion="2.0"
+  modelName="CherryBomb"
+  guid="{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}"
+  description=""
+  generationTool="OpenModelica Compiler 1.9.2+dev (r24043)"
+  generationDateAndTime="2015-02-08T18:41:22Z"
+  variableNamingConvention="structured"
+  numberOfEventIndicators="3">
+  <ModelExchange
+    modelIdentifier="CherryBomb">
+  </ModelExchange>
+  <TypeDefinitions>
+  </TypeDefinitions>
+  <LogCategories>
+    <Category name="logEvents" />
+    <Category name="logSingularLinearSystems" />
+    <Category name="logNonlinearSystems" />
+    <Category name="logDynamicStateSelection" />
+    <Category name="logStatusWarning" />
+    <Category name="logStatusDiscard" />
+    <Category name="logStatusError" />
+    <Category name="logStatusFatal" />
+    <Category name="logStatusPending" />
+    <Category name="logAll" />
+    <Category name="logFmi2Call" />
+  </LogCategories>
+  <DefaultExperiment startTime="0.0" stopTime="1.0" tolerance="1e-06"/>
+  <ModelVariables>
+  <!-- Index of variable = "1" -->
+  <ScalarVariable
+    name="fuseTime"
+    valueReference="0"
+    variability="continuous"
+    causality="local"
+    initial="approx">
+    <Real start="2.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "2" -->
+  <ScalarVariable
+    name="h"
+    valueReference="1"
+    variability="continuous"
+    causality="local"
+    initial="approx">
+    <Real start="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "3" -->
+  <ScalarVariable
+    name="v"
+    valueReference="2"
+    variability="continuous"
+    causality="local"
+    initial="approx">
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "4" -->
+  <ScalarVariable
+    name="der(fuseTime)"
+    valueReference="3"
+    variability="continuous"
+    causality="local"
+    initial="calculated">
+    <Real derivative="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "5" -->
+  <ScalarVariable
+    name="der(h)"
+    valueReference="4"
+    variability="continuous"
+    causality="local"
+    initial="calculated">
+    <Real derivative="2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "6" -->
+  <ScalarVariable
+    name="der(v)"
+    valueReference="5"
+    variability="continuous"
+    causality="local"
+    initial="calculated">
+    <Real derivative="3"/>
+  </ScalarVariable>
+  <!-- Index of variable = "7" -->
+  <ScalarVariable
+    name="g"
+    valueReference="6"
+    variability="fixed"
+    causality="parameter"
+    initial="exact">
+    <Real start="9.800000000000001"/>
+  </ScalarVariable>
+  <!-- Index of variable = "8" -->
+  <ScalarVariable
+    name="_D_whenCondition1"
+    valueReference="0"
+    variability="discrete"
+    causality="local"
+    initial="calculated">
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "9" -->
+  <ScalarVariable
+    name="_D_whenCondition2"
+    valueReference="1"
+    variability="discrete"
+    causality="local"
+    initial="calculated">
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "10" -->
+  <ScalarVariable
+    name="dropped"
+    valueReference="2"
+    variability="discrete"
+    causality="input"
+    initial="approx">
+    <Boolean start="false"/>
+  </ScalarVariable>
+  <!-- Index of variable = "11" -->
+  <ScalarVariable
+    name="exploded"
+    valueReference="3"
+    variability="discrete"
+    causality="output"
+    initial="approx">
+    <Boolean start="false"/>
+  </ScalarVariable>
+  </ModelVariables>
+  <ModelStructure>
+    <Outputs>
+      <Unknown index="11" dependencies="1" dependenciesKind="dependent" />
+    </Outputs>
+    <Derivatives>
+      <Unknown index="4" dependencies="10" dependenciesKind="dependent" />
+      <Unknown index="5" dependencies="3" dependenciesKind="dependent" />
+      <Unknown index="6" dependencies="10" dependenciesKind="dependent" />
+    </Derivatives>
+    <InitialUnknowns>
+    </InitialUnknowns>
+  </ModelStructure>
+</fmiModelDescription>
+\end{verbatim}
+
+We will embed this model in a simple simulation program that has two components: the bomb and a separate model that lights the fuse and reports the explosion. The mischievous miscreant that lights the fuse and chuckles when it goes off is described with an atomic model just like those that we've seen before. Its source code is listed below.
+\begin{verbatim}
+/**
+ * A miscreant drops the ball and reports the explosion.
+ */
+class Miscreant:
+   public adevs::Atomic<std::string>
+{
+   public:
+      Miscreant():
+         adevs::Atomic<std::string>(),
+         start(true),
+         tstart(1.0)
+      {
+      }
+      double ta() { return ((start) ? tstart : adevs_inf<double>()); }
+      void delta_int() { start = false; }
+      void delta_ext(double e, const Bag<std::string>& xb)
+      {
+         cout << (tstart+e) << " " << (*(xb.begin())) << endl;
+      }
+      void delta_conf(const Bag<std::string>&){}
+      void output_func(Bag<std::string>& yb)
+      {
+         if (start) yb.insert("light");
+      }
+      void gc_output(Bag<std::string>&){}
+   private:
+      bool start;
+      const double tstart;
+};
+\end{verbatim}
+
+Our next goal will be to create code for the CherryBomb model that appears in the main function of the simulation program. As you can see from the code below, this model is used just like any other model that is derived from the ode\_system class, and can be coupled to atomic and other models just like any other component in a simulation program.
+\begin{verbatim}
+int main()
+{
+   // Create our model of the bomb
+   CherryBomb* bomb = new CherryBomb();
+   // Wrap a set of solvers around it
+   Hybrid<std::string>* hybrid_model =
+      new Hybrid<std::string>
+      (
+         bomb, // Model to simulate
+         new corrected_euler<std::string>(bomb,1E-5,0.01), // ODE solver
+         new discontinuous_event_locator<std::string>(bomb,1E-5) // Event locator
+         // You must use this event locator for OpenModelica because it does
+         // not generate continuous zero crossing functions
+      );
+   // Couple the miscreant and the bomb
+   SimpleDigraph<std::string>* model = new SimpleDigraph<std::string>();
+   Miscreant* miscreant = new Miscreant();
+   model->add(miscreant);
+   model->add(hybrid_model);
+   model->couple(miscreant,hybrid_model);
+   model->couple(hybrid_model,miscreant);
+   // Create the simulator
+   Simulator<std::string>* sim =
+      new Simulator<std::string>(model);
+   // Run the simulation for ten seconds
+   while (sim->nextEventTime() <= 4.0)
+   {
+      cout << sim->nextEventTime() << " ";
+      sim->execNextEvent();
+      cout << bomb->get_height() << " " << bomb->get_fuse() << endl;
+   }
+   // Cleanup
+   delete sim;
+   delete hybrid_model;
+   // Done!
+   return 0;
+}
+\end{verbatim}
+
+The CherryBomb class is constructed as a subclass of the adevs FMI class. The FMI class contains all of the instructions needed to load, initialize, update, and access the variables of an FMI v2 object. The construction of the FMI class requires four arguments:
+\begin{enumerate}
+\item The model name that appears in the \verbatim{modelDecription.xml} within the tag \verbatim{modelName}.
+\item The GUID string for the FMI object that appears within the tag \verbatim{guid} just beneath the \verbatim{modelName} in \verbatim{modelDescription.xml}.
+\item The number of continuous state variables in the Modelica model, which is determined by counting the number of variable descriptions containing the tagged \verbatim{Real derivative}. There are three of these for the CherryBomb model.
+\item The number of state event conditions in the model, which is contained in the tag \verbatim{numberOfEventIndicators}. 
+\item The name of the shared object file that contains the equations, etc. for the compiled Modelica model.
+\end{enumerate}
+
 
 \section{Modeling hybrid systems with adevs and OpenModelica (deprecated)}
 
@@ -382,79 +651,79 @@ The complete code listing for the derived class is shown below.
  * on receiving discrete input.
  */
 class CircuitExt:
-	public Circuit
+   public Circuit
 {
-	public:
-		CircuitExt():
-			Circuit(1), // Add one state event to the base class
-			atVref(false) // Flag to indicate when Vref is reached
-		{
-		}
-		/**
-		 * Compute the extra state event.
-		 */
-		void extra_state_event_funcs(double* z)
-		{
-			if (!atVref)
-				z[0] = get_$PV$PT$Pv()-get_$PV$PVref();
-			else
-				z[0] = 1.0;
-		}
-		/**
-		 * Indicate that Vref has been reached when that event
-		 * occurs.
-		 */
-		void internal_event(double* q, const bool* event_flags)
-		{
-			// Apply the internal event function of the base class
-			Circuit::internal_event(q,event_flags);
-			// If this is the extra state event, then set atVref to true
-			if (event_flags[numStateEvents()]) atVref = true;
-		}
-		/**
-		 * Change Vref on receiving input.
-		 */
-		void external_event(double* q, double e, const Bag<double>& xb)
-		{
-			// Apply the external event function of the base class
-			Circuit::external_event(q,e,xb);
-			// Set the reference voltage and indicate that we are no longer
-			// at the reference.
-			set_$PV$PVref(*(xb.begin()));
-			atVref = false;
-			// Reinitialize the continuous model. This is really only necessary
-			// if your discrete event may result in new values for the 
-			// state variables (discrete or continuous) of the modelica model.
-			update_vars(q,true);
-		}
-		void confluent_event(double* q, const bool * event_flags,
-			const Bag<double>& xb)
-		{
-			internal_event(q,event_flags);
-			external_event(q,0.0,xb);
-		}
-		void output_func(const double* q, const bool* event_flags,
-			Bag<double>& yb)
-		{
-			// If this was the reference being reached, then
-			// output the current value of the voltage.
-			if (event_flags[numStateEvents()])
-			{
-				yb.insert(get_$PV$PT$Pv());
-				cerr << "Reached Vref=" << get_$PV$PT$Pv()
-					<< " @ t=" << get_time() << endl;
-			}
-		}
-	void print_state()
-	{
-		cout <<
-			get_time() << " " << // Print the time
-			get_$PV$PT$Pv() << " " << // The voltage
-			get_$PGnd$PT$Pi() << " " << // Current through the resistor
-			endl;
-	}
-	private:
-		bool atVref;
+   public:
+      CircuitExt():
+         Circuit(1), // Add one state event to the base class
+         atVref(false) // Flag to indicate when Vref is reached
+      {
+      }
+      /**
+       * Compute the extra state event.
+       */
+      void extra_state_event_funcs(double* z)
+      {
+         if (!atVref)
+            z[0] = get_$PV$PT$Pv()-get_$PV$PVref();
+         else
+            z[0] = 1.0;
+      }
+      /**
+       * Indicate that Vref has been reached when that event
+       * occurs.
+       */
+      void internal_event(double* q, const bool* event_flags)
+      {
+         // Apply the internal event function of the base class
+         Circuit::internal_event(q,event_flags);
+         // If this is the extra state event, then set atVref to true
+         if (event_flags[numStateEvents()]) atVref = true;
+      }
+      /**
+       * Change Vref on receiving input.
+       */
+      void external_event(double* q, double e, const Bag<double>& xb)
+      {
+         // Apply the external event function of the base class
+         Circuit::external_event(q,e,xb);
+         // Set the reference voltage and indicate that we are no longer
+         // at the reference.
+         set_$PV$PVref(*(xb.begin()));
+         atVref = false;
+         // Reinitialize the continuous model. This is really only necessary
+         // if your discrete event may result in new values for the 
+         // state variables (discrete or continuous) of the modelica model.
+         update_vars(q,true);
+      }
+      void confluent_event(double* q, const bool * event_flags,
+         const Bag<double>& xb)
+      {
+         internal_event(q,event_flags);
+         external_event(q,0.0,xb);
+      }
+      void output_func(const double* q, const bool* event_flags,
+         Bag<double>& yb)
+      {
+         // If this was the reference being reached, then
+         // output the current value of the voltage.
+         if (event_flags[numStateEvents()])
+         {
+            yb.insert(get_$PV$PT$Pv());
+            cerr << "Reached Vref=" << get_$PV$PT$Pv()
+               << " @ t=" << get_time() << endl;
+         }
+      }
+   void print_state()
+   {
+      cout <<
+         get_time() << " " << // Print the time
+         get_$PV$PT$Pv() << " " << // The voltage
+         get_$PGnd$PT$Pi() << " " << // Current through the resistor
+         endl;
+   }
+   private:
+      bool atVref;
 };
 \end{verbatim}
 
