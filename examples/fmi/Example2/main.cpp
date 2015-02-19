@@ -59,7 +59,7 @@ class ControlExt:
 				"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
 				0,
 				0,
-				"control/linux64,Control.so"
+				"control/linux64/Control.so"
 			),
 			doCmd(false)
 		{
@@ -318,7 +318,8 @@ int main(int argc, char** argv)
 	double maxError = 0.0;
 	cout << tReport << " " << arm->get_x() << " " << arm->get_z() << " "
 		<< ctrl->get_xd() << " " << ctrl->get_zd() << " " 
-		<< arm->get_q1() << " " << arm->get_q2() << endl;
+		<< arm->get_q1() << " " << arm->get_q2() << " "
+		<< arm->get_q1_sample() << " " << arm->get_q2_sample() << endl;
 	assert(arm->get_q1() == arm->get_q1_sample());
 	assert(arm->get_q2() == arm->get_q2_sample());
 	while (sim->nextEventTime() <= 20.0)

@@ -263,6 +263,7 @@ void FMI<X>::init(double* q)
 	// Initialize all variables
 	status = _fmi2EnterInitializationMode(c);
 	assert(status == fmi2OK);
+	// Done with initialization
 	status = _fmi2ExitInitializationMode(c);
 	assert(status == fmi2OK);
 	// Put into consistent initial state
