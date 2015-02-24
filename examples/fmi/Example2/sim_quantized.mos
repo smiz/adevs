@@ -1,0 +1,4 @@
+loadFile("BaseRobot.mo");
+loadFile("QuantizedRobot.mo");
+loadFile("ControlTrajectory.mo");
+translateModelFMU(Robot,"2.0");

@@ -26,7 +26,7 @@ model BaseRobot extends ControlTrajectory;
   Real Tred[2], Tfric[2],
     Tarm[2], Tfarm[2], Ttplate[2];
   // Control inputs
-  parameter Real T[2] = {0,0};
+  input Real T[2];
   // Mass and inertia matrices
   Real JxT[2,2], JqInv[2,2], M[2];
   // How many samples have been generated 

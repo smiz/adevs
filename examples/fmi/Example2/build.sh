@@ -1,5 +1,6 @@
 # Build the robot FMU 
-omc sim_sampled.mos
+mode=quantized
+omc sim_$mode.mos
 # Cleanup the junk produced by the omc compiler
 rm -f Robot_*
 rm -f Robot.c
@@ -26,7 +27,7 @@ mv *.xml control
 #    The adevs include directory
 #    The FMI for model exchange header files
 # You must link to system library libdl
-g++ -g \
+g++ -g -D$mode \
 	-Wall -I../../../include \
 	-I${HOME}/Code/FMI_for_ModelExchange_and_CoSimulation_v2.0 \
 	Ethernet.cpp main.cpp -ldl ../../../src/libadevs.a

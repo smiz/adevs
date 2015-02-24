@@ -149,30 +149,55 @@ class RobotExt:
 		static const int sample;
 		static const int command;
 
+#ifdef sampled 
 		int get_sampleNumber() { return get_int(16); }
-		double get_q1() { return get_real(37); }
-		double get_q1_sample() { return get_real(38); }
-		double get_q2() { return get_real(39); }
-		double get_q2_sample() { return get_real(40); }
+		double get_q1() { return get_real(39); }
+		double get_q1_sample() { return get_real(45); }
+		double get_q2() { return get_real(40); }
+		double get_q2_sample() { return get_real(46); }
 		double get_x() { return get_real(41); }
 		double get_xd() { return get_real(42); }
 		double get_z() { return get_real(43); }
 		double get_zd() { return get_real(44); }
-		double get_error() { return get_real(36); }
+		double get_error() { return get_real(38); }
 
 		void set_T(double val, int which)
 		{
-			if (which == 0) set_real(val,51);
-			else set_real(val,52);
+			if (which == 0) set_real(22,val);
+			else set_real(23,val);
 		}
+#else
+		int get_sampleNumber() { return get_int(16); }
+		double get_q1() { return get_real(39); }
+		double get_q1_sample() { return get_real(40); }
+		double get_q2() { return get_real(41); }
+		double get_q2_sample() { return get_real(42); }
+		double get_x() { return get_real(43); }
+		double get_xd() { return get_real(44); }
+		double get_z() { return get_real(46); }
+		double get_zd() { return get_real(47); }
+		double get_error() { return get_real(38); }
+
+		void set_T(double val, int which)
+		{
+			if (which == 0) set_real(22,val);
+			else set_real(23,val);
+		}
+#endif
 
 		RobotExt():
 			FMI<IO_Type>
 			(
 			 	"Robot",
+#ifdef sampled
 				"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
 				4, // Number of state variables
 				0, // Number of event indicators
+#else
+				"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
+				4, // Number of state variables
+				0, // Number of event indicators
+#endif
 				"robot/linux64/Robot.so"
 			),
 			numSteps(0),
