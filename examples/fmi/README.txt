@@ -21,7 +21,8 @@ This is the model of a robot controlled through an ethernet
 network that is described in J. Nutaro, "An extension of the
 OpenModelica compiler for using Modelica models in a discrete
 event simulation," SIMULATION, vol. 90, pp. 1328-1345,
-December 2014.
+December 2014. The script build.sh contains all of the commands
+needed to compile the model and its parts.
 
 Example3
 --------

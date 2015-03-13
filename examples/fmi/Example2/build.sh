@@ -1,5 +1,9 @@
+# Cleanup stale files
+rm -rf robot
+rm -rf control
 # Build the robot FMU 
 mode=quantized
+#mode=sampled
 omc sim_$mode.mos
 # Cleanup the junk produced by the omc compiler
 rm -f Robot_*

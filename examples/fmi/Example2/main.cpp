@@ -150,7 +150,6 @@ class RobotExt:
 		static const int command;
 
 #ifdef sampled 
-		int get_sampleNumber() { return get_int(16); }
 		double get_q1() { return get_real(39); }
 		double get_q1_sample() { return get_real(45); }
 		double get_q2() { return get_real(40); }
@@ -167,15 +166,14 @@ class RobotExt:
 			else set_real(23,val);
 		}
 #else
-		int get_sampleNumber() { return get_int(16); }
 		double get_q1() { return get_real(39); }
 		double get_q1_sample() { return get_real(40); }
 		double get_q2() { return get_real(41); }
 		double get_q2_sample() { return get_real(42); }
 		double get_x() { return get_real(43); }
 		double get_xd() { return get_real(44); }
-		double get_z() { return get_real(46); }
-		double get_zd() { return get_real(47); }
+		double get_z() { return get_real(45); }
+		double get_zd() { return get_real(46); }
 		double get_error() { return get_real(38); }
 
 		void set_T(double val, int which)
@@ -196,12 +194,10 @@ class RobotExt:
 #else
 				"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
 				4, // Number of state variables
-				0, // Number of event indicators
+				2, // Number of event indicators
 #endif
 				"robot/linux64/Robot.so"
 			),
-			numSteps(0),
-			lastSampleNumber(0),
 			doSample(true)
 		{
 		}
@@ -214,8 +210,7 @@ class RobotExt:
 		void internal_event(double* q, const bool* state_event)
 		{
 			FMI<IO_Type>::internal_event(q,state_event);
-			doSample = lastSampleNumber != get_sampleNumber();
-			lastSampleNumber = get_sampleNumber();
+			test_for_sample();
 			FMI<IO_Type>::internal_event(q,state_event);
 		}
 		void external_event(double* q, double e,
@@ -229,8 +224,7 @@ class RobotExt:
 			const adevs::Bag<IO_Type>& xb)
 		{
 			FMI<IO_Type>::confluent_event(q,state_event,xb);
-			doSample = lastSampleNumber != get_sampleNumber();
-			lastSampleNumber = get_sampleNumber();
+			test_for_sample();
 			process_input_data(xb);
 			FMI<IO_Type>::confluent_event(q,state_event,xb);
 		}
@@ -239,7 +233,6 @@ class RobotExt:
 		{
 			if (doSample)
 			{
-				numSteps++;
 				SampleSig* sig = new SampleSig(get_q1(),get_q2());	
 				IO_Type msg;
 				msg.port = sample;
@@ -253,10 +246,8 @@ class RobotExt:
 			for (; iter != g.end(); iter++)
 				delete (*iter).value;
 		}
-		int getNumSteps() const { return numSteps; }
 	private:
-		int numSteps;
-		int lastSampleNumber;
+		double q1_sample_value, q2_sample_value;
 		bool doSample;
 
 		void process_input_data(const Bag<IO_Type>& xb)
@@ -277,6 +268,15 @@ class RobotExt:
 		{
 			set_T(T1,0);
 			set_T(T2,1);
+		}
+		void test_for_sample()
+		{
+			doSample = (q1_sample_value != get_q1_sample() || q2_sample_value != get_q2_sample());
+			if (doSample)
+			{
+				q1_sample_value = get_q1_sample();
+				q2_sample_value = get_q2_sample();
+			}
 		}
 };
 
@@ -315,6 +315,10 @@ void makeEtherNetwork(Digraph<SimObject*>* model, Devs<IO_Type>* hybrid_ctrl,
 	}
 }
 
+void print_report(RobotExt* arm, double t)
+{
+}
+
 int main(int argc, char** argv)
 {
 	if (argc == 2)
@@ -324,13 +328,13 @@ int main(int argc, char** argv)
 		new Hybrid<IO_Type>(
 		arm,
 		new rk_45<IO_Type>(arm,1E-5,0.001),
-		new bisection_event_locator<IO_Type>(arm,1E-7));
+		new discontinuous_event_locator<IO_Type>(arm,1E-5));
 	ControlExt* ctrl = new ControlExt();
 	Hybrid<IO_Type>* hybrid_ctrl =
 		new Hybrid<IO_Type>(
 		ctrl,
 		new rk_45<IO_Type>(ctrl,1E-5,0.001),
-		new bisection_event_locator<IO_Type>(ctrl,1E-7));
+		new discontinuous_event_locator<IO_Type>(ctrl,1E-5));
 	Digraph<SimObject*>* model = new Digraph<SimObject*>();
 	model->add(hybrid_ctrl);
 	model->add(hybrid_arm);
@@ -341,12 +345,6 @@ int main(int argc, char** argv)
 	// Run the simulation, testing the solution as we go
 	double tReport = 0.0;
 	double maxError = 0.0;
-	cout << tReport << " " << arm->get_x() << " " << arm->get_z() << " "
-		<< ctrl->get_xd() << " " << ctrl->get_zd() << " " 
-		<< arm->get_q1() << " " << arm->get_q2() << " "
-		<< arm->get_q1_sample() << " " << arm->get_q2_sample() << endl;
-	assert(arm->get_q1() == arm->get_q1_sample());
-	assert(arm->get_q2() == arm->get_q2_sample());
 	while (sim->nextEventTime() <= 20.0)
 	{
 		if (maxError < arm->get_error())
@@ -359,13 +357,11 @@ int main(int argc, char** argv)
 			cout << tReport << " " << arm->get_x() << " " << arm->get_z() << " " <<
 				ctrl->get_xd() << " " << ctrl->get_zd() << " " <<
 				arm->get_q1() << " " << arm->get_q2() << " " <<
-				arm->get_sampleNumber() << " " << 
 				arm->get_error() << " " << maxError << endl;
 		} 
 	}
 	if (maxError < arm->get_error())
 		maxError = arm->get_error();
-	cerr << "steps = " << arm->getNumSteps() << endl;
 	cerr << "L1 err = " << maxError << endl;
 	delete sim;
 	delete model;

@@ -29,8 +29,6 @@ model BaseRobot extends ControlTrajectory;
   input Real T[2];
   // Mass and inertia matrices
   Real JxT[2,2], JqInv[2,2], M[2];
-  // How many samples have been generated 
-  Integer sampleNumber(start=0,fixed=true);
   // Sample values
   output Real q1_sample, q2_sample;
   // Control error
