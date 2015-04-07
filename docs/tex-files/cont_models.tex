@@ -188,7 +188,7 @@ Figure \ref{fig:cherry_bomb_trajectory} shows the cherry bomb's trajectory from 
 
 \section{Modeling hybrid systems with the Functional Mockup Interface}
 \label{sect:fmi}
-The Functional Mockup Interface (FMI) is a standard API for encapulating piecewise continuous models. The intent of this standard is to allow model developers to exchange their models in a way that is ameniable to accurate simulation. The FMI interface specification can be found at \url{http://www.fmistandard.org}. The practical advantage of this standard for modelers using adevs is that all major Modelica compilers can export their models in this form, and these can be wrapped in an ode\_system object.
+The Functional Mockup Interface (FMI) is a standard API for encapsulating piecewise continuous models. The intent of this standard is to allow model developers to exchange their models in a way that is amenable to accurate simulation. The FMI interface specification can be found at \url{http://www.fmistandard.org}. The practical advantage of this standard for modelers using adevs is that all major Modelica compilers can export their models in this form, and these can be wrapped in an ode\_system object.
 
 You will need three things to use this capability:
 \begin{enumerate}
@@ -221,23 +221,23 @@ equation
 end CherryBomb;
 \end{verbatim}
 
-I will use the OpenModelica compiler to demostrate how this is converted to an FMI compliant object file that can be used with adevs. Assume that the compiler \verbatim{omc} is in our path. We begin by creating a Modelica script file called \verbatim{makefmi.mos} and put into this file the following commands.
+I will use the OpenModelica compiler to demonstrate how this is converted to an FMI compliant object file that can be used with adevs. Assume that the compiler omc is in our path. We begin by creating a Modelica script file called \filename{makefmi.mos} and put into this file the following commands.
 \begin{verbatim}
 loadFile("CherryBomb.mo");
 translateModelFMU(CherryBomb,"2.0");
 \end{verbatim}
-The first line loads the CherryBomb model that is listed above. The second line generates and FMI object from this model that is compliant with the FMI v2 standard. This FMI object will be packed with several other files in a zipped file called \verbatim{CherryBomb.fmu}. The OpenModelica compiler will also produce a bunch of other junk that you don't need, and these extra files can be deleted with the following set of command.
+The first line loads the CherryBomb model that is listed above. The second line generates and FMI object from this model that is compliant with the FMI v2 standard. This FMI object will be packed with several other files in a zipped file called \filename{CherryBomb.fmu}. The OpenModelica compiler will also produce a bunch of other junk that you don't need, and these extra files can be deleted with the following set of command.
 \begin{verbatim}
 rm -f CherryBomb_*
 rm -f CherryBomb.c
 \end{verbatim}
-To get at the files you need, uncompress the zip file with the command
+To get at the files you need, decompress the zip file with the command
 \begin{verbatim}
 unzip -o -qq CherryBomb.fmu
 \end{verbatim}
-This will create directory called \verbatim{sources}, which you can delete, a file called \verbatim{modelDescription.xml}, which you will need, and a file \verbatim{CherryBomb.so}, which you will need. This shared object file will be in the directory called \verbatim{binaries/linux64}.
+This will create directory called \filename{sources}, which you can delete, a file called \filename{modelDescription.xml}, which you will need, and a file \filename{CherryBomb.so}, which you will need. This shared object file will be in the directory called \filename{binaries/linux64}.
 
-The file \verbatim{modeDescription.xml} contains all of the information you will need to program your simulator to access the variables of the Modelica model. The listing of the description file for the cherry bomb is shown below. The significance of the data in this file will become apparent as we construct the rest of the simulation software that will interact with this model.
+The file \filename{modelDescription.xml} contains all of the information you will need to program your simulator to access the variables of the Modelica model. The listing of the description file for the cherry bomb is shown below. The significance of the data in this file will become apparent as we construct the rest of the simulation software that will interact with this model.
 \begin{verbatim}
 <?xml version="1.0" encoding="UTF-8"?>
 <fmiModelDescription
@@ -460,12 +460,82 @@ int main()
 
 The CherryBomb class is constructed as a subclass of the adevs FMI class. The FMI class contains all of the instructions needed to load, initialize, update, and access the variables of an FMI v2 object. The construction of the FMI class requires four arguments:
 \begin{enumerate}
-\item The model name that appears in the \verbatim{modelDecription.xml} within the tag \verbatim{modelName}.
-\item The GUID string for the FMI object that appears within the tag \verbatim{guid} just beneath the \verbatim{modelName} in \verbatim{modelDescription.xml}.
-\item The number of continuous state variables in the Modelica model, which is determined by counting the number of variable descriptions containing the tagged \verbatim{Real derivative}. There are three of these for the CherryBomb model.
-\item The number of state event conditions in the model, which is contained in the tag \verbatim{numberOfEventIndicators}. 
+\item The model name that appears in the \filename{modelDescription.xml} within the tag "modelName".
+\item The GUID string for the FMI object that appears within the tag "guid" just beneath "modelName" in \filename{modelDescription.xml}.
+\item The number of continuous state variables in the Modelica model, which is determined by counting the number of variable descriptions containing the tagged "Real derivative". There are three of these for the CherryBomb model.
+\item The number of state event conditions in the model, which is contained in the tag "numberOfEventIndicators". 
 \item The name of the shared object file that contains the equations, etc. for the compiled Modelica model.
 \end{enumerate}
+The CherryBomb class inherits the functions of the ode\_system class described in the previous section, and the default implementation of these methods by the FMI class is sufficient to simulate the parts of the model's behavior that are described in the Modelica file. If these methods are overridden, then it is necessary to first invoke the method of the base class before performing any other action. If any of the Modelica variables are modified by the overridden method, then it is also necessary to invoke the method of the base class after the modifications have been made. Variables that are part of the Modelica model can be read and written using methods inherited from the FMI class. These methods have the forms \methodname{set\_int(int index, int val)}, \methodname{get\_int(int index): int}, \methodname{set\_double(int index, double val)}, \methodname{get\_double(int index): double}, \methodname{set\_bool(int index, bool val)}, and \methodname{get\_bool(int index): bool}. The index variable for each method should be valueReference number that appears in the file \filename{modelDescription.xml}. Each of these elements is illustrated in the implementation of the CherryBomb class below.
+
+\begin{verbatim}
+class CherryBomb:
+   // Derive model from the adevs FMI class
+   public FMI<std::string>
+{
+   public:
+      // Constructor loads the FMI
+      CherryBomb():
+         // Call FMI constructor
+         FMI<std::string>
+         (
+            "CherryBomb", // model name from modelDescription.xml
+            "{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}", // GUID from modelDescription.xml
+            3, // Number of derivative variables
+            3, // numberOfEventIndicators from modelDescription.xml
+            "binaries/linux64/CherryBomb.so" // Location of the shared object file produced by omc
+         )
+      {
+      }
+      // Internal transition function
+      void internal_event(double* q, const bool* state_event)
+      {
+         // Call the method of the base class
+         FMI<std::string>::internal_event(q,state_event);
+      }
+      // External transition function
+      void external_event(double* q, double e, const Bag<std::string>& xb)
+      {
+         // Call the method of the base class
+         FMI<std::string>::external_event(q,e,xb);
+         // Drop the ball
+         set_dropped();
+         // Call the base class method again to 
+         // recalculate variables that depend on
+         // the dropped variable
+         FMI<std::string>::external_event(q,e,xb);
+      }
+      // Time remaining to the next sample
+      double time_event_func(const double* q)
+      {
+         // Return the value of the base class
+         return FMI<std::string>::time_event_func(q);
+      }
+      // Print state at each output event
+      void output_func(const double* q, const bool* state_event, Bag<std::string>& yb)
+      {
+         // Output on the state event that is the explosion.
+         // The state event number is in modelDescription.xml
+         // as a whenCondition variable.
+         if (state_event[1])
+            yb.insert("boom!");
+      }
+      // The exploded variable in the Modelica model is its 
+      // third boolean variable. This information is in the
+      // modelDescription.xml file generated by the Modelica
+      // compiler.
+      bool get_exploded() { return get_bool(3); }
+      // See modelDescription.xml
+      double get_height() { return get_real(1); }
+      // See modelDescription.xml
+      void set_dropped() { set_bool(2,true); }
+      // See modelDescription.xml
+      bool get_dropped() { return get_bool(2); }
+      // See modelDescription.xml
+      double get_fuse() { return get_real(0); }
+};
+\end{verbatim}
+
 
 
 \section{Modeling hybrid systems with adevs and OpenModelica (deprecated)}
@@ -476,12 +546,12 @@ The Modelica simulation language and OpenModelica compiler can be used to automa
 \begin{enumerate}
 \item You may be able to reuse large numbers of model components from the Modelica standard library.
 \item For very complicated models, the OpenModelica compiler will create code to initialize the system, sort its equations, generate solutions to algebraic sub-systems, and perform other essential tasks.
-\item Modification of the continuous model will be much simpler because the model description is separated from the problem of its simulation (the latter being handled automatically by the OpenModelica compiler and runtime system).
+\item Modification of the continuous model will be much simpler because the model description is separated from the problem of its simulation (the latter being handled automatically by the OpenModelica compiler and run-time system).
 \end{enumerate}
 
-To take advantage of the Modelica language, you will need to get and install from source the OpenModelica compiler, which is hosted at \url{http://www.openmodelica.org/}. Instructions for building the compiler, source code for the compiler, and other information on the Modelica language are available from the Open Modelica group and at the Modelica Associate website \url{https://www.modelica.org/}. Instructions for building the adevs runtime environment for OpenModelica may be found in the README file in the top level of directory of the adevs package.
+To take advantage of the Modelica language, you will need to get and install from source the OpenModelica compiler, which is hosted at \url{http://www.openmodelica.org/}. Instructions for building the compiler, source code for the compiler, and other information on the Modelica language are available from the Open Modelica group and at the Modelica Associate website \url{https://www.modelica.org/}. Instructions for building the adevs run-time environment for OpenModelica may be found in the README file in the top level of directory of the adevs package.
 
-The adevs runtime environment for OpenModelica is relatively new, but aims to support most of the functionality of the standard OpenModelica runtime system with the following important caveats:
+The adevs run-time environment for OpenModelica is relatively new, but aims to support most of the functionality of the standard OpenModelica run-time system with the following important caveats:
 \begin{enumerate}
 \item You may only solve ordinary systems of equations in the form $\dot{x}=f(x,t)$ or semi-explicit differential-algebraic equations in the form $\dot{x}=f(x,y,t)$ subject to $g(x,y,t)=0$.
 \item Many types of discrete behaviors are not supported. There is explicit support for if and when clauses, but other discrete functions (e.g., sample statements) should not be relied upon unless they appear in examples shipped with adevs.
