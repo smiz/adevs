@@ -67,9 +67,10 @@ template <typename X> class FMI:
 		FMI(const char* modelname,
 			const char* guid,
 			int num_state_variables,
-			int num_event_indicators,
+			int num_modelica_event_indicators,
 			const char* shared_lib_name,
-			const double tolerance = 1E-8);
+			const double tolerance = 1E-8,
+			int num_extra_event_indicators = 0);
 		/// Copy the initial state of the model to q
 		virtual void init(double* q);
 		/// Compute the derivative for state q and put it in dq
@@ -169,6 +170,8 @@ template <typename X> class FMI:
 		void* so_hndl;
 		// Are we in continuous time mode?
 		bool cont_time_mode;
+		// Number of event indicators that are not governed by the modelica model
+		int num_extra_event_indicators;
 
 		static void fmilogger(
 			fmi2ComponentEnvironment componentEnvironment,
@@ -191,15 +194,17 @@ template <typename X>
 FMI<X>::FMI(const char* modelname,
 			const char* guid,
 			int num_state_variables,
-			int num_event_indicators,
+			int num_modelica_event_indicators,
 			const char* so_file_name,
-			const double tolerance):
+			const double tolerance,
+			int num_extra_event_indicators):
 	// One extra variable at the end for time
-	ode_system<X>(num_state_variables+1,num_event_indicators),
+	ode_system<X>(num_state_variables+1,num_modelica_event_indicators+num_extra_event_indicators),
 	next_time_event(adevs_inf<double>()),
 	t_now(0.0),
 	so_hndl(NULL),
-	cont_time_mode(false)
+	cont_time_mode(false),
+	num_extra_event_indicators(num_extra_event_indicators)
 {
 	fmi2CallbackFunctions tmp = {adevs::FMI<X>::fmilogger,calloc,free,NULL,NULL};
 	callbackFuncs = new fmi2CallbackFunctions(tmp);
@@ -310,7 +315,7 @@ void FMI<X>::state_event_func(const double* q, double* z)
 	assert(status == fmi2OK);
 	status = _fmi2SetContinuousStates(c,q,this->numVars()-1);
 	assert(status == fmi2OK);
-	status = _fmi2GetEventIndicators(c,z,this->numEvents());
+	status = _fmi2GetEventIndicators(c,z,this->numEvents()-num_extra_event_indicators);
 	assert(status == fmi2OK);
 }
 
