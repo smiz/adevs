@@ -1,2 +1,0 @@
-loadFile("Population.mo");
-simulate(Population,startTime=0.0,stopTime=2.0,outputFormat="csv");

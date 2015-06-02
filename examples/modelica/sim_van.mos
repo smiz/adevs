@@ -1,2 +1,0 @@
-loadFile("VanDerPol.mo");
-simulate(VanDerPol,startTime=0.0,stopTime=100.0,outputFormat="csv");

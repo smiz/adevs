@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -O3 -Wall -fopenmp 
+CFLAGS = -O3 -Wall -fopenmp ${INCLUDE}
 PREFIX = ../..
 INCLUDE = -I${PREFIX}/include
 
@@ -14,9 +14,7 @@ all: inverter
 	${CC} ${INCLUDE} ${CFLAGS} -o qss qss.cpp
 	${CC} ${INCLUDE} ${CFLAGS} -o pc proportional_control.cpp
 
-mda:
-
 clean:
 	rm -f *.o; rm -f core; rm -f a.out; rm -f pc ; rm -f qss
- 
+	rm -f inverter
 

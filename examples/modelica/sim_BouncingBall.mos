@@ -1,2 +1,0 @@
-loadFile("BouncingBall.mo");
-simulate(BouncingBall, stopTime=3.0, outputFormat="csv");

@@ -67,7 +67,7 @@ template <typename X> class FMI:
 		FMI(const char* modelname,
 			const char* guid,
 			int num_state_variables,
-			int num_modelica_event_indicators,
+			int num_event_indicators,
 			const char* shared_lib_name,
 			const double tolerance = 1E-8,
 			int num_extra_event_indicators = 0);
@@ -170,7 +170,7 @@ template <typename X> class FMI:
 		void* so_hndl;
 		// Are we in continuous time mode?
 		bool cont_time_mode;
-		// Number of event indicators that are not governed by the modelica model
+		// Number of event indicators that are not governed by the FMI
 		int num_extra_event_indicators;
 
 		static void fmilogger(
@@ -194,12 +194,12 @@ template <typename X>
 FMI<X>::FMI(const char* modelname,
 			const char* guid,
 			int num_state_variables,
-			int num_modelica_event_indicators,
+			int num_event_indicators,
 			const char* so_file_name,
 			const double tolerance,
 			int num_extra_event_indicators):
 	// One extra variable at the end for time
-	ode_system<X>(num_state_variables+1,num_modelica_event_indicators+num_extra_event_indicators),
+	ode_system<X>(num_state_variables+1,num_event_indicators+num_extra_event_indicators),
 	next_time_event(adevs_inf<double>()),
 	t_now(0.0),
 	so_hndl(NULL),

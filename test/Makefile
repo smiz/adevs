@@ -2,7 +2,7 @@ PREFIX=..
 include make.common
 
 # Everything else should work fine
-check: check_cpp check_par check_java check_modelica
+check: check_cpp check_par check_java 
 
 # Check cpp code only
 check_cpp: rvtest bag_test obj_pool sched atomic double_fcmp gcd_test gpt_test \
@@ -14,12 +14,6 @@ check_par: optsim_test
 
 # Check the java library
 check_java: java_test
-
-# Check the modelica runtime system and compiler
-check_modelica:
-	$(CC) $(CFLAGS) modelica_array.cpp $(LIBS)
-	$(TEST_EXEC)
-#	cd modelica $(CMD_SEP) $(MAKE) check
 
 java_test:
 	cd java $(CMD_SEP) $(MAKE) check
@@ -94,6 +88,5 @@ clean_all:
 	cd wrapper $(CMD_SEP) $(MAKE) clean
 	cd optsim $(CMD_SEP) $(MAKE) clean_all
 	cd java $(CMD_SEP) $(MAKE) clean
-	cd modelica $(CMD_SEP) $(MAKE) clean
 	$(MAKE) clean
 

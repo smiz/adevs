@@ -1,2 +1,0 @@
-loadFile("Influenza.mo");
-simulate(Influenza,startTime=0.0,stopTime=4.0,outputFormat="csv");

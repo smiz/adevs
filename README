@@ -1,6 +1,6 @@
-This file contains instructions for building the C++ library, the C++
-library with support for OpenModelica, and the Java bindings. Development
-versions of this library are available from SourceForge and github.
+This file contains instructions for building the C++ library and
+the Java bindings. Development versions of this library are available 
+from SourceForge and github.
 
 ---- C++ -----
 Adevs is implemented primarily as a set of C++ header files,
@@ -19,42 +19,6 @@ Note that the Windows build script does not include any OpenMP options
 and so those must be added to the compiler switches if you want to
 use the OpenMP enabled parts of the simulation engine. Note that
 the Express versions of Visual Studio don't support OpenMP in any case.
-
----- C++ with OpenModelica support ----
-Adevs may be used as a back-end for the OpenModelica simulation tool
-(see www.openmodelica.org). If you want support for OpenModelica,
-you need to get and build the OpenModelica compiler. For this purpose
-there is a shell script called 'build-omc.sh' in the 'util' directory
-of adevs. Executing this script will do the following: 
-
-1) Create a directory called openmodelica. This directory will contain
-   everything that the script downloads and compiles.
-2) Retrieve and compile rml, smlnj, and mmc.
-3) Retrieve and compile a bare-bones version of the OpenModelica compiler.
-
-The OpenModelica compiler is called omc and it is located in
-the openmodelica/trunk/build/bin directory. After building omc
-you must do the following:
-
-A) Get and install KINSOL from
-          http://computation.llnl.gov/casc/sundials/download/download.html
-B) Put the omc compiler into your executable PATH. The compiler is
-   in the directory openmodelica/trunk/build/bin
-C) Edit the Makefile for adevs so that MODELICA_HOME points at your
-   OpenModelica source tree (i.e., at openmodelica/trunk) and SUNDIALS_HOME
-   points to the directory where you installed KINSOL.
-D) Go to the 'src' directory of adevs and run the command
-   'make adevs_with_modelica'.
-
-You can test your new Modelica compiler and run-time environment
-with the modelica examples in the examples/modelica directory of
-adevs.
-
-To run a Modelica model, you will need to link your code with the KINSOL
-library, the f2c library (which is available with most linux distros),
-and the OpenModelica libgc library (this is located in the directory
-openmodelica/trunk/build/lib/omc). It is usually best to link statically
-to the f2c library. 
 
 ---- Java -----
 To build the java bindings for Linux, go the the 'src' directory and  
@@ -76,8 +40,7 @@ directory 'test'. The first set are for the C++ library without
 OpenMP support. These tests are run with 'make check_cpp'.
 The parts of the C++ library that use OpenMP can be tested by
 executing 'make check_par'.  The java bindings can be tested by
-executing 'make check_java'. The test cases for adevs's OpenModelica
-support can be run with 'make check_modelica'. Executing 'make check'
+executing 'make check_java'. Executing 'make check'
 runs all of the test cases.
 
 The make.common file contains platform specific settings for
@@ -94,7 +57,4 @@ respectively.
 
 For OpenMP test cases, you will need to set the maximum number of threads
 to at least four (one of the test cases requires at least four threads).
-
-When testing the OpenModelica support, make sure that the omc compiler
-is in your executable PATH (see the OpenModelica instructions above).
 

@@ -14,16 +14,6 @@ java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 # This builds the vanilla adevs library against which to link your c++ 
 # simulations.
 #
-# 3) adevs_with_modelica
-#
-# This builds adevs as above and adds to the vanilla library some
-# additional object files that are needed to use adevs models 
-# produced by the Open Modelica compiler. To build this you need
-# to have the SUNDIALS package installed. 
-SUNDIALS_HOME = /usr/local/sundials
-adevs_with_modelica: CFLAGS += -I${SUNDIALS_HOME}/include 
-
-include Makefile.modelica
 
 # These are generic options for the GNU C++ compiler.
 
@@ -52,8 +42,6 @@ JAVA_OBJS = \
 	adevs_jni/JavaNetwork.o \
 	adevs_jni/JavaSimulator.o
 
-MODELICA_OBJS += modelica_runtime.o
-
 .SUFFIXES: .cpp .c
 .cpp.o:
 	${CXX} ${CFLAGS} ${OPTFLAG} -o $@ -c $<
@@ -64,12 +52,7 @@ MODELICA_OBJS += modelica_runtime.o
 # to C++ simulations
 adevs: ${ADEVS_OBJS} 
 	ar -r libadevs.a ${ADEVS_OBJS}
-	${CXX} -shared -Wl,-soname,libadevs.so.2 -o libadevs.so.2.8 ${ADEVS_OBJS}
-
-# This adds the modelica extensions to the adevs library
-adevs_with_modelica: ${ADEVS_OBJS} ${MODELICA_OBJS}
-	ar -r libadevs.a ${ADEVS_OBJS} ${MODELICA_OBJS} 
-	${CXX} -shared -Wl,-soname,libadevs.so.2 -o libadevs.so.2.8 ${ADEVS_OBJS} ${MODELICA_OBJS} 
+	${CXX} -shared -Wl,-soname,libadevs.so.3 -o libadevs.so.3.0 ${ADEVS_OBJS}
 
 # This builds the Java bindings to the simulator
 java_adevs: ${JAVA_OBJS}
@@ -79,9 +62,9 @@ java_adevs: ${JAVA_OBJS}
 
 install:
 	mkdir -p "${DESTDIR}"
-	install -m 755 -p libadevs.so.2.8 "${DESTDIR}"
-	ln -f -s libadevs.so.2.8 "${DESTDIR}/libadevs.so.2"
-	ln -f -s libadevs.so.2.8 "${DESTDIR}/libadevs.so"
+	install -m 755 -p libadevs.so.3.0 "${DESTDIR}"
+	ln -f -s libadevs.so.3.0 "${DESTDIR}/libadevs.so.3"
+	ln -f -s libadevs.so.3.0 "${DESTDIR}/libadevs.so"
 
 clean:
-	rm -f *.o core *.a *.so adevs_jni/*.o adevs_jni/adevs/*.class *.jar rm libadevs.so.* ${MODELICA_OBJS}
+	rm -f *.o core *.a *.so adevs_jni/*.o adevs_jni/adevs/*.class *.jar rm libadevs.so.* 
