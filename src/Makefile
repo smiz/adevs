@@ -5,7 +5,7 @@
 #
 # This target builds the java language bindings to the adevs simulator.
 # Point this at your java installation if you want to build the Java bindings.
-JAVA_HOME = /usr/local/jdk1.7.0_51
+JAVA_HOME = /usr/local/jdk1.8.0_45
 java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux 
 
 #

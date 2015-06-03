@@ -4,7 +4,7 @@ CC = g++
 
 # Adjust these as needed to find the X11 and adevs libs and headers
 PREFIX = ../..
-LIBS = -lglut
+LIBS = -lglut -lGL
 LIBPATH = -L/usr/X11R6/lib
 INCLUDE = -I${PREFIX}/include
 

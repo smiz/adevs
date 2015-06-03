@@ -34,13 +34,27 @@ the batch file src/adevs_jni/build.bat. This creates the jar-file
 adevs.jar and DLL-file java_adevs.dll. You can use these by putting
 the former into your CLASSPATH and latter into your PATH.
 
+---- FMI ----
+Adevs supports importing models that use the FMI standard for Model
+Exchange. Information about this standard can be found at
+http://www.fmi-standard.org. This feature is particularly useful
+for importing continuous system models built with the Modelica
+language into your discrete event simulation. The examples and
+test cases shipped with adevs assume that you have the 
+OpenModelica compiler installed. You can get this compiler from
+http://www.openmodelica.org. The bash script build-omc.sh for building
+the OpenModelica compiler from source code is located in the util
+directory. The fmi test cases are located in test/fmi, and you can
+execute these by going to that directory and running 'make all'.
+
 ---- Testing -----
 There are four sets of test cases that can be run from the
 directory 'test'. The first set are for the C++ library without
 OpenMP support. These tests are run with 'make check_cpp'.
 The parts of the C++ library that use OpenMP can be tested by
 executing 'make check_par'.  The java bindings can be tested by
-executing 'make check_java'. Executing 'make check'
+executing 'make check_java'. The fmi import support can be
+tested by executing 'make check_fmi'. Executing 'make check'
 runs all of the test cases.
 
 The make.common file contains platform specific settings for
@@ -58,3 +72,5 @@ respectively.
 For OpenMP test cases, you will need to set the maximum number of threads
 to at least four (one of the test cases requires at least four threads).
 
+For the FMI test cases, you will need to have the OpenModelica compiler
+installed.
