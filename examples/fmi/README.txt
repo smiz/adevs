@@ -28,6 +28,3 @@ Example3
 --------
 This is the cherry bomb example from the adevs manual.
 
-smart_grid
---------
-Power system example from "Building Software from Simulation".

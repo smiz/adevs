@@ -1,5 +1,0 @@
-This is the example of frequency control via loads that appears in
-the book "Building Software for Simulation". This implementation
-of that model uses Modelica to generate the simulator for the electric
-power system. It also uses a much simpler electrical network, which
-comprises a single generator and single load.
