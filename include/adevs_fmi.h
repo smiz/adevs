@@ -188,8 +188,6 @@ template <typename X> class FMI:
 		void iterate_events();
 };
 
-#define LOAD_SO_FUNCTION(funcName) *(void**)(&_ ## funcName) = dlsym(so_hndl,#funcName )
-
 template <typename X>
 FMI<X>::FMI(const char* modelname,
 			const char* guid,
@@ -213,28 +211,64 @@ FMI<X>::FMI(const char* modelname,
 	{
 		throw adevs::exception("Could not load so file",this);
     }
-	LOAD_SO_FUNCTION(fmi2Instantiate);
-	LOAD_SO_FUNCTION(fmi2FreeInstance);
-	LOAD_SO_FUNCTION(fmi2SetupExperiment);
-	LOAD_SO_FUNCTION(fmi2EnterInitializationMode);
-	LOAD_SO_FUNCTION(fmi2ExitInitializationMode);
-	LOAD_SO_FUNCTION(fmi2GetReal);
-	LOAD_SO_FUNCTION(fmi2GetInteger);
-	LOAD_SO_FUNCTION(fmi2GetBoolean);
-	LOAD_SO_FUNCTION(fmi2GetString);
-	LOAD_SO_FUNCTION(fmi2SetReal);
-	LOAD_SO_FUNCTION(fmi2SetInteger);
-	LOAD_SO_FUNCTION(fmi2SetBoolean);
-	LOAD_SO_FUNCTION(fmi2SetString);
-	LOAD_SO_FUNCTION(fmi2EnterEventMode);
-	LOAD_SO_FUNCTION(fmi2NewDiscreteStates);
-	LOAD_SO_FUNCTION(fmi2EnterContinuousTimeMode);
-	LOAD_SO_FUNCTION(fmi2CompletedIntegratorStep);
-	LOAD_SO_FUNCTION(fmi2SetTime);
-	LOAD_SO_FUNCTION(fmi2SetContinuousStates);
-	LOAD_SO_FUNCTION(fmi2GetDerivatives);
-	LOAD_SO_FUNCTION(fmi2GetEventIndicators);
-	LOAD_SO_FUNCTION(fmi2GetContinuousStates);
+	// This only works with a POSIX compliant compiler/system
+	_fmi2Instantiate = (fmi2Component (*)(fmi2String, fmi2Type,
+		fmi2String, fmi2String, const fmi2CallbackFunctions*,
+		fmi2Boolean, fmi2Boolean))dlsym(so_hndl,"fmi2Instantiate");
+	assert(_fmi2Instantiate != NULL);
+	_fmi2FreeInstance = (void (*)(fmi2Component))dlsym(so_hndl,"fmi2FreeInstance");
+	assert(_fmi2FreeInstance != NULL);
+	_fmi2SetupExperiment = (fmi2Status (*)(fmi2Component, fmi2Boolean,
+		fmi2Real, fmi2Real, fmi2Boolean, fmi2Real))dlsym(so_hndl,"fmi2SetupExperiment");
+	assert(_fmi2SetupExperiment != NULL);
+	_fmi2EnterInitializationMode = (fmi2Status (*)(fmi2Component))dlsym(so_hndl,"fmi2EnterInitializationMode");
+	assert(_fmi2EnterInitializationMode != NULL);
+	_fmi2ExitInitializationMode = (fmi2Status (*)(fmi2Component))dlsym(so_hndl,"fmi2ExitInitializationMode");
+	assert(_fmi2ExitInitializationMode != NULL);
+	_fmi2GetReal = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, fmi2Real*))
+		dlsym(so_hndl,"fmi2GetReal");
+	assert(_fmi2GetReal != NULL);
+	_fmi2GetInteger = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, fmi2Integer*)) 
+		dlsym(so_hndl,"fmi2GetInteger");
+	assert(_fmi2GetInteger != NULL);
+	_fmi2GetBoolean = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, fmi2Boolean*))
+		dlsym(so_hndl,"fmi2GetBoolean");
+	assert(_fmi2GetBoolean != NULL);
+	_fmi2GetString = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, fmi2String*))
+		dlsym(so_hndl,"fmi2GetString");
+	assert(_fmi2GetString != NULL);
+	_fmi2SetReal = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2Real*))
+		dlsym(so_hndl,"fmi2SetReal");
+	assert(_fmi2SetReal != NULL);
+	_fmi2SetInteger = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2Integer*))
+		dlsym(so_hndl,"fmi2SetInteger");
+	assert(_fmi2SetInteger != NULL);
+	_fmi2SetBoolean = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2Boolean*))
+		dlsym(so_hndl,"fmi2SetBoolean");
+	assert(_fmi2SetBoolean != NULL);
+	_fmi2SetString = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2String*))
+		dlsym(so_hndl,"fmi2SetString");
+	assert(_fmi2SetString != NULL);
+	_fmi2EnterEventMode = (fmi2Status (*)(fmi2Component))dlsym(so_hndl,"fmi2EnterEventMode");
+	assert(_fmi2EnterEventMode != NULL);
+	_fmi2NewDiscreteStates = (fmi2Status (*)(fmi2Component,fmi2EventInfo*))dlsym(so_hndl,"fmi2NewDiscreteStates");
+	assert(_fmi2NewDiscreteStates != NULL);
+	_fmi2EnterContinuousTimeMode = (fmi2Status (*)(fmi2Component))dlsym(so_hndl,"fmi2EnterContinuousTimeMode");
+	assert(_fmi2EnterContinuousTimeMode != NULL);
+	_fmi2CompletedIntegratorStep = (fmi2Status (*)(fmi2Component, fmi2Boolean, fmi2Boolean*, fmi2Boolean*))
+		dlsym(so_hndl,"fmi2CompletedIntegratorStep");
+	assert(_fmi2CompletedIntegratorStep != NULL);
+	_fmi2SetTime = (fmi2Status (*)(fmi2Component, fmi2Real))dlsym(so_hndl,"fmi2SetTime");
+	assert(_fmi2SetTime != NULL);
+	_fmi2SetContinuousStates = (fmi2Status (*)(fmi2Component, const fmi2Real*, size_t))
+		dlsym(so_hndl,"fmi2SetContinuousStates");
+	assert(_fmi2SetContinuousStates != NULL);
+	_fmi2GetDerivatives = (fmi2Status (*)(fmi2Component, fmi2Real*, size_t))dlsym(so_hndl,"fmi2GetDerivatives");
+	assert(_fmi2GetDerivatives != NULL);
+	_fmi2GetEventIndicators = (fmi2Status (*)(fmi2Component, fmi2Real*, size_t))dlsym(so_hndl,"fmi2GetEventIndicators");
+	assert(_fmi2GetEventIndicators != NULL);
+	_fmi2GetContinuousStates = (fmi2Status (*)(fmi2Component, fmi2Real*, size_t))dlsym(so_hndl,"fmi2GetContinuousStates");
+	assert(_fmi2GetContinuousStates != NULL);
 	// Create the FMI component
 	c = _fmi2Instantiate(modelname,fmi2ModelExchange,guid,"",callbackFuncs,fmi2False,fmi2False);
 	assert(c != NULL);
