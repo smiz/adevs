@@ -1,5 +1,6 @@
 #include "adevs.h"
 #include "adevs_fmi.h"
+#include "HelloWorld.h"
 #include <iostream>
 using namespace std;
 using namespace adevs;
@@ -8,22 +9,13 @@ using namespace adevs;
  * This model will sample its own continuous state and generate an output
  * with a frequency f in Hertz.
  */
-class HelloWorld:
-	// Derive model from the adevs FMI class
-	public FMI<double>
+class HelloWorldExt:
+	public HelloWorld
 {
 	public:
 		// Constructor loads the FMI and sets the output frequency
-		HelloWorld():
-			// Call FMI constructor
-			FMI<double>
-			(
-			 	"HelloWorld", // model name from modelDescription.xml
-		 		"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}", // GUID from modelDescription.xml
-				1, // Number of derivative variables
-				0, // numberOfEventIndicators from modelDescription.xml
-				"binaries/linux64/HelloWorld.so" // Location of the shared object file produced by omc
-			),
+		HelloWorldExt():
+			HelloWorld(),
 			// Set frequency of output to 10 Hz
 			f(10.0),
 			// Time of first output
@@ -33,6 +25,7 @@ class HelloWorld:
 		// Internal transition function
 		void internal_event(double* q, const bool* state_event)
 		{
+			HelloWorld::internal_event(q,state_event);
 			assert(get_time() == q[1]); // These should match
 			// Update the time to the next event
 			tnext += 1.0/f;
@@ -46,10 +39,11 @@ class HelloWorld:
 		// Print state at each output event
 		void output_func(const double* q, const bool* state_event, Bag<double>& yb)
 		{
+			HelloWorld::output_func(q,state_event,yb);
 			// Get the model state. This is real variable 0 according to modelDescription.xml
-			double x = get_real(0);
+			double x = get_x();
 			// Get the model parameter. This is real variable 2 according to modelDescription.xml
-			double a = get_real(2);
+			double a = get_a();
 			assert(q[0] == x); // These should match
 			// Output our state
 			yb.insert(x);
@@ -64,7 +58,7 @@ class HelloWorld:
 int main()
 {
 	// Create our model
-	FMI<double>* hello = new HelloWorld();
+	FMI<double>* hello = new HelloWorldExt();
 	// Wrap a set of solvers around it
 	Hybrid<double>* hybrid_model =
 		new Hybrid<double>

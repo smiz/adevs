@@ -1,8 +1,8 @@
 # Build the FMU 
+rm -f a.out
 omc makefmi.mos
 # Cleanup the junk produced by the omc compiler
 rm -f CherryBomb_*
-rm -f CherryBomb.c
 # Unpack the fmu data 
 unzip -o -qq CherryBomb.fmu
 rm -rf sources

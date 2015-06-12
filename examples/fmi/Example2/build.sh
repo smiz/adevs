@@ -1,6 +1,7 @@
 # Cleanup stale files
 rm -rf robot
 rm -rf control
+rm -f a.out
 # Build the robot FMU 
 mode=quantized
 #mode=sampled
@@ -8,7 +9,6 @@ omc sim_$mode.mos
 # Cleanup the junk produced by the omc compiler
 rm -f Robot_*
 rm -f Robot.c
-rm -f Robot.h
 # Unpack the fmu data 
 unzip -o -qq Robot.fmu
 rm -f Robot.fmu
@@ -20,7 +20,6 @@ mv *.xml robot
 omc sim_control.mos
 rm -f Control_*
 rm -f Control.c
-rm -f Control.h
 unzip -o -qq Control.fmu
 rm -f Control.fmu
 rm -f *.json

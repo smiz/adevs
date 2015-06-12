@@ -2,6 +2,7 @@
 #include "adevs.h"
 #include "adevs_fmi.h"
 #include "Ethernet.h"
+#include "Control.h"
 #include <cmath>
 #include <iostream>
 using namespace std;
@@ -46,51 +47,44 @@ const int App::data_out = 0;
 adevs::rv App::randVar(new crand());
 
 class ControlExt:
-	public FMI<IO_Type>
+	public Control
 {
 	public:
 		static const int sample;
 		static const int command;
 
 		ControlExt():
-			FMI<IO_Type>
-			(
-				"Control",
-				"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
-				0,
-				0,
-				"control/linux64/Control.so"
-			),
+			Control(),
 			doCmd(false)
 		{
 			for (int i = 0; i < 2; i++)
 				T[i] = err[i] = ierr[i] = 0.0;
 		}
 		double time_event_func(const double* q) {
-			double tSup = FMI<IO_Type>::time_event_func(q);
+			double tSup = Control::time_event_func(q);
 			if (doCmd) return 0.0;
 			else return tSup;
 		}
 		void internal_event(double* q, const bool* state_event) {
-			FMI<IO_Type>::internal_event(q,state_event);
+			Control::internal_event(q,state_event);
 			doCmd = false;
 		}
 		void external_event(double* q, double e,
 			const adevs::Bag<IO_Type>& xb) {
-			FMI<IO_Type>::external_event(q,e,xb);
+			Control::external_event(q,e,xb);
 			process_input_data(e,xb);
-			FMI<IO_Type>::external_event(q,e,xb);
+			Control::external_event(q,e,xb);
 		}
 		void confluent_event(double *q, const bool* state_event,
 			const adevs::Bag<IO_Type>& xb) {
 			double h = time_event_func(q);
-			FMI<IO_Type>::confluent_event(q,state_event,xb);
+			Control::confluent_event(q,state_event,xb);
 			process_input_data(h,xb);
-			FMI<IO_Type>::confluent_event(q,state_event,xb);
+			Control::confluent_event(q,state_event,xb);
 		}
 		void output_func(const double *q, const bool* state_event,
            adevs::Bag<IO_Type>& yb) {
-			FMI<IO_Type>::output_func(q,state_event,yb);
+			Control::output_func(q,state_event,yb);
 			CommandSig* sig = new CommandSig(T[0],T[1]);
 			IO_Type msg;
 			msg.port = command;
@@ -103,11 +97,6 @@ class ControlExt:
 			for (; iter != g.end(); iter++)
 				delete (*iter).value;
 		}
-
-		double get_qd1() { return get_real(0); }
-		double get_qd2() { return get_real(1); }
-		double get_xd() { return get_real(2); }
-		double get_zd() { return get_real(3); }
 
 	private:
 		bool doCmd;

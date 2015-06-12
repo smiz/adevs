@@ -1,3 +1,6 @@
+# Clean up stale files
+rm -f a.out
+rm -rf binaries
 # Build the FMU 
 omc sim_hello.mos
 # Cleanup the junk produced by the omc compiler

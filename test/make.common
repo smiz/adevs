@@ -3,7 +3,7 @@ UNAME := $(shell uname -s)
 COMPARE = tclsh $(PREFIX)/util/compare
 # GNU gcc compiler
 OPENMP = -fopenmp
-CFLAGS = $(OPENMP) -g -pedantic -Wall -I$(PREFIX)/include
+CFLAGS = $(OPENMP) -g -Wall -I$(PREFIX)/include
 CC = g++
 ifeq ($(UNAME),CYGWIN_NT-6.1)
 TEST_EXEC=./a
