@@ -33,6 +33,10 @@ class ScalarVariable:
 				attributes["type"] = "boolean"
 			elif "<Integer" in line:
 				attributes["type"] = "int"
+			elif "<String" in line:
+				attributes["type"] = "std::string"
+			elif not "Scalar" in line:
+				attributes["type"] = line.split("<")[1].split(" ")[0] # This will capture any odd types of variables that are not currently in the FMI standard
 		return attributes
 	def getXMLString(self):
 		return self.xml_input
@@ -41,8 +45,15 @@ class ScalarVariable:
 		rs = "" # Return string
 		if self.attributes['type']=="double":
 			rs += "\t\t{0} get_{1}() {{ return get_real({2}); }}\n\t\tvoid set_{1}({0} val) {{ set_real({2},val); }}\n".format(self.attributes['type'], self.attributes['name'], self.attributes['index'])
-		else:
+		elif self.attributes['type']=="boolean":
 			rs += "\t\t{0} get_{1}() {{ return get_bool({2}); }}\n\t\tvoid set_{1}({0} val) {{ set_bool({2},val); }}\n".format(self.attributes['type'], self.attributes['name'], self.attributes['index'])
+		elif self.attributes['type']=="int":
+			rs += "\t\t{0} get_{1}() {{ return get_int({2}); }}\n\t\tvoid set_{1}({0} val) {{ set_int({2},val); }}\n".format(self.attributes['type'], self.attributes['name'], self.attributes['index'])
+		elif self.attributes['type']=="std::string":
+			rs += "\t\t{0} get_{1}() {{ return get_string({2}); }}\n\t\tvoid set_{1}({0} val) {{ set_string({2},val); }}\n".format(self.attributes['type'], self.attributes['name'], self.attributes['index'])
+		else:
+			rs += "\t\t{0} get_{1}() {{ return get_{0}({2}); }}\n\t\tvoid set_{1}({0} val) {{ set_{0}({2},val); }}\n".format(self.attributes['type'], self.attributes['name'], self.attributes['index'])
+			print "WARNING. UNRECOGNIZED TYPE: {0}. Parsing as: \n{1}".format(self.attributes['type'], rs)
 		return rs
 
 	def isDer(self): # Returns whether the variable is a derivative or not.
@@ -78,19 +89,28 @@ def interpret(line_arr): # Go through file and pick out important information.
 	legend["indexNum"] = index_num
 	return legend, variables
 
-def compile_str(legend, variables):
-	rs = "" # Return string variable.
-	rs += '#ifndef {0}_h_\n#define {0}_h_\n#include "adevs.h"\n#include "adevs_fmi.h"\n\n'.format(legend['modelName']) # Format header default information
-	rs += 'class {0}:\n\tpublic adevs::FMI<{1}>\n{{\n\tpublic:\n\t\t{0}():\n'.format(legend['modelName'], legend['convType']) # Format first part of class
-	rs += '\t\t\tadevs::FMI<{1}>\n\t\t\t(\n\t\t\t\t"{0}",\n\t\t\t\t"{2}",\n\t\t\t\t{3},\n\t\t\t\t{4},\n\t\t\t\t"{5}"\n\t\t\t)\n\t\t{{\n\t\t}}\n'.format(legend['modelName'], legend['convType'], legend['guid'], legend['derNum'], legend['indicatorNum'], legend['sharedLocation'])  # Format FMI constructor call
-	for var in variables:
-		rs += var.getCPPString()
-	rs += '};\n\n#endif'
-
+def compile_str(legend, variables, using_str):
+	if using_str:
+		rs = "" # Return string variable.
+		rs += '#ifndef {0}_h_\n#define {0}_h_\n#include "adevs.h"\n#include "adevs_fmi.h"\n#include <string>\n\n'.format(legend['modelName']) # Format header default information
+		rs += 'class {0}:\n\tpublic adevs::FMI<{1}>\n{{\n\tpublic:\n\t\t{0}():\n'.format(legend['modelName'], legend['convType']) # Format first part of class
+		rs += '\t\t\tadevs::FMI<{1}>\n\t\t\t(\n\t\t\t\t"{0}",\n\t\t\t\t"{2}",\n\t\t\t\t{3},\n\t\t\t\t{4},\n\t\t\t\t"{5}"\n\t\t\t)\n\t\t{{\n\t\t}}\n'.format(legend['modelName'], legend['convType'], legend['guid'], legend['derNum'], legend['indicatorNum'], legend['sharedLocation'])  # Format FMI constructor call
+		for var in variables:
+			rs += var.getCPPString()
+		rs += '};\n\n#endif'
+	else:
+		rs = "" # Return string variable.
+		rs += '#ifndef {0}_h_\n#define {0}_h_\n#include "adevs.h"\n#include "adevs_fmi.h"\n\n'.format(legend['modelName']) # Format header default information
+		rs += 'class {0}:\n\tpublic adevs::FMI<{1}>\n{{\n\tpublic:\n\t\t{0}():\n'.format(legend['modelName'], legend['convType']) # Format first part of class
+		rs += '\t\t\tadevs::FMI<{1}>\n\t\t\t(\n\t\t\t\t"{0}",\n\t\t\t\t"{2}",\n\t\t\t\t{3},\n\t\t\t\t{4},\n\t\t\t\t"{5}"\n\t\t\t)\n\t\t{{\n\t\t}}\n'.format(legend['modelName'], legend['convType'], legend['guid'], legend['derNum'], legend['indicatorNum'], legend['sharedLocation'])  # Format FMI constructor call
+		for var in variables:
+			rs += var.getCPPString()
+		rs += '};\n\n#endif'
 	return rs
 if __name__=="__main__":
 	args = sys.argv
 	output_file = ""
+	USING_STRING = False
 	for i, arg in enumerate(args):
 		if arg == "-r":
 			filename = args[i+1]
@@ -111,6 +131,8 @@ if __name__=="__main__":
 	for var in variables:
 		if var.isDer():
 			der_num += 1
+		if var.attributes['type']=="std::string":
+			USING_STRING = True
 	legend['derNum'] = der_num
 	legend['convType'] = conv_type
 	legend['sharedLocation'] = file_loc # This is the location of the shared object file produced by omc
@@ -120,4 +142,4 @@ if __name__=="__main__":
 	else:
 		output_file = output_file + ".h"
 
-	write_file(output_file, compile_str(legend, variables))
+	write_file(output_file, compile_str(legend, variables, USING_STRING))
