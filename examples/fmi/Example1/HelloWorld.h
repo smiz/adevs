@@ -11,7 +11,7 @@ class HelloWorld:
 		// Constructor loads the FMI
 		HelloWorld():
 			// Call FMI constructor
-			FMI<double>
+			adevs::FMI<double>
 			(
 			 	"HelloWorld", // model name from modelDescription.xml
 		 		"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}", // GUID from modelDescription.xml
