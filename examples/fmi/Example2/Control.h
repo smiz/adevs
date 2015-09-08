@@ -11,7 +11,7 @@ class Control:
 		// Constructor loads the FMI
 		Control():
 			// Call FMI constructor
-			FMI<IO_Type>
+			adevs::FMI<IO_Type>
 			(
 			 	"Control", // model name from modelDescription.xml
 		 		"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}", // GUID from modelDescription.xml
