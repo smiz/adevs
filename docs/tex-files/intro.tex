@@ -27,9 +27,7 @@ typedef adevs::PortValue<Customer*> IO_Type;
 
 Customers are served (processed) by the clerk, which is our first example of an atomic model. The clerk has a line of people waiting at her counter. When a customer is ready to make a purchase, that customer enters the end of the line. If the clerk is not busy and the line is not empty, then the clerk rings up the bill of the customer that is first in line. That customer then leaves the line and the clerk processes the next customer or, if the line is empty, the clerk sits idly at her counter.
 
-The DEVS model of the clerk is as follows. First, we specify the type of object that the model consumes and produces. For this model, we use \classname{PortValue} objects. The \classname{PortValue} class describes a port-value pair. In this case, \classname{Customer} objects are the value and they appear at the clerk's ``arrive" port. Customers depart via the clerk's ``depart" port.
-
-Second, we specify the state variables that describe the clerk. In this case, the state comprises the customers that are in line. We use a \classname{list} from the C++ Standard Template Library for this purpose.
+The DEVS model of the clerk is as follows. First, we specify the type of object that the model consumes and produces. For this model, we use \classname{PortValue} objects. The \classname{PortValue} class describes a port-value pair. In this case, \classname{Customer} objects are the value and they appear at the clerk's ``arrive" port. Customers depart via the clerk's ``depart" port. Second, we specify the state variables that describe the clerk. In this case, the state comprises the customers that are in line. We use a \classname{list} from the C++ Standard Template Library for this purpose.
 
 To complete the model of the clerk, we implement the four methods that model her behavior. First, lets construct the header file for the clerk. Then we can fill in the details.
 \begin{verbatim}
