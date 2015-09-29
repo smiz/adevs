@@ -3,13 +3,14 @@
 <HEAD>
 	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
 	<TITLE>Adevs user manual and API documentation</TITLE>
-	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.2  (Unix)">
+	<META NAME="GENERATOR" CONTENT="LibreOffice 4.0.4.2 (Linux)">
 	<META NAME="AUTHOR" CONTENT="Rotten ">
 	<META NAME="CREATED" CONTENT="20020609;9595500">
-	<META NAME="CHANGEDBY" CONTENT="rotten ">
-	<META NAME="CHANGED" CONTENT="20110114;6183700">
+	<META NAME="CHANGEDBY" CONTENT="James Nutaro">
+	<META NAME="CHANGED" CONTENT="20150929;16283100">
 	<META NAME="CLASSIFICATION" CONTENT="discrete event simulation">
 	<META NAME="KEYWORDS" CONTENT="DEVS, discrete event simulation">
+	<META NAME="CHANGEDBY" CONTENT="rotten ">
 	<META NAME="CHANGEDBY" CONTENT="Jim">
 </HEAD>
 <BODY LANG="en-US" DIR="LTR">
@@ -28,8 +29,8 @@ source code for examples included in this manual can be found
 examples directory. </SPAN>
 </P>
 <P STYLE="margin-bottom: 0in; text-decoration: none">This manual has
-two parts: the API documentation and the user manual. The user manual is available as an HTML document or as a
-PDF file. 
+two parts: the API documentation and the user manual. The user manual
+is available as an HTML document or as a PDF file. 
 </P>
 <UL>
 	<LI><P STYLE="margin-bottom: 0in"><A HREF="api/hierarchy.html"><SPAN STYLE="text-decoration: none">C++
@@ -43,9 +44,9 @@ PDF file.
 	<LI><P STYLE="margin-bottom: 0in"><A HREF="manual.pdf"><SPAN STYLE="text-decoration: none">PDF
 	formatted manual</SPAN></A></P>
 </UL>
-<P STYLE="margin-bottom: 0in"><SPAN STYLE="text-decoration: none">For
-users who want more information on the concepts underlying this
-simulation software, the bibliography below is a good place to start:</SPAN></P>
+<P STYLE="margin-bottom: 0in; text-decoration: none">For users who
+want more information on the concepts underlying this simulation
+software, the bibliography below is a good place to start:</P>
 <UL>
 	<LI><P STYLE="margin-bottom: 0in"><SPAN STYLE="text-decoration: none">A.
 	M. Uhrmacher. Dynamic structures in modeling and simulation: a
@@ -58,22 +59,34 @@ simulation software, the bibliography below is a good place to start:</SPAN></P>
 	in this paper.</SPAN></P>
 	<LI><P STYLE="margin-bottom: 0in"><SPAN STYLE="text-decoration: none">Bernard
 	P. Zeigler, Tag Gon Kim and Herbert Praehofer. </SPAN><SPAN STYLE="text-decoration: none"><I>Theory
-	of Modeling and Simulation, Second Edition.</I></SPAN><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal">
-	Academic Press. 2000. The publisher's website is
+	of Modeling and Simulation, Second Edition.</I></SPAN><SPAN STYLE="font-variant: normal"><SPAN STYLE="text-decoration: none">
+	</SPAN></SPAN><SPAN STYLE="font-variant: normal"><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal">Academic
+	Press. 2000. The publisher's website is
 	<A HREF="http://www.elsevierdirect.com/product.jsp?isbn=9780127784557">http://www.elsevierdirect.com/product.jsp?isbn=9780127784557</A>,
 	and this book is available from most on-line booksellers. The
 	Discrete Event System Specification (DEVS) is developed in this book
-	from its roots in abstract systems theory.</SPAN></SPAN></P>
-	<LI><P STYLE="margin-bottom: 0in"><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal">James
-	J. Nutaro. </SPAN></SPAN><SPAN STYLE="text-decoration: none"><I>Building
+	from its roots in abstract systems theory.</SPAN></SPAN></SPAN></P>
+	<LI><P STYLE="margin-bottom: 0in"><SPAN STYLE="font-variant: normal"><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal">James
+	J. Nutaro. </SPAN></SPAN></SPAN><SPAN STYLE="text-decoration: none"><I>Building
 	Software for Simulation: Theory and Algorithms, with Applications in
-	C++.</I></SPAN><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal">
-	Wiley. 2010. The publisher's website is
+	C++.</I></SPAN><SPAN STYLE="font-variant: normal"><SPAN STYLE="text-decoration: none">
+	</SPAN></SPAN><SPAN STYLE="font-variant: normal"><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal">Wiley.
+	2010. The publisher's website is
 	<A HREF="http://www.wiley.com/WileyCDA/WileyTitle/productCd-0470414693.html">http://www.wiley.com/WileyCDA/WileyTitle/productCd-0470414693.html</A>,
 	and this book is also available from most on-line booksellers. This
 	book presents the Discrete Event Systems Specification along side
-	code for the (slightly abridged) </SPAN></SPAN><SPAN STYLE="text-decoration: none"><I>adevs</I></SPAN><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal">
-	simulator and examples of its use.  </SPAN></SPAN>
+	code for the (slightly abridged) </SPAN></SPAN></SPAN><SPAN STYLE="text-decoration: none"><I>adevs</I></SPAN><SPAN STYLE="font-variant: normal"><SPAN STYLE="text-decoration: none">
+	</SPAN></SPAN><SPAN STYLE="font-variant: normal"><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal">simulator
+	and examples of its use. </SPAN></SPAN></SPAN>
+	</P>
+	<LI><P STYLE="margin-bottom: 0in"><SPAN STYLE="font-variant: normal"><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal">François
+	E. Cellier and Ernesto Kofman. </SPAN></SPAN></SPAN><SPAN STYLE="font-variant: normal"><SPAN STYLE="text-decoration: none"><I>Continuous
+	System Simulation.</I></SPAN></SPAN><SPAN STYLE="font-variant: normal"><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal">
+	Springer. 2006. The publisher's website is
+	<A HREF="http://www.springer.com/us/book/9780387261027">http://www.springer.com/us/book/9780387261027</A>.
+	The numerical methods used in the continuous system solvers and the
+	discontinuity locking approach that is used for hybrid models are
+	described here. </SPAN></SPAN></SPAN>
 	</P>
 </UL>
 <P>Question and comments about this software can be sent to its
