@@ -47,6 +47,19 @@ the OpenModelica compiler from source code is located in the util
 directory. The fmi test cases are located in test/fmi, and you can
 execute these by going to that directory and running 'make all'.
 
+---- Useful scripts ----
+
+xml2cpp.py
+This script will convert an FMI model description file to a C++ class
+that imports the FMI described into an adevs simulation by using the
+adevs::FMI class. Executing the script will display rudimentary information
+about command line arguments.
+
+build-omc.sh
+This bash shell script will download and build the OpenModelica compiler,
+which can be used to translate Modelica models into FMI modules. These FMI
+modules can then be loaded into your adevs simulation.
+
 ---- Testing -----
 There are four sets of test cases that can be run from the
 directory 'test'. The first set are for the C++ library without

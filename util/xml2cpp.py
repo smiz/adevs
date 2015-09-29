@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import sys
 import re
 
@@ -107,10 +108,20 @@ def compile_str(legend, variables, using_str):
 			rs += var.getCPPString()
 		rs += '};\n\n#endif'
 	return rs
+
+def print_help():
+			print "This program converts .xml files to .h files under the FMI standard found at www.fmi-standard.org"
+			print "Example: 'xml2cpp -r target_xml -type type -f shared_object_file -o output_name'"
+			print "-h will open up this screen"
+			print "-o is optional"
+
 if __name__=="__main__":
 	args = sys.argv
 	output_file = ""
 	USING_STRING = False
+	if len(args) == 1:
+		print_help()
+		sys.exit(0)
 	for i, arg in enumerate(args):
 		if arg == "-r":
 			filename = args[i+1]
@@ -121,10 +132,7 @@ if __name__=="__main__":
 		elif arg == "-o":
 			output_file = args[i+1]
 		elif arg == "-h":
-			print "This program converts .xml files to .h files under the FMI standard found at www.fmi-standard.org"
-			print "Example: 'xml2cpp -r target_xml -type type -f shared_object_file -o output_name'"
-			print "-h will open up this screen"
-			print "-o is optional"
+			print_help()
 			sys.exit(0)
 	legend, variables = interpret(read_file(filename))
 	der_num = 0
