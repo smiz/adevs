@@ -9,7 +9,7 @@ public class SimulationException extends Exception
 	/**
 	 * Create an exception attributed to a specific model.
 	 * @param msg Description of the error
-	 * @src The model that caused the problem
+	 * @param src The model that caused the problem
 	 */
 	public SimulationException(String msg, Devs src)
 	{
