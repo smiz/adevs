@@ -188,11 +188,11 @@ Figure \ref{fig:cherry_bomb_trajectory} shows the cherry bomb's trajectory from 
 
 \section{Modeling hybrid systems with the Functional Mockup Interface}
 \label{sect:fmi}
-The Functional Mockup Interface (FMI) is a standard API for encapsulating piecewise continuous models. The intent of this standard is to allow model developers to exchange their models in a way that is amenable to accurate simulation. The FMI interface specification can be found at \url{http://www.fmistandard.org}. The practical advantage of this standard for modelers using adevs is that all major Modelica compilers can export their models in this form, and these can be wrapped in an ode\_system object.
+The Functional Mockup Interface (FMI) is a standard API for encapsulating piecewise continuous models. The intent of this standard is to allow model developers to exchange their models in a way that is amenable to accurate simulation. The FMI interface specification can be found at \url{http://www.fmi-standard.org}. The practical advantage of this standard for modelers using adevs is that all major Modelica compilers can export their models in this form, and these can be wrapped in an ode\_system object.
 
 You will need three things to use this capability:
 \begin{enumerate}
-\item The FMI header files, which can be downloaded from the FMI website at \url{http://www.fmistandard.org}.
+\item The FMI header files, which can be downloaded from the FMI website \url{http://www.fmi-standard.org}.
 \item A Modelica compiler or other continuous system modeling tool that will export models in the FMI format.
 \end{enumerate}
 It is also helpful to have a passing familiarity with the FMI markup language for describing a model. Documentation for this markup language can be found in the FMI standard.
