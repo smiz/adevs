@@ -108,7 +108,11 @@ class crand: public random_seq
 		/// Get the next double uniformly distributed in [0, 1]
 		double next_dbl()
 		{
+			#ifdef _WIN32
+			return ((double)next_long()/(double)UINT_MAX);
+			#else
 			return ((double)next_long()/(double)RAND_MAX);
+			#endif
 		}
 		/// Get the next unsigned long
 		unsigned long next_long();
