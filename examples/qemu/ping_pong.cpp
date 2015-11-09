@@ -54,23 +54,27 @@ class CommChannel:
 		CommChannel(double delay):
 			Atomic<IO_Type>(),
 			delay(delay),
-			ttg(delay)
+			ttg(delay),
+			t(0.0)
 		{
 		}
 		void delta_int()
 		{
+			t += ta();
 			ttg = delay;
 			q.pop_front();
 		}
 		void delta_ext(double e, const Bag<IO_Type>& xb)
 		{
+			t += e;
 			if (!q.empty())
 				ttg -= e;
 			for (auto x: xb)
 			{
+				printf("@ t = %f xmit packet contents:\n",t);
 				for (int i = 0; i < x->size; i++)
 					printf("%x ",x->buf[i]);
-				printf("\n\n");
+				printf("\n");
 				q.push_back(new computer_io_type(*x));
 			}
 		}
@@ -104,7 +108,7 @@ class CommChannel:
 
 	private:
 		const double delay;
-		double ttg;
+		double ttg, t;
 		std::list<computer_io_type*> q;
 };
 

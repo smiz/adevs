@@ -241,6 +241,9 @@ void QemuComputer<X>::create_x86(
 	args.push_back("-m");
 	sprintf(arg_buf,"%d",mb_ram);
 	args.push_back(arg_buf);
+	// No monitor
+	args.push_back("-monitor");
+	args.push_back("none");
 	// Simulated computer will report virtual time and not attempt to track
 	// the real system clock
 	args.push_back("-rtc");
