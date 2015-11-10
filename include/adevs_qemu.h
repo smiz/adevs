@@ -173,7 +173,11 @@ template <typename X>
 QemuComputer<X>::~QemuComputer()
 {
 	if (thread_data != NULL)
+	{
+		if (mode == THREAD_RUNNING)
+			pthread_join(qemu_thread,NULL);
 		shutdown_qemu(thread_data);
+	}
 }
 
 template <typename X>
