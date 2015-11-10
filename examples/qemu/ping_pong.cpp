@@ -122,7 +122,7 @@ class x86:
 {
 	public:
 		x86(std::string disk_img):
-			QemuComputer<IO_Type>(1E-3),
+			QemuComputer<IO_Type>(1E-4),
 			sent(0),
 			recvd(0),
 			t(0.0),
@@ -159,6 +159,7 @@ class x86:
 		}
 		void output_func(Bag<IO_Type>& xb)
 		{
+			QemuComputer<IO_Type>::output_func(xb);
 			// Send packets that have been produced by the card
 			int num_bytes = 0;
 			while ((num_bytes = nic->num_bytes_to_read()) > 0)

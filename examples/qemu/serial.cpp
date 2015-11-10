@@ -139,6 +139,7 @@ class x86:
 		}
 		void output_func(Bag<IO_Type>& xb)
 		{
+			QemuComputer<IO_Type>::output_func(xb);
 			// Send data produced by the serial port
 			int num_bytes = 0;
 			while ((num_bytes = serial_port->num_bytes_to_read()) > 0)
@@ -183,7 +184,11 @@ int main()
 	model->couple(computer,echo);
 	Simulator<IO_Type>* sim = new Simulator<IO_Type>(model);
 	while (sim->nextEventTime() < adevs_inf<double>())
+	{
 		sim->execNextEvent();
+		if (computer->get_timing_error() != 0.0)
+			cout << computer->get_timing_error() << endl;
+	}
 	delete sim;
 	delete model;
 	return 0;

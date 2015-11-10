@@ -135,6 +135,7 @@ class QemuComputer:
 		void delta_ext(double e, const Bag<X>& xb);
 		void delta_conf(const Bag<X>& xb);
 		double ta();
+		void output_func(Bag<X>& yb);
 		// Get the seconds that qemu was ahead (> 0) or behind (< 0) the simulation
 		// at the most recent synchronization point
 		double get_timing_error() const { return qemu_time-sim_time; }
@@ -151,7 +152,7 @@ class QemuComputer:
 		double ttg, qemu_time, sim_time;
 		void inject_input(void* buf, unsigned size);
 		pthread_t qemu_thread;
-		bool thread_running;
+		enum { CATCHUP, THREAD_RUNNING, IDLE } mode;
 
 		void internal_and_confluent();
 };
@@ -164,7 +165,7 @@ QemuComputer<X>::QemuComputer(double quantum_seconds):
 	ttg(0.0),
 	qemu_time(0.0),
 	sim_time(0.0),
-	thread_running(false)
+	mode(IDLE)
 {
 }
 
@@ -176,30 +177,44 @@ QemuComputer<X>::~QemuComputer()
 }
 
 template <typename X>
+void QemuComputer<X>::output_func(Bag<X>& yb)
+{
+	// Wait for the quantum to complete before looking
+	// for output
+	if (mode == THREAD_RUNNING)
+	{
+		mode = IDLE;
+		pthread_join(qemu_thread,NULL);
+		// Get the time elapsed in the qemu thread
+		qemu_time += get_qemu_elapsed(thread_data)/1E6;
+	}
+}
+
+template <typename X>
 void QemuComputer<X>::internal_and_confluent()
 {
 	sim_time += ttg;
-	// If the machine is still running, then wait for it to complete
-	if (thread_running)
+	// If qemu is ahead of us then advance
+	// the clock without running qemu. A 
+	// simple test of qemu_time > sim_time
+	// can become stuck floating point error
+	// and a small ttg combine such that
+	// sim_time+ttg = sim_time.
+	if (mode != CATCHUP && qemu_time > sim_time)
 	{
-		pthread_join(qemu_thread,NULL);
-		qemu_time += get_qemu_elapsed(thread_data)/1E6;
+		mode = CATCHUP;
+		ttg = qemu_time - sim_time;
 	}
-	// If we have passed the quantum, then pause for the remainder
-	// before restarting the computer
-	if (thread_running && (get_qemu_elapsed(thread_data)/1E6 > quantum))
-	{
-		thread_running = false;
-		ttg = get_qemu_elapsed(thread_data)-quantum;
-	}
-	// Otherwise run the computer for another quantum if it is still alive
+	// Run the computer for another quantum if it is still alive
 	else if (qemu_is_alive(thread_data))
 	{
-		thread_running = true;
+		assert(mode != THREAD_RUNNING);
+		mode = THREAD_RUNNING;
 		ttg = quantum;
 		set_qemu_elapsed(thread_data,ttg*1E6);
 		pthread_create(&qemu_thread,NULL,qemu_thread_func,(void*)thread_data);
 	}
+	else mode = IDLE;
 }
 
 template <typename X>
