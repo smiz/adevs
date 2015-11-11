@@ -20,12 +20,12 @@ adevs::QemuNic::QemuNic():
 	start();
 }
 
-void adevs::QemuNic::write_data(void* data, int size)
+void adevs::QemuNic::write(void* data, int size)
 {
 	int msg_size = htonl(size);
-	if (write(fd[0],(char*)&msg_size,sizeof(int)) != sizeof(int))
+	if (::write(fd[0],(char*)&msg_size,sizeof(int)) != sizeof(int))
 		throw exception(strerror(errno));
-	if (write(fd[0],(char*)data,size) != size)
+	if (::write(fd[0],(char*)data,size) != size)
 		throw exception(strerror(errno));
 }
 

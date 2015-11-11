@@ -11,9 +11,9 @@
 
 const int adevs::QemuSerialPort::buf_size = 256;
 
-void adevs::QemuSerialPort::write_data(void* data, int num_bytes)
+void adevs::QemuSerialPort::write(void* data, int num_bytes)
 {
-	if (write(fd,(char*)data,num_bytes) < num_bytes)
+	if (::write(fd,(char*)data,num_bytes) < num_bytes)
 		perror("Serial port write failed");
 }
 

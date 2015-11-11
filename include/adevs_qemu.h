@@ -34,7 +34,7 @@ class QemuDeviceModel
 		 * will block if the corresponding write to the underlying file
 		 * descriptor blocks.
 		 */
-		virtual void write_data(void* data, int num_bytes) = 0;
+		void write_bytes(void* data, int num_bytes);
 		/**
 		 * Arguments to be appended to the qemu argument vector when
 		 * qemu is forked to simulate the computer.
@@ -44,8 +44,10 @@ class QemuDeviceModel
 		QemuDeviceModel();
 		// Called by the reading thread to execute the read loop
 		void read_loop();
+		// Called by the writing thread to execute the write loop
+		void write_loop();
 	protected:
-		// Start the read thread running on the file descriptor and return.
+		// Start the read and writing thread running on the file descriptor and return.
 		void start();
 		class io_buffer
 		{
@@ -62,6 +64,7 @@ class QemuDeviceModel
 		};
 		// Read a message, return NULL on error
 		virtual io_buffer* read() = 0;
+		virtual void write(void* data, int num_bytes) = 0;
 	private:
 		/**
 		 * Reading is done continuously in its own thread to prevent
@@ -69,8 +72,19 @@ class QemuDeviceModel
 		 * descriptor.
 		 */
 		pthread_t read_thread;
-		pthread_mutex_t lock;
-		std::list<io_buffer*> q;
+		pthread_mutex_t read_lock;
+		std::list<io_buffer*> read_q;
+		/**
+		 * Writing is done in seperate thread to prevent use from blocking
+		 * if qemu is not draining the corresponding buffers while it is
+		 * stalled waiting for the simulator to catch up to its timeslice.
+		 */
+		pthread_t write_thread;
+		pthread_mutex_t write_lock;
+		pthread_cond_t write_cond;
+		std::list<io_buffer*> write_q;
+
+		bool running;
 };
 
 /**
@@ -83,10 +97,10 @@ class QemuNic:
 {
 	public:
 		QemuNic();
-		void write_data(void* data, int num_bytes);
 		void append_qemu_arguments(std::vector<std::string>& args);
 		~QemuNic();
 	protected:
+		void write(void* data, int num_bytes);
 		io_buffer* read();
 	private:
 		int fd[2];
@@ -102,10 +116,10 @@ class QemuSerialPort:
 {
 	public:
 		QemuSerialPort();
-		void write_data(void* data, int num_bytes);
 		void append_qemu_arguments(std::vector<std::string>& args);
 		~QemuSerialPort();
 	protected:
+		void write(void* data, int num_bytes);
 		io_buffer* read();
 	private:
 		char socket_file[100];

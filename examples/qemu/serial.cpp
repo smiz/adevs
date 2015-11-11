@@ -128,14 +128,14 @@ class x86:
 			// Receive incoming data at the serial port
 			QemuComputer<IO_Type>::delta_ext(e,xb);
 			for (auto x: xb)
-				serial_port->write_data(x->buf,x->size);
+				serial_port->write_bytes(x->buf,x->size);
 		}
 		void delta_conf(const Bag<IO_Type>& xb)
 		{
 			// Receive incoming data at the serial port
 			QemuComputer<IO_Type>::delta_conf(xb);
 			for (auto x: xb)
-				serial_port->write_data(x->buf,x->size);
+				serial_port->write_bytes(x->buf,x->size);
 		}
 		void output_func(Bag<IO_Type>& xb)
 		{
