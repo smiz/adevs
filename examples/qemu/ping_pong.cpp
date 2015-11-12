@@ -166,13 +166,8 @@ class x86:
 			{
 				char* buf = new char[num_bytes];
 				nic->read_bytes(buf);
-				// Long packets are DHCP requests and we just throw those out
-				if (num_bytes < 300)
-				{
-					xb.insert(new computer_io_type(buf,num_bytes));
-					sent++;
-				}
-				else delete [] buf;
+				xb.insert(new computer_io_type(buf,num_bytes));
+				sent++;
 			}
 		}
 		void gc_output(Bag<IO_Type>& gb)
@@ -212,6 +207,10 @@ int main()
 	//
 	// sudo poweroff
 	//
+	double min_time_err[2] = {DBL_MAX,DBL_MAX}, max_time_err[2] = {-DBL_MAX,-DBL_MAX}, avg_time_err[2] = {0.0,0.0};
+	int time_err_count[2] = {0,0};
+	double tstart = omp_get_wtime();
+	double tnow = 0.0;
 	x86* B = new x86("/home/nutarojj/Code/qemu/images/jill.img");
 	x86* A = new x86("/home/nutarojj/Code/qemu/images/jack.img");
 	SimpleDigraph<IO_Type>* model = new SimpleDigraph<IO_Type>();
@@ -226,13 +225,34 @@ int main()
 	model->couple(A_to_B,B);
 	model->couple(B,B_to_A);
 	model->couple(B_to_A,A);
-	// Run the simulation
+	// Run the simulation and collect speedup and timing error statistics
 	Simulator<IO_Type>* sim = new Simulator<IO_Type>(model);
 	while (sim->nextEventTime() < adevs_inf<double>())
 	{
+		tnow = sim->nextEventTime();
 		sim->execNextEvent();
+		double Aerr = A->get_qemu_time()-tnow;
+		double Berr = B->get_qemu_time()-tnow;
+		if (A->ta() < adevs_inf<double>())
+		{
+			time_err_count[0]++;
+			avg_time_err[0] += Aerr;
+			min_time_err[0] = ::min(min_time_err[0],Aerr);
+			max_time_err[0] = ::max(max_time_err[0],Aerr);
+		}
+		if (B->ta() < adevs_inf<double>())
+		{
+			time_err_count[1]++;
+			avg_time_err[1] += Berr;
+			min_time_err[1] = ::min(min_time_err[1],Berr);
+			max_time_err[1] = ::max(max_time_err[1],Berr);
+		}
 	}
 	delete sim;
 	delete model;
+	double tend = omp_get_wtime();
+	cout << "sim: " << tnow << " , real: " << (tend-tstart) << endl;
+	cout << "A: " << min_time_err[0] << " " << (avg_time_err[0]/(double)(time_err_count[0])) << " " << max_time_err[0] << endl;
+	cout << "B: " << min_time_err[1] << " " << (avg_time_err[1]/(double)(time_err_count[1])) << " " << max_time_err[1] << endl;
 	return 0;
 }

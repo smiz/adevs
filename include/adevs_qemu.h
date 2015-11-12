@@ -159,7 +159,7 @@ class QemuComputer:
 		// Get the seconds that qemu was ahead (> 0) or behind (< 0) the simulation
 		// at the most recent synchronization point
 		double get_timing_error() const { return qemu_time-sim_time; }
-		double get_current_virtual_time() const { return qemu_time; }
+		double get_qemu_time() const { return qemu_time; }
 		virtual ~QemuComputer();
 	protected:
 		void create_x86(
