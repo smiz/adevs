@@ -35,7 +35,9 @@ void adevs::QemuDeviceModel::write_loop()
 	{
 		pthread_mutex_lock(&write_lock);
 		while (write_q.empty() && running)
+		{
 			pthread_cond_wait(&write_cond,&write_lock);
+		}
 		if (!running) 
 		{
 			pthread_mutex_unlock(&write_lock);
@@ -51,8 +53,20 @@ void adevs::QemuDeviceModel::write_loop()
 
 void adevs::QemuDeviceModel::start()
 {
-	pthread_create(&read_thread,NULL,pthread_read_func,(void*)this);
-	pthread_create(&write_thread,NULL,pthread_write_func,(void*)this);
+	/**
+	 * These threads have high priority because getting data into and out of qemu
+	 * should happen as soon as possible to avoid I/O spanning a time step.
+	 */
+	for (int i = 0; i < 2; i++)
+	{
+		pthread_attr_init(&io_sched_attr[i]);
+		pthread_attr_setinheritsched(&io_sched_attr[i], PTHREAD_EXPLICIT_SCHED);
+		pthread_attr_setschedpolicy(&io_sched_attr[i],SCHED_OTHER);
+		fifo_param[i].sched_priority = sched_get_priority_max(SCHED_OTHER);
+		pthread_attr_setschedparam(&io_sched_attr[i],&fifo_param[i]);
+	}
+	pthread_create(&read_thread,&io_sched_attr[0],pthread_read_func,(void*)this);
+	pthread_create(&write_thread,&io_sched_attr[1],pthread_write_func,(void*)this);
 }
 
 adevs::QemuDeviceModel::QemuDeviceModel():
@@ -105,6 +119,8 @@ adevs::QemuDeviceModel::~QemuDeviceModel()
 	pthread_join(read_thread,NULL);
 	pthread_join(write_thread,NULL);
 	// Clean up
+	pthread_attr_destroy(&io_sched_attr[0]);
+	pthread_attr_destroy(&io_sched_attr[1]);
 	pthread_mutex_destroy(&read_lock);
 	pthread_mutex_destroy(&read_lock);
 	pthread_cond_destroy(&write_cond);

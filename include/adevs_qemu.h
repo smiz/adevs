@@ -84,6 +84,12 @@ class QemuDeviceModel
 		pthread_cond_t write_cond;
 		std::list<io_buffer*> write_q;
 
+		/**
+		 * Scheduling policies for the threads
+		 */
+		pthread_attr_t io_sched_attr[2];
+		struct sched_param fifo_param[2];
+
 		bool running;
 };
 
