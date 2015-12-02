@@ -1,7 +1,7 @@
 PREFIX=../../..
 include ../../make.common
 
-check: check1 check2 check3
+check: check1 check2 check3 check4
 
 check2:
 	$(CC) $(CFLAGS) test2.cpp $(LIBS)
@@ -27,6 +27,15 @@ check1:
 	mv c.dat c1.dat
 	mv g.dat g1.dat
 	$(TEST_EXEC) 20 20 1000 -par
+	diff g.dat g1.dat
+	diff c.dat c1.dat
+
+check4:
+	$(CC) $(CFLAGS) main.cpp $(LIBS)
+	$(TEST_EXEC) 1 1 1000 -recycle
+	mv c.dat c1.dat
+	mv g.dat g1.dat
+	$(TEST_EXEC) 1 1 1000 -par -recycle
 	diff g.dat g1.dat
 	diff c.dat c1.dat
 
