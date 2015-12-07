@@ -141,6 +141,7 @@ int get_qemu_elapsed(qemu_thread_func_t*);
 // Supplied time should be microseconds
 void set_qemu_elapsed(qemu_thread_func_t*,int);
 qemu_thread_func_t* launch_qemu(const char* exec_file, std::vector<std::string>& args);
+qemu_thread_func_t* launch_ucsim(const char* exec_file, std::vector<std::string>& args);
 void shutdown_qemu(qemu_thread_func_t*);
 bool qemu_is_alive(qemu_thread_func_t*);
 void* qemu_thread_func(void*);
@@ -166,6 +167,9 @@ class QemuComputer:
 				std::vector<std::string>& qemu_args,
 				std::string disk_img,
 				int mb_ram = 2048);
+		void create_8052(
+				std::vector<std::string>& ucsim_args,
+				std::string flash_img);
 	private:
 		const double quantum;
 		qemu_thread_func_t* thread_data;
@@ -297,6 +301,16 @@ void QemuComputer<X>::create_x86(
 	args.push_back(arg_buf);
 	// Start the machine
 	thread_data = launch_qemu("qemu-system-i386",args);
+	assert(qemu_is_alive(thread_data));
+}
+
+template <typename X>
+void QemuComputer<X>::create_8052(
+	std::vector<std::string>& args,
+	std::string flash_image)
+{
+	args.push_back(flash_image);
+	thread_data = launch_ucsim("s51",args);
 	assert(qemu_is_alive(thread_data));
 }
 
