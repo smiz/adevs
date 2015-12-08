@@ -25,11 +25,37 @@ adevs::qemu_thread_func_t* adevs::launch_qemu(const char* exec_file, std::vector
 	return q;
 }
 
-adevs::qemu_thread_func_t* adevs::launch_ucsim(const char* exec_file, std::vector<std::string>& args)
+class uCsimMachineWrapper:
+	public adevs::ComputerMemoryAccess
 {
+	public:
+		uCsimMachineWrapper(uCsim_Machine* machine):
+			adevs::ComputerMemoryAccess(),
+			machine(machine)
+		{
+		}
+		unsigned read_mem(unsigned addr)
+		{
+			return machine->read_mem(addr);
+		}
+		void write_mem(unsigned addr, unsigned data)
+		{
+			machine->write_mem(addr,data);
+		}
+		~uCsimMachineWrapper(){}
+	private:
+		uCsim_Machine* machine;
+};
+
+adevs::qemu_thread_func_t* adevs::launch_ucsim(
+	const char* exec_file, std::vector<std::string>& args, adevs::ComputerMemoryAccess** obj)
+{
+	uCsim_Machine* machine = new uCsim_Machine(exec_file,args);
 	adevs::qemu_thread_func_t* q = new adevs::qemu_thread_func_t();
 	q->elapsed = 0;
-	q->machine = new uCsim_Machine(exec_file,args);
+	q->machine = machine;
+	if (obj != NULL)
+		*obj = new uCsimMachineWrapper(machine);
 	return q;
 }
 

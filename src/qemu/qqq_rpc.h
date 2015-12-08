@@ -1,5 +1,6 @@
 #ifndef _QQQ_RPC_H_
 #define _QQQ_RPC_H_
+#include "adevs_qemu.h"
 #include <unistd.h>
 #include <exception>
 #include <string>
@@ -60,7 +61,8 @@ class QEMU_Machine:
  * This class encapsulates a uCsim Machine.
  */
 class uCsim_Machine:
-	public Basic_Machine
+	public Basic_Machine,
+	public adevs::ComputerMemoryAccess
 {
 	public:
 		/**
@@ -70,7 +72,7 @@ class uCsim_Machine:
 		uCsim_Machine(
 				const char* executable,
 				const std::vector<std::string>& arguments,
-				double khz = 11059.2E3,
+				double mega_hz = 11.059,
 				int cycles_per_instr = 12);
 		/**
 		 * Instruct the machine to execute for at most usec
@@ -89,12 +91,19 @@ class uCsim_Machine:
 		 */
 		virtual ~uCsim_Machine();
 
+		unsigned read_mem(unsigned addr);
+		void write_mem(unsigned addr, unsigned data);
+
 	private:
 		unsigned pid;
 		int read_pipe[2];
 		int write_pipe[2];
-		const double khz;
+		const double mega_hz;
 		const int cycles_per_instr;
+		pthread_mutex_t mtx;
+		char buf[1000];
+
+		void scan_to_prompt();
 };
 
 /**

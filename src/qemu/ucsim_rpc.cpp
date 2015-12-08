@@ -14,17 +14,20 @@
 #include <iostream>
 
 #define STOP_CHAR '#'
-#define STOP_COUNT 10
+#define STOP_COUNT 20
 
 uCsim_Machine::uCsim_Machine(
 	const char* executable,
 	const std::vector<std::string>& args,
-	double khz,
+	double mega_hz,
 	int cycles_per_instr):
 		Basic_Machine(),
-		khz(khz),
+		adevs::ComputerMemoryAccess(),
+		mega_hz(mega_hz),
 		cycles_per_instr(cycles_per_instr)
 {
+	pthread_mutex_init(&mtx,NULL);
+	pthread_mutex_lock(&mtx);
 	if (pipe(read_pipe) != 0)
 		throw qemu_exception(strerror(errno));
 	if (pipe(write_pipe) != 0)
@@ -52,9 +55,9 @@ uCsim_Machine::uCsim_Machine(
 		cargs[3] = new char[3];
 		strcpy(cargs[3],"-X");
 		cargs[4] = new char[1000];
-		sprintf(cargs[4],"%fk",khz);
+		sprintf(cargs[4],"%fM",mega_hz);
 		// End the line of arguments
-		cargs[args.size()+3] = NULL;
+		cargs[args.size()+5] = NULL;
 		// Redirect stdin and stdout
 		dup2(write_pipe[0],STDIN_FILENO);
 		dup2(read_pipe[1],STDOUT_FILENO);
@@ -71,6 +74,8 @@ uCsim_Machine::uCsim_Machine(
 	}
 	close(write_pipe[0]);
 	close(read_pipe[1]);
+	scan_to_prompt();
+	pthread_mutex_unlock(&mtx);
 }
 
 bool uCsim_Machine::is_alive()
@@ -80,33 +85,85 @@ bool uCsim_Machine::is_alive()
 
 int uCsim_Machine::run(int usecs)
 {
-	char command[100];
-	int instrs_per_usec = int((khz*1E3/double(cycles_per_instr))*1E-6)+1; 
-	char stop_code;
-	int stop_count = 0;
-	int bytes;
+	int instrs_per_usec = int(mega_hz/double(cycles_per_instr))+1; 
+	pthread_mutex_lock(&mtx);
 	// Tell the emulator to advance one step
-	sprintf(command,"step %d\n",(instrs_per_usec*usecs));
-	bytes = write(write_pipe[1],command,strlen(command));
-	assert(bytes > 0);
+/*	for (int i = 0; i < instrs_per_usec*usecs; i++)
+	{
+		if (write(write_pipe[1],"step\n",5) != 5)
+			perror("ucSim_Machine::run"); 
+		// Wait for the advance to finish
+		scan_to_prompt();
+	} */ 
+	sprintf(buf,"step %d\n",instrs_per_usec*usecs);
+	if (write(write_pipe[1],buf,strlen(buf)) <= 0)
+		perror("ucSim_Machine::run"); 
 	// Wait for the advance to finish
+	scan_to_prompt();
+	pthread_mutex_unlock(&mtx);
+	return usecs;
+}
+
+void uCsim_Machine::write_mem(unsigned addr, unsigned data)
+{
+	pthread_mutex_lock(&mtx);
+	sprintf(buf,"set memory sfr 0x%02x 0x%02x\n",(unsigned char)addr,(unsigned char)data);
+	if (write(write_pipe[1],buf,strlen(buf)) <= 0)
+		perror("ucSim_Machine::write_mem");
+	// Read to the prompt
+	scan_to_prompt();
+	pthread_mutex_unlock(&mtx);
+}
+
+unsigned uCsim_Machine::read_mem(unsigned addr)
+{
+	unsigned value;
+	pthread_mutex_lock(&mtx);
+	sprintf(buf,"get sfr 0x%02x\n",(unsigned char)addr);
+	if (write(write_pipe[1],buf,strlen(buf)) <= 0)
+		perror("ucSim_Machine::read_mem");
+	// Read "0x?? "
+	int pos = 0;
+	while (1)
+	{
+		if (read(read_pipe[0],&(buf[pos]),1) != 1)
+			perror("ucSim_Machine::read_mem");
+		if (buf[pos] == '\n')
+			break;
+		pos++;
+	}
+	buf[pos] = 0x00; 
+	sscanf(buf,"0x%x %x",&pos,&value);
+	// Read to the prompt
+	scan_to_prompt();
+	pthread_mutex_unlock(&mtx);
+	return value;
+}
+
+void uCsim_Machine::scan_to_prompt()
+{
+	int stop_count = 0;
 	while (stop_count < STOP_COUNT)
 	{
-		bytes = read(read_pipe[0],&stop_code,1);
-		assert(bytes > 0);
-		if (stop_code == STOP_CHAR)
-			stop_count++;
-		else stop_count = 0;
+		int got, to_read = STOP_COUNT-stop_count;
+		if ((got = read(read_pipe[0],buf,to_read)) <= 0)
+			perror("uCsim_Machine::scan_to_prompt");
+		for (int i = 0; i < got; i++)
+		{
+			if (buf[i] == STOP_CHAR)
+				stop_count++;
+			else stop_count = 0;
+		}
 	}
-	return usecs;
 }
 
 uCsim_Machine::~uCsim_Machine()
 {
-	int bytes = write(write_pipe[1],"quit\n",strlen("quit\n"));
-	assert(bytes > 0);
+	if (write(write_pipe[1],"quit\n",strlen("quit\n")) <= 0)
+		perror("uCsim_Machine::~uCsim_Machine");
 	close(write_pipe[1]);
 	close(read_pipe[0]);
 	// Wait for it to exit then cleanup
 	waitpid(pid,NULL,0);
+	pthread_mutex_destroy(&mtx);
 }

@@ -135,15 +135,35 @@ class QemuSerialPort:
 		static const int buf_size;
 };
 
+/**
+ * For emulators that support access to memory locations (right now,
+ * this is only for the ucsim based emulator), this is the interface
+ * used to read and write memory locations. Its primary purpose is to
+ * enable access to the i/o registers in small microprocessors.
+ */
+class ComputerMemoryAccess
+{
+	public:
+		virtual ~ComputerMemoryAccess(){}
+		virtual unsigned read_mem(unsigned addr) = 0;
+		virtual void write_mem(unsigned addr, unsigned dat) = 0;
+};
+
 struct qemu_thread_func_t;
 // Returns microseconds
 int get_qemu_elapsed(qemu_thread_func_t*);
 // Supplied time should be microseconds
 void set_qemu_elapsed(qemu_thread_func_t*,int);
+// Launch a thread that will fork the emulator and regulate its progress
 qemu_thread_func_t* launch_qemu(const char* exec_file, std::vector<std::string>& args);
-qemu_thread_func_t* launch_ucsim(const char* exec_file, std::vector<std::string>& args);
+// Launches the thread and returns a pointer to a ComputerMemoryAccess object, which should be freed by the
+// caller when done. Presently only supports access to special function registers.
+qemu_thread_func_t* launch_ucsim(const char* exec_file, std::vector<std::string>& args, ComputerMemoryAccess** obj);
+// Kill the emulator
 void shutdown_qemu(qemu_thread_func_t*);
+// Returns true if the emulator is still running, false if it has exitted
 bool qemu_is_alive(qemu_thread_func_t*);
+// Pthread prototype for the thread that controls the emulator
 void* qemu_thread_func(void*);
 
 template <typename X>
@@ -169,7 +189,8 @@ class QemuComputer:
 				int mb_ram = 2048);
 		void create_8052(
 				std::vector<std::string>& ucsim_args,
-				std::string flash_img);
+				std::string flash_img,
+				ComputerMemoryAccess** obj = NULL);
 	private:
 		const double quantum;
 		qemu_thread_func_t* thread_data;
@@ -307,10 +328,11 @@ void QemuComputer<X>::create_x86(
 template <typename X>
 void QemuComputer<X>::create_8052(
 	std::vector<std::string>& args,
-	std::string flash_image)
+	std::string flash_image,
+	ComputerMemoryAccess** obj)
 {
 	args.push_back(flash_image);
-	thread_data = launch_ucsim("s51",args);
+	thread_data = launch_ucsim("s51",args,obj);
 	assert(qemu_is_alive(thread_data));
 }
 

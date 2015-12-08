@@ -1,7 +1,8 @@
 #include <8052.h>
 
-int main()
+void main(void)
 {
-	while (1) P2 = 0x00;
+	P3 = 0x00;
+	while (1) P1 = P3;
 }
 
