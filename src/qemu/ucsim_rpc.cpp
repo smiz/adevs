@@ -87,14 +87,6 @@ int uCsim_Machine::run(int usecs)
 {
 	int instrs_per_usec = int(mega_hz/double(cycles_per_instr))+1; 
 	pthread_mutex_lock(&mtx);
-	// Tell the emulator to advance one step
-/*	for (int i = 0; i < instrs_per_usec*usecs; i++)
-	{
-		if (write(write_pipe[1],"step\n",5) != 5)
-			perror("ucSim_Machine::run"); 
-		// Wait for the advance to finish
-		scan_to_prompt();
-	} */ 
 	sprintf(buf,"step %d\n",instrs_per_usec*usecs);
 	if (write(write_pipe[1],buf,strlen(buf)) <= 0)
 		perror("ucSim_Machine::run"); 
