@@ -9,39 +9,71 @@
 
 const int adevs::uCsimSerialPort::buf_size = 256;
 
+void adevs::uCsimSerialPort::initialize_io_structures()
+{
+	if ((write_fd = open(write_file,O_WRONLY)) < 0)
+		perror("uCsimSerialPort::write");
+	if ((read_fd = open(read_file,O_RDONLY)) < 0)
+		perror("uCsimSerialPort::read");
+}
+
 void adevs::uCsimSerialPort::write(void* data, int num_bytes)
 {
 	if (::write(write_fd,(char*)data,num_bytes) < num_bytes)
-		perror("Serial port write failed");
+		perror("uCsimSerialPort write write failed");
 }
 
 adevs::QemuDeviceModel::io_buffer* adevs::uCsimSerialPort::read()
 {
-	int num_read = 0;
-	adevs::QemuDeviceModel::io_buffer* buf = new adevs::QemuDeviceModel::io_buffer(buf_size);
-	if ((num_read = ::read(read_fd,buf->get_data(),buf_size)) <= 0)
+	// The call to read will not return until ucsim closes its port,
+	// so we are forced to poll I/O and check occasionally for the
+	// exit condition
+	fd_set read_fds, write_fds, except_fds;
+	struct timeval timeout;
+	// Wait for input to become ready or until the time out; the first parameter is
+	// 1 more than the largest file descriptor in any of the sets
+	while (true)
 	{
-		delete buf;
-		return NULL;
+		FD_ZERO(&read_fds);
+		FD_ZERO(&write_fds);
+		FD_ZERO(&except_fds);
+		FD_SET(read_fd,&read_fds);
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 10000;
+		if (select(read_fd+1,&read_fds,&write_fds,&except_fds,&timeout) == 1)
+		{
+			int num_read = 0;
+			adevs::QemuDeviceModel::io_buffer* buf =
+				new adevs::QemuDeviceModel::io_buffer(buf_size);
+			if ((num_read = ::read(read_fd,buf->get_data(),buf_size)) <= 0)
+			{
+				delete buf;
+				return NULL;
+			}
+			buf->reset_size(num_read);
+			return buf;
+		}
+		if (exit_read)
+			return NULL;
 	}
-	buf->reset_size(num_read);
-	return buf;
 }
 
 adevs::uCsimSerialPort::uCsimSerialPort():
-	adevs::QemuDeviceModel()
+	adevs::QemuDeviceModel(),
+	read_fd(-1),
+	write_fd(-1),
+	exit_read(false)
+
 {
 	sprintf(write_file,"./write_fifo_%ld",(unsigned long)(this));
 	sprintf(read_file,"./read_fifo_%ld",(unsigned long)(this));
-	write_fd = mkfifo(write_file,0x666);
 	errno = 0;
-	if (write_fd < 0)
+	if (mkfifo(write_file,0660) < 0)
 	{
 		throw adevs::exception(strerror(errno));
 	}
 	errno = 0;
-	read_fd = mkfifo(read_file,0x666);
-	if (read_fd < 0)
+	if (mkfifo(read_file,0600) < 0)
 	{
 		throw adevs::exception(strerror(errno));
 	}
@@ -57,6 +89,7 @@ void adevs::uCsimSerialPort::append_qemu_arguments(std::vector<std::string>& arg
 
 adevs::uCsimSerialPort::~uCsimSerialPort()
 {
+	exit_read = true;
 	close(write_fd);
 	close(read_fd);
 	unlink(write_file);

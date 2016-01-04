@@ -6,14 +6,22 @@
 
 static void* pthread_write_func(void* data)
 {
+	while (!(static_cast<adevs::QemuDeviceModel*>(data)->_is_done_with_init));
 	static_cast<adevs::QemuDeviceModel*>(data)->write_loop();
 	return NULL;
 }
 
 static void* pthread_read_func(void* data)
 {
+	static_cast<adevs::QemuDeviceModel*>(data)->init_func();
 	static_cast<adevs::QemuDeviceModel*>(data)->read_loop();
 	return NULL;
+}
+
+void adevs::QemuDeviceModel::init_func()
+{
+	initialize_io_structures();
+	_is_done_with_init = true;
 }
 
 void adevs::QemuDeviceModel::read_loop()
@@ -53,6 +61,7 @@ void adevs::QemuDeviceModel::write_loop()
 
 void adevs::QemuDeviceModel::start()
 {
+	_is_done_with_init = false;
 	/**
 	 * These threads have high priority because getting data into and out of qemu
 	 * should happen as soon as possible to avoid I/O spanning a time step.

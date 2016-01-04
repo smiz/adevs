@@ -46,6 +46,8 @@ class QemuDeviceModel
 		void read_loop();
 		// Called by the writing thread to execute the write loop
 		void write_loop();
+		void init_func();
+		volatile bool _is_done_with_init;
 	protected:
 		// Start the read and writing thread running on the file descriptor and return.
 		void start();
@@ -64,7 +66,10 @@ class QemuDeviceModel
 		};
 		// Read a message, return NULL on error
 		virtual io_buffer* read() = 0;
+		// Write data to the device
 		virtual void write(void* data, int num_bytes) = 0;
+		// Perform any global initializations
+		virtual void initialize_io_structures() = 0;
 	private:
 		/**
 		 * Reading is done continuously in its own thread to prevent
@@ -108,6 +113,7 @@ class QemuNic:
 	protected:
 		void write(void* data, int num_bytes);
 		io_buffer* read();
+		void initialize_io_structures(){}
 	private:
 		int fd[2];
 };
@@ -127,11 +133,11 @@ class QemuSerialPort:
 	protected:
 		void write(void* data, int num_bytes);
 		io_buffer* read();
+		void initialize_io_structures();
 	private:
 		char socket_file[100];
 		struct sockaddr_un address;
 		int fd;
-		bool connected;
 		static const int buf_size;
 };
 
@@ -150,10 +156,12 @@ class uCsimSerialPort:
 	protected:
 		void write(void* data, int num_bytes);
 		io_buffer* read();
+		void initialize_io_structures();
 	private:
 		char read_file[100];
 		char write_file[100];
 		int read_fd, write_fd;
+		volatile bool exit_read;
 		static const int buf_size;
 };
 

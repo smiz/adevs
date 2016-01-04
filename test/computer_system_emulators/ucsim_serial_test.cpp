@@ -54,7 +54,7 @@ class SingleBoard_8052:
 {
 	public:
 		SingleBoard_8052(const char* flash_img):
-			QemuComputer<IO_Type>(1E-1)
+			QemuComputer<IO_Type>(1E-4)
 		{
 			vector<string> args;
 			serial_port = new uCsimSerialPort();
@@ -109,5 +109,5 @@ int main()
 		sim->execNextEvent();
 	}
 	delete sim;
-	delete computer;
+	delete model;
 }
