@@ -136,6 +136,28 @@ class QemuSerialPort:
 };
 
 /**
+ * A model of a serial port. This will connect to a
+ * ucsim serial port emulator that sends and receives data
+ * via a pair of pipes. 
+ */
+class uCsimSerialPort:
+	public QemuDeviceModel
+{
+	public:
+		uCsimSerialPort();
+		void append_qemu_arguments(std::vector<std::string>& args);
+		~uCsimSerialPort();
+	protected:
+		void write(void* data, int num_bytes);
+		io_buffer* read();
+	private:
+		char read_file[100];
+		char write_file[100];
+		int read_fd, write_fd;
+		static const int buf_size;
+};
+
+/**
  * For emulators that support access to memory locations (right now,
  * this is only for the ucsim based emulator), this is the interface
  * used to read and write memory locations. Its primary purpose is to

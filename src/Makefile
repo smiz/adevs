@@ -54,6 +54,7 @@ QEMU_OBJS = \
 	qemu/device_model.o \
 	qemu/nic.o \
 	qemu/serial_port.o \
+	qemu/ucsim_serial_port.o \
 	qemu/qqq_rpc.o \
 	qemu/ucsim_rpc.o
 
