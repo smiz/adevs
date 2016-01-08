@@ -1,5 +1,6 @@
 #include "adevs_qemu.h"
 #include "qqq_rpc.h"
+#include <omp.h>
 
 struct adevs::qemu_thread_func_t
 {
@@ -74,6 +75,9 @@ void* adevs::qemu_thread_func(void* opaque)
 {
 	adevs::qemu_thread_func_t* data = static_cast<adevs::qemu_thread_func_t*>(opaque);
 	// Run for as long as instructed
+	double tt = omp_get_wtime();
 	data->elapsed = data->machine->run(data->elapsed);
+	tt = omp_get_wtime()-tt;
+	printf("run: %f\n",tt);
 	return NULL;
 }

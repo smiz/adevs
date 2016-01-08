@@ -101,7 +101,10 @@ class uCsim_Machine:
 		const double mega_hz;
 		const int cycles_per_instr;
 		pthread_mutex_t mtx;
-		char buf[1000];
+		char run_buf[1000];
+		char write_buf[1000];
+		char read_buf[1000];
+		char scan_buf[1000];
 
 		void scan_to_prompt();
 };

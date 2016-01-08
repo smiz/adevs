@@ -86,9 +86,10 @@ bool uCsim_Machine::is_alive()
 int uCsim_Machine::run(int usecs)
 {
 	int instrs_per_usec = int(mega_hz/double(cycles_per_instr))+1; 
+	sprintf(run_buf,"step %d\n",instrs_per_usec*usecs);
+	int buf_len = strlen(run_buf);
 	pthread_mutex_lock(&mtx);
-	sprintf(buf,"step %d\n",instrs_per_usec*usecs);
-	if (write(write_pipe[1],buf,strlen(buf)) <= 0)
+	if (write(write_pipe[1],run_buf,buf_len) <= 0)
 		perror("ucSim_Machine::run"); 
 	// Wait for the advance to finish
 	scan_to_prompt();
@@ -98,9 +99,10 @@ int uCsim_Machine::run(int usecs)
 
 void uCsim_Machine::write_mem(unsigned addr, unsigned data)
 {
+	sprintf(write_buf,"set memory sfr 0x%02x 0x%02x\n",(unsigned char)addr,(unsigned char)data);
+	int buf_len = strlen(write_buf);
 	pthread_mutex_lock(&mtx);
-	sprintf(buf,"set memory sfr 0x%02x 0x%02x\n",(unsigned char)addr,(unsigned char)data);
-	if (write(write_pipe[1],buf,strlen(buf)) <= 0)
+	if (write(write_pipe[1],write_buf,buf_len) <= 0)
 		perror("ucSim_Machine::write_mem");
 	// Read to the prompt
 	scan_to_prompt();
@@ -109,26 +111,27 @@ void uCsim_Machine::write_mem(unsigned addr, unsigned data)
 
 unsigned uCsim_Machine::read_mem(unsigned addr)
 {
+	int pos = 0;
 	unsigned value;
+	sprintf(read_buf,"get sfr 0x%02x\n",(unsigned char)addr);
+	int buf_len = strlen(read_buf);
 	pthread_mutex_lock(&mtx);
-	sprintf(buf,"get sfr 0x%02x\n",(unsigned char)addr);
-	if (write(write_pipe[1],buf,strlen(buf)) <= 0)
+	if (write(write_pipe[1],read_buf,buf_len) <= 0)
 		perror("ucSim_Machine::read_mem");
 	// Read "0x?? "
-	int pos = 0;
 	while (1)
 	{
-		if (read(read_pipe[0],&(buf[pos]),1) != 1)
+		if (read(read_pipe[0],&(read_buf[pos]),1) != 1)
 			perror("ucSim_Machine::read_mem");
-		if (buf[pos] == '\n')
+		if (read_buf[pos] == '\n')
 			break;
 		pos++;
 	}
-	buf[pos] = 0x00; 
-	sscanf(buf,"0x%x %x",&pos,&value);
 	// Read to the prompt
 	scan_to_prompt();
 	pthread_mutex_unlock(&mtx);
+	read_buf[pos] = 0x00; 
+	sscanf(read_buf,"0x%x %x",&pos,&value);
 	return value;
 }
 
@@ -137,12 +140,12 @@ void uCsim_Machine::scan_to_prompt()
 	int stop_count = 0;
 	while (stop_count < STOP_COUNT)
 	{
-		int got, to_read = STOP_COUNT-stop_count;
-		if ((got = read(read_pipe[0],buf,to_read)) <= 0)
+		int got;
+		if ((got = read(read_pipe[0],scan_buf,100)) <= 0)
 			perror("uCsim_Machine::scan_to_prompt");
 		for (int i = 0; i < got; i++)
 		{
-			if (buf[i] == STOP_CHAR)
+			if (scan_buf[i] == STOP_CHAR)
 				stop_count++;
 			else stop_count = 0;
 		}

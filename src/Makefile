@@ -31,7 +31,7 @@ CFLAGS += ${OMP} -fPIC -Wall -I../include -I./ -I./qemu
 # Best bet for GNU compiler
 CXX = g++
 CC = gcc
-OPTFLAG = -g
+OPTFLAG = -O3 
 
 #
 # SHOULD NOT NEED TO EDIT BELOW THIS LINE

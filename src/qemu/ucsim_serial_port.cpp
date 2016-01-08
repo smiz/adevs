@@ -39,7 +39,7 @@ adevs::QemuDeviceModel::io_buffer* adevs::uCsimSerialPort::read()
 		FD_ZERO(&except_fds);
 		FD_SET(read_fd,&read_fds);
 		timeout.tv_sec = 0;
-		timeout.tv_usec = 10000;
+		timeout.tv_usec = 1000;
 		if (select(read_fd+1,&read_fds,&write_fds,&except_fds,&timeout) == 1)
 		{
 			int num_read = 0;
