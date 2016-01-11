@@ -14,7 +14,7 @@
 #include <iostream>
 
 #define STOP_CHAR '#'
-#define STOP_COUNT 20
+#define STOP_COUNT 5
 
 uCsim_Machine::uCsim_Machine(
 	const char* executable,
@@ -48,9 +48,10 @@ uCsim_Machine::uCsim_Machine(
 		cargs[1] = new char[3];
 		// Second and third arguments set the prompt
 		strcpy(cargs[1],"-p");
-		cargs[2] = new char[STOP_COUNT+1];
+		cargs[2] = new char[STOP_COUNT+2];
 		for (int i = 0; i < STOP_COUNT; i++) cargs[2][i] = STOP_CHAR;
-		cargs[2][STOP_COUNT] = 0x00;
+		cargs[2][STOP_COUNT] = '\n';
+		cargs[2][STOP_COUNT+1] = 0x00;
 		// Fourth and fifth are the frequency
 		cargs[3] = new char[3];
 		strcpy(cargs[3],"-X");
@@ -137,19 +138,27 @@ unsigned uCsim_Machine::read_mem(unsigned addr)
 
 void uCsim_Machine::scan_to_prompt()
 {
+	int total = 0, loops = 0;
+	double tt = omp_get_wtime();
 	int stop_count = 0;
-	while (stop_count < STOP_COUNT)
+	while (stop_count < STOP_COUNT+1)
 	{
+		loops++;
 		int got;
 		if ((got = read(read_pipe[0],scan_buf,100)) <= 0)
 			perror("uCsim_Machine::scan_to_prompt");
+		total += got;
 		for (int i = 0; i < got; i++)
 		{
-			if (scan_buf[i] == STOP_CHAR)
+			if (stop_count < STOP_COUNT && scan_buf[i] == STOP_CHAR)
 				stop_count++;
-			else stop_count = 0;
+			else if (stop_count == STOP_COUNT && scan_buf[i] == '\n')
+				stop_count++;
+			else
+				stop_count = 0;
 		}
 	}
+	tt = omp_get_wtime()-tt;
 }
 
 uCsim_Machine::~uCsim_Machine()

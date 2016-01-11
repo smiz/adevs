@@ -179,22 +179,30 @@ class ComputerMemoryAccess
 		virtual void write_mem(unsigned addr, unsigned dat) = 0;
 };
 
-struct qemu_thread_func_t;
-// Returns microseconds
-int get_qemu_elapsed(qemu_thread_func_t*);
-// Supplied time should be microseconds
-void set_qemu_elapsed(qemu_thread_func_t*,int);
-// Launch a thread that will fork the emulator and regulate its progress
-qemu_thread_func_t* launch_qemu(const char* exec_file, std::vector<std::string>& args);
-// Launches the thread and returns a pointer to a ComputerMemoryAccess object, which should be freed by the
-// caller when done. Presently only supports access to special function registers.
-qemu_thread_func_t* launch_ucsim(const char* exec_file, std::vector<std::string>& args, ComputerMemoryAccess** obj);
-// Kill the emulator
-void shutdown_qemu(qemu_thread_func_t*);
-// Returns true if the emulator is still running, false if it has exitted
-bool qemu_is_alive(qemu_thread_func_t*);
-// Pthread prototype for the thread that controls the emulator
-void* qemu_thread_func(void*);
+/**
+ * Class for managing the execution of an emulator via a thread that monitors
+ * the emulators progress.
+ */
+class CompSysEmulator
+{
+	public:
+		CompSysEmulator(){}
+		// Shutdown the emulator
+		virtual ~CompSysEmulator(){}
+		// Returns microseconds actual elapsed in the last call to run
+		virtual int elapsed() = 0;
+		// Launch a thread that will fork the emulator and regulate its progress
+		static CompSysEmulator* launch_qemu(const char* exec_file, std::vector<std::string>& args);
+		// Launches the thread and returns a pointer to a ComputerMemoryAccess object, which should be freed by the
+		// caller when done. Presently only supports access to special function registers.
+		static CompSysEmulator* launch_ucsim(const char* exec_file, std::vector<std::string>& args, ComputerMemoryAccess** obj);
+		// Returns true if the emulator is still running, false if it has exitted
+		virtual bool is_alive() = 0;
+		// Run the emulator through the set elapsed time
+		virtual void run(int us) = 0;
+		// Join on the last run call
+		virtual void join() = 0;
+};
 
 template <typename X>
 class QemuComputer:
@@ -223,10 +231,9 @@ class QemuComputer:
 				ComputerMemoryAccess** obj = NULL);
 	private:
 		const double quantum;
-		qemu_thread_func_t* thread_data;
+		CompSysEmulator* emulator; 
 		double ttg, qemu_time, sim_time;
 		void inject_input(void* buf, unsigned size);
-		pthread_t qemu_thread;
 		enum { CATCHUP, THREAD_RUNNING, IDLE } mode;
 
 		void internal_and_confluent();
@@ -236,7 +243,7 @@ template <typename X>
 QemuComputer<X>::QemuComputer(double quantum_seconds):
 	Atomic<X>(),
 	quantum(quantum_seconds),
-	thread_data(NULL),
+	emulator(NULL),
 	ttg(0.0),
 	qemu_time(0.0),
 	sim_time(0.0),
@@ -247,11 +254,11 @@ QemuComputer<X>::QemuComputer(double quantum_seconds):
 template <typename X>
 QemuComputer<X>::~QemuComputer()
 {
-	if (thread_data != NULL)
+	if (emulator != NULL)
 	{
 		if (mode == THREAD_RUNNING)
-			pthread_join(qemu_thread,NULL);
-		shutdown_qemu(thread_data);
+			emulator->join();
+		delete emulator;
 	}
 }
 
@@ -263,9 +270,9 @@ void QemuComputer<X>::output_func(Bag<X>& yb)
 	if (mode == THREAD_RUNNING)
 	{
 		mode = IDLE;
-		pthread_join(qemu_thread,NULL);
+		emulator->join();
 		// Get the time elapsed in the qemu thread
-		qemu_time += get_qemu_elapsed(thread_data)/1E6;
+		qemu_time += emulator->elapsed()/1E6;
 	}
 }
 
@@ -285,13 +292,12 @@ void QemuComputer<X>::internal_and_confluent()
 		ttg = qemu_time - sim_time;
 	}
 	// Run the computer for another quantum if it is still alive
-	else if (qemu_is_alive(thread_data))
+	else if (emulator->is_alive())
 	{
 		assert(mode != THREAD_RUNNING);
+		emulator->run(quantum*1E6);
 		mode = THREAD_RUNNING;
 		ttg = quantum;
-		set_qemu_elapsed(thread_data,ttg*1E6);
-		pthread_create(&qemu_thread,NULL,qemu_thread_func,(void*)thread_data);
 	}
 	else mode = IDLE;
 }
@@ -318,7 +324,7 @@ void QemuComputer<X>::delta_conf(const Bag<X>& xb)
 template <typename X>
 double QemuComputer<X>::ta()
 {
-	if (qemu_is_alive(thread_data))
+	if (emulator->is_alive())
 		return ttg;
 	return adevs_inf<double>();
 }
@@ -351,8 +357,8 @@ void QemuComputer<X>::create_x86(
 	args.push_back("-drive");
 	args.push_back(arg_buf);
 	// Start the machine
-	thread_data = launch_qemu("qemu-system-i386",args);
-	assert(qemu_is_alive(thread_data));
+	emulator = CompSysEmulator::launch_qemu("qemu-system-i386",args);
+	assert(emulator->is_alive());
 }
 
 template <typename X>
@@ -362,8 +368,8 @@ void QemuComputer<X>::create_8052(
 	ComputerMemoryAccess** obj)
 {
 	args.push_back(flash_image);
-	thread_data = launch_ucsim("s51",args,obj);
-	assert(qemu_is_alive(thread_data));
+	emulator = CompSysEmulator::launch_ucsim("s51",args,obj);
+	assert(emulator->is_alive());
 }
 
 }

@@ -1,28 +1,107 @@
 #include "adevs_qemu.h"
 #include "qqq_rpc.h"
-#include <omp.h>
 
-struct adevs::qemu_thread_func_t
+/**
+ * Data that is shared between the run thread for the emulator
+ * and the main thread of the simulator
+ */
+struct thread_data_t
 {
-	int elapsed;
 	Basic_Machine* machine;
+	int elapsed;
+	int mode; // 0 idle, 1 run, 2 quit
+	pthread_cond_t cond;
+	pthread_mutex_t mtx;
 };
 
-int adevs::get_qemu_elapsed(adevs::qemu_thread_func_t* q)
+static void* thread_func(void* opaque)
 {
-	return q->elapsed;
+	thread_data_t* data = static_cast<thread_data_t*>(opaque);
+	pthread_mutex_lock(&(data->mtx));
+	while (true)
+	{
+		while (data->mode == 0)
+			pthread_cond_wait(&(data->cond),&(data->mtx));
+		// Run for as long as instructed
+		if (data->mode == 1)
+		{
+			data->elapsed = data->machine->run(data->elapsed);
+			data->mode = 0;
+			pthread_cond_signal(&(data->cond));
+		}
+		else break;
+	}
+	pthread_cond_signal(&(data->cond));
+	pthread_mutex_unlock(&(data->mtx));
+	return NULL;
 }
 
-void adevs::set_qemu_elapsed(adevs::qemu_thread_func_t* q, int elapsed)
+class GenericEmulator:
+	public adevs::CompSysEmulator
 {
-	q->elapsed = elapsed;
-}
+	public:
+		GenericEmulator():
+			adevs::CompSysEmulator()
+		{
+			data.machine = NULL;
+			data.elapsed = 0;
+			data.mode = 0;
+			pthread_mutex_init(&(data.mtx),NULL);
+			pthread_cond_init(&(data.cond),NULL);
+		}
+		~GenericEmulator()
+		{
+			// Nothing to stop if we haven't launched the machine
+			if (data.machine != NULL)
+			{
+				// Tell the thread to exit
+				pthread_mutex_lock(&(data.mtx));
+				data.mode = 2;
+				pthread_cond_signal(&(data.cond));
+				pthread_mutex_unlock(&(data.mtx));
+				// Wait for it to exit
+				pthread_join(thr,NULL);
+				// Delete the actual emulator
+				if (data.machine != NULL)
+					delete data.machine;
+			}
+			// Clean up mutex and conditional
+			pthread_mutex_destroy(&(data.mtx));
+			pthread_cond_destroy(&(data.cond));
+		}
+		int elapsed() { return data.elapsed; }
+		bool is_alive()
+		{
+			return data.machine->is_alive();
+		}
+		void run(int us)
+		{
+			pthread_mutex_lock(&(data.mtx));
+			// Set the amount of time to execute
+			data.elapsed = us;
+			// Start the thread
+			data.mode = 1;
+			pthread_cond_signal(&(data.cond));
+			pthread_mutex_unlock(&(data.mtx));
+		}
+		void join()
+		{
+			// Wait for the running time slice to complete
+			pthread_mutex_lock(&(data.mtx));
+			while (data.mode != 0)
+				pthread_cond_wait(&(data.cond),&(data.mtx));
+			pthread_mutex_unlock(&(data.mtx));
+		}
 
-adevs::qemu_thread_func_t* adevs::launch_qemu(const char* exec_file, std::vector<std::string>& args)
+	thread_data_t data;
+	pthread_t thr;
+};
+
+adevs::CompSysEmulator* adevs::CompSysEmulator::launch_qemu(const char* exec_file, std::vector<std::string>& args)
 {
-	adevs::qemu_thread_func_t* q = new adevs::qemu_thread_func_t();
-	q->elapsed = 0;
-	q->machine = new QEMU_Machine(exec_file,args);
+	GenericEmulator* q = new GenericEmulator();
+	q->data.machine = new QEMU_Machine(exec_file,args);
+	pthread_create(&(q->thr),NULL,thread_func,(void*)(&(q->data)));
 	return q;
 }
 
@@ -48,36 +127,15 @@ class uCsimMachineWrapper:
 		uCsim_Machine* machine;
 };
 
-adevs::qemu_thread_func_t* adevs::launch_ucsim(
+adevs::CompSysEmulator* adevs::CompSysEmulator::launch_ucsim(
 	const char* exec_file, std::vector<std::string>& args, adevs::ComputerMemoryAccess** obj)
 {
 	uCsim_Machine* machine = new uCsim_Machine(exec_file,args);
-	adevs::qemu_thread_func_t* q = new adevs::qemu_thread_func_t();
-	q->elapsed = 0;
-	q->machine = machine;
+	GenericEmulator* q = new GenericEmulator();
+	q->data.machine = machine;
 	if (obj != NULL)
 		*obj = new uCsimMachineWrapper(machine);
+	pthread_create(&(q->thr),NULL,thread_func,(void*)(&(q->data)));
 	return q;
 }
 
-void adevs::shutdown_qemu(adevs::qemu_thread_func_t* q)
-{
-	delete q->machine;
-	delete q;
-}
-
-bool adevs::qemu_is_alive(qemu_thread_func_t* q)
-{
-	return q->machine->is_alive();
-}
-
-void* adevs::qemu_thread_func(void* opaque)
-{
-	adevs::qemu_thread_func_t* data = static_cast<adevs::qemu_thread_func_t*>(opaque);
-	// Run for as long as instructed
-	double tt = omp_get_wtime();
-	data->elapsed = data->machine->run(data->elapsed);
-	tt = omp_get_wtime()-tt;
-	printf("run: %f\n",tt);
-	return NULL;
-}

@@ -73,7 +73,8 @@ class uCsim_Machine:
 				const char* executable,
 				const std::vector<std::string>& arguments,
 				double mega_hz = 11.059,
-				int cycles_per_instr = 12);
+				// Assumes 2 machine cycles per instruction on average
+				int cycles_per_instr = (12*2));
 		/**
 		 * Instruct the machine to execute for at most usec
 		 * microseconds of simulated time and then return.
