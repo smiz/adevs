@@ -71,10 +71,7 @@ class uCsim_Machine:
 		 */
 		uCsim_Machine(
 				const char* executable,
-				const std::vector<std::string>& arguments,
-				double mega_hz = 11.059,
-				// Assumes 2 machine cycles per instruction on average
-				int cycles_per_instr = (12*2));
+				const std::vector<std::string>& arguments);
 		/**
 		 * Instruct the machine to execute for at most usec
 		 * microseconds of simulated time and then return.
@@ -96,18 +93,18 @@ class uCsim_Machine:
 		void write_mem(unsigned addr, unsigned data);
 
 	private:
+		double elapsed_secs;
 		unsigned pid;
 		int read_pipe[2];
 		int write_pipe[2];
-		const double mega_hz;
-		const int cycles_per_instr;
+		static const double mega_hz;
+		static const int instrs_per_usec;
 		pthread_mutex_t mtx;
 		char run_buf[1000];
 		char write_buf[1000];
 		char read_buf[1000];
-		char scan_buf[1000];
 
-		void scan_to_prompt();
+		void scan_to_prompt(char* scan_buf);
 };
 
 /**

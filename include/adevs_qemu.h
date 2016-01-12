@@ -367,6 +367,8 @@ void QemuComputer<X>::create_8052(
 	std::string flash_image,
 	ComputerMemoryAccess** obj)
 {
+	args.push_back("-t");
+	args.push_back("8052");
 	args.push_back(flash_image);
 	emulator = CompSysEmulator::launch_ucsim("s51",args,obj);
 	assert(emulator->is_alive());
