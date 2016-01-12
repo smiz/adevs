@@ -15,7 +15,7 @@
 
 const double uCsim_Machine::mega_hz = 11.096;
 // Clock frequency in Mhz divided by clock oscillations per instruction
-const int uCsim_Machine::instrs_per_usec = int(uCsim_Machine::mega_hz/12.0)+1;
+const double uCsim_Machine::instrs_per_usec = uCsim_Machine::mega_hz/12.0;
 
 #define STOP_CHAR '#'
 #define STOP_COUNT 5
@@ -93,7 +93,9 @@ int uCsim_Machine::run(int usecs)
 	pthread_mutex_lock(&mtx);
 	while (usecs > 0)
 	{
-		sprintf(run_buf,"step %d\n",instrs_per_usec*usecs);
+		int instrs = (int)(instrs_per_usec*usecs);
+		if (instrs == 0) instrs = 1;
+		sprintf(run_buf,"step %d\n",instrs);
 		int buf_len = strlen(run_buf);
 		if (write(write_pipe[1],run_buf,buf_len) <= 0)
 			perror("ucSim_Machine::run"); 
@@ -110,7 +112,8 @@ int uCsim_Machine::run(int usecs)
 			pos++;
 		}
 		sscanf(run_buf+pos,"%lf",&elapsed_secs);
-		usecs -= ((elapsed_secs-t_start)*1E6);
+		int reduce = ((elapsed_secs-t_start)*1E6);
+		usecs -= (reduce > 0) ? reduce : 1;
 	}
 	pthread_mutex_unlock(&mtx);
 	return (int)((elapsed_secs-t_start)*1E6);

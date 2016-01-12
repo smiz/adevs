@@ -98,7 +98,7 @@ class uCsim_Machine:
 		int read_pipe[2];
 		int write_pipe[2];
 		static const double mega_hz;
-		static const int instrs_per_usec;
+		static const double instrs_per_usec;
 		pthread_mutex_t mtx;
 		char run_buf[1000];
 		char write_buf[1000];
