@@ -1,9 +1,9 @@
 #include "qqq_rpc.h"
-#include <sys/mman.h>
+#include <unistd.h>
 #include <sys/stat.h> 
 #include <sys/wait.h>
 #include <sys/types.h>
-#include <fcntl.h>
+#include <signal.h>
 #include <cstdio>
 #include <cerrno>
 #include <string>
@@ -15,70 +15,61 @@
 
 void QEMU_Machine::write_mem_value(int val)
 {
-	// I AM ASSUMING THAT THE MEMORY WRITE WILL BE ATOMIC!
-	(*((volatile int*)shm)) = val;
+	write(write_fd,&val,sizeof(int));
 }
 
 int QEMU_Machine::read_mem_value()
 {
-	// I AM ASSUMING THAT THE MEMORY READ WILL BE ATOMIC!
-	return (*((volatile int*)shm));
+	int val;
+	if (read(read_fd,&val,sizeof(int)) != sizeof(int))
+		return 0;
+	return val;
 }
 
 QEMU_Machine::QEMU_Machine(const char* executable, const std::vector<std::string>& args):
-	shm(NULL)
+	Basic_Machine()
 {
-	// Create a pipe that we will use to coordinate the creation
-	// of a shared memory regions
-	int pipefd[2];
-	if (pipe(pipefd) < 0)
+	// Ignore sigpipe which will kill us when qemu exits
+	signal(SIGPIPE,SIG_IGN);
+	// Create pipes that we will used to exchange data 
+	int pipefd[2][2];
+	if (pipe(pipefd[0]) < 0)
 		throw qemu_exception(strerror(errno));
+	if (pipe(pipefd[1]) < 0)
+		throw qemu_exception(strerror(errno));
+	// Get the pipes
+	read_fd = pipefd[1][0];
+	write_fd = pipefd[0][1];
 	// Fork a process for qemu
 	if ((pid = fork()) == 0)
 	{
-		// Child waits for the parent to create the shared memory
-		// region that qemu will attach to
-		char c;
-		if (read(pipefd[0],&c,1) != 1)
-			throw qemu_exception(strerror(errno));
-		// Done with the pipe!
-		close(pipefd[0]);
+		close(read_fd);
+		close(write_fd);
+		// Get read and write pipe for qemu process
+		read_fd = pipefd[0][0];
+		write_fd = pipefd[1][1];
 		// Fork qemu
-		char** cargs = new char*[args.size()+2];
+		char** cargs = new char*[args.size()+4];
+		cargs[0] = new char[strlen(executable)+1];
+		strcpy(cargs[0],executable);
+		cargs[1] = new char[5];
+		strcpy(cargs[1],"-qqq");
+		cargs[2] = new char[1000];
+		sprintf(cargs[2],"write=%d,read=%d",write_fd,read_fd);
 		for (unsigned i = 0; i < args.size(); i++)
 		{
-			cargs[i+1] = new char[args[i].length()+1];
-			strcpy(cargs[i+1],args[i].c_str());
+			cargs[i+3] = new char[args[i].length()+1];
+			strcpy(cargs[i+3],args[i].c_str());
 		}
-		cargs[args.size()+1] = NULL;
-		cargs[0] = new char[strlen(executable)];
-		strcpy(cargs[0],executable);
+		cargs[args.size()+3] = NULL;
 		errno = 0;
-		if (execvp(executable,cargs) != 0)
-			throw qemu_exception(strerror(errno));
+		execvp(executable,cargs);
+		throw qemu_exception(strerror(errno));
 		// We should never get here
 		assert(false);
 	}
-	// Create the shared memory region using the child pid in the key
-	sprintf(key,"/qemu_%d",pid);
-	errno = 0;
-	int fd = shm_open(key,O_RDWR|O_CREAT,S_IRWXU);
-	if (fd == -1)
-		throw qemu_exception(strerror(errno));
-	if (ftruncate(fd,sizeof(int)) == -1)
-		throw qemu_exception(strerror(errno));
-	// Map the memory region
-	shm = mmap(NULL,sizeof(int),PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
-	if (shm == NULL)
-		throw qemu_exception(strerror(errno));
-	// Qemu will pause waiting for the first time advance
-	write_mem_value(-1);
-    // Tell the child to go ahead
-	if (write(pipefd[1],(char*)&pid,1) != 1)
-		throw qemu_exception(strerror(errno));
-	close(pipefd[1]);
-	// Done with the shm file descriptor
-	close(fd);
+	close(pipefd[0][0]);
+	close(pipefd[1][1]);
 }
 
 bool QEMU_Machine::is_alive()
@@ -90,19 +81,18 @@ int QEMU_Machine::run(int usecs)
 {
 	int elapsed;
 	// Write the time advance
-	write_mem_value((usecs > 0) ? usecs : 1);
+	write_mem_value(usecs);
 	// Wait for qemu to reach that time
-	while ((elapsed = read_mem_value()) > 0 && is_alive());
+	elapsed = read_mem_value();
 	// Return the actual time that was advanced
-	return -elapsed;
+	return elapsed;
 }
 
 QEMU_Machine::~QEMU_Machine()
 {
-	// Instruct the child to exit
-	write_mem_value(0);
-	// Wait for it to exit then cleanup
+	// Close our pipes. This will force qemu to exit
+	close(read_fd);
+	close(write_fd);
+	// Wait for the process 
 	waitpid(pid,NULL,0);
-	munmap(shm,sizeof(int));
-	shm_unlink(key);
 }

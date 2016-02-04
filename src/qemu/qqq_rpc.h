@@ -48,10 +48,8 @@ class QEMU_Machine:
 
 	private:
 		unsigned pid;
-		// Key to the shared memory region.
-		char key[100]; 
-		// Beginning of memory mapped region
-		void* shm;
+		// Pipe for talking to qemu
+		int read_fd, write_fd;
 
 		void write_mem_value(int val);
 		int read_mem_value();	

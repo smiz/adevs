@@ -1,5 +1,5 @@
 ADEVS_PREFIX = ${HOME}/Code/adevs-code
-CFLAGS = -std=c++11 -Wall -O3 -fopenmp
+CFLAGS = -std=c++11 -Wall -g -fopenmp
 CC = g++
 INCLUDE = -I${ADEVS_PREFIX}/include 
 LIBS = -L${HOME}/Code/adevs-code/src -ladevs -lrt 

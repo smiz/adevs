@@ -211,8 +211,8 @@ int main()
 	int time_err_count[2] = {0,0};
 	double tstart = omp_get_wtime();
 	double tnow = 0.0;
-	x86* B = new x86("/home/nutarojj/Code/qemu/images/jill.img");
-	x86* A = new x86("/home/nutarojj/Code/qemu/images/jack.img");
+	x86* B = new x86("jill.img");
+	x86* A = new x86("jack.img");
 	SimpleDigraph<IO_Type>* model = new SimpleDigraph<IO_Type>();
 	model->add(A);
 	model->add(B);
