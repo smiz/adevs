@@ -1,46 +1,33 @@
 #!/usr/bin/python
 import sys
 import re
+from lxml import etree
 
 class ScalarVariable:
-	def __init__(self, input_lines):
+	def __init__(self, node):
 		"""This class is responsible for generating strings from .xml <ScalarVariable> tags."""
-		self.xml_input = input_lines
-		self.attributes = self.__createAttributes(input_lines)
-	def __createAttributes(self, inputs): # Pick out information about this scalar variable from the XML file string.
+		self.attributes = self.__createAttributes(node)
+	def __createAttributes(self, node): 
 		attributes = {}
-		for line in inputs:
-			if "name" in line:
-				if "der(" in line:
-					attributes["name"] = "der_" + line[14:-3]
-				else:
-					attributes["name"] = line[10:-2]
-				if "." in attributes["name"]:
-					attributes["name"] = re.sub('[.]', '_', attributes["name"])
-				if "[" in attributes["name"]:
-					attributes["name"] = re.sub('[[]', '', attributes["name"])
-					attributes["name"] = re.sub('[]]', '', attributes["name"])
-			elif "valueReference" in line: # Use index instead because that coincides with the index_num calculated in get_legend()
-				attributes["index"] = line[20:-2]
-			elif "variability" in line:
-				attributes["var"] = line[17:-2]
-			elif "causality" in line:
-				attributes["cause"] = line[15:-2]
-			elif "initial" in line:
-				attributes["init"] = line[13:-3]
-			elif "<Real" in line:
-				attributes["type"] = "double"
-			elif "<Bool" in line:
-				attributes["type"] = "boolean"
-			elif "<Integer" in line:
-				attributes["type"] = "int"
-			elif "<String" in line:
-				attributes["type"] = "std::string"
-			elif not "Scalar" in line:
-				attributes["type"] = line.split("<")[1].split(" ")[0] # This will capture any odd types of variables that are not currently in the FMI standard
+		name = node.get("name")
+		name = name.replace(".","_")
+		name = name.replace("]","_")
+		name = name.replace("[","_")
+		name = name.replace("(","_")
+		name = name.replace(")","_")
+		attributes["name"] = name
+		attributes["index"] = node.get("valueReference")
+		if node.find("Real") is not None:
+			attributes["type"] = "double"
+		elif node.find("Bool") is not None:
+			attributes["type"] = "boolean"
+		elif node.find("Integer") is not None:
+			attributes["type"] = "int"
+		elif node.find("String") is not None:
+			attributes["type"] = "std::string"
+		else:
+			print "Unknown attribute"
 		return attributes
-	def getXMLString(self):
-		return self.xml_input
 
 	def getCPPString(self):
 		rs = "" # Return string
@@ -60,34 +47,25 @@ class ScalarVariable:
 	def isDer(self): # Returns whether the variable is a derivative or not.
 		return "der" in self.attributes['name']
 
-
-def read_file(filename): # Open a file, copy it into list of lines. return
-	f = open(filename, 'r')
-	lines = f.readlines()
-	f.close()
-	return lines
-
 def write_file(filename, string):
 	f = open(filename, 'w')
 	f.write(string)
 	f.close()
-def interpret(line_arr): # Go through file and pick out important information.
+
+def interpret(filename): # Go through file and pick out important information.
 	legend = {}
 	variables = []
 	index_num = 0
-	for i, line in enumerate(line_arr):
-		if "modelName" in line:
-			legend["modelName"] = line[13:-2]
-		elif "guid" in line:
-			legend["guid"] = line[8:-2]
-		elif "Index" in line:
-			index_num += 1
-		elif "numberOfEventIndicators" in line:
-			legend["indicatorNum"] = line[27:-3]
-		elif "<ScalarVariable" in line:
-			variables.append(ScalarVariable(line_arr[i:i+8]))
-
-	legend["indexNum"] = index_num
+	doc = etree.parse(filename)
+	legend["modelName"] = doc.getroot().get("modelName")
+	print "Model name = ",legend["modelName"]
+	legend["guid"] = doc.getroot().get("guid")
+	print "GUID = ",legend["guid"]
+	legend["indicatorNum"] = doc.getroot().get("numberOfEventIndicators")
+	print "eventIndicators =",legend["indicatorNum"]
+	scalar_vars_list = doc.findall("ModelVariables/ScalarVariable")
+	for var in scalar_vars_list:
+		variables.append(ScalarVariable(var))
 	return legend, variables
 
 def compile_str(legend, variables, using_str):
@@ -134,7 +112,7 @@ if __name__=="__main__":
 		elif arg == "-h":
 			print_help()
 			sys.exit(0)
-	legend, variables = interpret(read_file(filename))
+	legend, variables = interpret(filename)
 	der_num = 0
 	for var in variables:
 		if var.isDer():
