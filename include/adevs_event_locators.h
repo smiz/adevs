@@ -183,6 +183,22 @@ class discontinuous_event_locator:
 					sys,err_tol,event_locator_impl<X>::DISCONTINUOUS){}
 };
 
+/**
+ * This event locator is for models that have no state events. Its find_events
+ * method simply returns false.
+ */
+template <typename X> class null_event_locator:
+	public event_locator<X>
+{
+	public:
+		null_event_locator():event_locator<X>(NULL){}
+		~null_event_locator(){}
+		bool find_events(bool*, const double*, double*, ode_solver<X>*, double&)
+		{
+			return false;
+		}
+};
+
 } // end of namespace 
 
 #endif
