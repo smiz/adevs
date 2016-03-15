@@ -21,6 +21,8 @@ class ScalarVariable:
 			attributes["type"] = "double"
 		elif node.find("Bool") is not None:
 			attributes["type"] = "boolean"
+		elif node.find("Boolean") is not None:
+			attributes["type"] = "boolean"
 		elif node.find("Integer") is not None:
 			attributes["type"] = "int"
 		elif node.find("String") is not None:
