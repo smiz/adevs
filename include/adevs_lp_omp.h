@@ -251,17 +251,21 @@ void LogicalProcess<X,T>::advanceState(T t_stop)
 template <typename X, class T>
 void LogicalProcess<X,T>::advanceOutput()
 {
+	assert(!looking_ahead);
 	// This is the time for the new output and state
 	tNow = tNextEvent(tL);
 	// Project the output as far into the future 
 	// as possible
 	if (eit.t < adevs_inf<T>() && lookahead < adevs_inf<T>())
 	{
-		looking_ahead = true;
-		sim.beginLookahead();
 		// Try to advance the output trajectory
 		while (tNow.t < adevs_inf<T>() && tNow < eit + lookahead)
 		{
+			if (!looking_ahead)
+			{
+				looking_ahead = true;
+				sim.beginLookahead();
+			}
 			bool ok = true;
 			try
 			{
@@ -285,9 +289,12 @@ void LogicalProcess<X,T>::advanceOutput()
 			if (ok) tNow = tNextEvent(tNow);
 			else break;
 		}
-		sim.endLookahead();
+		if (looking_ahead)
+		{
+			sim.endLookahead();
+			looking_ahead = false;
+		}
 		assert(tNextEvent(tL).t == sim.nextEventTime());
-		looking_ahead = false;
 	} 
 	sendEOT(tNow);
 }

@@ -131,7 +131,9 @@ template <class X, class T = double> class Simulator:
 		 * of a lookahead calculation. Lookahead calculations will cause
 		 * the atomic models involved to save their states at the point
 		 * that the lookahead calculation was begun. These states are
-		 * restored when the lookahead calculation ends.</P>
+		 * restored when the lookahead calculation ends. At least one call
+		 * to lookNextEvent() must be made between beginLookahead() and
+		 * endLookahead().</P>
 		 * <P>Lookahead calculations are done with the lookNextEvent method,
 		 * which may throw a lookahead_impossible_exception. This occurs when
 		 * the simulator calculate a new state for an atomic model
