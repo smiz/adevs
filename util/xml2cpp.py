@@ -108,6 +108,7 @@ def print_help():
 			print "-h will open up this screen"
 			print "-o is optional"
 
+"""This part builds the header file"""
 if __name__=="__main__":
 	args = sys.argv
 	output_file = ""
