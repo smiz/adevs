@@ -19,16 +19,16 @@ class ScalarVariable:
 		attributes["index"] = node.get("valueReference")
 		if node.find("Real") is not None:
 			attributes["type"] = "double"
-		elif node.find("Bool") is not None:
-			attributes["type"] = "boolean"
 		elif node.find("Boolean") is not None:
 			attributes["type"] = "boolean"
 		elif node.find("Integer") is not None:
 			attributes["type"] = "int"
 		elif node.find("String") is not None:
 			attributes["type"] = "std::string"
+		elif node.find("Enumeration") is not None:
+			attributes["type"] = "int"
 		else:
-			print "Unknown attribute"
+			print "Unknown attribute"+name
 		return attributes
 
 	def getCPPString(self):
@@ -36,7 +36,7 @@ class ScalarVariable:
 		if self.attributes['type']=="double":
 			rs += "\t\t{0} get_{1}() {{ return get_real({2}); }}\n\t\tvoid set_{1}({0} val) {{ set_real({2},val); }}\n".format(self.attributes['type'], self.attributes['name'], self.attributes['index'])
 		elif self.attributes['type']=="boolean":
-			rs += "\t\t{0} get_{1}() {{ return get_bool({2}); }}\n\t\tvoid set_{1}({0} val) {{ set_bool({2},val); }}\n".format(self.attributes['type'], self.attributes['name'], self.attributes['index'])
+			rs += "\t\tbool get_{1}() {{ return get_bool({2}); }}\n\t\tvoid set_{1}(bool val) {{ set_bool({2},val); }}\n".format(self.attributes['type'], self.attributes['name'], self.attributes['index'])
 		elif self.attributes['type']=="int":
 			rs += "\t\t{0} get_{1}() {{ return get_int({2}); }}\n\t\tvoid set_{1}({0} val) {{ set_int({2},val); }}\n".format(self.attributes['type'], self.attributes['name'], self.attributes['index'])
 		elif self.attributes['type']=="std::string":
@@ -45,9 +45,6 @@ class ScalarVariable:
 			rs += "\t\t{0} get_{1}() {{ return get_{0}({2}); }}\n\t\tvoid set_{1}({0} val) {{ set_{0}({2},val); }}\n".format(self.attributes['type'], self.attributes['name'], self.attributes['index'])
 			print "WARNING. UNRECOGNIZED TYPE: {0}. Parsing as: \n{1}".format(self.attributes['type'], rs)
 		return rs
-
-	def isDer(self): # Returns whether the variable is a derivative or not.
-		return "der" in self.attributes['name']
 
 def write_file(filename, string):
 	f = open(filename, 'w')
@@ -70,8 +67,21 @@ def interpret(filename): # Go through file and pick out important information.
 		variables.append(ScalarVariable(var))
 	return legend, variables
 
+def countDerivatives(filename):
+	"""This function is responsible for counting the state variables"""
+	doc = etree.parse(filename)
+	index_num = 0
+	derivatives_list = doc.findall("ModelStructure/Derivatives/Unknown")
+	for var in derivatives_list:
+		index_num=index_num+1
+	return index_num
+
 def compile_str(legend, variables, using_str):
+	"""This function is responsible for creating the header file"""
 	if using_str:
+		name =  legend['modelName']
+		name = name.replace(".","")
+		legend['modelName'] = name
 		rs = "" # Return string variable.
 		rs += '#ifndef {0}_h_\n#define {0}_h_\n#include "adevs.h"\n#include "adevs_fmi.h"\n#include <string>\n\n'.format(legend['modelName']) # Format header default information
 		rs += 'class {0}:\n\tpublic adevs::FMI<{1}>\n{{\n\tpublic:\n\t\t{0}():\n'.format(legend['modelName'], legend['convType']) # Format first part of class
@@ -80,6 +90,9 @@ def compile_str(legend, variables, using_str):
 			rs += var.getCPPString()
 		rs += '};\n\n#endif'
 	else:
+		name =  legend['modelName']
+		name = name.replace(".","")
+		legend['modelName'] = name
 		rs = "" # Return string variable.
 		rs += '#ifndef {0}_h_\n#define {0}_h_\n#include "adevs.h"\n#include "adevs_fmi.h"\n\n'.format(legend['modelName']) # Format header default information
 		rs += 'class {0}:\n\tpublic adevs::FMI<{1}>\n{{\n\tpublic:\n\t\t{0}():\n'.format(legend['modelName'], legend['convType']) # Format first part of class
@@ -116,12 +129,17 @@ if __name__=="__main__":
 			sys.exit(0)
 	legend, variables = interpret(filename)
 	der_num = 0
+	i = countDerivatives(filename)
 	for var in variables:
-		if var.isDer():
-			der_num += 1
+		#if var.isDer():
+			#der_num += 1
 		if var.attributes['type']=="std::string":
 			USING_STRING = True
-	legend['derNum'] = der_num
+	#if der_num > 0:
+	#	legend['derNum'] = der_num-1
+	#else:
+	#	legend['derNum'] = der_num
+	legend['derNum'] = i
 	legend['convType'] = conv_type
 	legend['sharedLocation'] = file_loc # This is the location of the shared object file produced by omc
 
