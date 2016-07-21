@@ -121,7 +121,7 @@ class x86:
 	public QemuComputer<IO_Type>
 {
 	public:
-		x86(std::string disk_img):
+		x86(std::string disk_img, std::string mac_addr = ""):
 			QemuComputer<IO_Type>(1E-4),
 			sent(0),
 			recvd(0),
@@ -130,7 +130,7 @@ class x86:
 		{
 			// Add a nic to the computer
 			vector<string> qemu_args;
-			nic = new QemuNic();
+			nic = new QemuNic(mac_addr);
 			nic->append_qemu_arguments(qemu_args);
 			create_x86(qemu_args,disk_img.c_str());
 		}
@@ -211,7 +211,7 @@ int main()
 	int time_err_count[2] = {0,0};
 	double tstart = omp_get_wtime();
 	double tnow = 0.0;
-	x86* B = new x86("jill.img");
+	x86* B = new x86("jill.img","00:00:00:11:11:11");
 	x86* A = new x86("jack.img");
 	SimpleDigraph<IO_Type>* model = new SimpleDigraph<IO_Type>();
 	model->add(A);

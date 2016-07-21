@@ -11,8 +11,9 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
-adevs::QemuNic::QemuNic():
-	adevs::QemuDeviceModel()
+adevs::QemuNic::QemuNic(std::string mac_addr):
+	adevs::QemuDeviceModel(),
+	mac_addr(mac_addr)
 {
 	errno = 0;
 	if (socketpair(AF_UNIX,SOCK_STREAM,0,fd) < 0)
@@ -50,7 +51,10 @@ void adevs::QemuNic::append_qemu_arguments(std::vector<std::string>& args)
 	char nic_arg[100];
 	sprintf(nic_arg,"socket,fd=%d",fd[1]);
 	args.push_back("-net");
-	args.push_back("nic");
+	if (mac_addr != "")
+		args.push_back("nic,macaddr="+mac_addr);
+	else
+		args.push_back("nic");
 	args.push_back("-net");
 	args.push_back(nic_arg);
 }

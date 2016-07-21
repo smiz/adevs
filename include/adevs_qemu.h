@@ -107,7 +107,7 @@ class QemuNic:
 	public QemuDeviceModel
 {
 	public:
-		QemuNic();
+		QemuNic(std::string mac_addr = "");
 		void append_qemu_arguments(std::vector<std::string>& args);
 		~QemuNic();
 	protected:
@@ -116,6 +116,7 @@ class QemuNic:
 		void initialize_io_structures(){}
 	private:
 		int fd[2];
+		std::string mac_addr;
 };
 
 /**
