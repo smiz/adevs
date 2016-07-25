@@ -12,10 +12,14 @@
 #include <cstdlib>
 #include <cassert>
 #include <iostream>
+#include <cerrno>
+#include <cstdio>
 
 void QEMU_Machine::write_mem_value(int val)
 {
-	write(write_fd,&val,sizeof(int));
+	errno = 0;
+	if (write(write_fd,&val,sizeof(int)) != sizeof(int))
+		perror("Write error to qemu pipe");
 }
 
 int QEMU_Machine::read_mem_value()
@@ -94,5 +98,6 @@ QEMU_Machine::~QEMU_Machine()
 	close(read_fd);
 	close(write_fd);
 	// Wait for the process 
+	kill(pid,SIGTERM);
 	waitpid(pid,NULL,0);
 }

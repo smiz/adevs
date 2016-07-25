@@ -61,6 +61,6 @@ void adevs::QemuNic::append_qemu_arguments(std::vector<std::string>& args)
 
 adevs::QemuNic::~QemuNic()
 {
-	shutdown(fd[0],0);
+	shutdown(fd[0],SHUT_RDWR);
 	close(fd[0]);
 }
