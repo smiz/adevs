@@ -7,6 +7,8 @@
 #include <cassert>
 #include <cstring>
 #include <list>
+#include <unistd.h>
+#include <fstream>
 using namespace std;
 using namespace adevs;
 
@@ -43,9 +45,8 @@ struct computer_io_type
 typedef computer_io_type* IO_Type;
 
 /**
- * A simplex communication channel modeled as a server with a finite
- * queue. Two of these will be used to create a duplex channel
- * between the simulated machines.
+ * A simplex communication channel with unlimited throughput and a 
+ * fixed transmission delay.
  */
 class CommChannel:
 	public Atomic<IO_Type>
@@ -53,29 +54,26 @@ class CommChannel:
 	public:
 		CommChannel(double delay):
 			Atomic<IO_Type>(),
-			delay(delay),
-			ttg(delay),
-			t(0.0)
+			delay(delay)
 		{
 		}
 		void delta_int()
 		{
-			t += ta();
-			ttg = delay;
+			double dt = ta();
 			q.pop_front();
+			for (auto& msg: q)
+				msg.ttg -= dt;
 		}
 		void delta_ext(double e, const Bag<IO_Type>& xb)
 		{
-			t += e;
-			if (!q.empty())
-				ttg -= e;
-			for (auto x: xb)
+			for (auto& msg: q)
+				msg.ttg -= e;
+			for (auto& x: xb)
 			{
-				printf("@ t = %f xmit packet contents:\n",t);
-				for (int i = 0; i < x->size; i++)
-					printf("%x ",x->buf[i]);
-				printf("\n");
-				q.push_back(new computer_io_type(*x));
+				msg_t msg;
+				msg.ttg = delay;
+			  	msg.msg = new computer_io_type(*x);
+				q.push_back(msg);
 			}
 		}
 		void delta_conf(const Bag<IO_Type>& xb)
@@ -85,31 +83,35 @@ class CommChannel:
 		}
 		void output_func(Bag<IO_Type>& yb)
 		{
-			yb.insert(q.front());
+			yb.insert(q.front().msg);
 		}
 		void gc_output(Bag<IO_Type>& yb)
 		{
-			for (auto x: yb)
+			for (auto& x: yb)
 				delete x;
 		}
 		~CommChannel()
 		{
 			for (auto msg: q)
 			{
-				delete msg;
+				delete msg.msg;
 			}
 			q.clear();
 		}
 		double ta()
 		{
 			if (q.empty()) return adevs_inf<double>();
-			return ttg;
+			else return q.front().ttg;
 		}
 
 	private:
 		const double delay;
-		double ttg, t;
-		std::list<computer_io_type*> q;
+		struct msg_t
+		{
+			computer_io_type *msg;
+			double ttg;
+		};
+		std::list<msg_t> q;
 };
 
 /**
@@ -121,8 +123,9 @@ class x86:
 	public QemuComputer<IO_Type>
 {
 	public:
-		x86(std::string disk_img, std::string mac_addr = ""):
-			QemuComputer<IO_Type>(1E-4),
+		x86(std::string disk_img, bool is_cd = false, std::string mac_addr = "",
+				EmulatorMode mode = PRECISE):
+			QemuComputer<IO_Type>(0.001),
 			sent(0),
 			recvd(0),
 			t(0.0),
@@ -132,7 +135,18 @@ class x86:
 			vector<string> qemu_args;
 			nic = new QemuNic(mac_addr);
 			nic->append_qemu_arguments(qemu_args);
-			create_x86(qemu_args,disk_img.c_str());
+			vector<string> disk, disk_format;
+			if (!is_cd)
+			{
+				std::string cd = "";
+				disk.push_back(disk_img);
+				disk_format.push_back("raw");
+				create_x86(qemu_args,disk,disk_format,cd,false,2048,mode);
+			}
+			else
+			{
+				create_x86(qemu_args,disk,disk_format,disk_img,true,2048,mode);
+			}
 		}
 		void delta_int()
 		{
@@ -145,7 +159,7 @@ class x86:
 			t += e;
 			recvd += xb.size();
 			QemuComputer<IO_Type>::delta_ext(e,xb);
-			for (auto x: xb)
+			for (auto& x: xb)
 				nic->write_bytes(x->buf,x->size);
 		}
 		void delta_conf(const Bag<IO_Type>& xb)
@@ -154,7 +168,7 @@ class x86:
 			t += ta();
 			recvd += xb.size();
 			QemuComputer<IO_Type>::delta_conf(xb);
-			for (auto x: xb)
+			for (auto& x: xb)
 				nic->write_bytes(x->buf,x->size);
 		}
 		void output_func(Bag<IO_Type>& xb)
@@ -172,7 +186,7 @@ class x86:
 		}
 		void gc_output(Bag<IO_Type>& gb)
 		{
-			for (auto x: gb)
+			for (auto& x: gb)
 				delete x;
 		}
 		~x86()
@@ -211,8 +225,10 @@ int main()
 	int time_err_count[2] = {0,0};
 	double tstart = omp_get_wtime();
 	double tnow = 0.0;
-	x86* B = new x86("jill.img","00:00:00:11:11:11");
-	x86* A = new x86("jack.img");
+	x86* B = new x86("jill.img",false,"00:00:00:11:11:11",
+			QemuComputer<IO_Type>::FAST);
+	x86* A = new x86("jack.img",false,"00:00:00:11:11:12",
+			QemuComputer<IO_Type>::FAST);
 	SimpleDigraph<IO_Type>* model = new SimpleDigraph<IO_Type>();
 	model->add(A);
 	model->add(B);

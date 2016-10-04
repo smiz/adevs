@@ -4,6 +4,7 @@
  * merely echoes each received character after a delay.
  */
 #include "adevs_qemu.h"
+#include <unistd.h>
 #include <iostream>
 #include <cassert>
 #include <cstring>
@@ -52,8 +53,8 @@ class SerialEcho:
 	public:
 		SerialEcho():
 			Atomic<IO_Type>(),
-			// One minute per character
-			proc_time(60.0),
+			// One second per character
+			proc_time(1.0),
 			ttg(proc_time)
 		{
 		}
@@ -67,7 +68,10 @@ class SerialEcho:
 			if (!q.empty()) ttg -= e;
 			for (auto x: xb)
 				for (unsigned i = 0; i < x->size; i++)
-					q.push_back(x->buf[i]);
+				{
+					cout << "x: " << x->buf[i] << endl;
+					q.push_back(x->buf[i]); 
+				}
 		}
 		void delta_conf(const Bag<IO_Type>& xb)
 		{
@@ -85,6 +89,7 @@ class SerialEcho:
 		{
 			char* buf = new char[1];
 			*buf = q.front();
+			cout << "y: " << buf[0] << endl;
 			yb.insert(new computer_io_type(buf,1));
 		}
 		void gc_output(Bag<IO_Type>& gb)
@@ -121,7 +126,7 @@ class x86:
 			 * http://www.ornl.gov/~1qn/qemu-images/jack.img
 			 *
 			 */
-			create_x86(qemu_args,"jack.img");
+			create_x86(qemu_args,"jack.img",2048,PRECISE);
 		}
 		void delta_ext(double e, const Bag<IO_Type>& xb)
 		{
@@ -183,11 +188,23 @@ int main()
 	model->couple(echo,computer);
 	model->couple(computer,echo);
 	Simulator<IO_Type>* sim = new Simulator<IO_Type>(model);
+	int count = 0;
+	double treal = omp_get_wtime(), tsim = 0.0;
 	while (sim->nextEventTime() < adevs_inf<double>())
 	{
+		if ((++count) % 100 == 0)
+		{
+			treal = omp_get_wtime()-treal;
+			tsim = sim->nextEventTime()-tsim;
+			double speedup = tsim/treal;
+			cout << "speedup=" << speedup << endl;
+			cout << computer->get_mean_timing_error() << " " <<
+				computer->get_max_timing_error() << endl;
+			count = 0;
+			tsim = sim->nextEventTime();
+			treal = omp_get_wtime();
+		} 
 		sim->execNextEvent();
-		if (computer->get_timing_error() != 0.0)
-			cout << computer->get_timing_error() << endl;
 	}
 	delete sim;
 	delete model;

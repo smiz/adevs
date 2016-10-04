@@ -194,9 +194,11 @@ class CompSysEmulator
 		virtual int elapsed() = 0;
 		// Launch a thread that will fork the emulator and regulate its progress
 		static CompSysEmulator* launch_qemu(const char* exec_file, std::vector<std::string>& args);
-		// Launches the thread and returns a pointer to a ComputerMemoryAccess object, which should be freed by the
-		// caller when done. Presently only supports access to special function registers.
-		static CompSysEmulator* launch_ucsim(const char* exec_file, std::vector<std::string>& args, ComputerMemoryAccess** obj);
+		// Launches the thread and returns a pointer to a ComputerMemoryAccess object,
+		// which should be freed by the caller when done. Presently only supports
+		// access to special function registers.
+		static CompSysEmulator* launch_ucsim(
+				const char* exec_file, std::vector<std::string>& args, ComputerMemoryAccess** obj);
 		// Returns true if the emulator is still running, false if it has exitted
 		virtual bool is_alive() = 0;
 		// Run the emulator through the set elapsed time
@@ -220,20 +222,41 @@ class QemuComputer:
 		// at the most recent synchronization point
 		double get_timing_error() const { return qemu_time-sim_time; }
 		double get_qemu_time() const { return qemu_time; }
+		double get_quantum_seconds() const { return quantum; }
+		double get_mean_timing_error() const { return acc_error/(double)(error_samples+1); }
+		double get_max_timing_error() const { return max_error; }
 		virtual ~QemuComputer();
+
+		enum EmulatorMode
+		{
+			PRECISE, // Use icount
+			FAST, // kvm
+		};
+
 	protected:
 		void create_x86(
 				std::vector<std::string>& qemu_args,
 				std::string disk_img,
-				int mb_ram = 2048);
+				int mb_ram = 2048,
+				EmulatorMode emulator_mode = PRECISE);
+		void create_x86(
+				std::vector<std::string>& qemu_args,
+				std::vector<std::string>& disks,
+				std::vector<std::string>& disk_formats,
+				std::string& cdrom,
+				bool boot_cdrom,
+				int mb_ram,
+				EmulatorMode emulator_mode);
 		void create_8052(
 				std::vector<std::string>& ucsim_args,
 				std::string flash_img,
 				ComputerMemoryAccess** obj = NULL);
+
 	private:
 		const double quantum;
 		CompSysEmulator* emulator; 
-		double ttg, qemu_time, sim_time;
+		double ttg, qemu_time, sim_time, acc_error, max_error;
+		unsigned error_samples;
 		void inject_input(void* buf, unsigned size);
 		enum { CATCHUP, THREAD_RUNNING, IDLE } mode;
 
@@ -248,6 +271,9 @@ QemuComputer<X>::QemuComputer(double quantum_seconds):
 	ttg(0.0),
 	qemu_time(0.0),
 	sim_time(0.0),
+	acc_error(0.0),
+	max_error(0.0),
+	error_samples(0),
 	mode(IDLE)
 {
 }
@@ -272,8 +298,8 @@ void QemuComputer<X>::output_func(Bag<X>& yb)
 	{
 		mode = IDLE;
 		emulator->join();
-		// Get the time elapsed in the qemu thread
-		qemu_time += emulator->elapsed()/1E6;
+		// Get the scaled time elapsed in the qemu thread
+		qemu_time += (emulator->elapsed()/1E6);
 	}
 }
 
@@ -284,12 +310,15 @@ void QemuComputer<X>::internal_and_confluent()
 	// If qemu is ahead of us then advance
 	// the clock without running qemu. A 
 	// simple test of qemu_time > sim_time
-	// can become stuck floating point error
-	// and a small ttg combine such that
+	// can become stuck if a floating point error
+	// and small ttg combine such that
 	// sim_time+ttg = sim_time.
 	if (mode != CATCHUP && qemu_time > sim_time)
 	{
 		mode = CATCHUP;
+		error_samples++;
+		acc_error += get_timing_error();
+		max_error = (max_error > get_timing_error()) ? max_error : get_timing_error();
 		ttg = qemu_time - sim_time;
 	}
 	// Run the computer for another quantum if it is still alive
@@ -333,8 +362,12 @@ double QemuComputer<X>::ta()
 template <typename X>
 void QemuComputer<X>::create_x86(
 	std::vector<std::string>& args,
-	std::string disk_image,
-	int mb_ram)
+	std::vector<std::string>& disks,
+	std::vector<std::string>& disk_formats,
+	std::string& cdrom,
+	bool boot_cdrom,
+	int mb_ram,
+	EmulatorMode emulator_mode)
 {
 	char arg_buf[1000];
 	args.push_back("-vga");
@@ -350,16 +383,54 @@ void QemuComputer<X>::create_x86(
 	args.push_back("-rtc");
 	args.push_back("clock=vm");
 	// Time will track the instruction count
-	sprintf(arg_buf,"1,sleep=off");
-	args.push_back("-icount");
-	args.push_back(arg_buf);
-	// Attach our disk image (assume a raw formatted image)
-	sprintf(arg_buf,"file=%s,index=0,media=disk,format=raw",disk_image.c_str());
-	args.push_back("-drive");
-	args.push_back(arg_buf);
+	if (emulator_mode == PRECISE)
+	{
+		sprintf(arg_buf,"1,sleep=off");
+		args.push_back("-icount");
+		args.push_back(arg_buf);
+	}
+	else if (emulator_mode == FAST)
+	{
+		args.push_back("-cpu");
+		args.push_back("kvm64,-kvmclock,-tsc");
+		args.push_back("-machine");
+		args.push_back("smm=off");
+		args.push_back("-enable-kvm");
+	}
+	// Attach our disk images 
+	for (unsigned idx = 0; idx < disks.size(); idx++)
+	{
+		sprintf(arg_buf,"file=%s,index=%u,media=disk,format=%s",disks[idx].c_str(),idx,disk_formats[idx].c_str());
+		args.push_back("-drive");
+		args.push_back(arg_buf);
+	}
+	if (cdrom != "")
+	{
+		args.push_back("-cdrom");
+		args.push_back(cdrom);
+		if (boot_cdrom)
+		{
+			args.push_back("-boot");
+			args.push_back("d");
+		}
+	}
 	// Start the machine
 	emulator = CompSysEmulator::launch_qemu("qemu-system-i386",args);
 	assert(emulator->is_alive());
+}
+
+template <typename X>
+void QemuComputer<X>::create_x86(
+	std::vector<std::string>& args,
+	std::string disk_image,
+	int mb_ram,
+	QemuComputer<X>::EmulatorMode emulator_mode)
+{
+	std::string cdrom = "";
+	std::vector<std::string> disks, disk_formats;
+	disks.push_back(disk_image);
+	disk_formats.push_back("raw");
+	create_x86(args,disks,disk_formats,cdrom,false,mb_ram,emulator_mode);
 }
 
 template <typename X>

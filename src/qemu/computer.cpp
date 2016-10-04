@@ -97,7 +97,8 @@ class GenericEmulator:
 	pthread_t thr;
 };
 
-adevs::CompSysEmulator* adevs::CompSysEmulator::launch_qemu(const char* exec_file, std::vector<std::string>& args)
+adevs::CompSysEmulator* adevs::CompSysEmulator::launch_qemu(const char* exec_file,
+	std::vector<std::string>& args)
 {
 	GenericEmulator* q = new GenericEmulator();
 	q->data.machine = new QEMU_Machine(exec_file,args);
