@@ -1,0 +1,9 @@
+\chapter{Mealy Models}
+\label{chapter:mealy_models}
+
+The output of a Mealy model is a function of its input. The simulator can support Mealy models used in the special case that no Mealy model is coupled to any other Mealy model. That is, Mealy models must be coupled only to Moore models. In the simulation library, a Mealy model is created by subclassing \classname{MealyAtomic} and a Moore model by subclassing \classname{Atomic}.
+
+The Mealy model has three output functions, corresponding to the three state transition functions \methodname{delta\_int}, \methodname{delta\_ext}, and \methodname{delta\_conf}. The output function that occurs just prior to an internal event has just one argument, which is a bag to be filled with output produced by the model. The output function that occurs just prior to an external event has three arguments: the elapsed time, the input to the model, and a bag to be filled with the resulting output. The output function that occurs just prior to a confluent event has two arguments: the input to the model and a bag to be filled with the resulting output. 
+
+In all other respects, \classname{MealyAtomic} is identical to \classname{Atomic}. Models derived from \classname{MealyAtomic} are convenient when you would otherwise introduce a transient state that would allow an \classname{Atomic} model to respond immediately to an input event. Note, however, that an atomic model with a zero time advance and a Mealy model are not identical: the Mealy model produces its output at the same instant it receives the input (i.e., in the same simulation step); the Moore model will wait until the next simulation step.
+

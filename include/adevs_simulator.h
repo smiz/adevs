@@ -171,6 +171,9 @@ template <class X, class T = double> class Simulator:
 		Schedule<X,T> sched;
 		// List of models that are imminent or activated by input
 		Bag<Atomic<X,T>*> activated;
+		// Mealy systems that we need to process
+		bool allow_mealy_input;
+		Bag<MealyAtomic<X,T>*> mealy;
 		// Pools of preallocated, commonly used objects
 		object_pool<Bag<X> > io_pool;
 		object_pool<Bag<Event<X,T> > > recv_pool;
@@ -283,6 +286,16 @@ template <class X, class T>
 void Simulator<X,T>::visit(Atomic<X,T>* model)
 {
 	assert(model->y == NULL);
+	// Mealy models are processed after the Moore models
+	if (model->typeIsMealyAtomic() != NULL)
+	{
+		model->typeIsMealyAtomic()->imm = true;
+		assert(model->y == NULL);
+		// May be in the mealy list because of a route call
+		if (model->x == NULL)
+			mealy.insert(model->typeIsMealyAtomic());
+		return;
+	}
 	model->y = io_pool.make_obj();
 	// Put it in the active list if it is not already there
 	if (model->x == NULL)
@@ -303,8 +316,52 @@ void Simulator<X,T>::computeNextOutput()
 {
 	// If the imminent set is up to date, then just return
 	if (activated.empty() == false) return;
-	// Get the imminent models from the schedule. 
+	// Get the imminent Moore models from the schedule. 
+	allow_mealy_input = true;
 	sched.visitImminent(this);
+	// Only Moore models can influence Mealy models. 
+	allow_mealy_input = false;
+	// Iterate over Mealy models to calculate their output
+	for (typename Bag<MealyAtomic<X,T>*>::iterator m_iter = mealy.begin();
+		m_iter != mealy.end(); m_iter++)
+	{
+		MealyAtomic<X,T> *model = *m_iter;
+		assert(model->y == NULL);
+		model->y = io_pool.make_obj();
+		// Put it in the active set if it is not already there
+		if (model->x == NULL)
+			activated.insert(model);
+		// Compute output functions and route the events. The bags of output
+		// are held for garbage collection at a later time.
+		if (model->imm) // These are the imminent Mealy models
+		{
+			if (model->x == NULL)
+				model->typeIsAtomic()->output_func(*(model->y));
+			else
+				model->output_func(*(model->x),*(model->y));
+			model->imm = false;
+		}
+		else
+		{
+			assert(model->x != NULL);
+			// These are the Mealy models activated by input
+			model->output_func(sched.minPriority()-model->tL,*(model->x),*(model->y));
+		}
+	}
+	// Translate Mealy output to inputs for Moore models. The route method
+	// will throw an exception if an event is sent to a Mealy model.
+	for (typename Bag<MealyAtomic<X,T>*>::iterator m_iter = mealy.begin();
+		m_iter != mealy.end(); m_iter++)
+	{
+		MealyAtomic<X,T> *model = *m_iter;
+		// Route each event in y
+		for (typename Bag<X>::iterator y_iter = model->y->begin(); 
+			y_iter != model->y->end(); y_iter++)
+		{
+			route(model->getParent(),model,*y_iter);
+		}
+	}
+	mealy.clear();
 }
 
 template <class X, class T>
@@ -531,6 +588,24 @@ void Simulator<X,T>::schedule(Devs<X,T>* model, T t)
 template <class X, class T>
 void Simulator<X,T>::inject_event(Atomic<X,T>* model, X& value)
 {
+	// If this is a Mealy model, add it to the list of models that
+	// will need their input calculated
+	if (model->typeIsMealyAtomic())
+	{
+		if (allow_mealy_input)
+		{
+			assert(model->y == NULL);
+			// Add it to the list of its not already there
+			if (model->x == NULL && !model->typeIsMealyAtomic()->imm)
+				mealy.insert(model->typeIsMealyAtomic());
+		}
+		else
+		{
+			exception err("Mealy model coupled to a Mealy model",model);
+			throw err;
+		}
+	}
+	// Add the output to the model's bag of output to be processed
 	if (model->x == NULL)
 	{
 		if (model->y == NULL)

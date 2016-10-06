@@ -7,7 +7,7 @@ check: check_cpp check_par check_java check_fmi
 # Check cpp code only
 check_cpp: rvtest bag_test obj_pool sched atomic double_fcmp gcd_test gpt_test \
 tokenring_test dyn_devs_test zero_time_test ode_test listener_test \
-wrapper_test alt_time 
+wrapper_test alt_time mealy
 
 # Check OpenMP code
 check_par: optsim_test  
@@ -79,6 +79,10 @@ atomic:
 
 double_fcmp:
 	$(CC) $(CFLAGS) double_fcmp_test.cpp 
+	$(TEST_EXEC)
+
+mealy:
+	$(CC) $(CFLAGS) test_mealy.cpp
 	$(TEST_EXEC)
 
 clean_all:
