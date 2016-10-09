@@ -49,8 +49,9 @@ namespace adevs
 /**
  * This Simulator class implements the DEVS simulation algorithm.
  * Its methods throw adevs::exception objects if any of the DEVS model
- * constraints are violated (i.e., a negative time advance or a model
- * attempting to send an input directly to itself).
+ * constraints are violated (i.e., a negative time advance, a model
+ * attempting to send an input directly to itself, or coupled Mealy
+ * type systems).
  */
 template <class X, class T = double> class Simulator:
 	public AbstractSimulator<X,T>,
@@ -66,7 +67,8 @@ template <class X, class T = double> class Simulator:
 		Simulator(Devs<X,T>* model):
 			AbstractSimulator<X,T>(),
 			Schedule<X,T>::ImminentVisitor(),
-			lps(NULL)
+			lps(NULL),
+			io_up_to_date(false)
 		{
 			schedule(model,adevs_zero<T>());
 		}
@@ -81,8 +83,7 @@ template <class X, class T = double> class Simulator:
 		/// Execute the simulation cycle at time nextEventTime()
 		void execNextEvent()
 		{
-			computeNextOutput();
-			computeNextState(bogus_input,sched.minPriority());
+			computeNextState();
 		}
 		/// Execute until nextEventTime() > tend
 		void execUntil(T tend)
@@ -99,14 +100,37 @@ template <class X, class T = double> class Simulator:
 		 */
 		void computeNextOutput();
 		/**
+		 * Compute the output value of the model in response to an input
+		 * at some time in lastEventTime() <= t <= nextEventTime().
+		 * This will notify registered EventListeners as the outputs
+		 * are produced. If this is the first call since the prior
+		 * state change with the given t, then the new output is computed.
+		 * Subsequent calls for the same time t simply
+		 * append to the input already supplied at time t.
+		 * @param input A bag of (input target,value) pairs
+		 * @param t The time at which the input takes effect
+		 */
+		void computeNextOutput(Bag<Event<X,T> >& input, T t);
+		/**
 		 * Apply the bag of inputs at time t and then compute the next model
 		 * states. Requires that lastEventTime() <= t <= nextEventTime().
 		 * This, in effect, implements the state transition function of 
-		 * the resultant model.
+		 * the resultant model. If the output has already been computed
+		 * at time t, then the new input at t is simply appended to the
+		 * prior input. Otherwise, the old results are discarded and input
+		 * is calculated at the given time.
 		 * @param input A bag of (input target,value) pairs
 		 * @param t The time at which the input takes effect
 		 */
 		void computeNextState(Bag<Event<X,T> >& input, T t);
+		/**
+		 * Compute the next state at the time at the time t and with
+		 * input supplied at the prior call to computeNextOutput
+		 * assuming no computeNextState has intervened. Assumes
+		 * t = nextEventTime() and input an empty bag if there was
+		 * no prior call to computeNextOutput.
+		 */
+		void computeNextState();
 		/**
 		 * Deletes the simulator, but leaves the model intact. The model must
 		 * exist when the simulator is deleted.  Delete the model only after
@@ -172,7 +196,8 @@ template <class X, class T = double> class Simulator:
 		// List of models that are imminent or activated by input
 		Bag<Atomic<X,T>*> activated;
 		// Mealy systems that we need to process
-		bool allow_mealy_input;
+		bool allow_mealy_input, io_up_to_date;
+		T io_time;
 		Bag<MealyAtomic<X,T>*> mealy;
 		// Pools of preallocated, commonly used objects
 		object_pool<Bag<X> > io_pool;
@@ -312,16 +337,40 @@ void Simulator<X,T>::visit(Atomic<X,T>* model)
 }
 
 template <class X, class T>
-void Simulator<X,T>::computeNextOutput()
+void Simulator<X,T>::computeNextOutput(Bag<Event<X,T> >& input, T t)
 {
-	// If the imminent set is up to date, then just return
-	if (activated.empty() == false) return;
-	// Get the imminent Moore models from the schedule. 
+	// Undo any prior output calculation at another time
+	if (io_up_to_date && !(io_time == t))
+	{
+		typename Bag<Atomic<X,T>*>::iterator iter;
+		for (iter = activated.begin(); iter != activated.end(); iter++)
+		{
+			clean_up(*iter);
+		}
+		activated.clear();
+	}
+	// Get the imminent Moore models from the schedule if we have not
+	// already done so.
 	allow_mealy_input = true;
-	sched.visitImminent(this);
+	if (t == sched.minPriority() && !io_up_to_date)
+		sched.visitImminent(this);
+	// Apply the injected inputs
+	for (typename Bag<Event<X,T> >::iterator iter = input.begin(); 
+		iter != input.end(); iter++)
+	{
+		Atomic<X,T>* amodel = (*iter).model->typeIsAtomic();
+		if (amodel != NULL)
+		{
+			inject_event(amodel,(*iter).value);
+		}
+		else
+		{
+			route((*iter).model->typeIsNetwork(),(*iter).model,(*iter).value);
+		}
+	}
 	// Only Moore models can influence Mealy models. 
 	allow_mealy_input = false;
-	// Iterate over Mealy models to calculate their output
+	// Iterate over activated Mealy models to calculate their output
 	for (typename Bag<MealyAtomic<X,T>*>::iterator m_iter = mealy.begin();
 		m_iter != mealy.end(); m_iter++)
 	{
@@ -362,40 +411,33 @@ void Simulator<X,T>::computeNextOutput()
 		}
 	}
 	mealy.clear();
+	// Record the time of the input
+	io_up_to_date = true;
+	io_time = t;
+
+}
+
+template<class X, class T>
+void Simulator<X,T>::computeNextOutput()
+{
+	computeNextOutput(bogus_input,sched.minPriority());
 }
 
 template <class X, class T>
 void Simulator<X,T>::computeNextState(Bag<Event<X,T> >& input, T t)
 {
-	// Clean up if there was a previous IO calculation
-	if (t < sched.minPriority())
-	{
-		typename Bag<Atomic<X,T>*>::iterator iter;
-		for (iter = activated.begin(); iter != activated.end(); iter++)
-		{
-			clean_up(*iter);
-		}
-		activated.clear();
-	}
-	// Otherwise, if the internal IO needs to be computed, do it
-	else if (t == sched.minPriority())
-	{
+	computeNextOutput(input,t);
+	assert(io_time == t && io_up_to_date);
+	computeNextState();
+}
+
+template <class X, class T>
+void Simulator<X,T>::computeNextState()
+{
+	if (!io_up_to_date)
 		computeNextOutput();
-	}
-	// Apply the injected inputs
-	for (typename Bag<Event<X,T> >::iterator iter = input.begin(); 
-	iter != input.end(); iter++)
-	{
-		Atomic<X,T>* amodel = (*iter).model->typeIsAtomic();
-		if (amodel != NULL)
-		{
-			inject_event(amodel,(*iter).value);
-		}
-		else
-		{
-			route((*iter).model->typeIsNetwork(),(*iter).model,(*iter).value);
-		}
-	}
+	io_up_to_date = false;
+	T t = io_time;
 	/*
 	 * Compute the states of atomic models.  Store Network models that 
 	 * need to have their model transition function evaluated in a
@@ -521,6 +563,10 @@ void Simulator<X,T>::clean_up(Devs<X,T>* model)
 			amodel->y->clear();
 			io_pool.destroy_obj(amodel->y);
 			amodel->y = NULL;
+		}
+		if (amodel->typeIsMealyAtomic() != NULL)
+		{
+			amodel->typeIsMealyAtomic()->imm = false;
 		}
 	}
 	else
@@ -723,6 +769,8 @@ template <class X, class T>
 Simulator<X,T>::Simulator(LogicalProcess<X,T>* lp):
 	AbstractSimulator<X,T>()
 {
+	io_up_to_date = false;
+	io_time = adevs_zero<T>();
 	lps = new lp_support;
 	lps->lp = lp;
 	lps->look_ahead = false;

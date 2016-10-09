@@ -45,7 +45,7 @@ template <class X> class CellEvent
 {
 	public:
 		/// Default constructor. Sets x = y = z = 0.
-		CellEvent(){ x = y = z = 0; }
+		CellEvent():value() { x = y = z = 0; }
 		/// Copy constructor
 		CellEvent(const CellEvent<X>& src):
 		x(src.x),y(src.y),z(src.z),value(src.value){}

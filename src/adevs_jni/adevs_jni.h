@@ -122,7 +122,7 @@ class JavaDevs
 };
 
 /**
- * Wrapper around a Jave atomic model.
+ * Wrapper around a Java atomic model.
  */
 class JavaAtomic:
 	public Atomic<java_io>,

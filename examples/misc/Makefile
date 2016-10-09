@@ -10,7 +10,7 @@ INCLUDE = -I${PREFIX}/include
 inv:
 	${CC} ${INCLUDE} ${CFLAGS} -o inverter inverter.cpp
 
-all: inverter
+all: inv
 	${CC} ${INCLUDE} ${CFLAGS} -o qss qss.cpp
 	${CC} ${INCLUDE} ${CFLAGS} -o pc proportional_control.cpp
 

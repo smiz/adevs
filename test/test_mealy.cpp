@@ -239,6 +239,7 @@ void test4()
 
 void test5()
 {
+	cout << "TEST 5" << endl;
 	SimpleDigraph<int>* model = new SimpleDigraph<int>();
 	Trigger *triggera = new Trigger();
 	Trigger *triggerb = new Trigger();
@@ -269,6 +270,7 @@ void test5()
 	delete sim;
 	delete l;
 	delete model;
+	cout << "TEST 5 PASSED" << endl;
 }
 
 int main()
