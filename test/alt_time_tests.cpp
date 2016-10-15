@@ -136,6 +136,7 @@ class TimeType
 		friend TimeType adevs_inf<TimeType>();
 		friend TimeType adevs_zero<TimeType>();
 		friend TimeType adevs_sentinel<TimeType>();
+		friend TimeType adevs_epsilon<TimeType>();
 		friend class PingPong<TimeType>;
 		friend void test3();
 };
@@ -146,6 +147,11 @@ template <> inline TimeType adevs_inf<TimeType>()
 }
 
 template <> inline TimeType adevs_zero<TimeType>()
+{
+	return TimeType(0);
+}
+
+template <> inline TimeType adevs_epsilon<TimeType>()
 {
 	return TimeType(0);
 }

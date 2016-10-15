@@ -450,6 +450,10 @@ void Simulator<X,T>::computeNextState()
 		exec_event(*iter,t); 
 	}
 	/**
+	 * The new states are in effect at t + eps so advance t
+	 */
+	t = t + adevs_epsilon<T>();
+	/**
 	 * Compute model transitions and build up the prev (pre-transition)
 	 * and next (post-transition) component sets. These sets are built
 	 * up from only the models that have the model_transition function
@@ -609,15 +613,20 @@ void Simulator<X,T>::schedule(Devs<X,T>* model, T t)
 	{
 		a->tL = t;
 		T dt = a->ta();
-		if (dt < adevs_zero<T>())
-		{
-			exception err("Negative time advance",a);
-			throw err;
-		}
 		if (dt == adevs_inf<T>())
+		{
 			sched.schedule(a,adevs_inf<T>());
+		}
 		else
-			sched.schedule(a,t+dt);
+		{
+			T tNext = a->tL+dt;
+			if (tNext < a->tL)
+			{
+				exception err("Negative time advance",a);
+				throw err;
+			}
+			sched.schedule(a,tNext);
+		}
 	}
 	else
 	{
@@ -726,8 +735,8 @@ void Simulator<X,T>::exec_event(Atomic<X,T>* model, T t)
 	// External event
 	else
 		model->delta_ext(t-model->tL,*(model->x));
-	// Notify any listeners
-	this->notify_state_listeners(model,t);
+	// Notify any listeners of the new state at t+eps
+	this->notify_state_listeners(model,t+adevs_epsilon<T>());
 	// Check for a model transition
 	if (model->model_transition() && model->getParent() != NULL)
 	{

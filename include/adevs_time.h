@@ -41,6 +41,8 @@ template <class T> inline T adevs_inf();
 template <class T> inline T adevs_zero(); 
 /// Returns a value less than adevs_zero()
 template <class T> inline T adevs_sentinel(); 
+/// Returns the interval to the next instant of time
+template <class T> inline T adevs_epsilon(); 
 
 namespace adevs
 {
@@ -124,6 +126,87 @@ template<class T = double> struct Time
 		return !(*this < t2);
 	}
 };
+
+/**
+ * This time type allows models to evolve on R x Z.
+ */
+class sd_time
+{
+	public:
+		// Creates the identify (0,0)
+		sd_time():t(0.0),k(0.0){}
+		// Create a time (t,k)
+		sd_time(double t, int k):t(t),k(k){}
+		sd_time(const sd_time& other):t(other.t),k(other.k){}
+		double real() const { return t; }
+		double integer() const { return k; }
+		const sd_time& operator=(const sd_time& other)
+		{
+			t = other.t;
+			k = other.k;
+			return *this;
+		}
+		/// Equivalence
+		bool operator==(const sd_time& t2) const
+		{
+			return (t == t2.t && k == t2.k);
+		}
+		/// Not equal
+		bool operator!=(const sd_time& t2) const
+		{
+			return !(*this == t2);
+		}
+		/// Order by t then by c
+		bool operator<(const sd_time& t2) const
+		{
+			return (t < t2.t || (t == t2.t && k < t2.k));
+		}
+		bool operator<=(const sd_time& t2) const
+		{
+			return (*this == t2 || *this < t2);
+		}
+		bool operator>(const sd_time& t2) const
+		{
+			return !(*this <= t2);
+		}
+		bool operator>=(const sd_time& t2) const
+		{
+			return !(*this < t2);
+		}
+		/// Add and subtract
+		sd_time operator+(const sd_time& t2) const
+		{
+			sd_time result(*this);
+			result += t2;
+			return result;
+		}
+		const sd_time& operator+=(const sd_time& t2) 
+		{
+			if (t2.t == 0.0) k += t2.k;
+			else { t += t2.t; k = t2.k; }
+			return *this;
+		}
+		sd_time operator-(const sd_time& t2) const
+		{
+			sd_time result(*this);
+			result -= t2;
+			return result;
+		}
+		const sd_time& operator-=(const sd_time& t2) 
+		{
+			if (t == t2.t) { t = 0.0; k -= t2.k; }
+			else t -= t2.t; 
+			return *this;
+		}
+		friend std::ostream& operator<<(std::ostream& out, const sd_time& t)
+		{
+			out << "(" << t.t << "," << t.k << ")";
+			return out;
+		}
+	private:
+		double t; int k;
+};
+
 
 /**
  * <p>The fcmp() inline function is taken from fcmp.c, which is
@@ -258,18 +341,29 @@ template <> inline long adevs_inf() {
 	return std::numeric_limits<long>::max(); }
 template <> inline adevs::double_fcmp adevs_inf() {
 	return std::numeric_limits<double>::max(); }
+template <> inline adevs::sd_time adevs_inf() {
+	return adevs::sd_time(std::numeric_limits<float>::max(),std::numeric_limits<int>::max()); }
 
 template <> inline long double adevs_zero() { return 0.0L; }
 template <> inline double adevs_zero() { return 0.0; }
 template <> inline int adevs_zero() { return 0; }
 template <> inline long adevs_zero() { return 0; }
 template <> inline adevs::double_fcmp adevs_zero() { return 0.0; }
+template <> inline adevs::sd_time adevs_zero() { return adevs::sd_time(); }
 
 template <> inline long double adevs_sentinel() { return -1.0L; }
 template <> inline double adevs_sentinel() { return -1.0; }
 template <> inline int adevs_sentinel() { return -1; }
 template <> inline long adevs_sentinel() { return -1; }
 template <> inline adevs::double_fcmp adevs_sentinel() { return -1.0; }
+template <> inline adevs::sd_time adevs_sentinel() { return adevs::sd_time(-1.0,0); }
+
+template <> inline long double adevs_epsilon() { return 0.0L; }
+template <> inline double adevs_epsilon() { return 0.0; }
+template <> inline int adevs_epsilon() { return 0; }
+template <> inline long adevs_epsilon() { return 0; }
+template <> inline adevs::double_fcmp adevs_epsilon() { return 0.0; }
+template <> inline adevs::sd_time adevs_epsilon() { return adevs::sd_time(0.0,1); }
 
 template<class T>
 std::ostream& operator<<(std::ostream& strm, const adevs::Time<T>& t);

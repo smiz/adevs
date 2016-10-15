@@ -73,6 +73,10 @@ sched:
 	$(CC) $(CFLAGS) sched_test.cpp 
 	$(TEST_EXEC)
 
+sd_time:
+	$(CC) $(CFLAGS) sd_time_test.cpp 
+	$(TEST_EXEC)
+
 atomic:
 	$(CC) $(CFLAGS) atomic_test.cpp 
 	$(TEST_EXEC)
