@@ -7,6 +7,9 @@ INCLUDE = -I${PREFIX}/include
 # Should not need to edit anything below this line
 ##
 
+cancer:
+	${CC} ${INCLUDE} ${CFLAGS} tumor.cpp 
+
 sri:
 	${CC} ${INCLUDE} ${CFLAGS} sri.cpp -lgsl -lblas
 
