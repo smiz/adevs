@@ -1,5 +1,6 @@
 #include "adevs.h"
 #include "adevs_fmi.h"
+#include "bounce/modelDescription.h"
 #include <iostream>
 using namespace std;
 using namespace adevs;
@@ -7,32 +8,27 @@ using namespace adevs;
 static const double epsilon = 1E-7;
 static const double err_tol = 1E-3;
 
-class bounce:
-	public FMI<double>
+class bounce2:
+	public bounce
 {
 	public:
-		bounce():
-		FMI<double>(
-				"bounce",
-				"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
-				1,1,
-				"bounce/binaries/linux64/bounce.so",
-				epsilon),
-		m_bounce(0),
-		m_resetTime(0.0)
+		bounce2():
+			bounce(),
+			m_bounce(0),
+			m_resetTime(0.0)
 		{
 		}
 		void internal_event(double* q, const bool* state_event)
 		{
 			cout << "internal" << endl;
 			// Apply internal event function of the super class
-			FMI<double>::internal_event(q,state_event);
+			bounce::internal_event(q,state_event);
 			// Change the direction as needed
 			m_bounce++;
 			set_a(-get_a());
 			m_resetTime = get_time();
 			// Reapply internal event function of the super class
-			FMI<double>::internal_event(q,state_event);
+			bounce::internal_event(q,state_event);
 			assert((get_a() > 0.0) == get_aAbove());
 			assert((get_x() > 1.5) == get_xAbove());
 			assert(get_goUp() == (!get_aAbove() && !get_xAbove()));
@@ -42,7 +38,7 @@ class bounce:
 		{
 			cout << get_time() << " " << 
 				get_x() << " " << 
-				get_DER_x() << " " << 
+				get_der_x_() << " " << 
 				get_a() << " " <<
 				get_goUp() << " " <<
 				get_goDown() << " " <<
@@ -59,14 +55,6 @@ class bounce:
 				x = exp(get_time()-m_resetTime);
 			assert(fabs(x-get_x()) < err_tol);
 		}
-		double get_a() { return get_real(2); }
-		double get_x() { return get_real(0); }
-		double get_DER_x() { return get_real(1); }
-		bool get_goUp() { return get_bool(4); }
-		bool get_goDown() { return get_bool(3); }
-		bool get_xAbove() { return get_bool(5); }
-		bool get_aAbove() { return get_bool(2); }
-		void set_a(double a) { set_real(2,a); }
 	private:
 		int m_bounce;
 		double m_resetTime;
@@ -74,7 +62,7 @@ class bounce:
 
 int main()
 {
-	bounce* test_model = new bounce();
+	bounce2* test_model = new bounce2();
 	Hybrid<double>* hybrid_model =
 		new Hybrid<double>(
 		test_model,
@@ -86,9 +74,9 @@ int main()
 		// Check initial values
 		assert(test_model->get_time() == 0.0);
 		cout << test_model->get_x() << " " <<
-			test_model->get_DER_x() << endl;
+			test_model->get_der_x_() << endl;
 		assert(fabs(test_model->get_x()-2.0) < err_tol);
-		assert(fabs(test_model->get_DER_x()+2.0)< err_tol);
+		assert(fabs(test_model->get_der_x_()+2.0)< err_tol);
 		assert(test_model->get_goUp() == false);
 		assert(test_model->get_goDown() == false);
 		test_model->print_state();

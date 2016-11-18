@@ -1,5 +1,6 @@
 #include "adevs.h"
 #include "adevs_fmi.h"
+#include "pendulum/modelDescription.h"
 #include <iostream>
 using namespace std;
 using namespace adevs;
@@ -60,51 +61,37 @@ class oracle:
 		int test_count;
 };
 
-class pendulum:
-	public FMI<double>
+class pendulum2:
+	public pendulum
 {
 	public:
-		pendulum():
-			FMI<double>(
-					"pendulum",
-					"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
-					2,0,
-					"pendulum/binaries/linux64/pendulum.so",
-					1E-10),
+		pendulum2():
+			pendulum(),
 			query(false)
 		{
 		}
-		double time_event_func(const double*)
+		double time_event_func(const double* q)
 		{
+			pendulum::time_event_func(q);
 			if (query) return 0;
 			else return DBL_MAX;
 		}
 		void internal_event(double* q, const bool* state_events)
 		{
-			FMI<double>::internal_event(q,state_events);
+			pendulum::internal_event(q,state_events);
 			query = false;
 		}
 		void external_event(double* q, double e, const Bag<double>& xb)
 		{
-			FMI<double>::external_event(q,e,xb);
+			pendulum::external_event(q,e,xb);
 			query = true;
 		}
-		void output_func(const double*,const bool*, Bag<double>& yb)
+		void output_func(const double* q,const bool* state_events, Bag<double>& yb)
 		{
+			pendulum::output_func(q,state_events,yb);
 			yb.insert(get_theta());
 		}
 
-		double get_theta() { return get_real(7); }
-		double get_x() { return get_real(8); }
-		double get_y() { return get_real(10); }
-		double get_state_set_1() { return get_real(0); }
-		double get_state_set_2() { return get_real(1); }
-		double get_der_state_set_1() { return get_real(2); }
-		double get_der_state_set_2() { return get_real(3); }
-		void print_state_matrix()
-		{
-			cout << get_int(0) << " " << get_int(1) << " " << get_int(2) << " " << get_int(3) << endl;
-		}
 	private:
 		bool query;
 };
@@ -112,7 +99,7 @@ class pendulum:
 int main()
 {
 	// Create the open modelica model
-	pendulum* model = new pendulum();
+	pendulum2* model = new pendulum2();
 	Hybrid<double>* hybrid_model =
 		new Hybrid<double>(
 		model,
@@ -144,12 +131,7 @@ int main()
 		<< model->get_y() << " "
 		<< model->get_theta() << " " 
 		<< hybrid_model_oracle->getState(0) << " "
-	   	<< model->get_state_set_1() << " " 
-		<< model->get_state_set_2() << " "
-	   	<< model->get_der_state_set_1() << " " 
-		<< model->get_der_state_set_2() << " "
 		<< endl;
-		model->print_state_matrix();
 	}
 	assert(test_oracle->getTestCount() > 0);
 	delete sim;

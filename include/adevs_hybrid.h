@@ -66,6 +66,12 @@ template <typename X> class ode_system
 		 * update algberaic variables. The default implementation does nothing.
 		 */
 		virtual void postStep(double* q){};
+		/**
+		 * This is called after a trial step. It can be used to restore the values
+		 * of any variables that might have been changed by der_func or state_event_func
+		 * while calculating the trial step. By default this method does nothing.
+		 */
+		virtual void postTrialStep(double* q){};
 		/// The internal transition function
 		virtual void internal_event(double* q,
 				const bool* state_event) = 0;
@@ -159,6 +165,10 @@ template <typename X> class dae_se1_system:
 		 * after the execution a discrete state transition.
 		 */
 		virtual void postStep(double* q, double* a) = 0;
+		/**
+		 * Default implementation calls postTrialStep(q)
+		 */
+		virtual void postTrialStep(double *q, double* a) { ode_system<X>::postTrialStep(q); }
 		/// The internal transition function
 		virtual void internal_event(double* q, double* a,
 				const bool* state_event) = 0;
@@ -596,6 +606,7 @@ template <typename X, class T = double> class Hybrid:
 			sigma = std::min(step_size,time_event);
 			event[sys->numEvents()] = time_event <= sigma;
 			event_exists = event[sys->numEvents()] || state_event_exists;
+			sys->postTrialStep(q);
 		}
 };
 

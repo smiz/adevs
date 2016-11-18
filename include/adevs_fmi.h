@@ -35,6 +35,7 @@
 #include <iostream>
 #include <dlfcn.h>
 #include <cstdlib>
+#include <stdio.h>
 #include "adevs_hybrid.h"
 #include "fmi2Functions.h"
 #include "fmi2FunctionTypes.h"
@@ -70,7 +71,8 @@ template <typename X> class FMI:
 			int num_event_indicators,
 			const char* shared_lib_name,
 			const double tolerance = 1E-8,
-			int num_extra_event_indicators = 0);
+			int num_extra_event_indicators = 0,
+			double start_time = 0.0);
 		/// Copy the initial state of the model to q
 		virtual void init(double* q);
 		/// Compute the derivative for state q and put it in dq
@@ -85,6 +87,7 @@ template <typename X> class FMI:
 		 * of an integration state.
 		 */
 		virtual void postStep(double* q);
+		virtual void postTrialStep(double* q);
 		/**
 		 * The internal transition function. This function will process all events
 		 * required by the FMI. Any derived class should call this method for the
@@ -132,7 +135,10 @@ template <typename X> class FMI:
 		bool get_bool(int k);
 		// Set the value of a boolean variable
 		void set_bool(int k, bool val);
-
+		// Get the value of a string variable
+		std::string get_string(int k);
+		// Set the value of a string variable
+		void set_string(int k, std::string& val);
 	private:
 		// Reference to the FMI
 		fmi2Component c;
@@ -161,7 +167,8 @@ template <typename X> class FMI:
 		fmi2Status (*_fmi2SetContinuousStates)(fmi2Component, const fmi2Real*, size_t);
 		fmi2Status (*_fmi2GetDerivatives)(fmi2Component, fmi2Real*, size_t);
 		fmi2Status (*_fmi2GetEventIndicators)(fmi2Component, fmi2Real*, size_t);
-		fmi2Status (*_fmi2GetContinuousStates)(fmi2Component, fmi2Real*, size_t);
+		fmi2Status (*_fmi2GetContinuousStates)(fmi2Component, fmi2Real*, size_t);	
+		
 		// Instant of the next time event
 		double next_time_event;
 		// Current time
@@ -172,15 +179,20 @@ template <typename X> class FMI:
 		bool cont_time_mode;
 		// Number of event indicators that are not governed by the FMI
 		int num_extra_event_indicators;
+		// Start time of the simulation
+		double start_time;
 
 		static void fmilogger(
 			fmi2ComponentEnvironment componentEnvironment,
 			fmi2String instanceName,
 			fmi2Status status,
 			fmi2String category,
-			fmi2String message, ...)
+			fmi2String message,...)
 		{
-			std::cerr << message << std::endl;
+			if (message != NULL){			
+		
+				fprintf(stderr, message,"\n");
+			}
 		}
 
 		fmi2CallbackFunctions* callbackFuncs;
@@ -195,14 +207,15 @@ FMI<X>::FMI(const char* modelname,
 			int num_event_indicators,
 			const char* so_file_name,
 			const double tolerance,
-			int num_extra_event_indicators):
+			int num_extra_event_indicators,
+			double start_time):
 	// One extra variable at the end for time
 	ode_system<X>(num_state_variables+1,num_event_indicators+num_extra_event_indicators),
 	next_time_event(adevs_inf<double>()),
-	t_now(0.0),
+	t_now(start_time),
 	so_hndl(NULL),
 	cont_time_mode(false),
-	num_extra_event_indicators(num_extra_event_indicators)
+	num_extra_event_indicators(num_extra_event_indicators)	
 {
 	fmi2CallbackFunctions tmp = {adevs::FMI<X>::fmilogger,calloc,free,NULL,NULL};
 	callbackFuncs = new fmi2CallbackFunctions(tmp);
@@ -384,6 +397,18 @@ void FMI<X>::postStep(double* q)
 }
 
 template <typename X>
+void FMI<X>::postTrialStep(double* q)
+{
+	assert(cont_time_mode);
+	// Restore values changed by der_func and state_event_func
+	fmi2Status status;
+	status = _fmi2SetTime(c,q[this->numVars()]-1);
+	assert(status == fmi2OK);
+	status = _fmi2SetContinuousStates(c,q,this->numVars()-1);
+	assert(status == fmi2OK);
+}
+
+template <typename X>
 void FMI<X>::internal_event(double* q, const bool* state_event)
 {
 	fmi2Status status;
@@ -509,6 +534,25 @@ void FMI<X>::set_bool(int k, bool val)
 	fmi2Boolean fmi_val = fmi2False;
 	if (val) fmi_val = fmi2True;
 	fmi2Status status = _fmi2SetBoolean(c,&ref,1,&fmi_val);
+	assert(status == fmi2OK);
+}
+
+template <typename X>
+std::string FMI<X>::get_string(int k)
+{
+	const fmi2ValueReference ref = k;
+	fmi2String val;
+	fmi2Status status = _fmi2GetString(c,&ref,1,&val);
+	assert(status == fmi2OK);
+	return val;
+}
+
+template <typename X>
+void FMI<X>::set_string(int k, std::string& val)
+{
+	const fmi2ValueReference ref = k;
+	fmi2String fmi_val = fmi2False;
+	fmi2Status status = _fmi2SetString(c,&ref,1,&fmi_val);
 	assert(status == fmi2OK);
 }
 

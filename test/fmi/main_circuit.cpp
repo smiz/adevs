@@ -1,29 +1,25 @@
 #include "adevs.h"
 #include "adevs_fmi.h"
+#include "circuit/modelDescription.h"
 #include <iostream>
 using namespace std;
 using namespace adevs;
 
-class Circuit:
-	public adevs::FMI<double>
+class Circuit2:
+	public Circuit
 {
 	public:
-		Circuit():
-		adevs::FMI<double>(
-				"Circuit",
-				"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
-				1,0,
-				"circuit/binaries/linux64/Circuit.so",
-				1E-10),
-		start_time(DBL_MAX)
+		Circuit2():
+			Circuit(),
+			start_time(DBL_MAX)
 		{
 		}
 		void external_event(double* q, double e, const Bag<double>& xb)
 		{
-			FMI<double>::external_event(q,e,xb);
+			Circuit::external_event(q,e,xb);
 			start_time = e;
 			set_Vsrc_Vref(0.0);
-			FMI<double>::external_event(q,e,xb);
+			Circuit::external_event(q,e,xb);
 		}
 		void print_state()
 		{
@@ -48,19 +44,13 @@ class Circuit:
 			assert(fabs(get_Rbridge_T1_i()) < 1E-6);
 		}
 
-		void set_Vsrc_Vref(double val) { set_real(17,val); }
-		double get_Vsrc_T_v() { return get_real(0); }
-		double get_R2_T2_v() { return get_real(7); }
-		double get_R1_T2_v() { return get_real(5); }
-		double get_Rbridge_T1_i() { return get_real(10); }
-
 	private:
 		double start_time;
 };
 
 int main()
 {
-	Circuit* test_model = new Circuit();
+	Circuit2* test_model = new Circuit2();
 	Hybrid<double>* hybrid_model =
 		new Hybrid<double>(
 		test_model,
