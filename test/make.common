@@ -1,8 +1,9 @@
 # Common macros
-UNAME := $(shell uname -s)
 COMPARE = tclsh $(PREFIX)/util/compare
 # GNU gcc compiler
+UNAME := $(shell uname -s)
 OPENMP = -fopenmp
+PREFIX=$(HOME)/Code/adevs-code
 CFLAGS = $(OPENMP) -g -Wall -I$(PREFIX)/include
 CC = g++
 ifeq ($(UNAME),CYGWIN_NT-6.1)
@@ -13,13 +14,19 @@ endif
 DEL = rm -f
 LIBS = -L$(PREFIX)/src -ladevs 
 CMD_SEP = ;
+MOVE = mv
+DIFF = diff
 # Microsoft cl compiler
-#CFLAGS = /W4 /GR /EHsc /I$(PREFIX)/include /Fe$(TEST_EXEC)
+#HOME=C:\Users\home426\Documents
+#PREFIX = $(HOME)\adevs-code
+#CFLAGS = /openmp /nologo /GR /EHsc /I$(PREFIX)\include /Fe$(TEST_EXEC)
 #CC = cl
 #TEST_EXEC = a.exe
 #DEL = del
-#LIBS = -L$(PREFIX)/src -ladevs
+#LIBS = $(PREFIX)\src\adevs.lib
 #CMD_SEP = &&
+#MOVE = move
+#DIFF = fc 
 # Common targets
 clean:
-	$(DEL) *.obj *.o tmp $(TEST_EXEC) $(DEL) *.class
+	$(DEL) *.obj *.o tmp* $(TEST_EXEC) $(DEL) *.class

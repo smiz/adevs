@@ -1,4 +1,3 @@
-PREFIX=..
 include make.common
 
 # Everything else should work fine

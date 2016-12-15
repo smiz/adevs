@@ -94,7 +94,7 @@ bool event_locator_impl<X>::find_events(bool* events,
 	// of the interval
 	this->sys->state_event_func(qstart,z[0]);
 	// Look for the first event inside of the interval [0,h]
-	for (;;)
+	while (this->sys->numEvents() > 0)
 	{
 		double tguess = h;
 		bool event_in_interval = false, found_event = false;

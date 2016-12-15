@@ -1,6 +1,6 @@
 #include "adevs.h"
 #include "adevs_fmi.h"
-#include "event_tests/modelDescription.h"
+#include "EventTests/modelDescription.h"
 #include <iostream>
 using namespace std;
 

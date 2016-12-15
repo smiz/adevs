@@ -33,13 +33,25 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
-#include <dlfcn.h>
 #include <cstdlib>
 #include <stdio.h>
 #include "adevs_hybrid.h"
 #include "fmi2Functions.h"
 #include "fmi2FunctionTypes.h"
 #include "fmi2TypesPlatform.h"
+
+// Functions for loading DLL and so files
+#ifdef _WIN32
+#include <windows.h>
+#define OPEN_LIB(name) LoadLibrary(name)
+#define GET_FUNC(hndl,name) GetProcAddress(hndl,name)
+#define CLOSE_LIB(hndl) FreeLibrary(hndl)
+#else
+#include <dlfcn.h>
+#define OPEN_LIB(name) dlopen(name,RTLD_LAZY)
+#define GET_FUNC(hndl,name) dlsym(hndl,name)
+#define CLOSE_LIB(hndl) dlclose(hndl)
+#endif
 
 namespace adevs
 {
@@ -174,7 +186,11 @@ template <typename X> class FMI:
 		// Current time
 		double t_now;
 		// so library handle
+		#ifdef _WIN32
+		HINSTANCE so_hndl;
+		#else
 		void* so_hndl;
+		#endif
 		// Are we in continuous time mode?
 		bool cont_time_mode;
 		// Number of event indicators that are not governed by the FMI
@@ -219,68 +235,68 @@ FMI<X>::FMI(const char* modelname,
 {
 	fmi2CallbackFunctions tmp = {adevs::FMI<X>::fmilogger,calloc,free,NULL,NULL};
 	callbackFuncs = new fmi2CallbackFunctions(tmp);
-	so_hndl = dlopen(so_file_name, RTLD_LAZY);
-	if (!so_hndl)
+	so_hndl = OPEN_LIB(so_file_name);
+	if (so_hndl == NULL)
 	{
 		throw adevs::exception("Could not load so file",this);
     }
 	// This only works with a POSIX compliant compiler/system
 	_fmi2Instantiate = (fmi2Component (*)(fmi2String, fmi2Type,
 		fmi2String, fmi2String, const fmi2CallbackFunctions*,
-		fmi2Boolean, fmi2Boolean))dlsym(so_hndl,"fmi2Instantiate");
+		fmi2Boolean, fmi2Boolean))GET_FUNC(so_hndl,"fmi2Instantiate");
 	assert(_fmi2Instantiate != NULL);
-	_fmi2FreeInstance = (void (*)(fmi2Component))dlsym(so_hndl,"fmi2FreeInstance");
+	_fmi2FreeInstance = (void (*)(fmi2Component))GET_FUNC(so_hndl,"fmi2FreeInstance");
 	assert(_fmi2FreeInstance != NULL);
 	_fmi2SetupExperiment = (fmi2Status (*)(fmi2Component, fmi2Boolean,
-		fmi2Real, fmi2Real, fmi2Boolean, fmi2Real))dlsym(so_hndl,"fmi2SetupExperiment");
+		fmi2Real, fmi2Real, fmi2Boolean, fmi2Real))GET_FUNC(so_hndl,"fmi2SetupExperiment");
 	assert(_fmi2SetupExperiment != NULL);
-	_fmi2EnterInitializationMode = (fmi2Status (*)(fmi2Component))dlsym(so_hndl,"fmi2EnterInitializationMode");
+	_fmi2EnterInitializationMode = (fmi2Status (*)(fmi2Component))GET_FUNC(so_hndl,"fmi2EnterInitializationMode");
 	assert(_fmi2EnterInitializationMode != NULL);
-	_fmi2ExitInitializationMode = (fmi2Status (*)(fmi2Component))dlsym(so_hndl,"fmi2ExitInitializationMode");
+	_fmi2ExitInitializationMode = (fmi2Status (*)(fmi2Component))GET_FUNC(so_hndl,"fmi2ExitInitializationMode");
 	assert(_fmi2ExitInitializationMode != NULL);
 	_fmi2GetReal = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, fmi2Real*))
-		dlsym(so_hndl,"fmi2GetReal");
+		GET_FUNC(so_hndl,"fmi2GetReal");
 	assert(_fmi2GetReal != NULL);
 	_fmi2GetInteger = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, fmi2Integer*)) 
-		dlsym(so_hndl,"fmi2GetInteger");
+		GET_FUNC(so_hndl,"fmi2GetInteger");
 	assert(_fmi2GetInteger != NULL);
 	_fmi2GetBoolean = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, fmi2Boolean*))
-		dlsym(so_hndl,"fmi2GetBoolean");
+		GET_FUNC(so_hndl,"fmi2GetBoolean");
 	assert(_fmi2GetBoolean != NULL);
 	_fmi2GetString = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, fmi2String*))
-		dlsym(so_hndl,"fmi2GetString");
+		GET_FUNC(so_hndl,"fmi2GetString");
 	assert(_fmi2GetString != NULL);
 	_fmi2SetReal = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2Real*))
-		dlsym(so_hndl,"fmi2SetReal");
+		GET_FUNC(so_hndl,"fmi2SetReal");
 	assert(_fmi2SetReal != NULL);
 	_fmi2SetInteger = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2Integer*))
-		dlsym(so_hndl,"fmi2SetInteger");
+		GET_FUNC(so_hndl,"fmi2SetInteger");
 	assert(_fmi2SetInteger != NULL);
 	_fmi2SetBoolean = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2Boolean*))
-		dlsym(so_hndl,"fmi2SetBoolean");
+		GET_FUNC(so_hndl,"fmi2SetBoolean");
 	assert(_fmi2SetBoolean != NULL);
 	_fmi2SetString = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t, const fmi2String*))
-		dlsym(so_hndl,"fmi2SetString");
+		GET_FUNC(so_hndl,"fmi2SetString");
 	assert(_fmi2SetString != NULL);
-	_fmi2EnterEventMode = (fmi2Status (*)(fmi2Component))dlsym(so_hndl,"fmi2EnterEventMode");
+	_fmi2EnterEventMode = (fmi2Status (*)(fmi2Component))GET_FUNC(so_hndl,"fmi2EnterEventMode");
 	assert(_fmi2EnterEventMode != NULL);
-	_fmi2NewDiscreteStates = (fmi2Status (*)(fmi2Component,fmi2EventInfo*))dlsym(so_hndl,"fmi2NewDiscreteStates");
+	_fmi2NewDiscreteStates = (fmi2Status (*)(fmi2Component,fmi2EventInfo*))GET_FUNC(so_hndl,"fmi2NewDiscreteStates");
 	assert(_fmi2NewDiscreteStates != NULL);
-	_fmi2EnterContinuousTimeMode = (fmi2Status (*)(fmi2Component))dlsym(so_hndl,"fmi2EnterContinuousTimeMode");
+	_fmi2EnterContinuousTimeMode = (fmi2Status (*)(fmi2Component))GET_FUNC(so_hndl,"fmi2EnterContinuousTimeMode");
 	assert(_fmi2EnterContinuousTimeMode != NULL);
 	_fmi2CompletedIntegratorStep = (fmi2Status (*)(fmi2Component, fmi2Boolean, fmi2Boolean*, fmi2Boolean*))
-		dlsym(so_hndl,"fmi2CompletedIntegratorStep");
+		GET_FUNC(so_hndl,"fmi2CompletedIntegratorStep");
 	assert(_fmi2CompletedIntegratorStep != NULL);
-	_fmi2SetTime = (fmi2Status (*)(fmi2Component, fmi2Real))dlsym(so_hndl,"fmi2SetTime");
+	_fmi2SetTime = (fmi2Status (*)(fmi2Component, fmi2Real))GET_FUNC(so_hndl,"fmi2SetTime");
 	assert(_fmi2SetTime != NULL);
 	_fmi2SetContinuousStates = (fmi2Status (*)(fmi2Component, const fmi2Real*, size_t))
-		dlsym(so_hndl,"fmi2SetContinuousStates");
+		GET_FUNC(so_hndl,"fmi2SetContinuousStates");
 	assert(_fmi2SetContinuousStates != NULL);
-	_fmi2GetDerivatives = (fmi2Status (*)(fmi2Component, fmi2Real*, size_t))dlsym(so_hndl,"fmi2GetDerivatives");
+	_fmi2GetDerivatives = (fmi2Status (*)(fmi2Component, fmi2Real*, size_t))GET_FUNC(so_hndl,"fmi2GetDerivatives");
 	assert(_fmi2GetDerivatives != NULL);
-	_fmi2GetEventIndicators = (fmi2Status (*)(fmi2Component, fmi2Real*, size_t))dlsym(so_hndl,"fmi2GetEventIndicators");
+	_fmi2GetEventIndicators = (fmi2Status (*)(fmi2Component, fmi2Real*, size_t))GET_FUNC(so_hndl,"fmi2GetEventIndicators");
 	assert(_fmi2GetEventIndicators != NULL);
-	_fmi2GetContinuousStates = (fmi2Status (*)(fmi2Component, fmi2Real*, size_t))dlsym(so_hndl,"fmi2GetContinuousStates");
+	_fmi2GetContinuousStates = (fmi2Status (*)(fmi2Component, fmi2Real*, size_t))GET_FUNC(so_hndl,"fmi2GetContinuousStates");
 	assert(_fmi2GetContinuousStates != NULL);
 	// Create the FMI component
 	c = _fmi2Instantiate(modelname,fmi2ModelExchange,guid,"",callbackFuncs,fmi2False,fmi2False);
@@ -476,7 +492,7 @@ FMI<X>::~FMI()
 {
 	_fmi2FreeInstance(c);
 	delete callbackFuncs;
-	dlclose(so_hndl);
+	CLOSE_LIB(so_hndl);
 }
 
 template <typename X>

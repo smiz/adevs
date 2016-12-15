@@ -1,6 +1,6 @@
 #include "adevs.h"
 #include "adevs_fmi.h"
-#include "event_tests/modelDescription.h"
+#include "eventIter/modelDescription.h"
 #include <iostream>
 #include <cassert>
 using namespace std;

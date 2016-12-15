@@ -161,7 +161,7 @@ void Tx::delta_ext(double e, const Bag<IO_Type>& xb)
 	{
 		collisions++;
 		mode = FAIL;
-		timeToTx = (random()%std::min(10,tryCount))*51.2E-6;
+		timeToTx = (rand()%std::min(10,tryCount))*51.2E-6;
 	}
 }
 

@@ -1,0 +1,42 @@
+include ..\make.common
+# GNU gcc compiler
+FMI_HOME = $(HOME)\FMI_for_ModelExchange_and_CoSimulation_v2.0
+
+all: t1 te tb tp tei tc
+
+tei:
+	python ..\..\util\xml2cpp.py -r eventIter\modelDescription.xml -type double -f eventIter\\binaries\\win64/eventIter.dll
+	$(CC) /I$(FMI_HOME) $(CFLAGS) main_eventIter.cpp $(LIBS)  
+	$(TEST_EXEC)
+
+te:
+	python ..\..\util\xml2cpp.py -r EventTests\modelDescription.xml -type int -f EventTests\\binaries\\win64\\EventTests.dll
+	$(CC) /I$(FMI_HOME) $(CFLAGS) main_EventTests.cpp $(LIBS)  
+	$(TEST_EXEC)
+
+t1:
+	python ..\..\util\xml2cpp.py -r test1\modelDescription.xml -type int -f test1\\binaries\\win64\\test1.dll
+	$(CC) /I$(FMI_HOME) $(CFLAGS) main_test1.cpp $(LIBS) 
+	$(TEST_EXEC)
+
+tb:
+	python ..\..\util\xml2cpp.py -r bounce\modelDescription.xml -type double -f .\\bounce\\binaries\\win64\\bounce.dll
+	$(CC) /I$(FMI_HOME) $(CFLAGS) main_bounce.cpp $(LIBS) 
+	$(TEST_EXEC)
+
+tp:
+	python ..\..\util\xml2cpp.py -r pendulum\modelDescription.xml -type double -f pendulum\\binaries\\win64\\pendulum.dll
+	$(CC) /I$(FMI_HOME) $(CFLAGS) main_pendulum.cpp $(LIBS) 
+	$(TEST_EXEC)
+
+tc:
+	python ..\..\util\xml2cpp.py -r Circuit\modelDescription.xml -type double -f Circuit\\binaries\\win64\\Circuit.dll
+	$(CC) /I$(FMI_HOME) $(CFLAGS) main_circuit.cpp $(LIBS) 
+	$(TEST_EXEC)
+
+clean_all: clean
+	rm -rf bounce
+	rm -rf event_tests
+	rm -rf test1
+	rm -rf pendulum
+	rm -rf circuit

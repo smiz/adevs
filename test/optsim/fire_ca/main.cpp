@@ -6,7 +6,6 @@
 #include <cstdio>
 #include <ctime>
 #include <cstring>
-#include <sys/time.h>
 using namespace std;
 
 // Use the parallel simulator?
@@ -159,14 +158,10 @@ int main(int argc, char** argv)
 		cout << "No data" << endl; 
 		return 0;
 	}
-	struct timeval tstart, tend;
-	gettimeofday(&tstart,NULL);
+	double tstart = omp_get_wtime();
 	simulateSpace();
-	gettimeofday(&tend,NULL);
+	double tend = omp_get_wtime();
 	// Done
-	long secs = tend.tv_sec-tstart.tv_sec;
-	long usecs = tend.tv_usec-tstart.tv_usec;
-	if (usecs < 0) { secs--; usecs += 1000000; }
-	cout << secs << " " << usecs << endl;
+	cout << (tend-tstart) << endl;
 	return 0;
 }

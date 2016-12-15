@@ -3,6 +3,7 @@
 #include "adevs_fmi.h"
 #include "Ethernet.h"
 #include "Control.h"
+#include "Robot.h"
 #include <cmath>
 #include <iostream>
 using namespace std;
@@ -131,91 +132,44 @@ const int ControlExt::sample = 0;
 const int ControlExt::command = 1;
 
 class RobotExt:
-	public FMI<IO_Type>
+	public Robot
 {
 	public:
 
 		static const int sample;
 		static const int command;
 
-#ifdef sampled 
-		double get_q1() { return get_real(39); }
-		double get_q1_sample() { return get_real(45); }
-		double get_q2() { return get_real(40); }
-		double get_q2_sample() { return get_real(46); }
-		double get_x() { return get_real(41); }
-		double get_xd() { return get_real(42); }
-		double get_z() { return get_real(43); }
-		double get_zd() { return get_real(44); }
-		double get_error() { return get_real(38); }
-
-		void set_T(double val, int which)
-		{
-			if (which == 0) set_real(22,val);
-			else set_real(23,val);
-		}
-#else
-		double get_q1() { return get_real(39); }
-		double get_q1_sample() { return get_real(40); }
-		double get_q2() { return get_real(41); }
-		double get_q2_sample() { return get_real(42); }
-		double get_x() { return get_real(43); }
-		double get_xd() { return get_real(44); }
-		double get_z() { return get_real(45); }
-		double get_zd() { return get_real(46); }
-		double get_error() { return get_real(38); }
-
-		void set_T(double val, int which)
-		{
-			if (which == 0) set_real(22,val);
-			else set_real(23,val);
-		}
-#endif
-
 		RobotExt():
-			FMI<IO_Type>
-			(
-			 	"Robot",
-#ifdef sampled
-				"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
-				4, // Number of state variables
-				0, // Number of event indicators
-#else
-				"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
-				4, // Number of state variables
-				2, // Number of event indicators
-#endif
-				"robot/linux64/Robot.so"
-			),
+			Robot(),
 			doSample(true)
 		{
 		}
 		double time_event_func(const double* q)
 		{
-			double tSup = FMI<IO_Type>::time_event_func(q);
+			double tSup = Robot::time_event_func(q);
 			if (doSample) return 0.0;
 			else return tSup;
 		}
 		void internal_event(double* q, const bool* state_event)
 		{
-			FMI<IO_Type>::internal_event(q,state_event);
+			Robot::internal_event(q,state_event);
 			test_for_sample();
-			FMI<IO_Type>::internal_event(q,state_event);
+			Robot::internal_event(q,state_event);
 		}
 		void external_event(double* q, double e,
 			const adevs::Bag<IO_Type>& xb)
 		{
-			FMI<IO_Type>::external_event(q,e,xb);
+			Robot::external_event(q,e,xb);
 			process_input_data(xb);
-			FMI<IO_Type>::external_event(q,e,xb);
+			Robot::external_event(q,e,xb);
 		}
 		void confluent_event(double *q, const bool* state_event,
 			const adevs::Bag<IO_Type>& xb)
 		{
-			FMI<IO_Type>::confluent_event(q,state_event,xb);
+			Robot::confluent_event(q,state_event,xb);
 			test_for_sample();
 			process_input_data(xb);
-			FMI<IO_Type>::confluent_event(q,state_event,xb);
+			Robot::confluent_event(q,state_event,xb);
 		}
 		void output_func(const double *q, const bool* state_event,
            adevs::Bag<IO_Type>& yb)
@@ -255,8 +209,8 @@ class RobotExt:
 		}
 		void process_command(double T1, double T2)
 		{
-			set_T(T1,0);
-			set_T(T2,1);
+			set_T_1_(T1);
+			set_T_2_(T2);
 		}
 		void test_for_sample()
 		{

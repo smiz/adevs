@@ -134,7 +134,7 @@ class sd_time
 {
 	public:
 		// Creates the identify (0,0)
-		sd_time():t(0.0),k(0.0){}
+		sd_time():t(0.0),k(0){}
 		// Create a time (t,k)
 		sd_time(double t, int k):t(t),k(k){}
 		sd_time(const sd_time& other):t(other.t),k(other.k){}

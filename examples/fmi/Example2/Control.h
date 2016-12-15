@@ -4,20 +4,17 @@
 #include "adevs_fmi.h"
 
 class Control:
-	// Derive model from the adevs FMI class
 	public adevs::FMI<IO_Type>
 {
 	public:
-		// Constructor loads the FMI
 		Control():
-			// Call FMI constructor
 			adevs::FMI<IO_Type>
 			(
-			 	"Control", // model name from modelDescription.xml
-		 		"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}", // GUID from modelDescription.xml
-				0, // Number of derivative variables
-				0, // numberOfEventIndicators from modelDescription.xml
-				"control/linux64/Control.so" // Location of the shared object file produced by omc
+				"Control",
+				"{f40c3fc8-01ad-4616-bb33-d7310350db66}",
+				0,
+				0,
+				"Control\\binaries\\win64\\Control.dll"
 			)
 		{
 		}

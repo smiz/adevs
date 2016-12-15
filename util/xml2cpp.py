@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import sys
 import re
-from lxml import etree
+import xml.etree.ElementTree as ET
 
 class ScalarVariable:
 	def __init__(self, node):
@@ -11,6 +11,7 @@ class ScalarVariable:
 		attributes = {}
 		name = node.get("name")
 		name = name.replace(".","_")
+		name = name.replace(",","_")
 		name = name.replace("]","_")
 		name = name.replace("[","_")
 		name = name.replace("(","_")
@@ -28,7 +29,7 @@ class ScalarVariable:
 		elif node.find("Enumeration") is not None:
 			attributes["type"] = "int"
 		else:
-			print "Unknown attribute"+name
+			print ("Unknown attribute"+name)
 		return attributes
 
 	def getCPPString(self):
@@ -43,7 +44,7 @@ class ScalarVariable:
 			rs += "\t\t{0} get_{1}() {{ return get_string({2}); }}\n\t\tvoid set_{1}({0} val) {{ set_string({2},val); }}\n".format(self.attributes['type'], self.attributes['name'], self.attributes['index'])
 		else:
 			rs += "\t\t{0} get_{1}() {{ return get_{0}({2}); }}\n\t\tvoid set_{1}({0} val) {{ set_{0}({2},val); }}\n".format(self.attributes['type'], self.attributes['name'], self.attributes['index'])
-			print "WARNING. UNRECOGNIZED TYPE: {0}. Parsing as: \n{1}".format(self.attributes['type'], rs)
+			print ("WARNING. UNRECOGNIZED TYPE: {0}. Parsing as: \n{1}".format(self.attributes['type'], rs))
 		return rs
 
 def write_file(filename, string):
@@ -55,13 +56,13 @@ def interpret(filename): # Go through file and pick out important information.
 	legend = {}
 	variables = []
 	index_num = 0
-	doc = etree.parse(filename)
+	doc = ET.parse(filename)
 	legend["modelName"] = doc.getroot().get("modelName")
-	print "Model name = ",legend["modelName"]
+	print ("Model name = ",legend["modelName"])
 	legend["guid"] = doc.getroot().get("guid")
-	print "GUID = ",legend["guid"]
+	print ("GUID = ",legend["guid"])
 	legend["indicatorNum"] = doc.getroot().get("numberOfEventIndicators")
-	print "eventIndicators =",legend["indicatorNum"]
+	print ("eventIndicators =",legend["indicatorNum"])
 	scalar_vars_list = doc.findall("ModelVariables/ScalarVariable")
 	for var in scalar_vars_list:
 		variables.append(ScalarVariable(var))
@@ -69,7 +70,7 @@ def interpret(filename): # Go through file and pick out important information.
 
 def countDerivatives(filename):
 	"""This function is responsible for counting the state variables"""
-	doc = etree.parse(filename)
+	doc = ET.parse(filename)
 	index_num = 0
 	derivatives_list = doc.findall("ModelStructure/Derivatives/Unknown")
 	for var in derivatives_list:
@@ -103,10 +104,10 @@ def compile_str(legend, variables, using_str):
 	return rs
 
 def print_help():
-			print "This program converts .xml files to .h files under the FMI standard found at www.fmi-standard.org"
-			print "Example: 'xml2cpp -r target_xml -type type -f shared_object_file -o output_name'"
-			print "-h will open up this screen"
-			print "-o is optional"
+			print ("This program converts .xml files to .h files under the FMI standard found at www.fmi-standard.org")
+			print ("Example: 'xml2cpp -r target_xml -type type -f shared_object_file -o output_name'")
+			print ("-h will open up this screen")
+			print ("-o is optional")
 
 """This part builds the header file"""
 if __name__=="__main__":
