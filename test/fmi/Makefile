@@ -8,15 +8,15 @@ LIBS += -ldl
 all: t1 te tb tp tei tc
 
 tei:
-	rm -rf event_tests; mkdir event_tests; cd event_tests; cp ../eventIter.mo .; cp ../eventIter.mos .; omc eventIter.mos; unzip -o -qq eventIter.fmu
-	python ../../util/xml2cpp.py -r event_tests/modelDescription.xml -type double -f event_tests/binaries/linux64/eventIter.so
+	rm -rf eventIter; mkdir eventIter; cd eventIter; cp ../eventIter.mo .; cp ../eventIter.mos .; omc eventIter.mos; unzip -o -qq eventIter.fmu
+	python ../../util/xml2cpp.py -r eventIter/modelDescription.xml -type double -f eventIter/binaries/linux64/eventIter.so
 	$(CC) $(CFLAGS) main_eventIter.cpp $(LIBS)  
 	$(TEST_EXEC)
 
 
 te:
-	rm -rf event_tests; mkdir event_tests; cd event_tests; cp ../EventTests.mo .; cp ../EventTests.mos .; omc EventTests.mos; unzip -o -qq EventTests.fmu
-	python ../../util/xml2cpp.py -r event_tests/modelDescription.xml -type int -f event_tests/binaries/linux64/EventTests.so
+	rm -rf EventTests; mkdir EventTests; cd EventTests; cp ../EventTests.mo .; cp ../EventTests.mos .; omc EventTests.mos; unzip -o -qq EventTests.fmu
+	python ../../util/xml2cpp.py -r EventTests/modelDescription.xml -type int -f EventTests/binaries/linux64/EventTests.so
 	$(CC) $(CFLAGS) main_EventTests.cpp $(LIBS)  
 	$(TEST_EXEC)
 
@@ -46,7 +46,8 @@ tc:
 
 clean_all: clean
 	rm -rf bounce
-	rm -rf event_tests
+	rm -rf EventTests
+	rm -rf eventIter
 	rm -rf test1
 	rm -rf pendulum
 	rm -rf circuit

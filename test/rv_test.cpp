@@ -12,7 +12,7 @@ void test_uniform()
 	double a = 0.0, b = 1.0;
 	double sum = 0.0;
 	int count = 100000000;
-	rv r(unsigned long(0));
+	rv r((unsigned long)0);
 	for (int i = 0; i < count; i++)
 	{
 		double s = r.uniform(a,b);
@@ -38,7 +38,7 @@ void test_triangular()
 	double a = 0.0, b = 1.0, c = 0.65;
 	double sum = 0.0;
 	int count = 100000000;
-	rv r(unsigned long(0));
+	rv r((unsigned long)0);
 	for (int i = 0; i < count; i++)
 	{
 		double s = r.triangular(a,b,c);
