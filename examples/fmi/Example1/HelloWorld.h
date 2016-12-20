@@ -11,10 +11,10 @@ class HelloWorld:
 			adevs::FMI<double>
 			(
 				"HelloWorld",
-				"{2d482288-9170-49f3-827f-afbe391837d3}",
+				"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
 				1,
 				0,
-				"HelloWorld\\binaries\\win64\\HelloWorld.dll"
+				"HelloWorld/binaries/linux64/HelloWorld.so"
 			)
 		{
 		}
