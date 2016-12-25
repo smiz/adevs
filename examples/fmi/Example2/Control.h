@@ -11,10 +11,10 @@ class Control:
 			adevs::FMI<IO_Type>
 			(
 				"Control",
-				"{f40c3fc8-01ad-4616-bb33-d7310350db66}",
+				"{efb7175f-8cf9-4fbc-8ecb-3348a491ee29}",
 				0,
 				0,
-				"Control\\binaries\\win64\\Control.dll"
+				"Control/binaries/linux64/Control.so"
 			)
 		{
 		}

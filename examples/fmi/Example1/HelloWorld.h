@@ -11,7 +11,7 @@ class HelloWorld:
 			adevs::FMI<double>
 			(
 				"HelloWorld",
-				"{8c4e810f-3df3-4a00-8276-176fa3c9f9e0}",
+				"{65900882-9b73-4993-97fa-f1288a2f8209}",
 				1,
 				0,
 				"HelloWorld/binaries/linux64/HelloWorld.so"

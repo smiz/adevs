@@ -1,39 +1,34 @@
 # Cleanup stale files
-rm -rf robot
-rm -rf control
+rm -rf Sampled
+rm -rf Quantized
+rm -rf Control
 rm -f a.out
-# Build the robot FMU 
-mode=quantized
-#mode=sampled
-omc sim_$mode.mos
-# Cleanup the junk produced by the omc compiler
-rm -f Robot_*
-rm -f Robot.c
-# Unpack the fmu data 
-unzip -o -qq Robot.fmu
-rm -f Robot.fmu
-rm -f *.json
-rm -rf sources
-mv binaries robot
-mv *.xml robot
-# Build the controller fmu
+# Build FMU's
 omc sim_control.mos
-rm -f Control_*
-rm -f Control.c
-unzip -o -qq Control.fmu
-rm -f Control.fmu
-rm -f *.json
-rm -rf sources
-mv binaries control
-mv *.xml control
+mkdir Control
+cd Control ; unzip -o -qq ../Control.fmu; cd ..
+# Cleanup the junk produced by the omc compiler
+rm -f *FMU* *.fmu *.log *.json *.libs
+# Unpack the fmu data 
+omc sim_quantized.mos
+mkdir Quantized
+cd Quantized ; unzip -o -qq ../Robot.fmu ; cd ..
+#rm -f *FMU* *.fmu *.log *.json *.libs
+omc sim_sampled.mos
+mkdir Sampled
+cd Sampled ; unzip -o -qq ../Robot.fmu ; cd ..
+#rm -f *FMU* *.fmu *.log *.json *.libs
 # Compile our simulator. You must have in the include path
 #    The adevs include directory
 #    The FMI for model exchange header files
 # You must link to system library libdl
-g++ -g -D$mode \
+python ../../../util/xml2cpp.py -o Control -type IO_Type -f Control/binaries/linux64/Control.so -r Control/modelDescription.xml
+# Build the quantized model. Change this to build the Sampled model.
+python ../../../util/xml2cpp.py -o Robot -type IO_Type -f Quantized/binaries/linux64/Robot.so -r Quantized/modelDescription.xml
+g++ -g \
 	-Wall -I../../../include \
 	-I${HOME}/Code/FMI_for_ModelExchange_and_CoSimulation_v2.0 \
 	Ethernet.cpp main.cpp -ldl ../../../src/libadevs.a
 # Run the model
-#./a.out
+./a.out
 

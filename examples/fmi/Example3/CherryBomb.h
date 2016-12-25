@@ -11,10 +11,10 @@ class CherryBomb:
 			adevs::FMI<std::string>
 			(
 				"CherryBomb",
-				"{ec145769-827a-4549-b6b5-226c92b8d197}",
+				"{7decb2a4-fe94-456f-89ce-6ec2aba03419}",
 				3,
 				3,
-				"CherryBomb\\binaries\\win64\\CherryBomb.dll"
+				"CherryBomb/binaries/linux64/CherryBomb.so"
 			)
 		{
 		}

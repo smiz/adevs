@@ -169,8 +169,9 @@ class Grid:
 				for (int j = 0; j < YSIZE; j++)
 					delete grid[i][j];
 		}
-		void print()
+		void print(sd_time tL)
 		{
+			cout << tL << endl;
 			for (int i = 0; i < XSIZE; i++)
 			{
 				for (int j = 0; j < YSIZE;j ++)
@@ -189,11 +190,12 @@ int main()
 {
 	Grid *world = new Grid();
 	Simulator<io_type,sd_time> *sim = new Simulator<io_type,sd_time>(world);
-	world->print();;
+	world->print(adevs_zero<sd_time>());
 	while (sim->nextEventTime() < adevs_inf<sd_time>())
 	{
+		sd_time tL = sim->nextEventTime();
 		sim->execNextEvent();
-		world->print();
+		world->print(tL);
 	}
 	delete sim;
 	delete world;

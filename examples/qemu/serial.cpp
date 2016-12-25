@@ -53,8 +53,8 @@ class SerialEcho:
 	public:
 		SerialEcho():
 			Atomic<IO_Type>(),
-			// One second per character
-			proc_time(1.0),
+			// Two seconds per character
+			proc_time(2.0),
 			ttg(proc_time)
 		{
 		}

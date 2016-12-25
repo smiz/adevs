@@ -1,5 +1,6 @@
 # Common macros
 COMPARE = tclsh $(PREFIX)/util/compare
+
 # GNU gcc compiler
 UNAME := $(shell uname -s)
 OPENMP = -fopenmp
@@ -16,6 +17,7 @@ LIBS = -L$(PREFIX)/src -ladevs
 CMD_SEP = ;
 MOVE = mv
 DIFF = diff
+
 # Microsoft cl compiler
 #HOME=C:\Users\home426\Documents
 #PREFIX = $(HOME)\adevs-code
@@ -27,6 +29,7 @@ DIFF = diff
 #CMD_SEP = &&
 #MOVE = move
 #DIFF = fc 
+
 # Common targets
 clean:
 	$(DEL) *.obj *.o tmp* $(TEST_EXEC) $(DEL) *.class

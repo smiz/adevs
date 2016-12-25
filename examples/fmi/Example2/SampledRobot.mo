@@ -1,5 +1,6 @@
 model Robot extends BaseRobot;
 	parameter Real sampleFreq = 1000.0; 
+	Integer sampleNumber;
 algorithm
 	when sample(0,1.0/sampleFreq) then
 		q1_sample := q1;
@@ -9,5 +10,6 @@ algorithm
 initial algorithm
 	q1_sample := q1;
 	q2_sample := q2;
+	sampleNumber := 0;
 end Robot;
 

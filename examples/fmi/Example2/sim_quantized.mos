@@ -1,4 +1,6 @@
 loadFile("BaseRobot.mo");
 loadFile("QuantizedRobot.mo");
 loadFile("ControlTrajectory.mo");
+setCommandLineOptions("-d=initialization");
 translateModelFMU(Robot,"2.0");
+getErrorString();
