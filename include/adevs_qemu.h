@@ -202,7 +202,7 @@ class CompSysEmulator
 		// Returns true if the emulator is still running, false if it has exitted
 		virtual bool is_alive() = 0;
 		// Run the emulator through the set elapsed time
-		virtual void run(int us) = 0;
+		virtual void run(unsigned us) = 0;
 		// Join on the last run call
 		virtual void join() = 0;
 };

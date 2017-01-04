@@ -228,7 +228,7 @@ int main()
 	x86* B = new x86("jill.img",false,"00:00:00:11:11:11",
 			QemuComputer<IO_Type>::FAST);
 	x86* A = new x86("jack.img",false,"00:00:00:11:11:12",
-			QemuComputer<IO_Type>::FAST);
+			QemuComputer<IO_Type>::PRECISE);
 	SimpleDigraph<IO_Type>* model = new SimpleDigraph<IO_Type>();
 	model->add(A);
 	model->add(B);

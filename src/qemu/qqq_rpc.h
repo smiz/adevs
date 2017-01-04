@@ -12,7 +12,7 @@
 class Basic_Machine
 {
 	public:
-		virtual int run(int usecs) = 0;
+		virtual int run(unsigned usecs) = 0;
 		virtual bool is_alive() = 0;
 		virtual ~Basic_Machine(){};
 };
@@ -35,7 +35,7 @@ class QEMU_Machine:
 		 * The return value is the number of microseconds
 		 * that actually advanced. 
 		 */
-		int run(int usecs);
+		int run(unsigned usecs);
 		/**
 		 * Returns true if qemu is still executing and false if it
 		 * has terminated.
@@ -48,11 +48,11 @@ class QEMU_Machine:
 
 	private:
 		unsigned pid;
-		// Pipe for talking to qemu
-		int read_fd, write_fd;
+		// Socket for talking to qemu
+		int fd[2];
 
-		void write_mem_value(int val);
-		int read_mem_value();	
+		void write_mem_value(unsigned val);
+		unsigned read_mem_value();
 };
 
 /**
@@ -76,7 +76,7 @@ class uCsim_Machine:
 		 * The return value is the number of microseconds
 		 * that actually advanced. 
 		 */
-		int run(int usecs);
+		int run(unsigned usecs);
 		/**
 		 * Returns true if qemu is still executing and false if it
 		 * has terminated.

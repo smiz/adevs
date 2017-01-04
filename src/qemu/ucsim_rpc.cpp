@@ -85,7 +85,7 @@ bool uCsim_Machine::is_alive()
 	return (waitpid(pid,NULL,WNOHANG) >= 0);
 }
 
-int uCsim_Machine::run(int usecs)
+int uCsim_Machine::run(unsigned usecs)
 {
 	static const char* state_inst = "state\n";
 	static const int state_inst_len = 7;

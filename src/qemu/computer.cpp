@@ -74,7 +74,7 @@ class GenericEmulator:
 		{
 			return data.machine->is_alive();
 		}
-		void run(int us)
+		void run(unsigned us)
 		{
 			pthread_mutex_lock(&(data.mtx));
 			// Set the amount of time to execute

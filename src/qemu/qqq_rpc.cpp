@@ -3,6 +3,7 @@
 #include <sys/stat.h> 
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <signal.h>
 #include <cstdio>
 #include <cerrno>
@@ -14,44 +15,34 @@
 #include <iostream>
 #include <cerrno>
 #include <cstdio>
+#include <arpa/inet.h>
+#include <stdint.h>
 
-void QEMU_Machine::write_mem_value(int val)
+void QEMU_Machine::write_mem_value(unsigned val)
 {
 	errno = 0;
-	if (write(write_fd,&val,sizeof(int)) != sizeof(int))
-		perror("Write error to qemu pipe");
+	uint32_t msg = htonl(val);
+	if (write(fd[0],&msg,sizeof(uint32_t)) != sizeof(uint32_t))
+		perror("Write error to qemu socket");
 }
 
-int QEMU_Machine::read_mem_value()
+unsigned QEMU_Machine::read_mem_value()
 {
-	int val;
-	if (read(read_fd,&val,sizeof(int)) != sizeof(int))
+	uint32_t msg;
+	if (read(fd[0],&msg,sizeof(uint32_t)) != sizeof(uint32_t))
 		return 0;
-	return val;
+	return ntohl(msg);
 }
 
 QEMU_Machine::QEMU_Machine(const char* executable, const std::vector<std::string>& args):
 	Basic_Machine()
 {
-	// Ignore sigpipe which will kill us when qemu exits
-	signal(SIGPIPE,SIG_IGN);
-	// Create pipes that we will used to exchange data 
-	int pipefd[2][2];
-	if (pipe(pipefd[0]) < 0)
+	// Create sockets that we will used to exchange data 
+	if (socketpair(AF_UNIX,SOCK_STREAM,0,fd) < 0)
 		throw qemu_exception(strerror(errno));
-	if (pipe(pipefd[1]) < 0)
-		throw qemu_exception(strerror(errno));
-	// Get the pipes
-	read_fd = pipefd[1][0];
-	write_fd = pipefd[0][1];
 	// Fork a process for qemu
 	if ((pid = fork()) == 0)
 	{
-		close(read_fd);
-		close(write_fd);
-		// Get read and write pipe for qemu process
-		read_fd = pipefd[0][0];
-		write_fd = pipefd[1][1];
 		// Fork qemu
 		char** cargs = new char*[args.size()+4];
 		cargs[0] = new char[strlen(executable)+1];
@@ -59,7 +50,7 @@ QEMU_Machine::QEMU_Machine(const char* executable, const std::vector<std::string
 		cargs[1] = new char[5];
 		strcpy(cargs[1],"-qqq");
 		cargs[2] = new char[1000];
-		sprintf(cargs[2],"write=%d,read=%d",write_fd,read_fd);
+		sprintf(cargs[2],"sock=%d",fd[1]);
 		for (unsigned i = 0; i < args.size(); i++)
 		{
 			cargs[i+3] = new char[args[i].length()+1];
@@ -72,8 +63,7 @@ QEMU_Machine::QEMU_Machine(const char* executable, const std::vector<std::string
 		// We should never get here
 		assert(false);
 	}
-	close(pipefd[0][0]);
-	close(pipefd[1][1]);
+	close(fd[1]);
 }
 
 bool QEMU_Machine::is_alive()
@@ -81,7 +71,7 @@ bool QEMU_Machine::is_alive()
 	return (waitpid(pid,NULL,WNOHANG) >= 0);
 }
 
-int QEMU_Machine::run(int usecs)
+int QEMU_Machine::run(unsigned usecs)
 {
 	int elapsed;
 	// Write the time advance
@@ -94,9 +84,8 @@ int QEMU_Machine::run(int usecs)
 
 QEMU_Machine::~QEMU_Machine()
 {
-	// Close our pipes. This will force qemu to exit
-	close(read_fd);
-	close(write_fd);
+	// Close our socket. This will force qemu to exit
+	close(fd[0]);
 	// Wait for the process 
 	kill(pid,SIGTERM);
 	waitpid(pid,NULL,0);
