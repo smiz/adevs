@@ -7,21 +7,10 @@
 #include <vector>
 
 /**
-  * Basic interface to any emulated computer system.
-  */
-class Basic_Machine
-{
-	public:
-		virtual int run(unsigned usecs) = 0;
-		virtual bool is_alive() = 0;
-		virtual ~Basic_Machine(){};
-};
-
-/**
  * This class encapsulates a QEMU Machine.
  */
 class QEMU_Machine:
-	public Basic_Machine
+	public adevs::CompSysEmulator
 {
 	public:
 		/**
@@ -30,17 +19,12 @@ class QEMU_Machine:
 		 */
 		QEMU_Machine(const char* executable, const std::vector<std::string>& arguments);
 		/**
-		 * Instruct the machine to execute for at most usec
-		 * microseconds of simulated time and then return.
-		 * The return value is the number of microseconds
-		 * that actually advanced. 
+		 * These methods are from the CompSysEmulator interface
 		 */
-		int run(unsigned usecs);
-		/**
-		 * Returns true if qemu is still executing and false if it
-		 * has terminated.
-		 */
+		int elapsed() { return e; }
 		bool is_alive();
+		void run(unsigned usecs);
+		void join();
 		/**
 		 * Shut the machine down now.
 		 */
@@ -50,6 +34,7 @@ class QEMU_Machine:
 		unsigned pid;
 		// Socket for talking to qemu
 		int fd[2];
+		int e;
 
 		void write_mem_value(unsigned val);
 		unsigned read_mem_value();
@@ -59,7 +44,7 @@ class QEMU_Machine:
  * This class encapsulates a uCsim Machine.
  */
 class uCsim_Machine:
-	public Basic_Machine,
+	public adevs::CompSysEmulator,
 	public adevs::ComputerMemoryAccess
 {
 	public:
@@ -71,17 +56,12 @@ class uCsim_Machine:
 				const char* executable,
 				const std::vector<std::string>& arguments);
 		/**
-		 * Instruct the machine to execute for at most usec
-		 * microseconds of simulated time and then return.
-		 * The return value is the number of microseconds
-		 * that actually advanced. 
+		 * These methods are from CompSysEmulator
 		 */
-		int run(unsigned usecs);
-		/**
-		 * Returns true if qemu is still executing and false if it
-		 * has terminated.
-		 */
+		int elapsed() { return e; }
 		bool is_alive();
+		void run(unsigned usecs);
+		void join(){}
 		/**
 		 * Shut the machine down now.
 		 */
@@ -92,6 +72,7 @@ class uCsim_Machine:
 
 	private:
 		double elapsed_secs;
+		int e;
 		unsigned pid;
 		int read_pipe[2];
 		int write_pipe[2];

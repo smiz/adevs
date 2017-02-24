@@ -3,6 +3,10 @@ include ../make.common
 
 check: bnew dae dae2
 
+con:
+	$(CC) $(CFLAGS) confluent_test.cpp
+	$(TEST_EXEC)
+
 dae2: 
 	$(CC) $(CFLAGS) dae_test2.cpp
 	$(TEST_EXEC) 1> tmp1 2> tmp2

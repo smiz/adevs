@@ -20,7 +20,6 @@
 
 void QEMU_Machine::write_mem_value(unsigned val)
 {
-	errno = 0;
 	uint32_t msg = htonl(val);
 	if (write(fd[0],&msg,sizeof(uint32_t)) != sizeof(uint32_t))
 		perror("Write error to qemu socket");
@@ -35,7 +34,8 @@ unsigned QEMU_Machine::read_mem_value()
 }
 
 QEMU_Machine::QEMU_Machine(const char* executable, const std::vector<std::string>& args):
-	Basic_Machine()
+	CompSysEmulator(),
+	e(0)
 {
 	// Create sockets that we will used to exchange data 
 	if (socketpair(AF_UNIX,SOCK_STREAM,0,fd) < 0)
@@ -71,15 +71,16 @@ bool QEMU_Machine::is_alive()
 	return (waitpid(pid,NULL,WNOHANG) >= 0);
 }
 
-int QEMU_Machine::run(unsigned usecs)
+void QEMU_Machine::run(unsigned usecs)
 {
-	int elapsed;
 	// Write the time advance
 	write_mem_value(usecs);
+}
+
+void QEMU_Machine::join()
+{
 	// Wait for qemu to reach that time
-	elapsed = read_mem_value();
-	// Return the actual time that was advanced
-	return elapsed;
+	e = read_mem_value();
 }
 
 QEMU_Machine::~QEMU_Machine()

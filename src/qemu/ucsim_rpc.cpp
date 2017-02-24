@@ -23,10 +23,11 @@ const double uCsim_Machine::instrs_per_usec = uCsim_Machine::mega_hz/12.0;
 uCsim_Machine::uCsim_Machine(
 	const char* executable,
 	const std::vector<std::string>& args):
-		Basic_Machine(),
+		CompSysEmulator(),
 		adevs::ComputerMemoryAccess(),
 		elapsed_secs(0.0)
 {
+	// read_mem and write_mem can be called concurrently with run
 	pthread_mutex_init(&mtx,NULL);
 	pthread_mutex_lock(&mtx);
 	if (pipe(read_pipe) != 0)
@@ -85,7 +86,7 @@ bool uCsim_Machine::is_alive()
 	return (waitpid(pid,NULL,WNOHANG) >= 0);
 }
 
-int uCsim_Machine::run(unsigned usecs)
+void uCsim_Machine::run(unsigned usecs)
 {
 	static const char* state_inst = "state\n";
 	static const int state_inst_len = 7;
@@ -116,7 +117,7 @@ int uCsim_Machine::run(unsigned usecs)
 		usecs -= (reduce > 0) ? reduce : 1;
 	}
 	pthread_mutex_unlock(&mtx);
-	return (int)((elapsed_secs-t_start)*1E6);
+	e = (int)((elapsed_secs-t_start)*1E6);
 }
 
 void uCsim_Machine::write_mem(unsigned addr, unsigned data)

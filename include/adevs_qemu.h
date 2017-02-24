@@ -3,6 +3,7 @@
 #include "adevs.h"
 #include <vector>
 #include <cstring>
+#include <cstdio>
 #include <pthread.h>
 #include <string>
 #include <list>
@@ -400,7 +401,8 @@ void QemuComputer<X>::create_x86(
 	// Attach our disk images 
 	for (unsigned idx = 0; idx < disks.size(); idx++)
 	{
-		sprintf(arg_buf,"file=%s,index=%u,media=disk,format=%s",disks[idx].c_str(),idx,disk_formats[idx].c_str());
+		sprintf(arg_buf,"file=%s,index=%u,media=disk,format=%s",
+			disks[idx].c_str(),idx,disk_formats[idx].c_str());
 		args.push_back("-drive");
 		args.push_back(arg_buf);
 	}
