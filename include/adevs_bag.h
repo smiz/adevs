@@ -156,6 +156,10 @@ template <class T> class Bag
 			b[size_] = t;
 			size_++;
 		}
+		/// Access the element at position k
+		const T& operator[](unsigned k) const { return b[k]; }
+		T& operator[](unsigned k) { return b[k]; }
+		/// Delete the bag 
 		~Bag() { delete [] b; }
 	private:	
 		unsigned cap_, size_;

@@ -6,12 +6,6 @@ using namespace std;
 // Movement rate of the fire
 const double fireCell::move_rate = 1.0;
 
-double fireCell::lookahead()
-{
-	if (fuel < move_rate) return DBL_MAX;
-	else return move_rate;
-}
-
 fireCell::fireCell(double fuel, bool on_fire, 
 long int x, long int y):
 adevs::Atomic<CellEvent>(),

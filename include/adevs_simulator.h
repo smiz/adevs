@@ -37,7 +37,6 @@
 #include "adevs_bag.h"
 #include "adevs_set.h"
 #include "object_pool.h"
-#include "adevs_lp.h"
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
@@ -67,7 +66,6 @@ template <class X, class T = double> class Simulator:
 		Simulator(Devs<X,T>* model):
 			AbstractSimulator<X,T>(),
 			Schedule<X,T>::ImminentVisitor(),
-			lps(NULL),
 			io_up_to_date(false)
 		{
 			schedule(model,adevs_zero<T>());
@@ -145,54 +143,15 @@ template <class X, class T = double> class Simulator:
 		{
 			schedule(model,adevs_zero<T>());
 		}
-		/**
-		 * Create a simulator that will be used by an LP as part of a parallel
-		 * simulation. This method is used by the parallel simulator.
-		 */
-		Simulator(LogicalProcess<X,T>* lp);
-		/**
-		 * <P>Call this method to indicate that all subsequent calls are part
-		 * of a lookahead calculation. Lookahead calculations will cause
-		 * the atomic models involved to save their states at the point
-		 * that the lookahead calculation was begun. These states are
-		 * restored when the lookahead calculation ends. At least one call
-		 * to lookNextEvent() must be made between beginLookahead() and
-		 * endLookahead().</P>
-		 * <P>Lookahead calculations are done with the lookNextEvent method,
-		 * which may throw a lookahead_impossible_exception. This occurs when
-		 * the simulator calculate a new state for an atomic model
-		 * whose beginLookahead method is unsupported.</P>
-		 */
-		void beginLookahead();
-		/**
-		 * This call terminates a lookahead calculation and restores the
-		 * models to their states when beginLookahead was called.
-		 */
-		void endLookahead();
-		/**
-		 * Look at future events assuming a input trajector with only
-		 * non-events. This has the same effect as calling execNextEvent
-		 * but the simulator can be restored to its prior state by
-		 * calling endLookahead. 
-		 */
-		void lookNextEvent();
 	private:
-		typedef enum { OUTPUT_OK, OUTPUT_NOT_OK, RESTORING_OUTPUT } OutputStatus;
-		// Structure to support parallel computing by a logical process
-		struct lp_support
-		{
-			// The processor that this simulator works for
-			LogicalProcess<X,T>* lp;
-			bool look_ahead, stop_forced;
-			OutputStatus out_flag;
-			Bag<Atomic<X,T>*> to_restore;
-		};
-		// This is NULL if the simulator is not supporting a logical process
-		lp_support* lps;
 		// Bogus input bag for execNextEvent() method
 		Bag<Event<X,T> > bogus_input;
 		// The event schedule
+		#ifdef _OPENMP
+		MultiSchedule<X,T> sched;
+		#else
 		Schedule<X,T> sched;
+		#endif
 		// List of models that are imminent or activated by input
 		Bag<Atomic<X,T>*> activated;
 		// Mealy systems that we need to process
@@ -285,22 +244,9 @@ template <class X, class T = double> class Simulator:
 		 */
 		void clean_up(Devs<X,T>* model);
 		/**
-		 * Execute the state transition function using t to compute the
-		 * elapsed time as t-model->tL. This adds the model to the nx bag 
-		 * if it is a network executive and updates the added
-		 * and removed sets. 
-		 */
-		void exec_event(Atomic<X,T>* model, T t);
-		/**
 		 * Construct the complete descendant set of a network model and store it in s.
 		 */
 		void getAllChildren(Network<X,T>* model, Set<Devs<X,T>*>& s);
-		/**
-		 * Update data structures needed for a reset of the simulator
-		 * following a speculative lookahead. Returns true if the
-		 * lookahead can be managed. False otherwise.
-		 */
-		bool manage_lookahead_data(Atomic<X,T>* model);
 		/**
 		 * Visit method inhereted from ImminentVisitor
 		 */
@@ -437,22 +383,45 @@ void Simulator<X,T>::computeNextState()
 	if (!io_up_to_date)
 		computeNextOutput();
 	io_up_to_date = false;
-	T t = io_time;
+	T t = io_time, tQ = io_time + adevs_epsilon<T>();
 	/*
 	 * Compute the states of atomic models.  Store Network models that 
 	 * need to have their model transition function evaluated in a
 	 * special container that will be used when the structure changes are
-	 * computed (see exec_event(.)).
+	 * computed.
 	 */
-	for (typename Bag<Atomic<X,T>*>::iterator iter = activated.begin(); 
-		iter != activated.end(); iter++)
+	#ifdef _OPENMP
+	#pragma omp parallel for
+	#endif
+	for (unsigned i = 0; i < activated.size(); i++)
 	{
-		exec_event(*iter,t); 
+		Atomic<X,T>* model = activated[i];
+		// Internal event
+		if (model->x == NULL)
+			model->delta_int();
+		// Confluent event
+		else if (model->y != NULL)
+			model->delta_conf(*(model->x));
+		// External event
+		else
+			model->delta_ext(t-model->tL,*(model->x));
+		// Check for a model transition
+		if (model->getParent() != NULL && model->model_transition())
+		{
+			#ifdef _OPENMP
+			#pragma omp critical
+			#endif
+			model_func_eval_set.insert(model->getParent());
+		}
+		// Notify listeners 
+		this->notify_state_listeners(model,tQ);
+		// Adjust position in the schedule
+		schedule(model,tQ);
 	}
 	/**
 	 * The new states are in effect at t + eps so advance t
 	 */
-	t = t + adevs_epsilon<T>();
+	t = tQ;
 	/**
 	 * Compute model transitions and build up the prev (pre-transition)
 	 * and next (post-transition) component sets. These sets are built
@@ -537,16 +506,9 @@ void Simulator<X,T>::computeNextState()
 		iter != activated.end(); iter++)
 	{
 		clean_up(*iter);
-		schedule(*iter,t);
 	}
 	// Empty the bags
 	activated.clear();
-	// If we are looking ahead, throw an exception if a stop was forced
-	if (lps != NULL && lps->stop_forced)
-	{
-		lookahead_impossible_exception err;
-		throw err;
-	}
 }
 
 template <class X, class T>
@@ -674,7 +636,7 @@ template <class X, class T>
 void Simulator<X,T>::route(Network<X,T>* parent, Devs<X,T>* src, X& x)
 {
 	// Notify event listeners if this is an output event
-	if (parent != src && (lps == NULL || lps->out_flag != RESTORING_OUTPUT))
+	if (parent != src)
 		this->notify_output_listeners(src,x,sched.minPriority());
 	// No one to do the routing, so return
 	if (parent == NULL) return;
@@ -699,12 +661,7 @@ void Simulator<X,T>::route(Network<X,T>* parent, Devs<X,T>* src, X& x)
 		amodel = (*recv_iter).model->typeIsAtomic();
 		if (amodel != NULL)
 		{
-			// Inject it only if it is assigned to our processor
-			if (lps == NULL || amodel->getProc() == lps->lp->getID())
-				inject_event(amodel,(*recv_iter).value);
-			// Otherwise tell the lp about it
-			else if (lps->out_flag != RESTORING_OUTPUT)
-				lps->lp->notifyInput(amodel,(*recv_iter).value);
+			inject_event(amodel,(*recv_iter).value);
 		}
 		// if this is an external output from the parent model
 		else if ((*recv_iter).model == parent)
@@ -720,28 +677,6 @@ void Simulator<X,T>::route(Network<X,T>* parent, Devs<X,T>* src, X& x)
 	}
 	recvs->clear();
 	recv_pool.destroy_obj(recvs);
-}
-
-template <class X, class T>
-void Simulator<X,T>::exec_event(Atomic<X,T>* model, T t)
-{
-	if (!manage_lookahead_data(model)) return;
-	// Internal event
-	if (model->x == NULL)
-		model->delta_int();
-	// Confluent event
-	else if (model->y != NULL)
-		model->delta_conf(*(model->x));
-	// External event
-	else
-		model->delta_ext(t-model->tL,*(model->x));
-	// Notify any listeners of the new state at t+eps
-	this->notify_state_listeners(model,t+adevs_epsilon<T>());
-	// Check for a model transition
-	if (model->model_transition() && model->getParent() != NULL)
-	{
-		model_func_eval_set.insert(model->getParent());
-	}
 }
 
 template <class X, class T>
@@ -772,83 +707,6 @@ Simulator<X,T>::~Simulator()
 	{
 		clean_up(*iter);
 	}
-}
-
-template <class X, class T>
-Simulator<X,T>::Simulator(LogicalProcess<X,T>* lp):
-	AbstractSimulator<X,T>()
-{
-	io_up_to_date = false;
-	io_time = adevs_zero<T>();
-	lps = new lp_support;
-	lps->lp = lp;
-	lps->look_ahead = false;
-	lps->stop_forced = false;
-	lps->out_flag = OUTPUT_OK;
-}
-
-template <class X, class T>
-void Simulator<X,T>::beginLookahead()
-{
-	if (lps == NULL)
-	{
-		adevs::exception err("tried to lookahead without lp support");
-		throw err;
-	}
-	lps->look_ahead = true;
-	if (!activated.empty())
-		lps->out_flag = OUTPUT_NOT_OK; 
-}
-
-template <class X, class T>
-void Simulator<X,T>::lookNextEvent()
-{
-	execNextEvent();
-}
-
-template <class X, class T>
-void Simulator<X,T>::endLookahead()
-{
-	if (lps == NULL) return;
-	typename Bag<Atomic<X,T>*>::iterator iter = lps->to_restore.begin();
-	for (; iter != lps->to_restore.end(); iter++)
-	{
-		(*iter)->endLookahead();
-		schedule(*iter,(*iter)->tL_cp);
-		(*iter)->tL_cp = adevs_sentinel<T>();
-		assert((*iter)->x == NULL);
-		assert((*iter)->y == NULL);
-	}
-	lps->to_restore.clear();
-	assert(activated.empty());
-	if (lps->out_flag == OUTPUT_NOT_OK)
-	{
-		lps->out_flag = RESTORING_OUTPUT;
-		computeNextOutput();
-		lps->out_flag = OUTPUT_OK;
-	}
-	lps->look_ahead = false;
-	lps->stop_forced = false;
-}
-
-template <class X, class T>
-bool Simulator<X,T>::manage_lookahead_data(Atomic<X,T>* model)
-{
-	if (lps == NULL) return true;
-	if (lps->look_ahead && model->tL_cp < adevs_zero<T>())
-	{
-		lps->to_restore.insert(model);
-		model->tL_cp = model->tL;
-		try
-		{
-			model->beginLookahead();
-		}
-		catch(method_not_supported_exception err)
-		{
-			lps->stop_forced = true;
-		}
-	}
-	return !(lps->stop_forced);
 }
 
 } // End of namespace

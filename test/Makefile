@@ -1,15 +1,12 @@
 include make.common
 
 # Everything else should work fine
-check: check_cpp check_par check_java check_fmi
+check: check_cpp check_java check_fmi
 
 # Check cpp code only
 check_cpp: rvtest bag_test obj_pool sched atomic double_fcmp gcd_test gpt_test \
 tokenring_test dyn_devs_test zero_time_test ode_test listener_test \
 wrapper_test alt_time mealy
-
-# Check OpenMP code
-check_par: optsim_test  
 
 # Check the java library
 check_java: java_test
@@ -20,9 +17,6 @@ check_fmi:
 
 java_test:
 	cd java $(CMD_SEP) $(MAKE) check
-
-optsim_test:
-	cd optsim $(CMD_SEP) $(MAKE) check
 
 wrapper_test:
 	cd wrapper $(CMD_SEP) $(MAKE) check
@@ -97,7 +91,6 @@ clean_all:
 	cd zero_time $(CMD_SEP) $(MAKE) clean
 	cd ode $(CMD_SEP) $(MAKE) clean
 	cd wrapper $(CMD_SEP) $(MAKE) clean
-	cd optsim $(CMD_SEP) $(MAKE) clean_all
 	cd java $(CMD_SEP) $(MAKE) clean
 	cd fmi $(CMD_SEP) $(MAKE) clean_all
 	$(MAKE) clean

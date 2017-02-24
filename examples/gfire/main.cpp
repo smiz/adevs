@@ -9,8 +9,6 @@
 #include <GL/glut.h>
 using namespace std;
 
-// Use the parallel simulator?
-static bool par_sim = false;
 // Phase space to visualize
 Phase** phase = NULL;
 Configuration* config = NULL;
@@ -118,6 +116,7 @@ void drawSpace()
  
 void simulateSpace()
 {
+	static int iters = 0;
 	// Dynamic cellspace model and simulator
 	static adevs::CellSpace<int>* cell_space = NULL;
 	static adevs::AbstractSimulator<CellEvent>* sim = NULL;
@@ -135,6 +134,8 @@ void simulateSpace()
 	// Create a simulator if needed
 	if (cell_space == NULL)
 	{
+		iters++;
+		if (iters > 10) exit(0);
 		cell_space = 
 			new adevs::CellSpace<int>(config->get_width(),config->get_height());
 		// Create a model to go into each point of the cellspace
@@ -150,14 +151,7 @@ void simulateSpace()
 			}
 		}
 		// Create a simulator for the model
-		if (!par_sim)
-		{
-			sim = new adevs::Simulator<CellEvent>(cell_space);
-		}
-		else
-		{
-			sim = new adevs::ParSimulator<CellEvent>(cell_space);
-		}
+		sim = new adevs::Simulator<CellEvent>(cell_space);
 		// Create a listener for the model
 		listener = new PhaseListener();
 		sim->addEventListener(listener);
@@ -201,13 +195,6 @@ int main(int argc, char** argv)
 		if (strcmp(argv[i],"--config") == 0 && i+1 < argc)
 		{
 			config = new Configuration(argv[++i]);
-		}
-		else if (strcmp(argv[i],"-p") == 0)
-		{
-			par_sim = true;
-			int procs = omp_get_num_procs();
-			int thrds = omp_get_max_threads();
-			cout << "Using " << thrds << " threads on " << procs << " processors" << endl;
 		}
 		else if (strcmp(argv[i],"--config-only") == 0)
 		{

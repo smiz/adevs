@@ -4,7 +4,7 @@ COMPARE = tclsh $(PREFIX)/util/compare
 # GNU gcc compiler
 UNAME := $(shell uname -s)
 OPENMP = -fopenmp
-PREFIX=$(HOME)/Code/adevs-code
+PREFIX=$(HOME)/Code/parallel-sim-try1
 CFLAGS = $(OPENMP) -g -Wall -I$(PREFIX)/include
 CC = g++
 ifeq ($(UNAME),CYGWIN_NT-6.1)

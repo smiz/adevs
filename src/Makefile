@@ -5,7 +5,7 @@
 #
 # This target builds the java language bindings to the adevs simulator.
 # Point this at your java installation if you want to build the Java bindings.
-JAVA_HOME = /usr/local/jdk1.8.0_73
+JAVA_HOME = /usr/local/jdk1.8.0_60
 java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux 
 
 #
@@ -39,8 +39,7 @@ OPTFLAG = -O3
 
 ADEVS_OBJS = \
 	rv.o \
-	poly.o \
-	time.o
+	poly.o 
 
 JAVA_OBJS = \
 	adevs_jni/JavaAtomic.o \

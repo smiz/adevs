@@ -1,1 +1,0 @@
-This is the example of the parallel simulator described in the manual. It requires three threads to execute. To build the example, simply type 'make'. Set the environment variable OMP_NUM_THREADS to 3 before running the simulation.

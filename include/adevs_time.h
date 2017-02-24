@@ -48,86 +48,6 @@ namespace adevs
 {
 
 /**
- * This is the super dense simulation clock that is used by
- * the parallel simulator to properly manage simultaneous
- * events.
- */
-template<class T = double> struct Time
-{
-	T t;
-	unsigned int c;
-	/// Value for infinity
-	static adevs::Time<T> Inf() { return Time<T>(adevs_inf<T>(),0); }
-	/// Constructor. Default time is (0,0).
-	Time(T t = adevs_zero<T>(), unsigned int c = 0):t(t),c(c){}
-	/// Copy constructor
-	Time(const Time& t2):t(t2.t),c(t2.c){}
-	/// Assignment operator
-	const Time& operator=(const Time& t2)
-	{
-		t = t2.t;
-		c = t2.c;
-		return *this;
-	}
-	/// Comparing with a T compares the real field
-	bool operator<(T t2) const { return t < t2; }
-	/**
-	 * Assigning a T sets the real field to the T and
-	 * the integer field to zero
-	 */
-	const Time& operator=(T t2)
-	{
-		t = t2;
-		c = 0;
-		return *this;
-	}
-	/// Advance operator (this is not commutative or associative!)
-	Time operator+(const Time& t2) const
-	{
-	   if (t2.t == 0) return Time(t,t2.c+c);
-	   else return Time(t+t2.t,0);
-	}
-	/// Advance and assign
-	const Time& operator+=(const Time& t2)
-	{
-		*this = *this+t2;
-		return *this;
-	}
-	/// Subtract a real number (used to get the elapsed time)
-	T operator-(T t2) const
-	{
-		return t-t2;
-	}
-	/// Equivalence
-	bool operator==(const Time& t2) const
-	{
-		return (t == t2.t && c == t2.c);
-	}
-	/// Not equal
-	bool operator!=(const Time& t2) const
-	{
-		return !(*this == t2);
-	}
-	/// Order by t then by c
-	bool operator<(const Time& t2) const
-	{
-		return (t < t2.t || (t == t2.t && c < t2.c));
-	}
-	bool operator<=(const Time& t2) const
-	{
-		return (*this == t2 || *this < t2);
-	}
-	bool operator>(const Time& t2) const
-	{
-		return !(*this <= t2);
-	}
-	bool operator>=(const Time& t2) const
-	{
-		return !(*this < t2);
-	}
-};
-
-/**
  * This time type allows models to evolve on R x Z.
  */
 class sd_time
@@ -206,7 +126,6 @@ class sd_time
 	private:
 		double t; int k;
 };
-
 
 /**
  * <p>The fcmp() inline function is taken from fcmp.c, which is
@@ -364,8 +283,5 @@ template <> inline int adevs_epsilon() { return 0; }
 template <> inline long adevs_epsilon() { return 0; }
 template <> inline adevs::double_fcmp adevs_epsilon() { return 0.0; }
 template <> inline adevs::sd_time adevs_epsilon() { return adevs::sd_time(0.0,1); }
-
-template<class T>
-std::ostream& operator<<(std::ostream& strm, const adevs::Time<T>& t);
 
 #endif

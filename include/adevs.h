@@ -49,6 +49,3 @@
 #include "adevs_rk_45.h"
 #include "adevs_poly.h"
 #include "adevs_wrapper.h"
-#ifdef _OPENMP
-#include "adevs_par_simulator.h"
-#endif

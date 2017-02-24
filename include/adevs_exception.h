@@ -92,20 +92,6 @@ class method_not_supported_exception:
 		}
 };
 
-/**
- * The lookahead impossible exception is raised when the simulator is
- * unable to proceed with a lookahead calculation. 
- */
-class lookahead_impossible_exception:
-	public exception
-{
-	public:
-		lookahead_impossible_exception():
-			exception("Lookahead cannot proceed")
-		{
-		}
-};
-	
 } // end of namespace
 
 #endif

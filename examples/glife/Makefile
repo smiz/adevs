@@ -1,4 +1,4 @@
-CFLAGS = -fopenmp -Wall
+CFLAGS = -Wall
 OPTFLAG = -O3 
 CC = g++
 
@@ -20,6 +20,9 @@ OBJS = Cell.o main.o
 
 glife: ${OBJS}
 	${CC} ${CFLAGS} ${OPTFLAG} ${OBJS} ${LIBS} ${LIBPATH} ${INCLUDE}
+
+self: Cell.o alone.o
+	${CC} ${CFLAGS} ${OPTFLAG} Cell.o alone.o ${LIBS} ${LIBPATH} ${INCLUDE}
 
 clean:
 	rm -f *.o core a.out

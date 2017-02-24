@@ -34,6 +34,14 @@
 #include "adevs_models.h"
 #include <cfloat>
 #include <cstdlib>
+#include <list>
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#define omp_get_max_threads() 1
+#define omp_get_thread_num() 0
+#define omp_in_parallel() false
+#endif
 using namespace std;
 
 namespace adevs
@@ -150,7 +158,7 @@ void Schedule<X,T>::schedule(Atomic<X,T>* model, T priority)
 	if (model->q_index != 0)
 	{
 		// Remove the model if the next event time is infinite
-		if (priority >= adevs_inf<T>()) 
+		if (!(priority < adevs_inf<T>())) 
 		{
 			// Move the item to the top of the heap
 			T min_priority = minPriority();
@@ -232,6 +240,101 @@ void Schedule<X,T>::enlarge()
 	delete [] heap;
 	heap = rheap;
 }
+
+/**
+ * This is a thread safe scheduler
+ */
+template <class X, class T = double> class MultiSchedule
+{
+	public:
+		/// Creates a scheduler with the default or specified initial capacity.
+		MultiSchedule(unsigned int capacity = 100):
+			count(omp_get_max_threads()),
+			#ifdef _OPENMP
+			lock(new omp_lock_t[omp_get_max_threads()]),
+			#endif
+			next(0)
+		{
+			sched = new Schedule<X,T>*[count];
+			#ifdef _OPENMP
+			for (int i = 0; i < count; i++)
+				omp_init_lock(&lock[i]);
+			#pragma omp parallel 
+			{
+				sched[omp_get_thread_num()] = new Schedule<X,T>(capacity);
+			}
+			#else
+			for (int i = 0; i < count; i++)
+				sched[i] = new Schedule<X,T>(capacity);
+			#endif
+		}
+		/// Get the time of the next event.
+		T minPriority() 
+		{
+			T p = sched[0]->minPriority();
+			for (int i = 1; i < count; i++)
+			{
+				T pp = sched[i]->minPriority();
+				p = (p < pp) ? p : pp;
+			}
+			return p;	
+		}
+		/// Visit the imminent models.
+		void visitImminent(typename Schedule<X,T>::ImminentVisitor* visitor) 
+		{
+			T p = minPriority();
+			for (int i = 0; i < count; i++)
+			{
+				if (sched[i]->minPriority() == p)
+					sched[i]->visitImminent(visitor);
+			}
+		}
+		/// Add, remove, or move a model as required by its priority.
+		void schedule(Atomic<X,T>* model, T priority)
+		{
+			if (omp_in_parallel())
+			{
+				const int thr = omp_get_thread_num();
+				if (model->q_index == 0)
+					model->proc = thr;
+				#ifdef _OPENMP
+				omp_set_lock(&lock[model->proc]);
+				#endif
+				sched[model->proc]->schedule(model,priority);
+				#ifdef _OPENMP
+				omp_unset_lock(&lock[model->proc]);
+				#endif
+			}
+			else
+			{
+				if (model->q_index == 0)
+					model->proc = (next++)%count;
+				sched[model->proc]->schedule(model,priority);
+			}
+		}
+		/// Destructor.
+		~MultiSchedule()
+		{
+			for (int i = 0; i < count; i++)
+			{
+				delete sched[i];
+				#ifdef _OPENMP
+				omp_destroy_lock(&lock[i]);
+				#endif
+			}
+			delete [] sched;
+			#ifdef _OPENMP
+			delete [] lock;
+			#endif
+		}
+	private:
+		Schedule<X,T>** sched;
+		const int count;
+		#ifdef _OPENMP
+		omp_lock_t* lock;
+		#endif
+		unsigned next;
+	};
 
 } // end of namespace
 

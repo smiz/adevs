@@ -52,7 +52,6 @@ class fireCell: public adevs::Atomic<CellEvent>
 		long int xpos() const { return x; }
 		// get the cell y location
 		long int ypos() const { return y; }
-		double lookahead();
 	protected:
 		// The phase of the cell
 		Phase phase;

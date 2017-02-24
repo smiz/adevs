@@ -1,9 +1,0 @@
-1 sent 1 @ t = 1
-1 got 0 @ t = 1
-0 sent 0 @ t = 1
-0 got 1 @ t = 1
-1 sent 0 @ t = 2
-1 got 1 @ t = 2
-0 sent 1 @ t = 2
-0 got 0 @ t = 2
-End of run!
