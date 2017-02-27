@@ -25,7 +25,7 @@ java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 # These are generic options for the GNU C++ compiler.
 
 # Use OpenMP? 
-OMP =
+OMP = -fopenmp
 # Compiler flags
 CFLAGS += ${OMP} -fPIC -Wall -I../include -I./ -I./qemu
 # Best bet for GNU compiler

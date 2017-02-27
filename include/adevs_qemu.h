@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstring>
 #include <cstdio>
+#include <cassert>
 #include <pthread.h>
 #include <string>
 #include <list>

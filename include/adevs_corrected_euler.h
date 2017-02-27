@@ -31,6 +31,7 @@
 #ifndef _adevs_corrected_euler_h_
 #define _adevs_corrected_euler_h_
 #include <cmath>
+#include <algorithm>
 #include "adevs_hybrid.h"
 
 namespace adevs
@@ -94,7 +95,8 @@ template <typename X>
 double corrected_euler<X>::integrate(double* q, double h_lim)
 {
 	// Initial error estimate and step size
-	double err = DBL_MAX, h = std::min(h_cur*1.1,std::min(h_max,h_lim));
+	double err = DBL_MAX,
+		   h = std::min<double>(h_cur*1.1,std::min<double>(h_max,h_lim));
 	for (;;) {
 		// Copy q to the trial vector
 		for (int i = 0; i < this->sys->numVars(); i++) qq[i] = q[i];
@@ -132,7 +134,7 @@ double corrected_euler<X>::trial_step(double step)
 	double err = 0.0;
 	for (j = 0; j < this->sys->numVars(); j++) {
 		qq[j] += k[1][j]; // Next state
-		err = std::max(err,fabs(k[0][j]-k[1][j])); // Maximum error
+		err = std::max<double>(err,fabs(k[0][j]-k[1][j])); // Maximum error
 	}
 	return err; // Return the error
 }

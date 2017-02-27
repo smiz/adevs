@@ -97,7 +97,8 @@ template <typename X>
 double rk_45<X>::integrate(double* q, double h_lim)
 {
 	// Initial error estimate and step size
-	double err = DBL_MAX, h = std::min(h_cur*1.1,std::min(h_max,h_lim));
+	double err = DBL_MAX,
+		   h = std::min<double>(h_cur*1.1,std::min<double>(h_max,h_lim));
 	for (;;) {
 		// Copy q to the trial vector
 		for (int i = 0; i < this->sys->numVars(); i++) qq[i] = q[i];

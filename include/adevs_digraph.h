@@ -31,6 +31,7 @@
 #ifndef __adevs_digraph_h_
 #define __adevs_digraph_h_
 #include "adevs.h"
+#include <cassert>
 #include <map>
 #include <set>
 #include <cstdlib>

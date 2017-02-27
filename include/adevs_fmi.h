@@ -34,7 +34,8 @@
 #include <cmath>
 #include <iostream>
 #include <cstdlib>
-#include <stdio.h>
+#include <cstdio>
+#include <cassert>
 #include "adevs_hybrid.h"
 #include "fmi2Functions.h"
 #include "fmi2FunctionTypes.h"

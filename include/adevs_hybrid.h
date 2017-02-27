@@ -603,7 +603,7 @@ template <typename X, class T = double> class Hybrid:
 			bool state_event_exists =
 				event_finder->find_events(event,q,q_trial,solver,step_size);
 			// Find the time advance and set the time event flag
-			sigma = std::min(step_size,time_event);
+			sigma = std::min<double>(step_size,time_event);
 			event[sys->numEvents()] = time_event <= sigma;
 			event_exists = event[sys->numEvents()] || state_event_exists;
 			sys->postTrialStep(q);
