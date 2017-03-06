@@ -17,7 +17,7 @@ void adevs::uCsimSerialPort::initialize_io_structures()
 		perror("uCsimSerialPort::read");
 }
 
-void adevs::uCsimSerialPort::write(void* data, int num_bytes)
+void adevs::uCsimSerialPort::write_bytes(void* data, int num_bytes)
 {
 	if (::write(write_fd,(char*)data,num_bytes) < num_bytes)
 		perror("uCsimSerialPort write write failed");

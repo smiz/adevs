@@ -21,7 +21,7 @@ adevs::QemuNic::QemuNic(std::string mac_addr):
 	start();
 }
 
-void adevs::QemuNic::write(void* data, int size)
+void adevs::QemuNic::write_bytes(void* data, int size)
 {
 	int msg_size = htonl(size);
 	if (::write(fd[0],(char*)&msg_size,sizeof(int)) != sizeof(int))
@@ -37,7 +37,8 @@ adevs::QemuDeviceModel::io_buffer* adevs::QemuNic::read()
 	{
 		return NULL;
 	}
-	adevs::QemuDeviceModel::io_buffer* buf = new adevs::QemuDeviceModel::io_buffer(ntohl(msg_size));
+	adevs::QemuDeviceModel::io_buffer* buf =
+		new adevs::QemuDeviceModel::io_buffer(ntohl(msg_size));
 	if (::read(fd[0],buf->get_data(),buf->get_size()) != buf->get_size())
 	{
 		delete buf;

@@ -16,7 +16,7 @@ void adevs::QemuSerialPort::initialize_io_structures()
 	while (connect(fd,(struct sockaddr*)&(address),sizeof(struct sockaddr_un)) != 0);
 }
 
-void adevs::QemuSerialPort::write(void* data, int num_bytes)
+void adevs::QemuSerialPort::write_bytes(void* data, int num_bytes)
 {
 	if (::write(fd,(char*)data,num_bytes) < num_bytes)
 		perror("Serial port write failed");
@@ -25,7 +25,8 @@ void adevs::QemuSerialPort::write(void* data, int num_bytes)
 adevs::QemuDeviceModel::io_buffer* adevs::QemuSerialPort::read()
 {
 	int num_read = 0;
-	adevs::QemuDeviceModel::io_buffer* buf = new adevs::QemuDeviceModel::io_buffer(buf_size);
+	adevs::QemuDeviceModel::io_buffer* buf =
+		new adevs::QemuDeviceModel::io_buffer(buf_size);
 	if ((num_read = recv(fd,buf->get_data(),buf_size,0)) <= 0)
 	{
 		delete buf;
