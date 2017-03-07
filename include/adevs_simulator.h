@@ -405,16 +405,16 @@ void Simulator<X,T>::computeNextState()
 		// External event
 		else
 			model->delta_ext(t-model->tL,*(model->x));
+		// Notify listeners 
+		this->notify_state_listeners(model,tQ);
 		// Check for a model transition
-		if (model->getParent() != NULL && model->model_transition())
+		if (model->model_transition() && model->getParent() != NULL)
 		{
 			#ifdef _OPENMP
 			#pragma omp critical
 			#endif
 			model_func_eval_set.insert(model->getParent());
 		}
-		// Notify listeners 
-		this->notify_state_listeners(model,tQ);
 		// Adjust position in the schedule
 		schedule(model,tQ);
 	}
