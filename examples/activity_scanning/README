@@ -1,0 +1,6 @@
+The files des.cpp and des.h contain an activity scanning
+simulation framework that is built on top of a DEVS atomic
+model. The simulation approach is described in the upcoming
+book "Model Engineering for Simulation" to be published by
+Elsevier. Examples of models that use the framework are
+in the files test*.cpp.
