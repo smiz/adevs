@@ -250,6 +250,8 @@ public:
 
 } // end namespace
 
+template <> inline float adevs_inf() {
+	return std::numeric_limits<float>::max(); }
 template <> inline long double adevs_inf() {
 	return std::numeric_limits<long double>::max(); }
 template <> inline double adevs_inf() {
@@ -263,6 +265,7 @@ template <> inline adevs::double_fcmp adevs_inf() {
 template <> inline adevs::sd_time adevs_inf() {
 	return adevs::sd_time(std::numeric_limits<float>::max(),std::numeric_limits<int>::max()); }
 
+template <> inline float adevs_zero() { return 0.0f; }
 template <> inline long double adevs_zero() { return 0.0L; }
 template <> inline double adevs_zero() { return 0.0; }
 template <> inline int adevs_zero() { return 0; }
@@ -270,6 +273,7 @@ template <> inline long adevs_zero() { return 0; }
 template <> inline adevs::double_fcmp adevs_zero() { return 0.0; }
 template <> inline adevs::sd_time adevs_zero() { return adevs::sd_time(); }
 
+template <> inline float adevs_sentinel() { return -1.0f; }
 template <> inline long double adevs_sentinel() { return -1.0L; }
 template <> inline double adevs_sentinel() { return -1.0; }
 template <> inline int adevs_sentinel() { return -1; }
@@ -277,6 +281,7 @@ template <> inline long adevs_sentinel() { return -1; }
 template <> inline adevs::double_fcmp adevs_sentinel() { return -1.0; }
 template <> inline adevs::sd_time adevs_sentinel() { return adevs::sd_time(-1.0,0); }
 
+template <> inline float adevs_epsilon() { return 0.0f; }
 template <> inline long double adevs_epsilon() { return 0.0L; }
 template <> inline double adevs_epsilon() { return 0.0; }
 template <> inline int adevs_epsilon() { return 0; }
