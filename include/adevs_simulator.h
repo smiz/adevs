@@ -334,7 +334,6 @@ void Simulator<X,T>::computeNextOutput(Bag<Event<X,T> >& input, T t)
 				model->typeIsAtomic()->output_func(*(model->y));
 			else
 				model->output_func(*(model->x),*(model->y));
-			model->imm = false;
 		}
 		else
 		{
@@ -396,13 +395,16 @@ void Simulator<X,T>::computeNextState()
 	for (unsigned i = 0; i < activated.size(); i++)
 	{
 		Atomic<X,T>* model = activated[i];
-		// Internal event
+		// Internal event if no input
 		if (model->x == NULL)
 			model->delta_int();
-		// Confluent event
-		else if (model->y != NULL)
+		// Confluent event if model is imminent and has input
+		else if (
+				(model->typeIsMealyAtomic() == NULL && model->y != NULL)
+				|| (model->typeIsMealyAtomic() != NULL && model->typeIsMealyAtomic()->imm)
+			)
 			model->delta_conf(*(model->x));
-		// External event
+		// External event if model is not imminent and has input
 		else
 			model->delta_ext(t-model->tL,*(model->x));
 		// Notify listeners 

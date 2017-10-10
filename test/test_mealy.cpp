@@ -76,7 +76,11 @@ class Trigger:
 	public MealyAtomic<int>
 {
 	public:
-		Trigger():MealyAtomic<int>(),ttg(adevs_inf<double>()){}
+		Trigger():
+			MealyAtomic<int>(),
+			ttg(adevs_inf<double>()),
+			external_events(0){}
+		int external_event_count() const { return external_events; }
 		double ta()
 		{
 			return ttg;
@@ -88,6 +92,7 @@ class Trigger:
 		void delta_ext(double e, const Bag<int>& xb)
 		{
 			assert(ee == e);
+			external_events++;
 			ttg = 1.0;
 		}
 		void delta_conf(const Bag<int>& xb)
@@ -112,6 +117,7 @@ class Trigger:
 		void gc_output(Bag<int>& gb){}
 	private:
 		double ttg, ee;
+		int external_events;
 };
 
 void test1()
@@ -274,6 +280,22 @@ void test5()
 	cout << "TEST 5 PASSED" << endl;
 }
 
+void test6()
+{
+	cout << "TEST 6" << endl;
+	SimpleDigraph<int>* model = new SimpleDigraph<int>();
+	Periodic *periodic = new Periodic(10.0);
+	Trigger *trigger = new Trigger();
+	model->add(periodic);
+	model->add(trigger);
+	model->couple(periodic,trigger);
+	Simulator<int>* sim = new Simulator<int>(model);
+	while (sim->nextEventTime() < 12.0)
+		sim->execNextEvent();
+	assert(trigger->external_event_count() == 1);
+	cout << "TEST 6 PASSED" << endl;
+}
+
 int main()
 {
 	test1();
@@ -281,6 +303,7 @@ int main()
 	test3();
 	test4();
 	test5();
+	test6();
 	return 0;
 }
 
