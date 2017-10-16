@@ -650,12 +650,6 @@ void Simulator<X,T>::route(Network<X,T>* parent, Devs<X,T>* src, X& x)
 	typename Bag<Event<X,T> >::iterator recv_iter = recvs->begin();
 	for (; recv_iter != recvs->end(); recv_iter++)
 	{
-		// Check for self-influencing error condition
-		if (src == (*recv_iter).model)
-		{
-			exception err("Model tried to influence self",src);
-			throw err;
-		}
 		/**
 		 * If the destination is an atomic model, add the event to the IO bag
 		 * for that model and add model to the list of activated models

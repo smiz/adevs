@@ -126,7 +126,7 @@ class x86:
 			 * http://www.ornl.gov/~1qn/qemu-images/jack.img
 			 *
 			 */
-			create_x86(qemu_args,"jack.img",2048,PRECISE);
+			create_x86(qemu_args,"jack.img",2048,FAST);
 		}
 		void delta_ext(double e, const Bag<IO_Type>& xb)
 		{

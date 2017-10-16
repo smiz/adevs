@@ -377,10 +377,8 @@ void QemuComputer<X>::create_x86(
 	else if (emulator_mode == FAST)
 	{
 		args.push_back("-cpu");
-		args.push_back("kvm64,-kvmclock,-tsc");
-		args.push_back("-machine");
-		args.push_back("smm=off");
-		args.push_back("-enable-kvm");
+		args.push_back("host,kvm=off,-tsc,-kvmclock");
+		args.push_back("-enable-kvm"); 
 	}
 	// Attach our disk images 
 	for (unsigned idx = 0; idx < disks.size(); idx++)
@@ -401,7 +399,7 @@ void QemuComputer<X>::create_x86(
 		}
 	}
 	// Start the machine
-	emulator = CompSysEmulator::launch_qemu("qemu-system-i386",args);
+	emulator = CompSysEmulator::launch_qemu("qemu-system-x86_64",args);
 	assert(emulator->is_alive());
 }
 
