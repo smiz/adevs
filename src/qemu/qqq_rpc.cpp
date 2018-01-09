@@ -47,8 +47,8 @@ QEMU_Machine::QEMU_Machine(const char* executable, const std::vector<std::string
 		char** cargs = new char*[args.size()+4];
 		cargs[0] = new char[strlen(executable)+1];
 		strcpy(cargs[0],executable);
-		cargs[1] = new char[5];
-		strcpy(cargs[1],"-qqq");
+		cargs[1] = new char[strlen("-external_sim")+1];
+		strcpy(cargs[1],"-external_sim");
 		cargs[2] = new char[1000];
 		sprintf(cargs[2],"sock=%d",fd[1]);
 		for (unsigned i = 0; i < args.size(); i++)
