@@ -147,11 +147,7 @@ template <class X, class T = double> class Simulator:
 		// Bogus input bag for execNextEvent() method
 		Bag<Event<X,T> > bogus_input;
 		// The event schedule
-		#ifdef _OPENMP
-		MultiSchedule<X,T> sched;
-		#else
 		Schedule<X,T> sched;
-		#endif
 		// List of models that are imminent or activated by input
 		Bag<Atomic<X,T>*> activated;
 		// Mealy systems that we need to process
@@ -579,6 +575,9 @@ void Simulator<X,T>::schedule(Devs<X,T>* model, T t)
 		T dt = a->ta();
 		if (dt == adevs_inf<T>())
 		{
+			#ifdef _OPENMP
+			#pragma omp critical
+			#endif
 			sched.schedule(a,adevs_inf<T>());
 		}
 		else
@@ -589,6 +588,9 @@ void Simulator<X,T>::schedule(Devs<X,T>* model, T t)
 				exception err("Negative time advance",a);
 				throw err;
 			}
+			#ifdef _OPENMP
+			#pragma omp critical
+			#endif
 			sched.schedule(a,tNext);
 		}
 	}

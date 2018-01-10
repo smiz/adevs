@@ -47,7 +47,6 @@ template <typename X, typename T> class Network;
 template <typename X, typename T> class Atomic;
 template <typename X, typename T> class MealyAtomic;
 template <typename X, typename T> class Schedule;
-template <typename X, typename T> class MultiSchedule;
 template <typename X, typename T> class Simulator;
 
 /**
@@ -221,7 +220,6 @@ template <typename X, typename T = double> class Atomic: public Devs<X,T>
 
 		friend class Simulator<X,T>;
 		friend class Schedule<X,T>;
-		friend class MultiSchedule<X,T>;
 
 		// Time of last event
 		T tL;

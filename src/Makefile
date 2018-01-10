@@ -5,7 +5,7 @@
 #
 # This target builds the java language bindings to the adevs simulator.
 # Point this at your java installation if you want to build the Java bindings.
-JAVA_HOME = /usr/local/jdk1.8.0_60
+JAVA_HOME = /usr/local/jdk1.8.0_151
 java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux 
 
 #
@@ -24,8 +24,11 @@ java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 
 # These are generic options for the GNU C++ compiler.
 
-# Use OpenMP? 
-OMP = -fopenmp
+# Use OpenMP? Do not use this with Java.
+# You probably don't want it at all unless your
+# model has lots of simulatenous events or several
+# very expensive to compute simultaneous events.
+OMP = 
 # Compiler flags
 CFLAGS += ${OMP} -fPIC -Wall -I../include -I./ -I./qemu
 # Best bet for GNU compiler

@@ -3,7 +3,9 @@ COMPARE = tclsh $(PREFIX)/util/compare
 
 # GNU gcc compiler
 UNAME := $(shell uname -s)
-OPENMP = -fopenmp
+# You only want this for models with lots of
+# simultaenous events. 
+OPENMP = # -fopenmp
 PREFIX=$(HOME)/Code/adevs-code
 CFLAGS = $(OPENMP) -g -Wall -I$(PREFIX)/include
 CC = g++
@@ -21,7 +23,7 @@ DIFF = diff
 # Microsoft cl compiler
 #HOME=C:\Users\home426\Documents
 #PREFIX = $(HOME)\adevs-code
-#CFLAGS = /openmp /nologo /GR /EHsc /I$(PREFIX)\include /Fe$(TEST_EXEC)
+#CFLAGS = /nologo /GR /EHsc /I$(PREFIX)\include /Fe$(TEST_EXEC)
 #CC = cl
 #TEST_EXEC = a.exe
 #DEL = del
