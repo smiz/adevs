@@ -25,26 +25,35 @@ class QemuDeviceModel
 		 * Returns the number of bytes available to be read from the device.
 		 * For message oriented devices, this will be the size of the next
 		 * message (e.g., an ethernet frame).
+		 * @return Number of bytes available to read
 		 */
 		int num_bytes_to_read();
 		/**
 		 * Copy the available data to the supplied buffer.
+		 * @param buf Buffer with space sufficient to hold num_bytes_to_read()
 		 */
 		void read_bytes(void* buf);
 		/**
 		 * Cause data to arrive at the external, physical port. This call
 		 * will block if the corresponding write to the underlying file
 		 * descriptor blocks.
+		 * @param data Data buffer to copy to device
+		 * @param num_bytes Number of bytes to copy
 		 */
 		virtual void write_bytes(void* data, int num_bytes) = 0;
 		/**
-		 * Arguments to be appended to the qemu argument vector when
-		 * qemu is forked to simulate the computer.
+		 * The device may append arguments to the qemu command line
+		 * by appending them to this vector. Distinct elements in
+		 * the vector will be separated by a space on the command line.
+		 * This method should called by the simulator prior to forking
+		 * qemu.
 		 */
 		virtual void append_qemu_arguments(std::vector<std::string>& args) = 0;
+		/// Destructor
 		virtual ~QemuDeviceModel();
+		/// Constructor
 		QemuDeviceModel();
-		// Called by the reading thread to execute the read loop
+		/// Called by the reading thread to execute the read loop
 		void read_loop();
 		void init_func();
 	protected:
@@ -92,9 +101,19 @@ class QemuNic:
 	public QemuDeviceModel
 {
 	public:
+		/**
+		 * Create a network card. If you need a specific MAC
+		 * address that can be supplied as an argument.
+		 * @param mac_addr Optional MAC address for card
+		 */
 		QemuNic(std::string mac_addr = "");
+		/**
+		 * Appends arguments that qemu needs to setup the network device.
+		 */
 		void append_qemu_arguments(std::vector<std::string>& args);
+		/// Write bytes to the network card
 		void write_bytes(void* data, int num_bytes);
+		/// Destructor
 		~QemuNic();
 	protected:
 		io_buffer* read();
@@ -377,7 +396,7 @@ void QemuComputer<X>::create_x86(
 	else if (emulator_mode == FAST)
 	{
 		args.push_back("-cpu");
-		args.push_back("host,kvm=off,-tsc,-kvmclock");
+		args.push_back("host,kvm=off,-kvmclock");
 		args.push_back("-enable-kvm"); 
 	}
 	// Attach our disk images 
