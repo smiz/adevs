@@ -242,7 +242,8 @@ class QemuComputer:
 				std::vector<std::string>& qemu_args,
 				std::string disk_img,
 				int mb_ram = 2048,
-				EmulatorMode emulator_mode = PRECISE);
+				EmulatorMode emulator_mode = PRECISE,
+				double delayStart = 0.0);
 		void create_x86(
 				std::vector<std::string>& qemu_args,
 				std::vector<std::string>& disks,
@@ -250,19 +251,24 @@ class QemuComputer:
 				std::string& cdrom,
 				bool boot_cdrom,
 				int mb_ram,
-				EmulatorMode emulator_mode);
+				EmulatorMode emulator_mode,
+				double delayStart = 0.0);
 		void create_8052(
 				std::vector<std::string>& ucsim_args,
 				std::string flash_img,
-				ComputerMemoryAccess** obj = NULL);
+				ComputerMemoryAccess** obj = NULL,
+				double delayStart = 0.0);
 
 	private:
+		ComputerMemoryAccess** ucsim_mem_obj;
+		std::vector<std::string> emulator_arguments;
+		std::string emulator_exec;
 		const double quantum;
 		CompSysEmulator* emulator; 
 		double ttg, qemu_time, sim_time, acc_error, max_error;
 		unsigned error_samples;
 		void inject_input(void* buf, unsigned size);
-		enum { CATCHUP, THREAD_RUNNING, IDLE } mode;
+		enum { CATCHUP, THREAD_RUNNING, IDLE , DELAY_START } mode;
 
 		void internal_and_confluent();
 };
@@ -270,6 +276,7 @@ class QemuComputer:
 template <typename X>
 QemuComputer<X>::QemuComputer(double quantum_seconds):
 	Atomic<X>(),
+	ucsim_mem_obj(NULL),
 	quantum(quantum_seconds),
 	emulator(NULL),
 	ttg(0.0),
@@ -310,6 +317,22 @@ void QemuComputer<X>::output_func(Bag<X>& yb)
 template <typename X>
 void QemuComputer<X>::internal_and_confluent()
 {
+	// Start of the emulator was delayed
+	if (mode == DELAY_START)
+	{
+		mode = IDLE;
+		ttg = 0.0;
+		assert(sim_time == 0.0);
+		assert(qemu_time == 0.0);
+		assert(emulator == NULL);
+		if (emulator_exec == "qemu-system-x86_64")
+			emulator = CompSysEmulator::launch_qemu(emulator_exec.c_str(),emulator_arguments);
+		else if (emulator_exec == "s51")
+			emulator = CompSysEmulator::launch_ucsim(emulator_exec.c_str(),
+				emulator_arguments,ucsim_mem_obj);
+		assert(emulator->is_alive());
+	}
+	// Run the emulator
 	sim_time += ttg;
 	// If qemu is ahead of us then advance
 	// the clock without running qemu. A 
@@ -345,7 +368,8 @@ void QemuComputer<X>::delta_int()
 template <typename X>
 void QemuComputer<X>::delta_ext(double e, const Bag<X>& xb)
 {
-	sim_time += e;
+	if (mode != DELAY_START)
+		sim_time += e;
 	ttg -= e;
 }
 
@@ -358,7 +382,7 @@ void QemuComputer<X>::delta_conf(const Bag<X>& xb)
 template <typename X>
 double QemuComputer<X>::ta()
 {
-	if (emulator->is_alive())
+	if (mode == DELAY_START || emulator->is_alive())
 		return ttg;
 	return adevs_inf<double>();
 }
@@ -371,7 +395,8 @@ void QemuComputer<X>::create_x86(
 	std::string& cdrom,
 	bool boot_cdrom,
 	int mb_ram,
-	EmulatorMode emulator_mode)
+	EmulatorMode emulator_mode,
+	double delayStart)
 {
 	char arg_buf[1000];
 	args.push_back("-vga");
@@ -418,8 +443,18 @@ void QemuComputer<X>::create_x86(
 		}
 	}
 	// Start the machine
-	emulator = CompSysEmulator::launch_qemu("qemu-system-x86_64",args);
-	assert(emulator->is_alive());
+	if (delayStart > 0.0)
+	{
+		mode = DELAY_START;
+		ttg = delayStart;
+		emulator_arguments = args;
+		emulator_exec = "qemu-system-x86_64";
+	}
+	else
+	{
+		emulator = CompSysEmulator::launch_qemu("qemu-system-x86_64",args);
+		assert(emulator->is_alive());
+	}
 }
 
 template <typename X>
@@ -427,26 +462,39 @@ void QemuComputer<X>::create_x86(
 	std::vector<std::string>& args,
 	std::string disk_image,
 	int mb_ram,
-	QemuComputer<X>::EmulatorMode emulator_mode)
+	QemuComputer<X>::EmulatorMode emulator_mode,
+	double delayStart)
 {
 	std::string cdrom = "";
 	std::vector<std::string> disks, disk_formats;
 	disks.push_back(disk_image);
 	disk_formats.push_back("raw");
-	create_x86(args,disks,disk_formats,cdrom,false,mb_ram,emulator_mode);
+	create_x86(args,disks,disk_formats,cdrom,false,mb_ram,emulator_mode,delayStart);
 }
 
 template <typename X>
 void QemuComputer<X>::create_8052(
 	std::vector<std::string>& args,
 	std::string flash_image,
-	ComputerMemoryAccess** obj)
+	ComputerMemoryAccess** obj,
+	double delayStart)
 {
 	args.push_back("-t");
 	args.push_back("8052");
 	args.push_back(flash_image);
-	emulator = CompSysEmulator::launch_ucsim("s51",args,obj);
-	assert(emulator->is_alive());
+	if (delayStart > 0.0)
+	{
+		mode = DELAY_START;
+		ttg = delayStart;
+		emulator_arguments = args;
+		emulator_exec = "s51";
+		ucsim_mem_obj = obj;
+	}
+	else
+	{
+		emulator = CompSysEmulator::launch_ucsim("s51",args,obj);
+		assert(emulator->is_alive());
+	}
 }
 
 }

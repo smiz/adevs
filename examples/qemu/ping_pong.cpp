@@ -124,7 +124,7 @@ class x86:
 {
 	public:
 		x86(std::string disk_img, bool is_cd = false, std::string mac_addr = "",
-				EmulatorMode mode = PRECISE):
+				EmulatorMode mode = PRECISE, double delayStart = 0.0):
 			QemuComputer<IO_Type>(0.001),
 			sent(0),
 			recvd(0),
@@ -141,11 +141,11 @@ class x86:
 				std::string cd = "";
 				disk.push_back(disk_img);
 				disk_format.push_back("raw");
-				create_x86(qemu_args,disk,disk_format,cd,false,2048,mode);
+				create_x86(qemu_args,disk,disk_format,cd,false,2048,mode,delayStart);
 			}
 			else
 			{
-				create_x86(qemu_args,disk,disk_format,disk_img,true,2048,mode);
+				create_x86(qemu_args,disk,disk_format,disk_img,true,2048,mode,delayStart);
 			}
 		}
 		void delta_int()
@@ -226,9 +226,9 @@ int main()
 	double tstart = omp_get_wtime();
 	double tnow = 0.0;
 	x86* B = new x86("jill.img",false,"00:00:00:11:11:11",
-			QemuComputer<IO_Type>::FAST);
+			QemuComputer<IO_Type>::FAST,0.0);
 	x86* A = new x86("jack.img",false,"00:00:00:11:11:12",
-			QemuComputer<IO_Type>::PRECISE);
+			QemuComputer<IO_Type>::FAST,60.0);
 	SimpleDigraph<IO_Type>* model = new SimpleDigraph<IO_Type>();
 	model->add(A);
 	model->add(B);

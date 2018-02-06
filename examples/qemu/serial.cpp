@@ -53,7 +53,6 @@ class SerialEcho:
 	public:
 		SerialEcho():
 			Atomic<IO_Type>(),
-			// Two seconds per character
 			proc_time(2.0),
 			ttg(proc_time)
 		{
@@ -126,7 +125,7 @@ class x86:
 			 * http://www.ornl.gov/~1qn/qemu-images/jack.img
 			 *
 			 */
-			create_x86(qemu_args,"jack.img",2048,FAST);
+			create_x86(qemu_args,"jack.img",2048,FAST,30.0);
 		}
 		void delta_ext(double e, const Bag<IO_Type>& xb)
 		{
