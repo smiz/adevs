@@ -15,4 +15,4 @@ pp:
 
 
 clean: 
-	rm -f ${OBJS} a.out 
+	rm -f ${OBJS} a.out pc_serial_*

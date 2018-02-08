@@ -34,13 +34,11 @@ class QemuDeviceModel
 		 */
 		void read_bytes(void* buf);
 		/**
-		 * Cause data to arrive at the external, physical port. This call
-		 * will block if the corresponding write to the underlying file
-		 * descriptor blocks.
+		 * Cause data to arrive at the external, physical port.
 		 * @param data Data buffer to copy to device
 		 * @param num_bytes Number of bytes to copy
 		 */
-		virtual void write_bytes(void* data, int num_bytes) = 0;
+		void write_bytes(void* data, int num_bytes);
 		/**
 		 * The device may append arguments to the qemu command line
 		 * by appending them to this vector. Distinct elements in
@@ -55,7 +53,11 @@ class QemuDeviceModel
 		QemuDeviceModel();
 		/// Called by the reading thread to execute the read loop
 		void read_loop();
-		void init_func();
+		/// Called by the writing thread to execute the write loop
+		void write_loop();
+		// Perform any global initializations
+		virtual void initialize_read_structures() = 0;
+		virtual void initialize_write_structures() = 0;
 	protected:
 		// Start the read thread and return.
 		void start();
@@ -74,8 +76,8 @@ class QemuDeviceModel
 		};
 		// Read a message, return NULL on error
 		virtual io_buffer* read() = 0;
-		// Perform any global initializations
-		virtual void initialize_io_structures() = 0;
+		// Write a message
+		virtual void write(void* data, int size) = 0;
 	private:
 		/**
 		 * Reading is done continuously in its own thread to prevent
@@ -83,8 +85,12 @@ class QemuDeviceModel
 		 * descriptor.
 		 */
 		pthread_t read_thread;
+		pthread_t write_thread;
 		pthread_mutex_t read_lock;
+		pthread_mutex_t write_lock;
+		pthread_cond_t write_sig;
 		std::list<io_buffer*> read_q;
+		std::list<io_buffer*> write_q;
 		/**
 		 * Scheduling policies for read thread
 		 */
@@ -111,13 +117,13 @@ class QemuNic:
 		 * Appends arguments that qemu needs to setup the network device.
 		 */
 		void append_qemu_arguments(std::vector<std::string>& args);
-		/// Write bytes to the network card
-		void write_bytes(void* data, int num_bytes);
 		/// Destructor
 		~QemuNic();
 	protected:
 		io_buffer* read();
-		void initialize_io_structures(){}
+		void initialize_read_structures(){}
+		void initialize_write_structures(){}
+		void write(void* data, int size);
 	private:
 		int fd[2];
 		std::string mac_addr;
@@ -134,12 +140,16 @@ class QemuSerialPort:
 	public:
 		QemuSerialPort();
 		void append_qemu_arguments(std::vector<std::string>& args);
-		void write_bytes(void* data, int num_bytes);
 		~QemuSerialPort();
 	protected:
 		io_buffer* read();
+		void initialize_read_structures();
+		void initialize_write_structures();
 		void initialize_io_structures();
+		void write(void* data, int num_bytes);
 	private:
+		bool isConnected;
+		pthread_mutex_t connectMtx;
 		char socket_file[100];
 		struct sockaddr_un address;
 		int fd;
@@ -161,7 +171,9 @@ class uCsimSerialPort:
 		~uCsimSerialPort();
 	protected:
 		io_buffer* read();
-		void initialize_io_structures();
+		void write(void* data, int num_bytes);
+		void initialize_read_structures();
+		void initialize_write_structures();
 	private:
 		char read_file[100];
 		char write_file[100];

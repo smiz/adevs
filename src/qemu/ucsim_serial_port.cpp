@@ -9,18 +9,25 @@
 
 const int adevs::uCsimSerialPort::buf_size = 256;
 
-void adevs::uCsimSerialPort::initialize_io_structures()
+void adevs::uCsimSerialPort::initialize_read_structures()
 {
-	if ((write_fd = open(write_file,O_WRONLY)) < 0)
-		perror("uCsimSerialPort::write");
 	if ((read_fd = open(read_file,O_RDONLY)) < 0)
 		perror("uCsimSerialPort::read");
 }
 
-void adevs::uCsimSerialPort::write_bytes(void* data, int num_bytes)
+void adevs::uCsimSerialPort::initialize_write_structures()
+{
+	if ((write_fd = open(write_file,O_WRONLY)) < 0)
+		perror("uCsimSerialPort::write");
+}
+
+void adevs::uCsimSerialPort::write(void* data, int num_bytes)
 {
 	if (::write(write_fd,(char*)data,num_bytes) < num_bytes)
+	{
 		perror("uCsimSerialPort write write failed");
+		throw adevs::exception("ucsim write failed");
+	}
 }
 
 adevs::QemuDeviceModel::io_buffer* adevs::uCsimSerialPort::read()

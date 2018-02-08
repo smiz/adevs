@@ -54,11 +54,11 @@ JAVA_OBJS = \
 QEMU_OBJS = \
 	qemu/computer.o \
 	qemu/device_model.o \
+	qemu/qqq_rpc.o \
+	qemu/ucsim_rpc.o \
 	qemu/nic.o \
 	qemu/serial_port.o \
-	qemu/ucsim_serial_port.o \
-	qemu/qqq_rpc.o \
-	qemu/ucsim_rpc.o
+	qemu/ucsim_serial_port.o 
 
 .SUFFIXES: .cpp .c
 .cpp.o:
