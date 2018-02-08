@@ -20,26 +20,26 @@ static void* pthread_read_func(void* data)
 
 void adevs::QemuDeviceModel::write_loop()
 {
+	adevs::QemuDeviceModel::io_buffer* buf;
 	bool running = true;
 	while (running)
 	{
-		pthread_cond_wait(&write_sig,&write_lock);
-		while (!write_q.empty())
-		{
-			// Write should throw an exception if the other end is closed
-			try
-			{
-				this->write(write_q.front()->get_data(),write_q.front()->get_size());
-			}
-			catch(...)
-			{
-				running = false;
-				break;
-			}
-			delete write_q.front();
-			write_q.pop_front();
-		}
+		pthread_mutex_lock(&write_lock);
+		while (write_q.empty())
+			pthread_cond_wait(&write_sig,&write_lock);
+		buf = write_q.front();
+		write_q.pop_front();
 		pthread_mutex_unlock(&write_lock);
+		// Write should throw an exception if the other end is closed
+		try
+		{
+			this->write(buf->get_data(),buf->get_size());
+		}
+		catch(...)
+		{
+			running = false;
+		}
+		delete buf;
 	}
 }
 
