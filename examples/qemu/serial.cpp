@@ -125,7 +125,7 @@ class x86:
 			 * http://www.ornl.gov/~1qn/qemu-images/jack.img
 			 *
 			 */
-			create_x86(qemu_args,"jack.img",2048,FAST,30.0);
+			create_x86(qemu_args,"jack.img",2048,PRECISE,30.0);
 		}
 		void delta_ext(double e, const Bag<IO_Type>& xb)
 		{
@@ -162,12 +162,20 @@ class x86:
 		{
 			delete serial_port;
 		}
+		double ta()
+		{
+			double ttg = QemuComputer<IO_Type>::ta();
+			if (ttg < 0.0) return 0.0;
+			ttg += (rand()%3-1)*ttg/2.0;
+			return ttg;
+		}
 	private:
 		QemuSerialPort* serial_port;
 };
 
 int main()
 {
+	srand(time(NULL));
 	SerialEcho* echo = new SerialEcho();
 	/**
 	 * When the simulated computer boots, you can send and receive

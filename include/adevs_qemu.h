@@ -9,7 +9,7 @@
 #include <string>
 #include <list>
 #include <sys/un.h>
-
+typedef long emulator_time_t;
 namespace adevs
 {
 
@@ -207,7 +207,7 @@ class CompSysEmulator
 		// Shutdown the emulator
 		virtual ~CompSysEmulator(){}
 		// Returns microseconds actual elapsed in the last call to run
-		virtual int elapsed() = 0;
+		virtual emulator_time_t elapsed() = 0;
 		// Launch a thread that will fork the emulator and regulate its progress
 		static CompSysEmulator* launch_qemu(const char* exec_file, std::vector<std::string>& args);
 		// Launches the thread and returns a pointer to a ComputerMemoryAccess object,
@@ -215,10 +215,10 @@ class CompSysEmulator
 		// access to special function registers.
 		static CompSysEmulator* launch_ucsim(
 				const char* exec_file, std::vector<std::string>& args, ComputerMemoryAccess** obj);
-		// Returns true if the emulator is still running, false if it has exitted
-		virtual bool is_alive() = 0;
+		// Get the time advance requested by the emulator
+		virtual emulator_time_t get_time_advance_ns() = 0;
 		// Run the emulator through the set elapsed time
-		virtual void run(unsigned us) = 0;
+		virtual void run(emulator_time_t ns) = 0;
 		// Join on the last run call
 		virtual void join() = 0;
 };
@@ -234,13 +234,13 @@ class QemuComputer:
 		void delta_conf(const Bag<X>& xb);
 		double ta();
 		void output_func(Bag<X>& yb);
-		// Get the seconds that qemu was ahead (> 0) or behind (< 0) the simulation
+		// Get the nanoseconds that qemu was ahead (> 0) or behind (< 0) the simulation
 		// at the most recent synchronization point
-		double get_timing_error() const { return qemu_time-sim_time; }
-		double get_qemu_time() const { return qemu_time; }
-		double get_quantum_seconds() const { return quantum; }
-		double get_mean_timing_error() const { return acc_error/(double)(error_samples+1); }
-		double get_max_timing_error() const { return max_error; }
+		long get_timing_error() const { return qemu_time-sim_time; }
+		long get_qemu_time() const { return qemu_time; }
+		double get_quantum_seconds() const { return double(quantum)/1E9; }
+		double get_mean_timing_error() const { return double(acc_error)/(double)(error_samples+1); }
+		double get_max_timing_error() const { return double(max_error); }
 		virtual ~QemuComputer();
 
 		enum EmulatorMode
@@ -275,12 +275,11 @@ class QemuComputer:
 		ComputerMemoryAccess** ucsim_mem_obj;
 		std::vector<std::string> emulator_arguments;
 		std::string emulator_exec;
-		const double quantum;
+		const long quantum;
 		CompSysEmulator* emulator; 
-		double ttg, qemu_time, sim_time, acc_error, max_error;
+		long ttg, qemu_time, sim_time, acc_error, max_error;
 		unsigned error_samples;
 		void inject_input(void* buf, unsigned size);
-		enum { CATCHUP, THREAD_RUNNING, IDLE , DELAY_START } mode;
 
 		void internal_and_confluent();
 };
@@ -289,15 +288,14 @@ template <typename X>
 QemuComputer<X>::QemuComputer(double quantum_seconds):
 	Atomic<X>(),
 	ucsim_mem_obj(NULL),
-	quantum(quantum_seconds),
+	quantum(quantum_seconds*1E9),
 	emulator(NULL),
-	ttg(0.0),
-	qemu_time(0.0),
-	sim_time(0.0),
-	acc_error(0.0),
-	max_error(0.0),
-	error_samples(0),
-	mode(IDLE)
+	ttg(0),
+	qemu_time(0),
+	sim_time(0),
+	acc_error(0),
+	max_error(0),
+	error_samples(0)
 {
 }
 
@@ -306,8 +304,7 @@ QemuComputer<X>::~QemuComputer()
 {
 	if (emulator != NULL)
 	{
-		if (mode == THREAD_RUNNING)
-			emulator->join();
+		emulator->join();
 		delete emulator;
 	}
 }
@@ -317,58 +314,43 @@ void QemuComputer<X>::output_func(Bag<X>& yb)
 {
 	// Wait for the quantum to complete before looking
 	// for output
-	if (mode == THREAD_RUNNING)
+	if (emulator != NULL)
 	{
-		mode = IDLE;
 		emulator->join();
-		// Get the scaled time elapsed in the qemu thread
-		qemu_time += (emulator->elapsed()/1E6);
 	}
 }
 
 template <typename X>
 void QemuComputer<X>::internal_and_confluent()
 {
-	// Start of the emulator was delayed
-	if (mode == DELAY_START)
+	// Start the emulator
+	if (emulator == NULL)
 	{
-		mode = IDLE;
-		ttg = 0.0;
-		assert(sim_time == 0.0);
-		assert(qemu_time == 0.0);
+		ttg = 0;
+		assert(sim_time == 0);
+		assert(qemu_time == 0);
 		assert(emulator == NULL);
 		if (emulator_exec == "qemu-system-x86_64")
 			emulator = CompSysEmulator::launch_qemu(emulator_exec.c_str(),emulator_arguments);
 		else if (emulator_exec == "s51")
 			emulator = CompSysEmulator::launch_ucsim(emulator_exec.c_str(),
 				emulator_arguments,ucsim_mem_obj);
-		assert(emulator->is_alive());
+		// First synchronization call
+		emulator->join();
 	}
 	// Run the emulator
 	sim_time += ttg;
-	// If qemu is ahead of us then advance
-	// the clock without running qemu. A 
-	// simple test of qemu_time > sim_time
-	// can become stuck if a floating point error
-	// and small ttg combine such that
-	// sim_time+ttg = sim_time.
-	if (mode != CATCHUP && qemu_time > sim_time)
-	{
-		mode = CATCHUP;
-		error_samples++;
-		acc_error += get_timing_error();
-		max_error = (max_error > get_timing_error()) ? max_error : get_timing_error();
-		ttg = qemu_time - sim_time;
-	}
-	// Run the computer for another quantum if it is still alive
-	else if (emulator->is_alive())
-	{
-		assert(mode != THREAD_RUNNING);
-		emulator->run(quantum*1E6);
-		mode = THREAD_RUNNING;
+	qemu_time += emulator->elapsed();
+	error_samples++;
+	long err = get_timing_error();
+	acc_error += err;
+	max_error = (max_error > err) ? max_error : err;
+	ttg = emulator->get_time_advance_ns();
+	if (ttg > quantum)
 		ttg = quantum;
-	}
-	else mode = IDLE;
+	// We're behind by err, so catch up and figure we'll miss by the
+	// same amount of this pass so add the error again.
+	emulator->run((ttg-2*err) > 0 ? (ttg-2*err) : 1);
 }
 
 template <typename X>
@@ -380,9 +362,9 @@ void QemuComputer<X>::delta_int()
 template <typename X>
 void QemuComputer<X>::delta_ext(double e, const Bag<X>& xb)
 {
-	if (mode != DELAY_START)
-		sim_time += e;
-	ttg -= e;
+	if (emulator != NULL)
+		sim_time += long(e*1E9);
+	ttg -= long(e*1E9);
 }
 
 template <typename X>
@@ -394,9 +376,7 @@ void QemuComputer<X>::delta_conf(const Bag<X>& xb)
 template <typename X>
 double QemuComputer<X>::ta()
 {
-	if (mode == DELAY_START || emulator->is_alive())
-		return ttg;
-	return adevs_inf<double>();
+	return double(ttg)/1E9;
 }
 
 template <typename X>
@@ -454,19 +434,9 @@ void QemuComputer<X>::create_x86(
 			args.push_back("d");
 		}
 	}
-	// Start the machine
-	if (delayStart > 0.0)
-	{
-		mode = DELAY_START;
-		ttg = delayStart;
-		emulator_arguments = args;
-		emulator_exec = "qemu-system-x86_64";
-	}
-	else
-	{
-		emulator = CompSysEmulator::launch_qemu("qemu-system-x86_64",args);
-		assert(emulator->is_alive());
-	}
+	ttg = delayStart;
+	emulator_arguments = args;
+	emulator_exec = "qemu-system-x86_64";
 }
 
 template <typename X>
@@ -494,19 +464,10 @@ void QemuComputer<X>::create_8052(
 	args.push_back("-t");
 	args.push_back("8052");
 	args.push_back(flash_image);
-	if (delayStart > 0.0)
-	{
-		mode = DELAY_START;
-		ttg = delayStart;
-		emulator_arguments = args;
-		emulator_exec = "s51";
-		ucsim_mem_obj = obj;
-	}
-	else
-	{
-		emulator = CompSysEmulator::launch_ucsim("s51",args,obj);
-		assert(emulator->is_alive());
-	}
+	ttg = delayStart;
+	emulator_arguments = args;
+	emulator_exec = "s51";
+	ucsim_mem_obj = obj;
 }
 
 }

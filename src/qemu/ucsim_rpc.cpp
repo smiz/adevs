@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <cassert>
 #include <iostream>
+#include <climits>
 
 const double uCsim_Machine::mega_hz = 11.096;
 // Clock frequency in Mhz divided by clock oscillations per instruction
@@ -81,13 +82,14 @@ uCsim_Machine::uCsim_Machine(
 	pthread_mutex_unlock(&mtx);
 }
 
-bool uCsim_Machine::is_alive()
+emulator_time_t uCsim_Machine::get_time_advance_ns()
 {
-	return (waitpid(pid,NULL,WNOHANG) >= 0);
+	return ULONG_MAX;
 }
 
-void uCsim_Machine::run(unsigned usecs)
+void uCsim_Machine::run(emulator_time_t nsecs)
 {
+	unsigned usecs = (unsigned)(nsecs/1000);
 	static const char* state_inst = "state\n";
 	static const int state_inst_len = 7;
 	double t_start = elapsed_secs;
@@ -117,7 +119,7 @@ void uCsim_Machine::run(unsigned usecs)
 		usecs -= (reduce > 0) ? reduce : 1;
 	}
 	pthread_mutex_unlock(&mtx);
-	e = (int)((elapsed_secs-t_start)*1E6);
+	e = (emulator_time_t)((elapsed_secs-t_start)*1E9);
 }
 
 void uCsim_Machine::write_mem(unsigned addr, unsigned data)

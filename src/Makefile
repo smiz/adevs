@@ -58,7 +58,8 @@ QEMU_OBJS = \
 	qemu/ucsim_rpc.o \
 	qemu/nic.o \
 	qemu/serial_port.o \
-	qemu/ucsim_serial_port.o 
+	qemu/ucsim_serial_port.o \
+	qemu/qemu_sync.o
 
 .SUFFIXES: .cpp .c
 .cpp.o:

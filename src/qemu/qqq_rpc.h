@@ -1,6 +1,7 @@
 #ifndef _QQQ_RPC_H_
 #define _QQQ_RPC_H_
 #include "adevs_qemu.h"
+#include "qemu_sync.h"
 #include <unistd.h>
 #include <exception>
 #include <string>
@@ -21,9 +22,9 @@ class QEMU_Machine:
 		/**
 		 * These methods are from the CompSysEmulator interface
 		 */
-		int elapsed() { return e; }
-		bool is_alive();
-		void run(unsigned usecs);
+		emulator_time_t elapsed() { return e; }
+		void run(emulator_time_t nsecs);
+		emulator_time_t get_time_advance_ns() { return h; }
 		void join();
 		/**
 		 * Shut the machine down now.
@@ -32,12 +33,8 @@ class QEMU_Machine:
 
 	private:
 		unsigned pid;
-		// Socket for talking to qemu
-		int fd[2];
-		int e;
-
-		void write_mem_value(unsigned val);
-		unsigned read_mem_value();
+		emulator_time_t e, h;
+		qemu_sync s;
 };
 
 /**
@@ -58,9 +55,9 @@ class uCsim_Machine:
 		/**
 		 * These methods are from CompSysEmulator
 		 */
-		int elapsed() { return e; }
-		bool is_alive();
-		void run(unsigned usecs);
+		emulator_time_t elapsed() { return e; }
+		void run(emulator_time_t nsecs);
+		emulator_time_t get_time_advance_ns();
 		void join(){}
 		/**
 		 * Shut the machine down now.
@@ -72,7 +69,7 @@ class uCsim_Machine:
 
 	private:
 		double elapsed_secs;
-		int e;
+		emulator_time_t e;
 		unsigned pid;
 		int read_pipe[2];
 		int write_pipe[2];

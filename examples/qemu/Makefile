@@ -4,9 +4,6 @@ CC = g++
 INCLUDE = -I${ADEVS_PREFIX}/include 
 LIBS = -L${HOME}/Code/adevs-code/src -ladevs -lrt 
 
-saved:
-	${CC} ${CFLAGS} ${INCLUDE} boot_from_saved.cpp ${LIBS} 
-
 ser: 
 	${CC} ${CFLAGS} ${INCLUDE} serial.cpp ${LIBS} 
 

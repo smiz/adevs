@@ -1,7 +1,7 @@
 PREFIX = ../..
 include ../make.common
 
-check: bnew dae dae2
+check: bnew dae dae2 con
 
 con:
 	$(CC) $(CFLAGS) confluent_test.cpp
