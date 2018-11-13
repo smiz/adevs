@@ -4,8 +4,7 @@
 
 /**
  * Simulator side protocol for coordinating time
- * advanced with QEMU. The call sequence for the
- * simulator is
+ * advanced with QEMU.
  */
 class qemu_sync
 {

@@ -4,6 +4,9 @@ CC = g++
 INCLUDE = -I${ADEVS_PREFIX}/include 
 LIBS = -L${HOME}/Code/adevs-code/src -ladevs -lrt 
 
+gp:
+	${CC} ${CFLAGS} ${INCLUDE} gpu.cpp ${LIBS} 
+
 ser: 
 	${CC} ${CFLAGS} ${INCLUDE} serial.cpp ${LIBS} 
 

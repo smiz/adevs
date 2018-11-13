@@ -226,7 +226,7 @@ int main()
 	double tstart = omp_get_wtime();
 	double tnow = 0.0;
 	x86* B = new x86("jill.img",false,"00:00:00:11:11:11",
-			QemuComputer<IO_Type>::PRECISE,0.0);
+			QemuComputer<IO_Type>::FAST,0.0);
 	x86* A = new x86("jack.img",false,"00:00:00:11:11:12",
 			QemuComputer<IO_Type>::PRECISE,0.0);
 	SimpleDigraph<IO_Type>* model = new SimpleDigraph<IO_Type>();
