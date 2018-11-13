@@ -1,8 +1,8 @@
-ADEVS_PREFIX = ${HOME}/Code/adevs-code
+ADEVS_PREFIX = ../..
 CFLAGS = -std=c++11 -Wall -g -fopenmp
 CC = g++
 INCLUDE = -I${ADEVS_PREFIX}/include 
-LIBS = -L${HOME}/Code/adevs-code/src -ladevs -lrt 
+LIBS = -L${ADEVS_PREFIX}/src -ladevs -lrt 
 
 gp:
 	${CC} ${CFLAGS} ${INCLUDE} gpu.cpp ${LIBS} 
