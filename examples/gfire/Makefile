@@ -1,4 +1,4 @@
-CFLAGS = -fopenmp -Wall 
+CFLAGS = -Wall 
 OPTFLAG = -O3 
 CC = g++
 

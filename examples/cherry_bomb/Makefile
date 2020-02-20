@@ -1,4 +1,4 @@
-CFLAGS = -Wall -g -fopenmp
+CFLAGS = -Wall -g 
 CC = g++
 
 # Adjust these as needed to find the X11 and adevs libs and headers

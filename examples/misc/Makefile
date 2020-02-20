@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -O3 -Wall -fopenmp ${INCLUDE}
+CFLAGS = -O3 -Wall ${INCLUDE}
 PREFIX = ../..
 INCLUDE = -I${PREFIX}/include
 

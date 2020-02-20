@@ -49,29 +49,40 @@ template <class T> class Bag
 		class iterator
 		{
 			public:
-				iterator(unsigned int start = 0, T* b = NULL):
-				i(start),b(b){} 
-				iterator(const iterator& src):
-				i(src.i),b(src.b){}
+				/// Default constructor
+				iterator(){}
+				/// Copy constructor
+				iterator(const iterator& src):i(src.i),b(src.b){}
+				/// Copy by assignment
 				const iterator& operator=(const iterator& src) 
 				{ 
 					i = src.i; 
 					b = src.b;
 					return *this;
 				}
+				/// True if two iterators point at the same position in the bag
 				bool operator==(const iterator& src) const { return i==src.i; }
+				/// True if two iterators point at different positions in the bag
 				bool operator!=(const iterator& src) const { return i!=src.i; }
+				/// Get the element at the current position
 				T& operator*() { return b[i]; }
+				/// Get the element at the current position
 				const T& operator*() const { return b[i]; }
+				/// Move to the next position and get the element there
 				iterator& operator++() { i++; return *this; }
-				iterator& operator--() { i--; return *this; }
+				/// Move to the next position and get the element there
 				iterator& operator++(int) { ++i; return *this; }
+				/// Move to the previous position and get the element there
+				iterator& operator--() { i--; return *this; }
+				/// Move to the previous position and get the element there
 				iterator& operator--(int) { --i; return *this; }
 			private:
 				friend class Bag<T>;	
 				unsigned int i;
 				T* b;
+				iterator(unsigned int start, T* b):i(start),b(b){}
 		};
+		/// A bidirection iterator for the Bag that should not change its contents 
 		typedef iterator const_iterator;
 		/// Create an empty bag with an initial capacity
 		Bag(unsigned int cap = 8):
@@ -158,6 +169,7 @@ template <class T> class Bag
 		}
 		/// Access the element at position k
 		const T& operator[](unsigned k) const { return b[k]; }
+		/// Access the element at position k
 		T& operator[](unsigned k) { return b[k]; }
 		/// Delete the bag 
 		~Bag() { delete [] b; }

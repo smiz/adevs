@@ -45,16 +45,21 @@ namespace adevs
 template <class X, class T = double> class AbstractSimulator 
 {
 	public:
+		/// Constructor
 		AbstractSimulator(){}
 		/**
 		 * Add an event listener that will be notified of output events 
-		 * produced by the model.
+		 * produced by all components within the model.
+		 * @param l The listener to be notified
 		 */
 		void addEventListener(EventListener<X,T>* l)
 		{
 			listeners.insert(l);
 		}
-		/// Remove an event listener
+		/**
+		 * Remove an event listener that was previously added.
+		 * @param l The listener to be removed
+		 */
 		void removeEventListener(EventListener<X,T>* l)
 		{
 			listeners.erase(l);

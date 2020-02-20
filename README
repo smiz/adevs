@@ -15,10 +15,6 @@ If you are using Visual Studio and Windows, then to build the
 static library do the following: 1) open a command shell, 2) go the
 'src' directory, and 3) run the batch file 'build.bat'. This 
 creates a static library to link with your simulation applications.
-Note that the Windows build script does not include any OpenMP options
-and so those must be added to the compiler switches if you want to
-use the OpenMP enabled parts of the simulation engine. Note that
-the Express versions of Visual Studio don't support OpenMP in any case.
 
 ---- Java -----
 To build the java bindings for Linux, go the the 'src' directory and  
@@ -63,9 +59,8 @@ modules can then be loaded into your adevs simulation.
 ---- Testing -----
 There are four sets of test cases that can be run from the
 directory 'test'. The first set are for the C++ library without
-OpenMP support. These tests are run with 'make check_cpp'.
-The parts of the C++ library that use OpenMP can be tested by
-executing 'make check_par'.  The java bindings can be tested by
+and these tests are run with 'make check_cpp'.
+The java bindings can be tested by
 executing 'make check_java'. The fmi import support can be
 tested by executing 'make check_fmi'. Executing 'make check'
 runs all of the test cases.
@@ -81,9 +76,6 @@ and CLASSPATH are setup properly before running the Java test
 cases. These need to include your DLL (for Windows) and Java binaries,
 shared object file (for Linux), and jar file and the '.' directory
 respectively.
-
-For OpenMP test cases, you will need to set the maximum number of threads
-to at least four (one of the test cases requires at least four threads).
 
 For the FMI test cases, you will need to have the OpenModelica compiler
 installed.

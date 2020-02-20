@@ -36,39 +36,6 @@
 namespace adevs
 {
 
-typedef enum 
-{
-	NDURATION,
-	NCOUNT,EMPTY,
-	NDELAY,
-	ADDTOQ,
-	EMPTYQ,
-	HNCLMS,
-	HMODE,
-	PROBVAL,
-	ERRUNIFORM,
-	ERRNORMAL,
-	ERRLOGNORM,
-	ERRTRIANG,
-	ERRGAMMA,
-	ERRBETA,
-	ERREXPONENT,
-	ERRERLANG,
-	ERRHYPGEO,
-	NULLEV,
-	NOHISTO,
-	INITERR,
-	AMODE,
-	HFORM,
-	ERRFILE,
-	SAMPLE,
-	FRACTION,
-	LEVEL,
-	SCAN,
-	SUPPRESS,
-	SEED
-} errorType;
-
 /**
  * The random_seq class is an abstract interface to a random sequence
  * generator.
@@ -125,8 +92,15 @@ class crand: public random_seq
 };
 
 /**
- * The rv class provides a random variable based on a selectable
+ * <p>The rv class provides a random variable based on a selectable
  * implementation.  By default, this implementation is crand.
+ * I recommend that you find a modern random variate generator,
+ * such as the ones included in the new C++ standards,
+ * rather than use the one here.</p>
+ * <p>The assortment of random variable types was contributed by
+ * Alex Cave (who, at the time, was with the Intelligent 
+ * Systems Automation Group in the School of Engineering at
+ * Deakin University).</p>
  */
 class rv 
 {
@@ -157,34 +131,98 @@ class rv
 		 */
 		double normal(double m, double s);
 		/**
-		 * An assortment of other random variable types contributed by
-		 * Alex Cave (who, at the time, was with the Intelligent 
-		 * Systems Automation Group
-		 * in the School of Engineering at Deakin University).
+		 * return a negative exponentially distributed random number with
+		 * the mean as parameter
 		 */
 		double exponential(double a);
+		/**
+		 * return a hyperexponentially distributed random number with
+		 * the means as parameters to two exponentially distributed variates,
+		 * the first with a chance of p of being generated, the second with a
+		 * chance of 1-p.
+		 */
 		double hyperexponential(double p,double a,double b);
+		/// Return a laplace number with the given parameter
 		double laplace(double a);
+		/// Sample a chisquare random variable with n degrees of freedom
 		double chisquare(unsigned int n);
+		/// Sample a student-t random variable
 		double student(unsigned int n);
+		/// Sample a lognormal random variable
 		double lognormal(double a,double b);
+		/// Sample an erlang distribution
 		double erlang(unsigned int n,double a);
+		/// Sample a gamma random variable
 		double gamma(double a,double b);
+		/// Sample a beta random variable
 		double beta(double a,double b);
+		/// Sample a F-distributed random variable
 		double fdistribution(unsigned int n,unsigned int m);
+		/// Sample a Poisson random variable
 		double poisson(double a);
+		/// Sample a geometric random variable with event probability p
 		double geometric(double p);
+		/**
+		 * return a variate from the hypergeometric distribution with m the
+		 * population, p the chance on success and n the number of items drawn
+		 */
 		double hypergeometric(unsigned int m,unsigned int n,double p);
+		/// Sample a weibull random variable
 		double weibull(double a,double b);
+		/**
+		 *  An event count for a binomial distribution with event
+		 *  probability p and n the number of trials
+		 */ 
 		double binomial(double p,unsigned int n);
+		/**
+		 * return a random variable with probabilty of success equal to p
+		 * and n as the number of successes
+		 */
 		double negativebinomial(double p,unsigned int n);
+		/// Sample a triangular random variable
 		double triangular(double a);
-		int probability(double p);
+		/// return TRUE with probability p and FALSE with probability 1-p
+		bool probability(double p);
+		/// Sample a lognormal gamma random variable
 		double lngamma(double xx);
 		/// Destructor
 		~rv();
 	private:	
 		random_seq* _impl;
+		typedef enum 
+		{
+			NDURATION,
+			NCOUNT,
+			EMPTY,
+			NDELAY,
+			ADDTOQ,
+			EMPTYQ,
+			HNCLMS,
+			HMODE,
+			PROBVAL,
+			ERRUNIFORM,
+			ERRNORMAL,
+			ERRLOGNORM,
+			ERRTRIANG,
+			ERRGAMMA,
+			ERRBETA,
+			ERREXPONENT,
+			ERRERLANG,
+			ERRHYPGEO,
+			NULLEV,
+			NOHISTO,
+			INITERR,
+			AMODE,
+			HFORM,
+			ERRFILE,
+			SAMPLE,
+			FRACTION,
+			LEVEL,
+			SCAN,
+			SUPPRESS,
+			SEED
+		} errorType;
+
 		void err(errorType n);
 };
 

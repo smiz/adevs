@@ -18,7 +18,6 @@ class Listener:
 		}
 		void stateChange(Atomic<int>* model, double t)
 		{
-			#pragma omp critical
 			s++;
 		}
 		int c, s, value;

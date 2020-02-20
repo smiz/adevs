@@ -53,13 +53,17 @@ namespace adevs
 class sd_time
 {
 	public:
-		// Creates the identify (0,0)
+		/// Creates the identify (0,0)
 		sd_time():t(0.0),k(0){}
-		// Create a time (t,k)
+		/// Create a time (t,k)
 		sd_time(double t, int k):t(t),k(k){}
+		/// Copy constructor
 		sd_time(const sd_time& other):t(other.t),k(other.k){}
+		/// Get the real part of time
 		double real() const { return t; }
+		/// Get the logical part of time
 		double integer() const { return k; }
+		/// Assignment operator
 		const sd_time& operator=(const sd_time& other)
 		{
 			t = other.t;
@@ -81,43 +85,50 @@ class sd_time
 		{
 			return (t < t2.t || (t == t2.t && k < t2.k));
 		}
+		/// Less than or equal
 		bool operator<=(const sd_time& t2) const
 		{
 			return (*this == t2 || *this < t2);
 		}
+		/// Greater than
 		bool operator>(const sd_time& t2) const
 		{
 			return !(*this <= t2);
 		}
+		/// Greater than or equal
 		bool operator>=(const sd_time& t2) const
 		{
 			return !(*this < t2);
 		}
-		/// Add and subtract
+		/// Advance this value by a step size t2
 		sd_time operator+(const sd_time& t2) const
 		{
 			sd_time result(*this);
 			result += t2;
 			return result;
 		}
+		/// Advance this value by a step size t2
 		const sd_time& operator+=(const sd_time& t2) 
 		{
 			if (t2.t == 0.0) k += t2.k;
 			else { t += t2.t; k = t2.k; }
 			return *this;
 		}
+		/// Length of the interval from now to t2
 		sd_time operator-(const sd_time& t2) const
 		{
 			sd_time result(*this);
 			result -= t2;
 			return result;
 		}
+		/// Length of the interval from now to t2
 		const sd_time& operator-=(const sd_time& t2) 
 		{
 			if (t == t2.t) { t = 0.0; k -= t2.k; }
 			else t -= t2.t; 
 			return *this;
 		}
+		/// Print a time to the output stream
 		friend std::ostream& operator<<(std::ostream& out, const sd_time& t)
 		{
 			out << "(" << t.t << "," << t.k << ")";

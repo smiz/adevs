@@ -395,6 +395,7 @@ template <typename X> class ode_solver
 		/// Destructor
 		virtual ~ode_solver(){}
 	protected:
+		/// The system of odes to be acted upon by the solver
 		ode_system<X>* sys;
 };
 
@@ -426,6 +427,7 @@ template <typename X> class event_locator
 		/// Destructor
 		virtual ~event_locator(){}
 	protected:
+		/// The system of odes to be acted upon by the event locator
 		ode_system<X>* sys;
 };
 

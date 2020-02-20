@@ -12,7 +12,6 @@ Atomic<SimpleIO>()
 
 void SimpleAtomic::delta_int()
 {
-	#pragma omp atomic
 	internal_execs++;
 }
 

@@ -100,6 +100,16 @@ template <typename X> class FMI:
 		 * of an integration state.
 		 */
 		virtual void postStep(double* q);
+		/**
+		 * Like the postStep() method, but this is called at the end
+		 * of a trial step made by the numerical integrator. Trial steps
+		 * are used to locate state events and to estimate numerical
+		 * errors. The state vector q passed to this method may not be
+		 * the final vector assigned to the model at the end of
+		 * the current integration step. The get that value use
+		 * the postStep() method.
+		 */
+		 * 
 		virtual void postTrialStep(double* q);
 		/**
 		 * The internal transition function. This function will process all events
@@ -134,23 +144,23 @@ template <typename X> class FMI:
 		virtual void gc_output(Bag<X>& gb);
 		/// Destructor
 		virtual ~FMI();
-		// Get the current time
+		/// Get the current time
 		double get_time() const { return t_now; }
-		// Get the value of a real variable
+		/// Get the value of a real variable
 		double get_real(int k);
-		// Set the value of a real variable
+		/// Set the value of a real variable
 		void set_real(int k, double val);
-		// Get the value of an integer variable
+		/// Get the value of an integer variable
 		int get_int(int k);
-		// Set the value of an integer variable
+		/// Set the value of an integer variable
 		void set_int(int k, int val);
-		// Get the value of a boolean variable
+		/// Get the value of a boolean variable
 		bool get_bool(int k);
-		// Set the value of a boolean variable
+		/// Set the value of a boolean variable
 		void set_bool(int k, bool val);
-		// Get the value of a string variable
+		/// Get the value of a string variable
 		std::string get_string(int k);
-		// Set the value of a string variable
+		/// Set the value of a string variable
 		void set_string(int k, std::string& val);
 	private:
 		// Reference to the FMI

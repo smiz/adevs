@@ -1,5 +1,5 @@
 ADEVS_PREFIX = ../..
-CFLAGS = -Wall -g -pedantic -fopenmp
+CFLAGS = -Wall -g -pedantic 
 CC = g++
 INCLUDE = -I${ADEVS_PREFIX}/include
 

@@ -114,8 +114,7 @@ adevs::rv::~rv()
 	delete _impl; 
 }
 
-// return a negative exponentially distributed random number with
-// the mean as parameter
+
 double adevs::rv::exponential(double a)
 {
 	if (a < 0)
@@ -126,10 +125,6 @@ double adevs::rv::exponential(double a)
 }
 
 
-// return a hyperexponentially distributed random number with
-// the means as parameters to two exponentially distributed variates,
-// the first with a chance of p of being generated, the second with a
-// chance of 1-p.
 double adevs::rv::hyperexponential(double p,double a,double b)
 {
 	if ( (a < 0) || (b < 0) )
@@ -152,7 +147,6 @@ double adevs::rv::hyperexponential(double p,double a,double b)
 	}
 }
 
-// return a laplace number with the given parameter
 double adevs::rv::laplace(double a)
 {
 	if (probability(0.5))
@@ -165,7 +159,6 @@ double adevs::rv::laplace(double a)
 	}
 }
 
-// return random variable from the erlang distribution
 double adevs::rv::erlang(unsigned int n,double a)
 {
 	if (a < 0)
@@ -380,7 +373,7 @@ double adevs::rv::binomial(double p,unsigned int n)
 	int nold = -1;
 	double am,em,g,angle,prob,bnl,sq,t,yy;
 	double pold = -1.0;
-	double pc,plog,pclog,en,oldg;
+	double pc=0,plog=0,pclog=0,en=0,oldg=0;
 
 	if ((p <= 0.0) || (p >= 1.0))
 	{
@@ -427,7 +420,7 @@ double adevs::rv::binomial(double p,unsigned int n)
 	}
 	else 
 	{
-		if (n != nold) 
+		if ((int)n != nold) 
 		{
 			en = n;
 			oldg = lngamma(en + 1.0);
@@ -510,7 +503,7 @@ double adevs::rv::triangular(double a)
 
 
 // return OK with probability p and FALSE with probability 1-p
-int adevs::rv::probability(double p)
+bool adevs::rv::probability(double p)
 {
 	if ((p < 0.0) || (p > 1.0)) 
 	{

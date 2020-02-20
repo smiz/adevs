@@ -52,8 +52,29 @@ template <typename X> class event_locator_impl:
 		 * |z(t')| < err_tol.
 		 */
 		enum Mode { INTERPOLATE, BISECTION, DISCONTINUOUS };
+		/**
+		 * Create an event locator that will act on the supplied ode system.
+		 * @param sys The system of equations to solve
+		 * @param err_tol Threshold for the zero crossing function that will
+		 * trigger an event detect.
+		 * @param mode The event localization method to be used
+		 */
 		event_locator_impl(ode_system<X>* sys, double err_tol, Mode mode);
+		/// Destructor leaves the ode_system object intact
 		~event_locator_impl();
+		/**
+		 * Location discrete events between now and now + h.
+		 * @param events This array contains one entry for each zero crossing
+		 * function. An entry is true of that function is within err_tol of
+		 * zero and false otherwise.
+		 * @param qstart The continuous variable state vector now.
+		 * @param qend The continuous value state vector when the event
+		 * is detected or at now+h if no event is detected.
+		 * @param solver The ode solver to use when computing continuous
+		 * state vector values.
+		 * @param h The interval of time over which to look for events.
+		 * @return true if at least one event was found and false otherwise.
+		 */
 		bool find_events(bool* events, const double* qstart, double* qend,
 				ode_solver<X>* solver, double& h);
 	private:
@@ -145,26 +166,30 @@ bool event_locator_impl<X>::find_events(bool* events,
 }
 
 /**
- * Locate events using the bisection method.
+ * Locate events using the bisection method. Your z functions must be
+ * continuous for this to work.
  */
 template <typename X>
 class bisection_event_locator:
 	public event_locator_impl<X>
 {
 	public:
+		/// Create an event locator that implements the bisection search mode
 		bisection_event_locator(ode_system<X>* sys, double err_tol):
 			event_locator_impl<X>(
 					sys,err_tol,event_locator_impl<X>::BISECTION){}
 };
 
 /**
- * Locate events using linear interpolation.
+ * Locate events using linear interpolation. Your z functions must be
+ * continuous for this to work.
  */
 template <typename X>
 class linear_event_locator:
 	public event_locator_impl<X>
 {
 	public:
+		/// Create an event locator that implements the linear interpolation search mode
 		linear_event_locator(ode_system<X>* sys, double err_tol):
 			event_locator_impl<X>(
 					sys,err_tol,event_locator_impl<X>::INTERPOLATE){}
@@ -178,6 +203,10 @@ class discontinuous_event_locator:
 	public event_locator_impl<X>
 {
 	public:
+		/**
+		 * Create an event locator that implements a bisection search while
+		 * assuming the z functions are not continuous.
+		 */
 		discontinuous_event_locator(ode_system<X>* sys, double err_tol):
 			event_locator_impl<X>(
 					sys,err_tol,event_locator_impl<X>::DISCONTINUOUS){}

@@ -1,6 +1,0 @@
-# Boot kernel with options
-# intel_iommu=on rc.driver.blacklist=nouveau nouveau.modeset=0
-devices="10de:0983,10de:1024"
-echo "options vfio-pci ids=$devices" > /etc/modprobe.d/vfio.conf
-echo "vfio-pci" > /etc/modules-load.d/vfio-pci.conf
-

@@ -385,9 +385,6 @@ void Simulator<X,T>::computeNextState()
 	 * special container that will be used when the structure changes are
 	 * computed.
 	 */
-	#ifdef _OPENMP
-	#pragma omp parallel for
-	#endif
 	for (unsigned i = 0; i < activated.size(); i++)
 	{
 		Atomic<X,T>* model = activated[i];
@@ -408,9 +405,6 @@ void Simulator<X,T>::computeNextState()
 		// Check for a model transition
 		if (model->model_transition() && model->getParent() != NULL)
 		{
-			#ifdef _OPENMP
-			#pragma omp critical
-			#endif
 			model_func_eval_set.insert(model->getParent());
 		}
 		// Adjust position in the schedule
@@ -575,9 +569,6 @@ void Simulator<X,T>::schedule(Devs<X,T>* model, T t)
 		T dt = a->ta();
 		if (dt == adevs_inf<T>())
 		{
-			#ifdef _OPENMP
-			#pragma omp critical
-			#endif
 			sched.schedule(a,adevs_inf<T>());
 		}
 		else
@@ -588,9 +579,6 @@ void Simulator<X,T>::schedule(Devs<X,T>* model, T t)
 				exception err("Negative time advance",a);
 				throw err;
 			}
-			#ifdef _OPENMP
-			#pragma omp critical
-			#endif
 			sched.schedule(a,tNext);
 		}
 	}

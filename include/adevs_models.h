@@ -82,6 +82,7 @@ template <typename X, typename T = double> class Devs
 		 * NULL if this model is at the top of the hierarchy.
 		 */
 		const Network<X,T>* getParent() const { return parent; }
+		/// Get the model that contains this model as a component.
 		Network<X,T>* getParent() { return parent; }
 		/**
 		 * Assign a new parent to this model. Network model's should always
