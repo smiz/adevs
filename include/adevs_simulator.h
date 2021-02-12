@@ -291,12 +291,14 @@ void Simulator<X,T>::computeNextOutput(Bag<Event<X,T> >& input, T t)
 		}
 		activated.clear();
 	}
+	// Input and output happen at the current time.
+	io_time = t;
 	// Get the imminent Moore models from the schedule if we have not
 	// already done so.
 	allow_mealy_input = true;
 	if (t == sched.minPriority() && !io_up_to_date)
 		sched.visitImminent(this);
-	// Apply the injected inputs
+	// Apply the injected inputs. 
 	for (typename Bag<Event<X,T> >::iterator iter = input.begin(); 
 		iter != input.end(); iter++)
 	{
@@ -352,10 +354,7 @@ void Simulator<X,T>::computeNextOutput(Bag<Event<X,T> >& input, T t)
 		}
 	}
 	mealy.clear();
-	// Record the time of the input
 	io_up_to_date = true;
-	io_time = t;
-
 }
 
 template<class X, class T>
@@ -621,6 +620,7 @@ void Simulator<X,T>::inject_event(Atomic<X,T>* model, X& value)
 			activated.insert(model);
 		model->x = io_pool.make_obj();
 	}
+	this->notify_input_listeners(model,value,io_time);
 	model->x->insert(value);
 }
 
@@ -629,7 +629,7 @@ void Simulator<X,T>::route(Network<X,T>* parent, Devs<X,T>* src, X& x)
 {
 	// Notify event listeners if this is an output event
 	if (parent != src)
-		this->notify_output_listeners(src,x,sched.minPriority());
+		this->notify_output_listeners(src,x,io_time);
 	// No one to do the routing, so return
 	if (parent == NULL) return;
 	// Compute the set of receivers for this value
@@ -657,6 +657,7 @@ void Simulator<X,T>::route(Network<X,T>* parent, Devs<X,T>* src, X& x)
 		// otherwise it is an input to a coupled model
 		else
 		{
+			this->notify_input_listeners((*recv_iter).model,(*recv_iter).value,io_time);
 			route((*recv_iter).model->typeIsNetwork(),
 			(*recv_iter).model,(*recv_iter).value);
 		}

@@ -149,7 +149,7 @@ JNIEXPORT jlong JNICALL Java_adevs_Simulator_createCppSimulator
 		env->ExceptionClear();
 		env->Throw(exp);
 	}
-	catch(adevs::exception exp)
+	catch(adevs::exception& exp)
 	{
 		throwit(exp,env);
 	}
@@ -191,7 +191,7 @@ JNIEXPORT void JNICALL Java_adevs_Simulator_execNextEvent
 		env->ExceptionClear();
 		env->Throw(exp);
 	}
-	catch(adevs::exception exp)
+	catch(adevs::exception& exp)
 	{
 		throwit(exp,env);
 	}
@@ -219,7 +219,7 @@ JNIEXPORT void JNICALL Java_adevs_Simulator_execUntil
 		env->ExceptionClear();
 		env->Throw(exp);
 	}
-	catch(adevs::exception exp)
+	catch(adevs::exception& exp)
 	{
 		throwit(exp,env);
 	}
@@ -245,7 +245,7 @@ JNIEXPORT void JNICALL Java_adevs_Simulator_computeNextOutput
 		env->ExceptionClear();
 		env->Throw(exp);
 	}
-	catch(adevs::exception exp)
+	catch(adevs::exception& exp)
 	{
 		throwit(exp,env);
 	}
@@ -289,7 +289,7 @@ JNIEXPORT void JNICALL Java_adevs_Simulator_computeNextState
 		env->ExceptionClear();
 		env->Throw(exp);
 	}
-	catch(adevs::exception exp)
+	catch(adevs::exception& exp)
 	{
 		throwit(exp,env);
 	}

@@ -9,8 +9,8 @@ using namespace std;
 using namespace adevs;
 
 // Cellspace dimensions
-#define WIDTH 300
-#define HEIGHT 300
+#define WIDTH 200
+#define HEIGHT 200
 bool state[HEIGHT+1][WIDTH];
 unsigned lines = 0, rule, numSteps;
 

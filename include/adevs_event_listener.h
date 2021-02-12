@@ -51,6 +51,13 @@ template <class X, class T = double> class EventListener
 		 */
 		virtual void outputEvent(Event<X,T> x, T t){}
 		/**
+		 * This callback is invoked when a model, network or atomic,
+		 * recieves an input. The default implementation is empty.
+		 * @param x The model and input value
+		 * @param t The absolute time at which the output occurred
+		 */
+		virtual void inputEvent(Event<X,T> x, T t){}
+		/**
 		 * This callback is invoked by the simulator after an Atomic
 		 * model changes its state. This method has an empty default
 		 * implementation.

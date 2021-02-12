@@ -5,17 +5,24 @@ using namespace adevs;
 
 Relay* r;
 vector<Event<IO_Type> > output;
+vector<Event<IO_Type> > input;
 
 class Listener:
 	public EventListener<IO_Type>
 {
 	public:
 		Listener():EventListener<IO_Type>(){}
+		void inputEvent(Event<IO_Type> x, double t)
+		{
+			// First input should occur at time zero
+			assert(input.size() == 0 || t == 0.0);
+			input.push_back(x);
+		}
 		void outputEvent(Event<IO_Type> x, double t)
 		{
 			// Output should occur only at the relay time
 			assert(t == 1.0);
-			// Save the even to check its validity
+			// Save to check its validity
 			output.push_back(x);
 		}
 		void stateChange(Atomic<IO_Type>* model, double t, void* state)
@@ -52,8 +59,9 @@ int main()
 	assert(output.size() == 0);
 	// Execute the next event
 	sim->execNextEvent();
-	// Should be two outputs
+	// Should be two outputs and one input
 	assert(output.size() == 2);
+	assert(input.size() == 1);
 	// Check the output sources
 	assert(output[0].model == d || output[1].model == d);
 	assert(output[0].model == r || output[1].model == r);
