@@ -50,17 +50,18 @@ namespace adevs
 /**
  * This time type allows models to evolve on R x Z.
  */
+template <typename T=double>
 class sd_time
 {
 	public:
 		/// Creates the identify (0,0)
-		sd_time():t(0.0),k(0){}
+		sd_time():t(0),k(0){}
 		/// Create a time (t,k)
-		sd_time(double t, int k):t(t),k(k){}
+		sd_time(T t, int k):t(t),k(k){}
 		/// Copy constructor
 		sd_time(const sd_time& other):t(other.t),k(other.k){}
 		/// Get the real part of time
-		double real() const { return t; }
+		T real() const { return t; }
 		/// Get the logical part of time
 		double integer() const { return k; }
 		/// Assignment operator
@@ -110,7 +111,7 @@ class sd_time
 		/// Advance this value by a step size t2
 		const sd_time& operator+=(const sd_time& t2) 
 		{
-			if (t2.t == 0.0) k += t2.k;
+			if (t2.t == 0) k += t2.k;
 			else { t += t2.t; k = t2.k; }
 			return *this;
 		}
@@ -124,7 +125,7 @@ class sd_time
 		/// Length of the interval from now to t2
 		const sd_time& operator-=(const sd_time& t2) 
 		{
-			if (t == t2.t) { t = 0.0; k -= t2.k; }
+			if (t == t2.t) { t = 0; k -= t2.k; }
 			else t -= t2.t; 
 			return *this;
 		}
@@ -134,8 +135,15 @@ class sd_time
 			out << "(" << t.t << "," << t.k << ")";
 			return out;
 		}
+		/// Read a time from the input stream
+		friend std::istream& operator>>(std::istream& in, sd_time& t)
+		{
+			char junk;
+			in >> junk >> t.t >> junk >> t.k >> junk;
+			return in;
+		}
 	private:
-		double t; int k;
+		T t; int k;
 };
 
 /**
@@ -273,8 +281,12 @@ template <> inline long adevs_inf() {
 	return std::numeric_limits<long>::max(); }
 template <> inline adevs::double_fcmp adevs_inf() {
 	return std::numeric_limits<double>::max(); }
-template <> inline adevs::sd_time adevs_inf() {
-	return adevs::sd_time(std::numeric_limits<float>::max(),std::numeric_limits<int>::max()); }
+template <> inline adevs::sd_time<double> adevs_inf() {
+	return adevs::sd_time<double>(std::numeric_limits<double>::max(),std::numeric_limits<int>::max()); }
+template <> inline adevs::sd_time<long> adevs_inf() {
+	return adevs::sd_time<long>(std::numeric_limits<long>::max(),std::numeric_limits<int>::max()); }
+template <> inline adevs::sd_time<int> adevs_inf() {
+	return adevs::sd_time<int>(std::numeric_limits<int>::max(),std::numeric_limits<int>::max()); }
 
 template <> inline float adevs_zero() { return 0.0f; }
 template <> inline long double adevs_zero() { return 0.0L; }
@@ -282,7 +294,9 @@ template <> inline double adevs_zero() { return 0.0; }
 template <> inline int adevs_zero() { return 0; }
 template <> inline long adevs_zero() { return 0; }
 template <> inline adevs::double_fcmp adevs_zero() { return 0.0; }
-template <> inline adevs::sd_time adevs_zero() { return adevs::sd_time(); }
+template <> inline adevs::sd_time<double> adevs_zero() { return adevs::sd_time<double>(0.0,0); }
+template <> inline adevs::sd_time<long> adevs_zero() { return adevs::sd_time<long>(0,0); }
+template <> inline adevs::sd_time<int> adevs_zero() { return adevs::sd_time<int>(0,0); }
 
 template <> inline float adevs_sentinel() { return -1.0f; }
 template <> inline long double adevs_sentinel() { return -1.0L; }
@@ -290,7 +304,9 @@ template <> inline double adevs_sentinel() { return -1.0; }
 template <> inline int adevs_sentinel() { return -1; }
 template <> inline long adevs_sentinel() { return -1; }
 template <> inline adevs::double_fcmp adevs_sentinel() { return -1.0; }
-template <> inline adevs::sd_time adevs_sentinel() { return adevs::sd_time(-1.0,0); }
+template <> inline adevs::sd_time<double> adevs_sentinel() { return adevs::sd_time<double>(-1.0,0); }
+template <> inline adevs::sd_time<long> adevs_sentinel() { return adevs::sd_time<long>(-1,0); }
+template <> inline adevs::sd_time<int> adevs_sentinel() { return adevs::sd_time<int>(-1,0); }
 
 template <> inline float adevs_epsilon() { return 0.0f; }
 template <> inline long double adevs_epsilon() { return 0.0L; }
@@ -298,6 +314,8 @@ template <> inline double adevs_epsilon() { return 0.0; }
 template <> inline int adevs_epsilon() { return 0; }
 template <> inline long adevs_epsilon() { return 0; }
 template <> inline adevs::double_fcmp adevs_epsilon() { return 0.0; }
-template <> inline adevs::sd_time adevs_epsilon() { return adevs::sd_time(0.0,1); }
+template <> inline adevs::sd_time<double> adevs_epsilon() { return adevs::sd_time<double>(0.0,1); }
+template <> inline adevs::sd_time<long> adevs_epsilon() { return adevs::sd_time<long>(0,1); }
+template <> inline adevs::sd_time<int> adevs_epsilon() { return adevs::sd_time<int>(0,1); }
 
 #endif

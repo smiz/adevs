@@ -69,6 +69,9 @@ sched:
 sd_time:
 	$(CC) $(CFLAGS) sd_time_test.cpp 
 	$(TEST_EXEC)
+	$(CC) $(CFLAGS) sd_time_test_2.cpp
+	$(TEST_EXEC) > tmp
+	$(DIFF) tmp sd_time_test2.ok
 
 atomic:
 	$(CC) $(CFLAGS) atomic_test.cpp 

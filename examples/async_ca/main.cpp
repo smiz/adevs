@@ -92,6 +92,11 @@ void simulateSpace()
 
 int main(int argc, char** argv)
 {
+	if (argc < 4)
+	{
+		cout << "Need a seed, rule number (0-255), and number of steps to simulate" << endl;
+		return 0;
+	}
 	int seed = atoi(argv[1]);
 	rule = atoi(argv[2]);
 	numSteps = atoi(argv[3]);

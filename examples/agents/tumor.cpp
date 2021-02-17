@@ -29,17 +29,17 @@ struct io_type
 };
 
 class Agent:
-	public Atomic<io_type,sd_time>
+	public Atomic<io_type,sd_time<> >
 {
 	public:
 		Agent(int c0, int p, int x, int y):
-			Atomic<io_type,sd_time>(),
+			Atomic<io_type,sd_time<> >(),
 			c(c0),p(p),x(x),y(y)
 		{
 			output[x][y] = c0;
 		}
 		void delta_int(){}
-		void delta_ext(sd_time e, const Bag<io_type>& xb)
+		void delta_ext(sd_time<> e, const Bag<io_type>& xb)
 		{
 			for (auto xx: xb)
 			{
@@ -57,7 +57,7 @@ class Agent:
 		void delta_conf(const Bag<io_type>& xb)
 		{
 			delta_int();
-			delta_ext(adevs_zero<sd_time>(),xb);
+			delta_ext(adevs_zero<sd_time<> >(),xb);
 		}
 		void output_func(Bag<io_type>& yb)
 		{
@@ -79,14 +79,14 @@ class Agent:
 			output[x][y] = c;
 		}
 		void gc_output(Bag<io_type>&){}
-		sd_time ta()
+		sd_time<> ta()
 		{
 			if (output[x][y] != c)
-				return sd_time(0.0,0);
+				return sd_time<>(0.0,0);
 			else if (c == Tumor)
-				return sd_time(r,p);
+				return sd_time<>(r,p);
 			else
-				return adevs_inf<sd_time>();
+				return adevs_inf<sd_time<>>();
 		}
 	private:
 		char c;
@@ -113,11 +113,11 @@ class Agent:
 };
 
 class Grid:
-	public Network<io_type,sd_time>
+	public Network<io_type,sd_time<>>
 {
 	public:
 		Grid():
-			Network<io_type,sd_time>()
+			Network<io_type,sd_time<>>()
 		{
 			int count = 0;
 			for (int i = 0; i < XSIZE; i++)
@@ -132,15 +132,15 @@ class Grid:
 				}
 			}
 		}
-		void getComponents(Set<Devs<io_type,sd_time>*>& c)
+		void getComponents(Set<Devs<io_type,sd_time<>>*>& c)
 		{
 			for (int i = 0; i < XSIZE; i++)
 				for (int j = 0; j < YSIZE; j++)
 					c.insert(grid[i][j]);
 		}
-		void route(const io_type &value, Devs<io_type,sd_time>* model, Bag<Event<io_type,sd_time> >& r)
+		void route(const io_type &value, Devs<io_type,sd_time<>>* model, Bag<Event<io_type,sd_time<>> >& r)
 		{
-			Event<io_type,sd_time> xx;
+			Event<io_type,sd_time<>> xx;
 			xx.value = value;
 			if (value.xsrc-1 >= 0)
 				xx.model = grid[value.xsrc-1][value.ysrc];
@@ -169,7 +169,7 @@ class Grid:
 				for (int j = 0; j < YSIZE; j++)
 					delete grid[i][j];
 		}
-		void print(sd_time tL)
+		void print(sd_time<> tL)
 		{
 			cout << tL << endl;
 			for (int i = 0; i < XSIZE; i++)
@@ -189,11 +189,11 @@ class Grid:
 int main()
 {
 	Grid *world = new Grid();
-	Simulator<io_type,sd_time> *sim = new Simulator<io_type,sd_time>(world);
-	world->print(adevs_zero<sd_time>());
-	while (sim->nextEventTime() < adevs_inf<sd_time>())
+	Simulator<io_type,sd_time<>> *sim = new Simulator<io_type,sd_time<>>(world);
+	world->print(adevs_zero<sd_time<>>());
+	while (sim->nextEventTime() < adevs_inf<sd_time<>>())
 	{
-		sd_time tL = sim->nextEventTime();
+		sd_time<> tL = sim->nextEventTime();
 		sim->execNextEvent();
 		world->print(tL);
 	}

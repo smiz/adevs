@@ -78,18 +78,26 @@ template <class X, class T = double> class Simulator:
 		{
 			return sched.minPriority();
 		}
-		/// Execute the simulation cycle at time nextEventTime()
-		void execNextEvent()
+		/**
+		 * Execute the simulation cycle at time nextEventTime()
+		 * @return The updated simulation time
+		 */
+		T execNextEvent()
 		{
-			computeNextState();
+			return computeNextState();
 		}
-		/// Execute until nextEventTime() > tend
-		void execUntil(T tend)
+		/**
+		 * Execute until nextEventTime() > tend.
+		 * @return The updated simulation time
+		 */
+		T execUntil(T tend)
 		{
+			T t = tend+adevs_epsilon<T>();
 			while (nextEventTime() <= tend 
                    && nextEventTime() < adevs_inf<T>()) {
-				execNextEvent();
+				t = execNextEvent();
             }
+			return t;
 		}
 		/**
 		 * Compute the output values of the imminent component models 
@@ -119,16 +127,18 @@ template <class X, class T = double> class Simulator:
 		 * is calculated at the given time.
 		 * @param input A bag of (input target,value) pairs
 		 * @param t The time at which the input takes effect
+		 * @return The new, current simulation time
 		 */
-		void computeNextState(Bag<Event<X,T> >& input, T t);
+		T computeNextState(Bag<Event<X,T> >& input, T t);
 		/**
 		 * Compute the next state at the time at the time t and with
 		 * input supplied at the prior call to computeNextOutput
 		 * assuming no computeNextState has intervened. Assumes
 		 * t = nextEventTime() and input an empty bag if there was
 		 * no prior call to computeNextOutput.
+		 * @return The new, current simulation time
 		 */
-		void computeNextState();
+		T computeNextState();
 		/**
 		 * Deletes the simulator, but leaves the model intact. The model must
 		 * exist when the simulator is deleted.  Delete the model only after
@@ -364,15 +374,15 @@ void Simulator<X,T>::computeNextOutput()
 }
 
 template <class X, class T>
-void Simulator<X,T>::computeNextState(Bag<Event<X,T> >& input, T t)
+T Simulator<X,T>::computeNextState(Bag<Event<X,T> >& input, T t)
 {
 	computeNextOutput(input,t);
 	assert(io_time == t && io_up_to_date);
-	computeNextState();
+	return computeNextState();
 }
 
 template <class X, class T>
-void Simulator<X,T>::computeNextState()
+T Simulator<X,T>::computeNextState()
 {
 	if (!io_up_to_date)
 		computeNextOutput();
@@ -500,6 +510,8 @@ void Simulator<X,T>::computeNextState()
 	}
 	// Empty the bags
 	activated.clear();
+	// Return the current simulation time
+	return t;
 }
 
 template <class X, class T>
@@ -596,6 +608,11 @@ void Simulator<X,T>::schedule(Devs<X,T>* model, T t)
 template <class X, class T>
 void Simulator<X,T>::inject_event(Atomic<X,T>* model, X& value)
 {
+	if (io_time < model->tL)
+	{
+		exception err("Attempt to apply input in the past",model);
+		throw err;
+	}
 	// If this is a Mealy model, add it to the list of models that
 	// will need their input calculated
 	if (model->typeIsMealyAtomic())

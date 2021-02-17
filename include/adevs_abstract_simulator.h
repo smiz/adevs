@@ -67,7 +67,7 @@ template <class X, class T = double> class AbstractSimulator
 		/// Get the model's next event time
 		virtual T nextEventTime() = 0;
 		/// Execute the simulator until the next event time is greater than tend
-		virtual void execUntil(T tend) = 0;
+		virtual T execUntil(T tend) = 0;
 		/// Destructor leaves the model intact.
 		virtual ~AbstractSimulator(){}
 		/// Notify listeners of an output event.

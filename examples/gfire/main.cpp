@@ -177,7 +177,7 @@ void simulateSpace()
 		{
 			sim->execUntil(tN+10.0);
 		} 
-		catch(adevs::exception err)
+		catch(adevs::exception& err)
 		{
 			cout << err.what() << endl;
 			exit(-1);

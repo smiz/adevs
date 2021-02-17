@@ -14,8 +14,9 @@ int main()
 	adevs::Bag<adevs::Event<PortValue> > input;
 	while (sim.nextEventTime() < DBL_MAX)
 	{
+		double tnew = sim.nextEventTime();
 		sim.computeNextOutput();
-		sim.computeNextState(input,sim.nextEventTime());
+		assert(sim.computeNextState(input,sim.nextEventTime()) == tnew+adevs_epsilon<double>());
 	}
 	cout << "Test done" << endl;
 	return 0;

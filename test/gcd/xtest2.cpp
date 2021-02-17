@@ -49,9 +49,9 @@ int main()
 			}
 		}
 		listener.output.clear();
-		sim_c.computeNextState(y,tN);
+		assert(sim_c.computeNextState(y,tN) == tN+adevs_epsilon<double>());
 		y.clear();
-		sim_g.computeNextState(y,tN);
+		assert(sim_g.computeNextState(y,tN) == tN+adevs_epsilon<double>());
 	}
 	cout << "Test done" << endl;
 	return 0;
