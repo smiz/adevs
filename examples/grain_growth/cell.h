@@ -3,8 +3,7 @@
 #include <adevs.h>
 #include <iostream>
 #include <random>
-
-#define SIZE 800
+#include "params.h"
 
 /**
  * Each integer index is associated with an angle. The angle table

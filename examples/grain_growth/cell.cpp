@@ -1,11 +1,12 @@
 #include "cell.h"
 #include <cassert>
 #include <iostream>
+#include <climits>
 using namespace std;
 
 int Cell::state_changes = 0;
 default_random_engine Cell::generator;
-exponential_distribution<double> Cell::distribution(1.0);
+exponential_distribution<double> Cell::distribution(W);
 
 int Cell::angle[SIZE][SIZE];
 
@@ -48,6 +49,7 @@ void Cell::delta_conf(const adevs::Bag<CellEvent>& xb)
 void Cell::output_func(adevs::Bag<CellEvent>& yb)
 {
 	CellEvent e;
+	if (angle[x][y] == new_angle) return;
 	e.value = angle[x][y] = new_angle;
 	// Produce an event for each of the 8 neighbors
 	for (int dx = -1; dx <= 1; dx++)
@@ -67,8 +69,11 @@ void Cell::output_func(adevs::Bag<CellEvent>& yb)
 
 void Cell::calc_next()
 {
-	int E = 9; // Worst case energy 
-	new_angle = -1;
+	int Eo[9];
+	int En[9];
+	int Ec[9];
+	int k = 0, min_E = INT_MAX;
+	int options = 0, unique_options = 0;
 	// Find lowest energy choice
 	for (int dx = -1; dx <= 1; dx++)
 	{
@@ -77,33 +82,44 @@ void Cell::calc_next()
 			int nx = x+dx, ny = y+dy;
 			if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE)
 			{
-				int trial_angle = angle[nx][ny], trial_E = 0;
-				if (trial_angle == new_angle) continue;
+				Ec[k] = angle[nx][ny];
+				En[k] = 0;
 				for (int ddx = -1; ddx <= 1; ddx++)
 				{
 					for (int ddy = -1; ddy <= 1; ddy++)
 					{
-						if (ddx != 0 || ddy != 0)
+						if (ddx == 0 && ddy == 0) continue;
+						int nnx = x+ddx, nny = y+ddy;
+						if (nnx >= 0 && nnx < SIZE && nny >= 0 && nny < SIZE)
 						{
-							int nnx = x+ddx, nny = y+ddy;
-							if (nnx >= 0 && nnx < SIZE && nny >= 0 && nny < SIZE)
-							{
-								if (trial_angle != angle[nnx][nny])
-									trial_E++;
-							}
+							if (Ec[k] != angle[nnx][nny])
+								En[k]++;
 						}
 					}
 				}
-				if (trial_E < E || (trial_E == E && trial_angle == angle[x][y]))
-				{
-					E = trial_E;
-					new_angle = trial_angle;
-				}
+				min_E = ::min(min_E,En[k]);
+				k++;
 			}
 		}
 	}
-	// No change. Sit tight.
-	if (new_angle == angle[x][y])
+	for (int i = 0; i < k; i++)
+	{
+		if (min_E == En[i])
+		{
+			int j;
+			for (j = 0; j < options; j++)
+			{
+				if (Ec[i] == Eo[j])
+					break;
+			}
+			if (j == options || options == 0)
+				unique_options++;
+			Eo[options] = Ec[i];
+			options++;
+		}
+	}
+	new_angle = Eo[rand()%options];
+	if (unique_options == 1 && new_angle == angle[x][y])
 		q = adevs_inf<double>();
 	// Change but still active
 	else if (q == adevs_inf<double>())

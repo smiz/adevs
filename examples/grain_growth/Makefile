@@ -1,26 +1,27 @@
 CFLAGS = -Wall 
-OPTFLAG = -Ofast
+OPTFLAG = -Ofast 
 CC = g++
 
 # Adjust these as needed to find the X11 and adevs libs and headers
 PREFIX = ../..
-LIBS = -lglut -lGL
-LIBPATH = -L/usr/X11R6/lib
+LIBS = -lpng
+LIBPATH = 
 INCLUDE = -I${PREFIX}/include
 
 ##
 # Should not need to edit below this line
 ##
 
-OBJS = main.o cell.o
+OBJS = cell.o save_results.o
 
 .SUFFIXES: .cpp
 .cpp.o:
 	${CC} ${CFLAGS} ${OPTFLAG} ${INCLUDE} -c $<
 
-gfire: ${OBJS}
-	${CC} ${CFLAGS} ${OPTFLAG} ${OBJS} ${LIBS} ${LIBPATH} ${INCLUDE}
+all: ${OBJS} main.o ca.o
+	${CC} ${CFLAGS} -o des ${OPTFLAG} main.o ${OBJS} ${LIBS} ${LIBPATH} ${INCLUDE}
+	${CC} ${CFLAGS} -o ca ${OPTFLAG} ca.o save_results.o ${LIBS} ${LIBPATH} ${INCLUDE}
 
 clean:
-	rm -f *.o core a.out
+	rm -f *.o core des ca
 
