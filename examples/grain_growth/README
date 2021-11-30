@@ -1,1 +1,1 @@
-This is a simple cell space model that simulates a "forest fire".  The cell space is displayed using OpenGL.  Use 'make' to build the example. The program can accepts an initial configuration file (see the examples) or will create a random one if no configuration is provided.
+This is a simple cell space model that simulates grain growth.

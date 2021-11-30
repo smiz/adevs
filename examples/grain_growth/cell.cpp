@@ -67,61 +67,64 @@ void Cell::output_func(adevs::Bag<CellEvent>& yb)
 	}
 }
 
+static int neighbors[8][2] =
+{
+	{0,1},
+	{0,-1},
+	{1,0},
+	{-1,0},
+	{1,1},
+	{1,-1},
+	{-1,1},
+	{-1,-1}
+};
+
+int Cell::energy(int C)
+{
+	int E = 0;
+	for (int i = 0; i < 8; i++)
+	{
+		int nx = x+neighbors[i][0];
+		int ny = y+neighbors[i][1];
+		if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE)
+		{
+			if (C != angle[nx][ny])
+				E++;
+		}
+	}
+	return E;
+}
+
 void Cell::calc_next()
 {
-	int Eo[9];
-	int En[9];
-	int Ec[9];
-	int k = 0, min_E = INT_MAX;
-	int options = 0, unique_options = 0;
-	// Find lowest energy choice
-	for (int dx = -1; dx <= 1; dx++)
+	bool options = false;
+	int option_count = 0, px, py;
+	int En[8]; 
+	int C[8];
+	int E = energy(angle[x][y]);
+	for (int i = 0; i < 8; i++)
 	{
-		for (int dy = -1; dy <= 1; dy++)
+		px = x+neighbors[i][0];
+		py = y+neighbors[i][1];
+		if (px >= 0 && px < SIZE && py >= 0 && py < SIZE)
 		{
-			int nx = x+dx, ny = y+dy;
-			if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE)
-			{
-				Ec[k] = angle[nx][ny];
-				En[k] = 0;
-				for (int ddx = -1; ddx <= 1; ddx++)
-				{
-					for (int ddy = -1; ddy <= 1; ddy++)
-					{
-						if (ddx == 0 && ddy == 0) continue;
-						int nnx = x+ddx, nny = y+ddy;
-						if (nnx >= 0 && nnx < SIZE && nny >= 0 && nny < SIZE)
-						{
-							if (Ec[k] != angle[nnx][nny])
-								En[k]++;
-						}
-					}
-				}
-				min_E = ::min(min_E,En[k]);
-				k++;
-			}
+			En[option_count] = energy(angle[px][py]);
+			C[option_count] = angle[px][py];
+			options = options || (En[option_count] <= E && C[option_count] != angle[x][y]);
+			option_count++;
 		}
 	}
-	for (int i = 0; i < k; i++)
+	// No viable alternatives to current state
+	if (!options)
 	{
-		if (min_E == En[i])
-		{
-			int j;
-			for (j = 0; j < options; j++)
-			{
-				if (Ec[i] == Eo[j])
-					break;
-			}
-			if (j == options || options == 0)
-				unique_options++;
-			Eo[options] = Ec[i];
-			options++;
-		}
-	}
-	new_angle = Eo[rand()%options];
-	if (unique_options == 1 && new_angle == angle[x][y])
 		q = adevs_inf<double>();
-	// Change but still active
-	else if (q == adevs_inf<double>())
+		return;
+	}
+	int pick = rand()%option_count;
+	if (En[pick] < E || (En[pick] == E && rand()%2 == 0))
+		new_angle = C[pick];
+	else
+		new_angle = angle[x][y];
+	if (q == adevs_inf<double>())
 		q = distribution(generator);
 }

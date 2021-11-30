@@ -55,6 +55,7 @@ class Cell: public adevs::Atomic<CellEvent>
 		double q;
 
 		void calc_next();
+		int energy(int C);
 };
 
 #endif

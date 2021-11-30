@@ -23,5 +23,5 @@ all: ${OBJS} main.o ca.o
 	${CC} ${CFLAGS} -o ca ${OPTFLAG} ca.o save_results.o ${LIBS} ${LIBPATH} ${INCLUDE}
 
 clean:
-	rm -f *.o core des ca
+	rm -f *.o core des ca *.png
 
