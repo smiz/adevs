@@ -1,7 +1,7 @@
 #ifndef _params_h_
 #define _params_h_
 
-#define SIZE 600
-#define W 0.5
+#define SIZE 100
+#define W 0.1
 
 #endif

@@ -6,66 +6,11 @@ using namespace std;
 
 int Cell::state_changes = 0;
 default_random_engine Cell::generator;
-exponential_distribution<double> Cell::distribution(W);
+exponential_distribution<double> Cell::exp_dist(W);
+uniform_int_distribution<int> Cell::binary_dist(0,1);
+uniform_int_distribution<int> Cell::eight_dist(0,7);
 
 int Cell::angle[SIZE][SIZE];
-
-Cell::Cell(int x, int y): 
-	adevs::Atomic<CellEvent>(),
-	x(x),
-	y(y),
-	q(adevs_inf<double>())
-{
-	calc_next();
-}
-
-double Cell::ta()
-{
-	return q;
-}
-
-void Cell::delta_int()
-{
-	q = adevs_inf<double>();
-	calc_next();
-	state_changes++;
-}
-
-void Cell::delta_ext(double e, const adevs::Bag<CellEvent>& xb)
-{
-	if (q < adevs_inf<double>())
-		q -= e;
-	calc_next();
-	state_changes++;
-}
-
-void Cell::delta_conf(const adevs::Bag<CellEvent>& xb) 
-{
-	q = adevs_inf<double>();
-	calc_next();
-	state_changes++;
-}
-
-void Cell::output_func(adevs::Bag<CellEvent>& yb)
-{
-	CellEvent e;
-	if (angle[x][y] == new_angle) return;
-	e.value = angle[x][y] = new_angle;
-	// Produce an event for each of the 8 neighbors
-	for (int dx = -1; dx <= 1; dx++)
-	{
-		for (int dy = -1; dy <= 1; dy++)
-		{
-			e.x = x+dx;
-			e.y = y+dy;
-			// Don't send an event to self
-			if (e.x != x || e.y != y)
-			{
-				yb.insert(e);
-			}
-		}
-	}
-}
 
 static int neighbors[8][2] =
 {
@@ -79,52 +24,148 @@ static int neighbors[8][2] =
 	{-1,-1}
 };
 
+static bool inside(int x, int y)
+{
+	return x >= 0 && x < SIZE && y >= 0 && y < SIZE;
+}
+
 int Cell::energy(int C)
 {
 	int E = 0;
 	for (int i = 0; i < 8; i++)
 	{
-		int nx = x+neighbors[i][0];
-		int ny = y+neighbors[i][1];
-		if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE)
-		{
-			if (C != angle[nx][ny])
-				E++;
-		}
+		int dx = neighbors[i][0]+1;
+		int dy = neighbors[i][1]+1;
+		E += (q[dx][dy] != -1 && C != q[dx][dy]);
 	}
 	return E;
 }
 
-void Cell::calc_next()
+void Cell::set_time_advance()
 {
-	bool options = false;
-	int option_count = 0, px, py;
-	int En[8]; 
-	int C[8];
-	int E = energy(angle[x][y]);
+	// Is it possible to achieve an equal or lower energy
+	// by accepting a neighboring state?  
+	int E = energy(q[1][1]);
 	for (int i = 0; i < 8; i++)
 	{
-		px = x+neighbors[i][0];
-		py = y+neighbors[i][1];
-		if (px >= 0 && px < SIZE && py >= 0 && py < SIZE)
+		int dx = neighbors[i][0]+1;
+		int dy = neighbors[i][1]+1;
+		if (q[dx][dy] != q[1][1] && q[dx][dy] != -1 && energy(q[dx][dy] <= E))
 		{
-			En[option_count] = energy(angle[px][py]);
-			C[option_count] = angle[px][py];
-			options = options || (En[option_count] <= E && C[option_count] != angle[x][y]);
-			option_count++;
+			// Yes it is! Leave time of next event unchanged
+			// or pick a new one if we were passive
+			if (h == adevs_inf<double>())
+				h = exp_dist(generator);
+			return;
 		}
 	}
-	// No viable alternatives to current state
-	if (!options)
-	{
-		q = adevs_inf<double>();
-		return;
-	}
-	int pick = rand()%option_count;
-	if (En[pick] < E || (En[pick] == E && rand()%2 == 0))
-		new_angle = C[pick];
-	else
-		new_angle = angle[x][y];
-	if (q == adevs_inf<double>())
-		q = distribution(generator);
+	// Nope, its not. We are passive.
+	h = adevs_inf<double>();
 }
+
+Cell::Cell(int x, int y): 
+	adevs::Atomic<CellEvent>(),
+	x(x),
+	y(y),
+	h(adevs_inf<double>())
+{
+	// Record our and the neighboring states
+	for (int i = 0; i < 8; i++)
+	{
+		int dx = neighbors[i][0]+1;
+		int dy = neighbors[i][1]+1;
+		int px = x+neighbors[i][0];
+		int py = y+neighbors[i][1];
+		if (inside(px,py))
+			q[dx][dy] = angle[px][py];
+		else
+			q[dx][dy] = -1;
+	}
+	q[1][1] = angle[x][y];
+	// Set our initial time advance
+	set_time_advance();
+}
+
+double Cell::ta()
+{
+	return h;
+}
+
+void Cell::delta_int()
+{
+	state_changes++;
+	// Record our selected output value as the new state
+	q[1][1] = angle[x][y];
+	// Set the time advance
+	h = adevs_inf<double>();
+	set_time_advance();
+}
+
+void Cell::delta_ext(double e, const adevs::Bag<CellEvent>& xb)
+{
+	state_changes++;
+	// Update time to next event
+	if (h < adevs_inf<double>())
+		h -= e;
+	// Record new neighboring states
+	for (auto xx: xb)
+	{
+		int dx = xx.value.x_origin-x;
+		int dy = xx.value.y_origin-y;
+		q[dx+1][dy+1] = xx.value.q;
+	}
+	// Are we passive?
+	set_time_advance();
+}
+
+void Cell::delta_conf(const adevs::Bag<CellEvent>& xb) 
+{
+	state_changes++;
+	// Record our selected output value as the new state
+	q[1][1] = angle[x][y];
+	// Record new neighboring states
+	for (auto xx: xb)
+	{
+		int dx = xx.value.x_origin-x;
+		int dy = xx.value.y_origin-y;
+		q[dx+1][dy+1] = xx.value.q;
+	}
+	// Set the time advance
+	h = adevs_inf<double>();
+	set_time_advance();
+}
+
+void Cell::output_func(adevs::Bag<CellEvent>& yb)
+{
+	// What does everyone see already?
+	int q_prev = angle[x][y];
+	// What will our new choice be?
+	int pick, dx, dy;
+	do
+	{
+		pick = eight_dist(generator);
+		dx = neighbors[pick][0]+1;
+		dy = neighbors[pick][1]+1;
+	}
+	while (q[dx][dy] == -1);
+	// No change, so don't bother reporting it
+	if (q[dx][dy] == q_prev) return;
+	// Compare energy levels. If we accept the change, report it
+	int E = energy(q_prev);
+	int En = energy(q[dx][dy]);
+	if (En < E || (En == E && binary_dist(generator) == 0))
+	{
+		CellEvent e;
+		e.value.q = angle[x][y] = q[dx][dy];
+		e.value.x_origin = x;
+		e.value.y_origin = y;
+		// Produce an event for each of the 8 neighbors
+		for (int i = 0; i < 8; i++)
+		{
+			e.x = x+neighbors[i][0];
+			e.y = y+neighbors[i][1];
+			yb.insert(e);
+		}
+	}
+}
+

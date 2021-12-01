@@ -13,19 +13,16 @@ double tend;
 
 void simulateSpace()
 {	
-	srand(0);
 	int *grains = new int[SIZE*SIZE];
-	// Dynamic cellspace model and simulator
-	adevs::CellSpace<int>* cell_space = NULL;
-	adevs::Simulator<CellEvent>* sim = NULL;
 	int k = 0;
-	// Create a simulator if needed
+	// Initialize the cell space
 	for (int i = 0; i < SIZE; i++)
 		for (int j = 0; j < SIZE; j++)
 			Cell::angle[i][j] = k++;
-	cell_space = 
-			new adevs::CellSpace<int>(SIZE,SIZE);
-	// Create a model to go into each point of the cellspace
+	// Create a simulator
+	adevs::CellSpace<event_t>* cell_space = 
+			new adevs::CellSpace<event_t>(SIZE,SIZE);
+	// Create a cell to go into each point of the cellspace
 	for (int x = 0; x < SIZE; x++)
 	{
 		for (int y = 0; y < SIZE; y++)
@@ -35,7 +32,9 @@ void simulateSpace()
 		}
 	}
 	// Create a simulator for the model
-	sim = new adevs::Simulator<CellEvent>(cell_space);
+	adevs::Simulator<CellEvent>* sim =
+		new adevs::Simulator<CellEvent>(cell_space);
+	// Run the simulation
 	double tL = 0.0;
 	clock_t start = clock();
 	while (sim->nextEventTime() < adevs_inf<double>() && sim->nextEventTime() < tend)
@@ -44,6 +43,7 @@ void simulateSpace()
 		sim->execNextEvent();
 	}
 	cout << tL << " " << clock()-start << " " << Cell::state_changes << endl;
+	// Record the outcome
 	k = 0;
 	for (int i = 0; i < SIZE; i++)
 	{
