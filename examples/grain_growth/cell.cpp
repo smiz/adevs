@@ -50,7 +50,7 @@ void Cell::set_time_advance()
 	{
 		int dx = neighbors[i][0]+1;
 		int dy = neighbors[i][1]+1;
-		if (q[dx][dy] != q[1][1] && q[dx][dy] != -1 && energy(q[dx][dy] <= E))
+		if (q[dx][dy] != q[1][1] && q[dx][dy] != -1 && energy(q[dx][dy]) <= E)
 		{
 			// Yes it is! Leave time of next event unchanged
 			// or pick a new one if we were passive

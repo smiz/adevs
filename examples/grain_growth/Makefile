@@ -1,5 +1,5 @@
 CFLAGS = -Wall 
-OPTFLAG = -O -pg
+OPTFLAG = -Ofast
 CC = g++
 
 # Adjust these as needed to find the X11 and adevs libs and headers
