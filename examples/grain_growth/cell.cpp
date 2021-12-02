@@ -137,8 +137,6 @@ void Cell::delta_conf(const adevs::Bag<CellEvent>& xb)
 
 void Cell::output_func(adevs::Bag<CellEvent>& yb)
 {
-	// What does everyone see already?
-	int q_prev = angle[x][y];
 	// What will our new choice be?
 	int pick, dx, dy;
 	do
@@ -149,9 +147,9 @@ void Cell::output_func(adevs::Bag<CellEvent>& yb)
 	}
 	while (q[dx][dy] == -1);
 	// No change, so don't bother reporting it
-	if (q[dx][dy] == q_prev) return;
+	if (q[dx][dy] == angle[x][y]) return;
 	// Compare energy levels. If we accept the change, report it
-	int E = energy(q_prev);
+	int E = energy(angle[x][y]);
 	int En = energy(q[dx][dy]);
 	if (En < E || (En == E && binary_dist(generator) == 0))
 	{

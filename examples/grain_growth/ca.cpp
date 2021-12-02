@@ -19,7 +19,7 @@ int grains[SIZE*SIZE];
 // End time of the simulation
 int tend;
 // Count of state transitions performed
-int state_changes = 0;
+unsigned long state_changes = 0;
 
 // Index into neighborhood coordinates
 int neighbor[8][2] = 
@@ -58,6 +58,9 @@ void update_cell(int x, int y)
 		py = y+neighbor[pick][1];
 	}
 	while (!inside(px,py));
+	// No change
+	if (angle[x][y] == angle[px][py])
+		return;
 	// Calculate E for current state and E for possible new state
 	for (int i = 0; i < 8; i++)
 	{
