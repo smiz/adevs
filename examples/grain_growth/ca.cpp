@@ -79,13 +79,12 @@ void update_cell(int x, int y)
 
 void simulateSpace()
 {
+	clock_t trun = clock();
 	// Randomize the initial state space values
 	int k = 0;
 	for (int i = 0; i < SIZE; i++)
 		for (int j = 0; j < SIZE; j++)
 			angle[0][i][j] = angle[1][i][j] = k++;
-	// Time at which simulation proper begins
-	clock_t start = clock();
 	// Simulate until tend
 	for (int t = 0; t < tend; t++)
 	{
@@ -96,7 +95,8 @@ void simulateSpace()
 				update_cell(i,j);
 	}
 	// Report end time, clock ticks needed, and state changes calculated
-	cout << tend << " " << clock()-start << " "<< state_changes << endl;
+	trun = clock()-trun;
+	cout << tend << " " << trun << " " << state_changes << " " << (double)trun/(double)state_changes << endl;
 	// Record the outcome to a png file
 	k = 0;
 	for (int i = 0; i < SIZE; i++)

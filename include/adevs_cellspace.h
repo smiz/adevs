@@ -206,7 +206,7 @@ const CellEvent<X>& event, Cell* model, Bag<Event<CellEvent<X>,T> >& r)
 	if (target != NULL)
 	{
 		// Add an appropriate event to the receiver bag
-		Event<CellEvent<X> > io(target,event);
+		Event<CellEvent<X>,T> io(target,event);
 		r.insert(io);
 	}
 }

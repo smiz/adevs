@@ -5,7 +5,7 @@
 #
 # This target builds the java language bindings to the adevs simulator.
 # Point this at your java installation if you want to build the Java bindings.
-JAVA_HOME = /usr/local/jdk-14.0.2
+JAVA_HOME = /usr/local/jdk-15.0.2
 java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux 
 
 #
@@ -15,13 +15,6 @@ java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 # simulations.
 #
 
-#
-# 3) adevs_qemu
-# 
-# This builds the vanilla library and the extensions for using qemu
-# to insert a simulated computer into your model.
-# 
-
 # These are generic options for the GNU C++ compiler.
 
 # Use OpenMP? Do not use this with Java.
@@ -30,7 +23,7 @@ java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 # very expensive to compute simultaneous events.
 OMP = 
 # Compiler flags
-CFLAGS += ${OMP} -fPIC -Wall -I../include -I./ -I./qemu
+CFLAGS += ${OMP} -fPIC -Wall -I../include -I./ 
 # Best bet for GNU compiler
 CXX = g++
 CC = gcc
@@ -51,16 +44,6 @@ JAVA_OBJS = \
 	adevs_jni/JavaNetwork.o \
 	adevs_jni/JavaSimulator.o
 
-QEMU_OBJS = \
-	qemu/computer.o \
-	qemu/device_model.o \
-	qemu/qqq_rpc.o \
-	qemu/ucsim_rpc.o \
-	qemu/nic.o \
-	qemu/serial_port.o \
-	qemu/ucsim_serial_port.o \
-	qemu/qemu_sync.o
-
 .SUFFIXES: .cpp .c
 .cpp.o:
 	${CXX} ${CFLAGS} ${OPTFLAG} -o $@ -c $<
@@ -79,11 +62,6 @@ java_adevs: ${JAVA_OBJS}
 	javac adevs_jni/adevs/*.java
 	cd adevs_jni ; jar cfv ../adevs.jar adevs/*.class
 
-# This builds a static library with the qemu extensions
-adevs_qemu: ${ADEVS_OBJS} ${QEMU_OBJS}
-	ar -r libadevs.a ${ADEVS_OBJS} ${QEMU_OBJS}
-	${CXX} -shared -Wl,-soname,libadevs.so.3 -o libadevs.so.3.0 ${ADEVS_OBJS} ${QEMU_OBJS}
-
 install:
 	mkdir -p "${DESTDIR}"
 	install -m 755 -p libadevs.so.3.0 "${DESTDIR}"
@@ -91,4 +69,4 @@ install:
 	ln -f -s libadevs.so.3.0 "${DESTDIR}/libadevs.so"
 
 clean:
-	rm -f *.o core *.a *.so qemu/*.o adevs_jni/*.o adevs_jni/adevs/*.class *.jar rm libadevs.so.* 
+	rm -f *.o core *.a *.so adevs_jni/*.o adevs_jni/adevs/*.class *.jar rm libadevs.so.* 

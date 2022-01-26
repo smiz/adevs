@@ -15,6 +15,7 @@ void simulateSpace()
 {	
 	int *grains = new int[SIZE*SIZE];
 	int k = 0;
+	clock_t trun = clock();
 	// Initialize the cell space
 	for (int i = 0; i < SIZE; i++)
 		for (int j = 0; j < SIZE; j++)
@@ -36,13 +37,13 @@ void simulateSpace()
 		new adevs::Simulator<CellEvent>(cell_space);
 	// Run the simulation
 	double tL = 0.0;
-	clock_t start = clock();
 	while (sim->nextEventTime() < adevs_inf<double>() && sim->nextEventTime() < tend)
 	{
 		tL = sim->nextEventTime();
 		sim->execNextEvent();
 	}
-	cout << tL << " " << clock()-start << " " << Cell::state_changes << endl;
+	trun = clock()-trun;
+	cout << tL << " " << trun << " " << Cell::state_changes << " " << (double)trun/(double)Cell::state_changes << endl;
 	// Record the outcome
 	k = 0;
 	for (int i = 0; i < SIZE; i++)

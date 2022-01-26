@@ -109,7 +109,6 @@ template <typename X> class FMI:
 		 * the current integration step. The get that value use
 		 * the postStep() method.
 		 */
-		 * 
 		virtual void postTrialStep(double* q);
 		/**
 		 * The internal transition function. This function will process all events

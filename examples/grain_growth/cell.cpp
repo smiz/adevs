@@ -69,6 +69,7 @@ Cell::Cell(int x, int y):
 	y(y),
 	h(adevs_inf<double>())
 {
+	state_changes++;
 	// Record our and the neighboring states
 	for (int i = 0; i < 8; i++)
 	{

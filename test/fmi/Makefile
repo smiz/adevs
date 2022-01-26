@@ -1,7 +1,7 @@
 PREFIX=../..
 include ../make.common
 # GNU gcc compiler
-FMI_HOME = $(HOME)/Code/FMI_for_ModelExchange_and_CoSimulation_v2.0
+FMI_HOME = $(HOME)/Code/fmi/headers
 CFLAGS += -I$(FMI_HOME)
 LIBS += -ldl
 
