@@ -5,6 +5,7 @@ using namespace adevs;
 
 static const double period = 0.001;
 
+// Produces an event every period units of time
 class Genr:
 	public Atomic<int>
 {
@@ -18,12 +19,16 @@ class Genr:
 		void gc_output(Bag<int>&){}
 };
 
+// Also undergoes an internal transition every
+// period units of time. All state transitions
+// should be confluent transitions.
 class test_model:
 	public ode_system<int>
 {
 	public:
 		test_model():
-		ode_system<int>(1,0)
+		ode_system<int>(1,0),
+		is_confluent(false)
 		{
 		}
 		void init(double* q)
@@ -41,22 +46,25 @@ class test_model:
 		}
 		void internal_event(double* q, const bool* event_flag)
 		{
-			cout << "internal: " << q[0] << endl;
+			assert(is_confluent);
 			q[0] = period;
 		}
 		void external_event(double* q, double e, const Bag<int>& xb)
 		{
-			cout << "external: " << q[0] << " " << e << " " << xb.size() << endl;
+			assert(is_confluent);
+			assert(xb.size() == 1);
 		}
 		void confluent_event(double* q, const bool* event_flag, const Bag<int>& xb)
 		{
-			cout << "confluent" << endl;
+			is_confluent = true;
 			internal_event(q,event_flag);
 			external_event(q,0.0,xb);
-			cout << "end confluent" << endl;
+			is_confluent = false;
 		}
 		void output_func(const double*, const bool*, Bag<int>&){}
 		void gc_output(Bag<int>&){}
+	private:
+		bool is_confluent;
 };
 
 void run_test(ode_system<int>* b,
