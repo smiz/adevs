@@ -70,4 +70,6 @@ equation
 initial equation
   x = 0;
   z = -0.6;
+  dq1 = 0;
+  dq2 = 0; 
 end BaseRobot;

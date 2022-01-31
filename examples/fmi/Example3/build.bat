@@ -11,7 +11,7 @@ del /F *fmu*
 del /F *.libs
 del /F *.json
 rem Generate the HelloWorld.h header file
-python ..\..\..\util\xml2cpp.py -o CherryBomb -type std::string -f CherryBomb\\binaries\\win64\\CherryBomb.dll -r CherryBomb\modelDescription.xml
+python ..\..\..\util\xml2cpp.py -o CherryBomb -type std::string -f CherryBomb\\binaries\\win64\\CherryBomb.dll -x CherryBomb\modelDescription.xml -r file://%CD%\CherryBomb\resources
 rem Compile our simulator. You must have in the include path
 rem    The adevs include directory
 rem    The FMI for model exchange header files

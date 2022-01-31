@@ -22,12 +22,13 @@ cd Sampled ; unzip -o -qq ../Robot.fmu ; cd ..
 #    The adevs include directory
 #    The FMI for model exchange header files
 # You must link to system library libdl
-python ../../../util/xml2cpp.py -o Control -type IO_Type -f Control/binaries/linux64/Control.so -r Control/modelDescription.xml
+python3 ../../../util/xml2cpp.py -o Control -type IO_Type -f Control/binaries/linux64/Control.so -x Control/modelDescription.xml -r file://${PWD}/Control/resources
 # Build the quantized model. Change this to build the Sampled model.
-python ../../../util/xml2cpp.py -o Robot -type IO_Type -f Quantized/binaries/linux64/Robot.so -r Quantized/modelDescription.xml
+#python3 ../../../util/xml2cpp.py -o Robot -type IO_Type -f Quantized/binaries/linux64/Robot.so -x Quantized/modelDescription.xml -r file://${PWD}/Quantized/resources
+python3 ../../../util/xml2cpp.py -o Robot -type IO_Type -f Sampled/binaries/linux64/Robot.so -x Sampled/modelDescription.xml -r file://${PWD}/Sampled/resources
 g++ -g \
 	-Wall -I../../../include \
-	-I${HOME}/Code/FMI_for_ModelExchange_and_CoSimulation_v2.0 \
+	-I${HOME}/Code/fmi/headers \
 	Ethernet.cpp main.cpp -ldl ../../../src/libadevs.a
 # Run the model
 ./a.out

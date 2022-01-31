@@ -86,7 +86,7 @@ def compile_str(legend, variables, using_str):
 		rs = "" # Return string variable.
 		rs += '#ifndef {0}_h_\n#define {0}_h_\n#include "adevs.h"\n#include "adevs_fmi.h"\n#include <string>\n\n'.format(legend['modelName']) # Format header default information
 		rs += 'class {0}:\n\tpublic adevs::FMI<{1}>\n{{\n\tpublic:\n\t\t{0}():\n'.format(legend['modelName'], legend['convType']) # Format first part of class
-		rs += '\t\t\tadevs::FMI<{1}>\n\t\t\t(\n\t\t\t\t"{0}",\n\t\t\t\t"{2}",\n\t\t\t\t{3},\n\t\t\t\t{4},\n\t\t\t\t"{5}"\n\t\t\t)\n\t\t{{\n\t\t}}\n'.format(legend['modelName'], legend['convType'], legend['guid'], legend['derNum'], legend['indicatorNum'], legend['sharedLocation'])  # Format FMI constructor call
+		rs += '\t\t\tadevs::FMI<{1}>\n\t\t\t(\n\t\t\t\t"{0}",\n\t\t\t\t"{2}",\n\t\t\t\t"{3}",\n\t\t\t\t{4},\n\t\t\t\t{5},\n\t\t\t\t"{6}"\n\t\t\t)\n\t\t{{\n\t\t}}\n'.format(legend['modelName'], legend['convType'], legend['guid'], legend['resourceLocation'], legend['derNum'], legend['indicatorNum'], legend['sharedLocation'])  # Format FMI constructor call
 		for var in variables:
 			rs += var.getCPPString()
 		rs += '};\n\n#endif'
@@ -97,7 +97,7 @@ def compile_str(legend, variables, using_str):
 		rs = "" # Return string variable.
 		rs += '#ifndef {0}_h_\n#define {0}_h_\n#include "adevs.h"\n#include "adevs_fmi.h"\n\n'.format(legend['modelName']) # Format header default information
 		rs += 'class {0}:\n\tpublic adevs::FMI<{1}>\n{{\n\tpublic:\n\t\t{0}():\n'.format(legend['modelName'], legend['convType']) # Format first part of class
-		rs += '\t\t\tadevs::FMI<{1}>\n\t\t\t(\n\t\t\t\t"{0}",\n\t\t\t\t"{2}",\n\t\t\t\t{3},\n\t\t\t\t{4},\n\t\t\t\t"{5}"\n\t\t\t)\n\t\t{{\n\t\t}}\n'.format(legend['modelName'], legend['convType'], legend['guid'], legend['derNum'], legend['indicatorNum'], legend['sharedLocation'])  # Format FMI constructor call
+		rs += '\t\t\tadevs::FMI<{1}>\n\t\t\t(\n\t\t\t\t"{0}",\n\t\t\t\t"{2}",\n\t\t\t\t"{3}",\n\t\t\t\t{4},\n\t\t\t\t{5},\n\t\t\t\t"{6}"\n\t\t\t)\n\t\t{{\n\t\t}}\n'.format(legend['modelName'], legend['convType'], legend['guid'], legend['resourceLocation'], legend['derNum'], legend['indicatorNum'], legend['sharedLocation'])  # Format FMI constructor call
 		for var in variables:
 			rs += var.getCPPString()
 		rs += '};\n\n#endif'
@@ -105,7 +105,7 @@ def compile_str(legend, variables, using_str):
 
 def print_help():
 			print ("This program converts .xml files to .h files under the FMI standard found at www.fmi-standard.org")
-			print ("Example: 'xml2cpp -r target_xml -type type -f shared_object_file -o output_name'")
+			print ("Example: 'xml2cpp -x target_xml -type type -f shared_object_file -r resource_location -o output_name'")
 			print ("-h will open up this screen")
 			print ("-o is optional")
 
@@ -118,8 +118,10 @@ if __name__=="__main__":
 		print_help()
 		sys.exit(0)
 	for i, arg in enumerate(args):
-		if arg == "-r":
+		if arg == "-x":
 			filename = args[i+1]
+		elif arg == "-r":
+			res_loc = args[i+1]
 		elif arg == "-type":
 			conv_type = args[i+1]
 		elif arg == "-f":
@@ -144,6 +146,7 @@ if __name__=="__main__":
 	legend['derNum'] = i
 	legend['convType'] = conv_type
 	legend['sharedLocation'] = file_loc # This is the location of the shared object file produced by omc
+	legend['resourceLocation'] = res_loc # This is the location of json files produced by omc
 
 	if output_file == "":
 		output_file = filename[:-4] + ".h"

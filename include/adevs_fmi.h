@@ -80,6 +80,7 @@ template <typename X> class FMI:
 		 */
 		FMI(const char* modelname,
 			const char* guid,
+			const char* resource_location,
 			int num_state_variables,
 			int num_event_indicators,
 			const char* shared_lib_name,
@@ -229,6 +230,7 @@ template <typename X> class FMI:
 template <typename X>
 FMI<X>::FMI(const char* modelname,
 			const char* guid,
+			const char* resource_location,
 			int num_state_variables,
 			int num_event_indicators,
 			const char* so_file_name,
@@ -309,7 +311,7 @@ FMI<X>::FMI(const char* modelname,
 	_fmi2GetContinuousStates = (fmi2Status (*)(fmi2Component, fmi2Real*, size_t))GET_FUNC(so_hndl,"fmi2GetContinuousStates");
 	assert(_fmi2GetContinuousStates != NULL);
 	// Create the FMI component
-	c = _fmi2Instantiate(modelname,fmi2ModelExchange,guid,"",callbackFuncs,fmi2False,fmi2False);
+	c = _fmi2Instantiate(modelname,fmi2ModelExchange,guid,resource_location,callbackFuncs,fmi2False,fmi2False);
 	assert(c != NULL);
 	_fmi2SetupExperiment(c,fmi2True,tolerance,-1.0,fmi2False,-1.0);
 }
@@ -328,6 +330,8 @@ void FMI<X>::iterate_events()
 	while (eventInfo.newDiscreteStatesNeeded == fmi2True);
 	if (eventInfo.nextEventTimeDefined == fmi2True)
 		next_time_event = eventInfo.nextEventTime;
+	else
+		next_time_event = adevs_inf<double>();
 	assert(status == fmi2OK);
 }
 

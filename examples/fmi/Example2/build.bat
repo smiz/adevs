@@ -27,8 +27,8 @@ set FMI=%HOME%\FMI_for_ModelExchange_and_CoSimulation_v2.0
 set ADEVS=%HOME%\adevs-code
 set SRC=Ethernet.cpp main.cpp
 rem Generate the sampled data simulation
-python ..\..\..\util\xml2cpp.py -o Robot -type IO_Type -f Sampled\\binaries\\win64\\Robot.dll -r Sampled\modelDescription.xml
+python ..\..\..\util\xml2cpp.py -o Robot -type IO_Type -f Sampled\\binaries\\win64\\Robot.dll -x Sampled\modelDescription.xml -r file://%CD%\Sampled\resources
 cl /nologo /O2 /GR /MT /EHsc /I%FMI% /I%ADEVS%\include /Fesampled %SRC% %ADEVS%\src\adevs.lib
 rem Generate the quantized data simulation
-python ..\..\..\util\xml2cpp.py -o Robot -type IO_Type -f Quantized\\binaries\\win64\\Robot.dll -r Quantized\modelDescription.xml
+python ..\..\..\util\xml2cpp.py -o Robot -type IO_Type -f Quantized\\binaries\\win64\\Robot.dll -x Quantized\modelDescription.xml -r file://%CD%\Quantized\resources
 cl /nologo /O2 /GR /MT /EHsc /I%FMI% /I%ADEVS%\include /Fequantized %SRC% %ADEVS%\src\adevs.lib

@@ -1,0 +1,2 @@
+loadFile("stairs.mo");
+translateModelFMU(stairs,"2.0");

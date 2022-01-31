@@ -143,6 +143,8 @@ class RobotExt:
 			Robot(),
 			doSample(true)
 		{
+			set_T_1_(0.0);
+			set_T_2_(0.0);
 		}
 		double time_event_func(const double* q)
 		{

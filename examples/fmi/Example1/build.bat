@@ -11,7 +11,7 @@ del /F *fmu*
 del /F *.libs
 del /F *.json
 rem Generate the HelloWorld.h header file
-python ..\..\..\util\xml2cpp.py -o HelloWorld -type double -f HelloWorld\\binaries\\win64\\HelloWorld.dll -r HelloWorld\modelDescription.xml
+python ..\..\..\util\xml2cpp.py -o HelloWorld -type double -f HelloWorld\\binaries\\win64\\HelloWorld.dll -x HelloWorld\modelDescription.xml -r file://%CD%\HelloWorld\resources
 rem Compile our simulator. You must have in the include path
 rem    The adevs include directory
 rem    The FMI for model exchange header files
