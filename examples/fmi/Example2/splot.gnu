@@ -1,6 +1,6 @@
 reset
-set terminal postscript eps mono 18
-set output 'fig.eps'
+#set terminal postscript eps mono 18
+#set output 'fig.eps'
 set multiplot layout 1,3
 set xlabel 'x error'
 set ylabel 'z error'

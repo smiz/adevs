@@ -199,7 +199,7 @@ int main()
 	RandomNetwork *world = new RandomNetwork();
 	Simulator<int> *sim = new Simulator<int>(world);
 	print(0.0,world);
-	while (sim->nextEventTime() < adevs_inf<double>())
+	while (sim->nextEventTime() < 200.0)
 	{
 		double t = sim->nextEventTime();
 		sim->execNextEvent();

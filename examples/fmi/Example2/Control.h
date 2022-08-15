@@ -11,8 +11,8 @@ class Control:
 			adevs::FMI<IO_Type>
 			(
 				"Control",
-				"{420b618a-2167-443c-a7fa-f31fc2a92746}",
-				"file:///home/1qn/Code/adevs-code/examples/fmi/Example2/Control/resources",
+				"{f16bb5a0-d6fe-4ed3-9fb2-5e2789583b6a}",
+				"file:///home/rotten/Code/adevs-code/examples/fmi/Example2/Control/resources",
 				0,
 				0,
 				"Control/binaries/linux64/Control.so"

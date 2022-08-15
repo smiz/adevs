@@ -14,12 +14,15 @@ class CherryBombExt:
 		CherryBombExt():
 			CherryBomb()
 		{
+			std::cerr << numEvents() << std::endl;
 		}
 		// Internal transition function
 		void internal_event(double* q, const bool* state_event)
 		{
 			// Call the method of the base class
 			CherryBomb::internal_event(q,state_event);
+			if (get_exploded())
+				std::cerr << "BOOM!" << std::endl;
 		}
 		// External transition function
 		void external_event(double* q, double e, const Bag<std::string>& xb)
@@ -42,11 +45,15 @@ class CherryBombExt:
 		// Print state at each output event
 		void output_func(const double* q, const bool* state_event, Bag<std::string>& yb)
 		{
+			cerr << "State event " << state_event[0] << " " << state_event[1] << " " << state_event[2] << endl;
 			// Output on the state event that is the explosion.
 			// The state event number is in modelDescription.xml
 			// as a whenCondition variable.
-			if (state_event[1])
+			if (get_exploded())
+			{
+				std::cerr << "BOOM!" << std::endl;
 				yb.insert("boom!");
+			}
 		}
 };
 
@@ -105,11 +112,11 @@ int main()
 	Simulator<std::string>* sim =
 		new Simulator<std::string>(model);
 	// Run the simulation for ten seconds
-	while (sim->nextEventTime() <= 4.0)
+	while (!bomb->get_exploded())
 	{
 		cout << sim->nextEventTime() << " ";
 		sim->execNextEvent();
-		cout << bomb->get_h() << " " << bomb->get_fuseTime() << endl;
+		cout << bomb->get_h() << " " << bomb->get_fuseTime() << " " << bomb->get_exploded() << endl;
 	}
 	// Cleanup
 	delete sim;

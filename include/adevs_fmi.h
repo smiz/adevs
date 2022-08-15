@@ -339,9 +339,6 @@ template <typename X>
 void FMI<X>::init(double* q)
 {
 	fmi2Status status;
-	// Set initial value for time
-	status = _fmi2SetTime(c,t_now);
-	assert(status == fmi2OK);
 	// Initialize all variables
 	status = _fmi2EnterInitializationMode(c);
 	assert(status == fmi2OK);
@@ -353,6 +350,10 @@ void FMI<X>::init(double* q)
 	// Enter continuous time mode to start integration
 	status = _fmi2EnterContinuousTimeMode(c);
 	assert(status == fmi2OK);
+	// Set initial value for time
+	status = _fmi2SetTime(c,t_now);
+	assert(status == fmi2OK);
+	// Get starting state variable values
 	status = _fmi2GetContinuousStates(c,q,this->numVars()-1);
 	assert(status == fmi2OK);
 	q[this->numVars()-1] = t_now;

@@ -18,11 +18,8 @@ OBJS = Cell.o main.o
 .cpp.o:
 	${CC} ${CFLAGS} ${OPTFLAG} ${INCLUDE} -c $<
 
-glife: ${OBJS}
+all: ${OBJS}
 	${CC} ${CFLAGS} ${OPTFLAG} ${OBJS} ${LIBS} ${LIBPATH} ${INCLUDE}
-
-self: Cell.o alone.o
-	${CC} ${CFLAGS} ${OPTFLAG} Cell.o alone.o ${LIBS} ${LIBPATH} ${INCLUDE}
 
 clean:
 	rm -f *.o core a.out

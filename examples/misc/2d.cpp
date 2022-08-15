@@ -210,7 +210,7 @@ class report:
 
 int main(int argc, char** argv)
 {
-	double q = 0.0001;
+	double q = 0.01;
 	SimpleDigraph<event_t>* dig = new SimpleDigraph<event_t>();
 	qss1* x0 = new qss1(q,0);
 	qss1* x1 = new qss1(q,1);
@@ -223,7 +223,7 @@ int main(int argc, char** argv)
 	dig->couple(x0,r);
 	dig->couple(x1,r);
 	Simulator<event_t>* sim = new Simulator<event_t>(dig);
-	while (sim->nextEventTime() < 20.0)
+	while (sim->nextEventTime() < 10.0)
 		sim->execNextEvent();
 	delete sim;
 	delete dig;
