@@ -433,7 +433,7 @@ void FMI<X>::postTrialStep(double* q)
 	assert(cont_time_mode);
 	// Restore values changed by der_func and state_event_func
 	fmi2Status status;
-	status = _fmi2SetTime(c,q[this->numVars()]-1);
+	status = _fmi2SetTime(c,q[this->numVars()-1]);
 	assert(status == fmi2OK);
 	status = _fmi2SetContinuousStates(c,q,this->numVars()-1);
 	assert(status == fmi2OK);

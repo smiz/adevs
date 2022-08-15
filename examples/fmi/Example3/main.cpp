@@ -5,6 +5,10 @@
 using namespace std;
 using namespace adevs;
 
+/**
+ * This is an FMI + Modelica version of the bouncing bomb example
+ * in the examples/cherry_bomb directory.
+ */
 class CherryBombExt:
 	// Derive model from the adevs FMI class
 	public CherryBomb
@@ -14,15 +18,12 @@ class CherryBombExt:
 		CherryBombExt():
 			CherryBomb()
 		{
-			std::cerr << numEvents() << std::endl;
 		}
 		// Internal transition function
 		void internal_event(double* q, const bool* state_event)
 		{
 			// Call the method of the base class
 			CherryBomb::internal_event(q,state_event);
-			if (get_exploded())
-				std::cerr << "BOOM!" << std::endl;
 		}
 		// External transition function
 		void external_event(double* q, double e, const Bag<std::string>& xb)
@@ -42,19 +43,6 @@ class CherryBombExt:
 			// Return the value of the base class
 			return CherryBomb::time_event_func(q);
 		}
-		// Print state at each output event
-		void output_func(const double* q, const bool* state_event, Bag<std::string>& yb)
-		{
-			cerr << "State event " << state_event[0] << " " << state_event[1] << " " << state_event[2] << endl;
-			// Output on the state event that is the explosion.
-			// The state event number is in modelDescription.xml
-			// as a whenCondition variable.
-			if (get_exploded())
-			{
-				std::cerr << "BOOM!" << std::endl;
-				yb.insert("boom!");
-			}
-		}
 };
 
 /**
@@ -72,10 +60,7 @@ class Miscreant:
 		}
 		double ta() { return ((start) ? tstart : adevs_inf<double>()); }
 		void delta_int() { start = false; }
-		void delta_ext(double e, const Bag<std::string>& xb)
-		{
-			cout << (tstart+e) << " " << (*(xb.begin())) << endl;
-		}
+		void delta_ext(double e, const Bag<std::string>& xb){}
 		void delta_conf(const Bag<std::string>&){}
 		void output_func(Bag<std::string>& yb)
 		{
@@ -106,8 +91,8 @@ int main()
 	Miscreant* miscreant = new Miscreant();
 	model->add(miscreant);
 	model->add(hybrid_model);
+	// Input from the miscreate lights the fuse and drops the bomb
 	model->couple(miscreant,hybrid_model);
-	model->couple(hybrid_model,miscreant);
 	// Create the simulator
 	Simulator<std::string>* sim =
 		new Simulator<std::string>(model);

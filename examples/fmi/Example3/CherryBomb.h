@@ -11,7 +11,7 @@ class CherryBomb:
 			adevs::FMI<std::string>
 			(
 				"CherryBomb",
-				"{3a1259b0-b326-461f-bfae-77948f196a36}",
+				"{596c9dd4-1bc5-41de-9388-6a5be2ec421d}",
 				"file:///home/rotten/Code/adevs-code/examples/fmi/Example3/CherryBomb/resources",
 				3,
 				3,

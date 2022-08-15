@@ -6,7 +6,7 @@ model Control extends ControlTrajectory;
   // Lengths 
   parameter Real L = 0.3, l = 0.7;
 equation
-  // Position and angle contraints (Eqn 4)
+  // Position and angle constraints (Eqn 4)
   0 = (xd-xp-L*cos(qd1))^2+(zd+L*sin(qd1))^2-l^2;
   0 = (xd+xp+L*cos(qd2))^2+(zd+L*sin(qd2))^2-l^2;
 end Control;

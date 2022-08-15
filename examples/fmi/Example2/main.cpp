@@ -9,10 +9,20 @@
 using namespace std;
 using namespace adevs;
 
+/**
+  * Demonstrates control of a robotic arm when sensor measurements and
+  * actuator commands pass through a shared communication network, such
+  * as an Ethernet.
+  */
+
+/// Labels for input and output ports
 static const int controlAddr = 1;
 static const int robotAddr = 2;
+/// Number of sources of background traffic
 static int numApps = 0;
 
+/// This atomic model generates traffic for the network
+/// using a Poisson process.
 class App:
 	public AtomicModel
 {
@@ -25,11 +35,13 @@ class App:
 			bytes(bytes)
 		{
 		}
+		/// Calculate the time to next packet
 		double ta() { return randVar.exponential(1.0/freq); }
 		void delta_int(){}
 		void delta_ext(double,const Bag<IO_Type>&){}
 		void delta_conf(const Bag<IO_Type>&){}
 		void gc_output(Bag<IO_Type>&){}
+		/// Put a packet on the network
 		void output_func(Bag<IO_Type>& yb)
 		{
 			IO_Type y;
@@ -47,6 +59,8 @@ class App:
 const int App::data_out = 0;
 adevs::rv App::randVar(new crand());
 
+/// Extension of the Control modelica model that implements
+/// the control strategy.
 class ControlExt:
 	public Control
 {
@@ -63,6 +77,8 @@ class ControlExt:
 		}
 		double time_event_func(const double* q) {
 			double tSup = Control::time_event_func(q);
+			// Control model has no events of its own
+			assert(tSup == adevs_inf<double>());
 			if (doCmd) return 0.0;
 			else return tSup;
 		}
@@ -72,14 +88,20 @@ class ControlExt:
 		}
 		void external_event(double* q, double e,
 			const adevs::Bag<IO_Type>& xb) {
+			// We generate commands in response to new data
 			Control::external_event(q,e,xb);
+			// Nothing to do if no time has elapsed
+			if (e == 0.0) return;
 			process_input_data(e,xb);
 			Control::external_event(q,e,xb);
 		}
 		void confluent_event(double *q, const bool* state_event,
 			const adevs::Bag<IO_Type>& xb) {
 			double h = time_event_func(q);
+			// We generate commands in response to new data
 			Control::confluent_event(q,state_event,xb);
+			// Nothing to do if no time has elapsed
+			if (h == 0.0) return;
 			process_input_data(h,xb);
 			Control::confluent_event(q,state_event,xb);
 		}
@@ -131,6 +153,7 @@ class ControlExt:
 const int ControlExt::sample = 0;
 const int ControlExt::command = 1;
 
+/// Extends the Robot modelica model
 class RobotExt:
 	public Robot
 {
@@ -148,14 +171,20 @@ class RobotExt:
 		}
 		double time_event_func(const double* q)
 		{
+			// The sampled robot will have time events.
 			double tSup = Robot::time_event_func(q);
 			if (doSample) return 0.0;
 			else return tSup;
 		}
 		void internal_event(double* q, const bool* state_event)
 		{
+			// Give the FMI an opportunity to process its own events
 			Robot::internal_event(q,state_event);
+			// Do we want to generate a sample for the controller?
 			test_for_sample();
+			// Give the FMI an opportunity to process its own events
+			// after we have changed any state variables due to our
+			// own event.
 			Robot::internal_event(q,state_event);
 		}
 		void external_event(double* q, double e,
@@ -228,6 +257,7 @@ class RobotExt:
 const int RobotExt::sample = 1;
 const int RobotExt::command = 2;
 
+// Connect control and robot directly by using this function
 void makeDirectNetwork(Digraph<SimObject*>* model, Devs<IO_Type>* hybrid_ctrl,
 	Devs<IO_Type>* hybrid_arm)
 {
@@ -235,6 +265,7 @@ void makeDirectNetwork(Digraph<SimObject*>* model, Devs<IO_Type>* hybrid_ctrl,
 	model->couple(hybrid_ctrl,ControlExt::command,hybrid_arm,RobotExt::command);
 }
 
+// Or connect them through a shared network with this function
 void makeEtherNetwork(Digraph<SimObject*>* model, Devs<IO_Type>* hybrid_ctrl,
 	Devs<IO_Type>* hybrid_arm)
 {
@@ -283,6 +314,7 @@ int main(int argc, char** argv)
 	Digraph<SimObject*>* model = new Digraph<SimObject*>();
 	model->add(hybrid_ctrl);
 	model->add(hybrid_arm);
+	// makeDirectNetwork(model,hybrid_ctrl,hybrid_arm);
 	makeEtherNetwork(model,hybrid_ctrl,hybrid_arm);
 	// Create the simulator
 	Simulator<IO_Type>* sim =
@@ -296,7 +328,7 @@ int main(int argc, char** argv)
 			maxError = arm->get_error();
 		double t = sim->nextEventTime();
 		sim->execNextEvent();
-		if (t - tReport >= 0.001)
+		if (t != tReport)
 		{
 			tReport = t;
 			cout << tReport << " " << arm->get_x() << " " << arm->get_z() << " " <<
