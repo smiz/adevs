@@ -5,7 +5,7 @@
 The modeling of discrete event systems is most easily introduced with an example. Suppose we want to model the checkout line at a convenience store. There is a single clerk who serves customers in a first come-first served fashion. The time required for the clerk to ring up each customer's bill depends on the number of items purchased. We are interested in determining the average and maximum amount of time that customers spend waiting in line at the clerk's counter.
 \begin{figure}[ht]
 \centering
-\epsfig{file=intro_figs/busy_mart.eps}
+\includegraphics{intro_figs/busy_mart.pdf}
 \caption{Customers waiting in line at BusyMart.}
 \label{fig:busy_mart}
 \end{figure}
@@ -390,7 +390,7 @@ double Generator::ta()
 To conduct the simulation experiment, the \classname{Generator}'s output must be connected to the \classname{Clerk}'s input.  When these are connected, output from the \classname{Generator}'s ``arrive" port becomes input on the \classname{Clerk}'s ``arrive" port. These inputs cause the \classname{Clerk}'s external transition function to be activated. The relationship between input and output events can be understood by viewing the whole model as a block diagram with two distinct components, the \classname{Generator} and the \classname{Clerk}, that are connected via their input and output ports. This view of the model is depicted in Figure \ref{fig:clerk_and_generator}.
 \begin{figure}[ht]
 \centering
-\epsfig{file=intro_figs/generator_and_clerk.eps}
+\includegraphics{intro_figs/generator_and_clerk.pdf}
 \caption{A block-diagram view of \classname{Generator} and \classname{Clerk} models.}
 \label{fig:clerk_and_generator}
 \end{figure}
@@ -561,7 +561,8 @@ void Observer::delta_ext(double e, const Bag<IO_Type>& xb)
         // Compute the time spent waiting in line 
         double waiting_time = (c->tleave-c->tenter)-c->twait;
         // Dump stats to a file
-        output_strm << c->tenter << " " << c->twait << " " << c->tleave << " " << waiting_time << endl;
+        output_strm << c->tenter << " " << c->twait << " " <<
+            c->tleave << " " << waiting_time << endl;
     }
 }
 
@@ -590,7 +591,7 @@ Observer::~Observer()
 This model is coupled to the \classname{Clerk}'s ``depart" output port in the same manner as before. The resulting coupled model is illustrated in Figure \ref{fig:complete_store_model}. 
 \begin{figure}[ht]
 \centering
-\epsfig{file=intro_figs/generator_and_clerk_and_observer.eps}
+\includegraphics{intro_figs/generator_and_clerk_and_observer.pdf}
 \caption{The \classname{Generator}, \classname{Clerk}, and \classname{Observer} model.} 
 \label{fig:complete_store_model}
 \end{figure}

@@ -30,6 +30,8 @@ public class Event
 	/**
 	 * Create an event with both fields set. The model is the target if the Object
 	 * is an input, and the model is the source if the Object is an output.
+	 * @param model The model to be affected by this event.
+	 * @param value The input or output value for this event.
 	 */
 	public Event(Devs model, Object value)
 	{

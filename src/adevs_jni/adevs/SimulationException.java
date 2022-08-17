@@ -18,6 +18,7 @@ public class SimulationException extends Exception
 	}
 	/**
 	 * Create an exception not attributed to any particular model.
+	 * @param msg A description of the exception.
 	 */
 	public SimulationException(String msg)
 	{
@@ -26,11 +27,15 @@ public class SimulationException extends Exception
 	/**
 	 * Get the model that caused the error, or null if it is not
 	 * attributed to a model.
+	 * @return The model that generated the exception or null.
 	 */
 	public Devs who()
 	{
 		return src;
 	}
-	
-	public Devs src;
+
+	/**
+	 * The model that generated the exception.
+	 */
+	private Devs src;
 }

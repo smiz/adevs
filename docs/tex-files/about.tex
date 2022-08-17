@@ -7,10 +7,10 @@ The Java bindings have three limitations. First, you pay a (usually unnoticeable
 
 There are at least two positive aspects of the Java bindings. The first is it omits the need for explicitly managing memory. The Java garbage collector (plus some extra work by the simulation engine) takes care of this for you. Second, you have access to the nice features and standard libraries of the Java programming language.
 
-Other topics not included in this manual are theory (why the simulator is built as it is) and some experimental features of the simulation engine. Among the latter are support for simulating hybrid differential-algebraic systems and conservative, parallel simulation using multicore processors. If you are interested in any of these subjects, I offer the following (greatly abridged) list of books and articles:
+If you are interested in digging deeper into the origins and thinking behind this simulation tool, then I offer the following (greatly abridged) list of books and articles:
 \begin{enumerate}
 \item A. M. Uhrmacher. Dynamic structures in modeling and simulation: a reflective approach, ACM Transactions on Modeling and Computer Simulation, Vol. 11, No. 2 , pp. 206-232. April 2001. This paper describes the approach used by \adevs\ to model and simulate dynamic structure systems.
 \item Bernard P. Zeigler, Tag Gon Kim and Herbert Praehofer. Theory of Modeling and Simulation, Second Edition. Academic Press. 2000. This book develops the Discrete Event System Specification (DEVS) from its roots in abstract systems theory.
-\item James J. Nutaro. Building Software for Simulation: Theory and Algorithms, with Applications in C++. Wiley. 2010. This book presents the Discrete Event Systems Specification with code for the (slightly abridged) \adevs\ simulator and has several examples of its use. This book also describes the conservative, parallel simulator and discusses the construction of new ODE solvers and event finding modules for \adevs.
+\item James J. Nutaro. Building Software for Simulation: Theory and Algorithms, with Applications in C++. Wiley. 2010. This book presents the Discrete Event Systems Specification with code for the (slightly abridged) \adevs\ simulator and has several examples of its use. This book also describes a conservative, parallel simulator, discusses the construction of ODE solvers and event finding modules for \adevs.
 \end{enumerate}
 Question and comments about this software can be sent to Jim Nutaro at nutarojj@ornl.gov. 

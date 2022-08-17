@@ -39,7 +39,7 @@ The procedure for calculating a change of structure can be summarized as follows
 The procedure for calculating a change of structure is illustrated in Fig. \ref{fig:set_defns}. The black models' \methodname{model\_transition} methods returned true. The set of components examined before and after the structure change are listed above the before (left) and after (right) trees. Notice that these models are in the sub-tree below the model $C$, which is the top-most model in that sub-tree that returned false from its \methodname{model\_transition} method. Also note that while the leaves of the tree may have had their model transition method invoked, none returns true and so their parents' model transition methods are not invoked nor are their sets of components considered when determining what models have been added and removed from the model. The set of deleted components is $\{c,D,d,e,f\}-\{e,g,d\} = \{c,D,f\}$. The set of new components is $\{e,g,d\} - \{c,D,d,e,f\} = \{g\}$.
 \begin{figure}[ht]
 \centering
-\epsfig{file=var_struct_models_figs/var_struct_model_sets.eps}
+\includegraphics{var_struct_models_figs/var_struct_model_sets.pdf}
 \caption{Illustration of a change of structure in a variable structure model.}
 \label{fig:set_defns}
 \end{figure}
@@ -58,7 +58,7 @@ The Custom Widget Company is expanding its operations. Plans are being drawn for
 We will use a variable structure model to answer these questions. This model has three components: a generator that creates orders for gizmos, a model of a machine, and a model of the factory that contains the machines and that activates and deactivates machines as required to satisfy demand. The model of the factory is illustrated in Fig. \ref{fig:factory_model}.
 \begin{figure}[ht]
 \centering
-\epsfig{file=var_struct_models_figs/factory_block_diagram.eps}
+\includegraphics{var_struct_models_figs/factory_block_diagram.pdf}
 \caption{Block diagram of the model of the factory. The broken lines indicate structural elements that are subject to change.}
 \label{fig:factory_model}
 \end{figure}
@@ -312,7 +312,7 @@ The factory engineers have two questions: how many machines are needed and what 
 
 \begin{figure}[ht]
 \centering
-\epsfig{file=var_struct_models_figs/machine_plot.eps}
+\includegraphics{var_struct_models_figs/machine_plot.pdf}
 \caption{Active machine count over one year.}
 \label{fig:active_machine_plot}
 \end{figure}

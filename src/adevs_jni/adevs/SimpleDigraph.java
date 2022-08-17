@@ -51,6 +51,8 @@ public class SimpleDigraph extends Network
 	}
 	/**
 	 * Couple the source model to the destination model.
+	 * @param src Source of events on this link.
+	 * @param dst Destination of events on this link.
 	 */
 	public void couple(Devs src, Devs dst)
 	{
@@ -72,6 +74,10 @@ public class SimpleDigraph extends Network
 	}
 	/**
 	 * Route an event according to the network's couplings.
+	 * @param x The object being routed.
+	 * @param model The most immediate origin of this object
+	 * @param r The collection of events describing models to receive
+	 * the object x or a transformation of it as input.
 	 * @see Network
 	 */
 	public void route(Object x, Devs model, Collection<Event> r)

@@ -6,6 +6,9 @@ import java.util.Collection;
  */
 public abstract class Network extends Devs
 {
+	/**
+	 * Create a network (coupled) model.
+	 */
 	public Network()
 	{
 		super(false);
@@ -16,7 +19,6 @@ public abstract class Network extends Devs
 	 * the C++ simulator, the parent of a component is
 	 * automatically set to be the Network whose set of
 	 * components it appears in.
-	 *
 	 * @param	c	Empty collection to fill with the Network's components
 	 */
 	public abstract void getComponents(Collection<Devs> c);
@@ -24,7 +26,6 @@ public abstract class Network extends Devs
 	 * Route events coming into to the model or being produced
 	 * by one of its components. The collection is filled with
 	 * events whose model field is the target of its value field.
-	 *
 	 * @param	x	The value of the event to be routed
 	 * @param	model	The source of the event
 	 * @param	r	An empty collection to be filled with (target,value) pairs

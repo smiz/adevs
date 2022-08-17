@@ -54,7 +54,7 @@ adevs: ${ADEVS_OBJS}
 # This builds the Java bindings to the simulator
 java_adevs: ${JAVA_OBJS}
 	${CXX} ${OMP} ${OPTFLAG} -shared -Wl,-soname,java_adevs -o libjava_adevs.so ${JAVA_OBJS}
-	javac adevs_jni/adevs/*.java
+	javac -Xlint:deprecation adevs_jni/adevs/*.java
 	cd adevs_jni ; jar cfv ../adevs.jar adevs/*.class
 
 install:

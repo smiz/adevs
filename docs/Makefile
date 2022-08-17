@@ -10,7 +10,7 @@ PREFIX = ..
 docs: html_manual cpp_docs pdf_manual latex_clean java_docs
 
 pdf_manual:
-	cd tex-files; latex manual; latex manual; latex manual; dvipdf manual.dvi; mv manual.pdf .. 
+	cd tex-files; pdflatex manual; pdflatex manual; pdflatex manual; mv manual.pdf .. 
 
 html_manual:
 	cd tex-files; latex2html -local_icons -split 3 -no_math -html_version 3.2 -dir ../${MANUAL_DIR} -mkdir -contents_in_navigation manual

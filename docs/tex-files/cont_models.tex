@@ -181,7 +181,7 @@ int main() {
 Figure \ref{fig:cherry_bomb_trajectory} shows the cherry bomb's trajectory from $t=0$ to its explosion at $t=2$. This plot was produced using the simulation program listed above. There are two bounce events at $t \approx 0.45$ and $t \approx 1.4$. The cherry bomb explodes abruptly at the start of its third descent.
 \begin{figure}[ht]
 \centering
-\epsfig{file=cont_models_figs/ball_height.eps}
+\includegraphics{cont_models_figs/ball_height.pdf}
 \caption{A simulation of the cherry bomb model that terminates when the cherry bomb explodes.}
 \label{fig:cherry_bomb_trajectory}
 \end{figure}
@@ -467,7 +467,7 @@ The CherryBomb class is constructed as a subclass of the adevs FMI class. The FM
 \item The number of state event conditions in the model, which is contained in the tag "numberOfEventIndicators". 
 \item The name of the shared object file that contains the equations, etc. for the compiled Modelica model.
 \end{enumerate}
-The CherryBomb class inherits the functions of the ode\_system class described in the previous section, and the default implementation of these methods by the FMI class is sufficient to simulate the parts of the model's behavior that are described in the Modelica file. If these methods are overridden, then it is necessary to first invoke the method of the base class before performing any other action. If any of the Modelica variables are modified by the overridden method, then it is also necessary to invoke the method of the base class after the modifications have been made. Variables that are part of the Modelica model can be read and written using methods inherited from the FMI class. These methods have the forms \methodname{set\_int(int index, int val)}, \methodname{get\_int(int index): int}, \methodname{set\_double(int index, double val)}, \methodname{get\_double(int index): double}, \methodname{set\_bool(int index, bool val)}, and \methodname{get\_bool(int index): bool}. The index variable for each method should be valueReference number that appears in the file \filename{modelDescription.xml}. Each of these elements is illustrated in the implementation of the CherryBomb class below.
+The CherryBomb class inherits the functions of the ode\_system class described in the previous section, and the default implementation of these methods by the FMI class is sufficient to simulate the parts of the model's behavior that are described in the Modelica file. If these methods are overridden, then it is necessary to first invoke the method of the base class before performing any other action. If any of the Modelica variables are modified by the overridden method, then it is also necessary to invoke the method of the base class after the modifications have been made. Variables that are part of the Modelica model can be read and written using methods inherited from the FMI class. These methods have the forms \methodname{set\_int(int index, int val)}, \methodname{get\_int(int index): int}, \methodname{set\_double(int index, double val)}, \methodname{get\_double(int index): double}, \methodname{set\_bool(int index, bool val)}, and \methodname{get\_bool(int index): bool}. The index variable for each method should be valueReference number that appears in the file \filename{modelDescription.xml}. Each of these elements is illustrated in the implementation of the CherryBomb class below. \bf{A header file like the one shown below can be generated automatically using the \filename{xml2cpp.py} python script from the \filename{utils} directory.}
 
 \begin{verbatim}
 class CherryBomb:

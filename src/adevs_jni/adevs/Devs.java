@@ -15,15 +15,24 @@ public abstract class Devs
 	 * to add and remove components the the model's set of components. Only models
 	 * added and removed by the model_transition function are guaranteed to
 	 * be properly handled by the Simulator. Method returns false by default.
+ 	 * @return Returns true if a change in model structure should occur that
+	 * involves this component model and its children.
 	 */
 	public boolean model_transition() { return false; }
-	// This is set by the cpp Simulator to keep track of the C++ peer
+	/// This is set by the cpp Simulator to keep track of the C++ peer
 	private long cpp_peer;
-	// Used by the C++ simulator to typecheck models
+	/// Used by the C++ simulator to typecheck models
 	private boolean is_atomic;
-	// Get the identification of the native peer. 
+	/**
+	 * Get the identification of the native peer.
+	 * @return The address of the C++ object that is the native 
+	 * reflection of this object.
+	 */
 	public final long getNativePeer() { return cpp_peer; }
-	// Constructor sets the flag for the model's type
+	/**
+	 * Constructor sets the flag for the model's type
+	 * @param is_atomic True if this is an atomic model, false otherwise.
+	 */
 	protected Devs(boolean is_atomic)
 	{
 		this.is_atomic = is_atomic;

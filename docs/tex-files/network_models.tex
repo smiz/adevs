@@ -22,7 +22,7 @@ Any other relationship between the source and the target is illegal and causes t
 
 \begin{figure}[ht]
 \centering
-\epsfig{file=network_models_figs/connected_atomic_models.eps}
+\includegraphics{network_models_figs/connected_atomic_models.pdf}
 \caption{Two connected \classname{Atomic} components in a single \classname{Network}.}
 \label{fig:atomic_to_atomic_coupling}
 \end{figure} 
@@ -47,7 +47,7 @@ where $A$ and $B$ are pointers to the respective models. This route method imple
 A more complicated example is the network receiving input destined for one of its atomic components. This can happen, for instance, when the network is a component of another network. Suppose the input to the network is to become input for \classname{Atomic} model $A$. Figure \ref{fig:eic_atomic_to_atomic_coupling} extends Fig. \ref{fig:atomic_to_atomic_coupling} to include this connection.
 \begin{figure}[ht]
 \centering
-\epsfig{file=network_models_figs/eic_atomic_atomic_coupling.eps}
+\includegraphics{network_models_figs/eic_atomic_atomic_coupling.pdf}
 \caption{Two connected \classname{Atomic} components with external input coupling to component $A$.}
 \label{fig:eic_atomic_to_atomic_coupling}
 \end{figure} 
@@ -74,7 +74,7 @@ void route(const int& value, Devs<int>* model, Bag<Event<int> >& r) {
 
 \begin{figure}[ht]
 \centering
-\epsfig{file=network_models_figs/big_coupled.eps}
+\includegraphics{network_models_figs/big_coupled.pdf}
 \caption{A network with external input, external output, and internal coupling.}
 \label{fig:big_coupling}
 \end{figure} 
@@ -117,7 +117,7 @@ void getComponents(Set<Devs<int>*>& c) {
 There are two rules that must be followed when building networks. First, components cannot be connected to themselves. This means that direct feedback loops and connections directly through a network model are illegal. The former can always be replaced with an internal event and the latter by simply bypassing the network. These two cases are illustrated in Fig. \ref{fig:bad_coupling}. Second, direct coupling can only occur between components belonging to the same network, and every component must belong to at most one network. 
 \begin{figure}[ht]
 \centering
-\epsfig{file=network_models_figs/bad_couplings.eps}
+\includegraphics{network_models_figs/bad_couplings.pdf}
 \caption{Illegal coupling in a \classname{Network} model.}
 \label{fig:bad_coupling}
 \end{figure}
@@ -275,7 +275,7 @@ store.couple(genr,genr->arrive,clrk,clrk->arrive);
 \end{verbatim}
 \begin{figure}[ht]
 \centering
-\epsfig{file=network_models_figs/two_component_model.eps}
+\includegraphics{network_models_figs/two_component_model.pdf}
 \caption{A \classname{Digraph} model with two components.}
 \label{fig:two_component_diagram}
 \end{figure}
@@ -479,7 +479,7 @@ The block diagram of the store and its multiple clerks is shown in Fig. \ref{fig
 The external ``arrive" input of the multi-clerk model is connected to the ``decide" input of the \classname{Decision} model. The ``depart" output ports of each of the \classname{Clerk} models is connected to the external ``arrive" output port of the multi-clerk model. The \classname{Decision} model has two output ports, each producing customers for a distinct clerk. These output ports are coupled to the ``arrive" port of the appropriate clerk. The \classname{Clerk}'s ``depart" output ports are coupled to the appropriate ``departures" port of the decision model.
 \begin{figure}[ht]
 \centering
-\epsfig{file=network_models_figs/multi_clerk_diagram.eps}
+\includegraphics{network_models_figs/multi_clerk_diagram.pdf}
 \caption{Component models and their interconnections in the multi-clerk convenience store model.}
 \label{fig:multi_clerk_diagram}
 \end{figure}    
@@ -704,14 +704,14 @@ long int getDepth() const;
 The Game of Life produces a surprising number of distinct patterns. Some of these patterns are fixed and unchanging. Others oscillate, cycling through a set of patterns that always repeats itself. Still others seem to crawl or fly. One common pattern is the Block, which is shown in Fig. \ref{fig:gol_block}. Our discrete event implementation of the Game of Life doesn't do any work when simulating a Block. None of the cells in a Block change in any way: their states are constant and so are their neighbor counts.
 \begin{figure}[ht]
 \centering
-\epsfig{file=network_models_figs/block_pattern.eps}
+\includegraphics{network_models_figs/block_pattern.pdf}
 \caption{The Block.}
 \label{fig:gol_block}
 \end{figure}
 
 \begin{figure}[ht]
 \centering
-\epsfig{file=network_models_figs/blinker.eps}
+\includegraphics{network_models_figs/blinker.pdf}
 \caption{The Blinker. The input, output, and state transitions for the cell marked with a * are shown in Table \ref{tab:blinker_cell_activity}. The address of each cell is shown in its upper left corner. Living cells are indicated with a \$.}
 \label{fig:gol_blinker}
 \end{figure}

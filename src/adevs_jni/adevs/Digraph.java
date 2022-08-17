@@ -36,12 +36,26 @@ public class Digraph extends Network
 	 */
 	public static class PortValue
 	{
+		/**
+		 * Create a PortValue object and assign to
+		 * it the supplied port and value.
+		 * @param port The port on which the value appears
+		 * @param value The value on that port
+		 */
 		public PortValue(int port, Object value)
 		{
 			this.value = value;
 			this.port = port;
 		}
+		/**
+		 * Get the value object.
+		 * @return The object assigned by the constructor.
+		 */
 		public Object getValue() { return value; }
+		/**
+		 * Get the port object.
+		 * @return The port assigned by the constructor.
+		 */
 		public int getPort() { return port; }
 		private Object value;
 		private int port;
@@ -95,6 +109,10 @@ public class Digraph extends Network
 	}
 	/**
 	 * Couple the source model to the destination model.
+	 * @param src The model that generates output on this link
+	 * @param src_port Port on which output appears
+	 * @param dst Model to receive input on this link
+	 * @param dst_port Port on which input will appear
 	 */
 	public void couple(Devs src, int src_port, Devs dst, int dst_port)
 	{
