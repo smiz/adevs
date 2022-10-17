@@ -1,10 +1,15 @@
 PREFIX=../..
 include ../make.common
 
-check: t1 t2 t3 t4 t5 t6 t7
+check: t1 t1a t2 t3 t4 t5 t6 t7
 
 t1:
 	$(CC) $(CFLAGS) case1.cpp 
+	$(TEST_EXEC) > tmp
+	$(COMPARE) test1.ok tmp
+
+t1a:
+	$(CC) $(CFLAGS) case1a.cpp 
 	$(TEST_EXEC) > tmp
 	$(COMPARE) test1.ok tmp
 

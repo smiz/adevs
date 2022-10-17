@@ -39,8 +39,7 @@
 #include "object_pool.h"
 #include <cassert>
 #include <cstdlib>
-#include <iostream>
-#include <vector>
+#include <list>
 
 namespace adevs
 {
@@ -70,6 +69,15 @@ template <class X, class T = double> class Simulator:
 		{
 			schedule(model,adevs_zero<T>());
 		}
+		/**
+		 * Initialize the simulator with a list of atomic models
+		 * that will be active at the start. The constructor
+		 * only schedules the models in the list, which avoids
+		 * the overhead of constructing the full set of atomic
+		 * models with recursive calls to Network::getComponents().
+		 * @param active The list of active Atomic models.
+		 */
+		Simulator(std::list<Atomic<X,T>*>& active);
 		/**
 		 * Get the model's next event time
 		 * @return The absolute time of the next event
@@ -258,6 +266,21 @@ template <class X, class T = double> class Simulator:
 		 */
 		void visit(Atomic<X,T>* model);
 };
+
+template <typename X, typename T>
+Simulator<X,T>::Simulator(std::list<Atomic<X,T>*>& active):
+	AbstractSimulator<X,T>(),
+	Schedule<X,T>::ImminentVisitor(),
+	io_up_to_date(false)
+{
+	// The Atomic constructor sets the atomic model's
+	// tL correctly to zero, and so it is sufficient
+	// to only worry about putting models with a 
+	// non infinite time advance into the schedule.
+	for (typename std::list<Atomic<X,T>*>::iterator iter = active.begin(); 
+			iter != active.end(); iter++)
+		schedule(*iter,adevs_zero<T>());
+}
 
 template <class X, class T>
 void Simulator<X,T>::visit(Atomic<X,T>* model)
