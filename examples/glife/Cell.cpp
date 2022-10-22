@@ -7,7 +7,7 @@ long int Cell::h = 0;
 
 Cell::Cell(long int x, long int y, long int w, long int h, 
 Phase phase, short int nalive, Phase* vis_phase):
-adevs::Atomic<CellEvent>(),
+adevs::Atomic<CellEvent,int>(),
 x(x),
 y(y),
 phase(phase),
@@ -21,34 +21,29 @@ vis_phase(vis_phase)
 	if (vis_phase != NULL) *vis_phase = phase;
 }
 
-double Cell::ta()
+int Cell::ta()
 {
 	// If a phase change should occur
 	if (check_death_rule() // cell will die
 	|| check_born_rule()) // cell will be birthed
 	{
-		return 1.0;
+		return 1;
 	}
 	// Otherwise, do nothing
-	return DBL_MAX;
+	return adevs_inf<int>();
 }
 
 void Cell::delta_int() 
 {
-	// Change the cell state if necessary
-	if (check_death_rule())
-	{
-		phase = Dead;
-	}
-	else if (check_born_rule())
-	{
-		phase = Alive;
-	}
+	// One of these must be true
+	assert(check_death_rule() || check_born_rule());
+	// Change our state
+	phase = (check_death_rule()) ? Dead : Alive;
 }
 
-void Cell::delta_ext(double e, const adevs::Bag<CellEvent>& xb) 
+void Cell::delta_ext(int e, const adevs::Bag<CellEvent>& xb) 
 {
-	// Update the count if living neighbors
+	// Update the count of living neighbors
 	adevs::Bag<CellEvent>::const_iterator iter;
 	for (iter = xb.begin(); iter != xb.end(); iter++)
 	{
@@ -60,20 +55,15 @@ void Cell::delta_ext(double e, const adevs::Bag<CellEvent>& xb)
 void Cell::delta_conf(const adevs::Bag<CellEvent>& xb) 
 {
 	delta_int();
-	delta_ext(0.0,xb);
+	delta_ext(0,xb);
 }
 
 void Cell::output_func(adevs::Bag<CellEvent>& yb) 
 {
 	CellEvent e;
-	// Assume we are dying
-	e.value = Dead;
-	// Check in case this in not true
-	if (check_born_rule())
-	{
-		e.value = Alive;
-	}
-	// Set the initial visualization value
+	// Out is the state that we will assume
+	e.value = (check_born_rule()) ? Alive : Dead;
+	// Set the visualization value
 	if (vis_phase != NULL) *vis_phase = e.value;
 	// Generate an event for each neighbor
 	for (long int dx = -1; dx <= 1; dx++)

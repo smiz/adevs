@@ -71,8 +71,8 @@ void simulateSpace()
 	// Seed the random number generator
 	srand(time(NULL));
 	// Dynamic cellspace model and simulator
-	static adevs::CellSpace<Phase>* cell_space = NULL;
-	static adevs::Simulator<CellEvent>* sim = NULL;
+	static adevs::CellSpace<Phase,int>* cell_space = NULL;
+	static adevs::Simulator<CellEvent,int>* sim = NULL;
 	// Reset the space if everything has died
 	if (cell_space == NULL)
 	{
@@ -86,23 +86,24 @@ void simulateSpace()
 			}
 		}
 		// Create the cellspace model
-		cell_space = new adevs::CellSpace<Phase>(WIDTH,HEIGHT);
+		cell_space = new adevs::CellSpace<Phase,int>(WIDTH,HEIGHT);
 		for (int x = 0; x < WIDTH; x++)
 		{
 			for (int y = 0; y < HEIGHT; y++)
 			{
 				// Count the living neighbors
 				short int nalive = count_living_cells(x,y);
+				// Create the cell with its initial count of living neighbors
 				cell_space->add(
 					new Cell(x,y,WIDTH,HEIGHT,phase[x][y],nalive,&(phase[x][y])),
 					x,y);
 			}
 		}
 		// Create a simulator for the model
-		sim = new adevs::Simulator<CellEvent>(cell_space);
+		sim = new adevs::Simulator<CellEvent,int>(cell_space);
 	}
 	// If everything has died, then restart on the next call
-	if (sim->nextEventTime() == DBL_MAX)
+	if (sim->nextEventTime() == adevs_inf<int>())
 	{
 		delete cell_space;
 		delete sim;
