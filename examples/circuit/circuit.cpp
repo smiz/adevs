@@ -97,7 +97,8 @@ int main()
 	model->couple(open_switch,hybrid_model);
 	// Create the simulator
 	Simulator<bool>* sim = new Simulator<bool>(model);
-	// Simulate until the switch opens
+	// Simulate until the switch and diode have both experienced
+	// an event
 	double tNow = 0.0;
 	while (sim->nextEventTime() <= 4.0)
 	{
@@ -106,7 +107,6 @@ int main()
 		tNow = sim->nextEventTime();
 		sim->execNextEvent();
 	}
-	// Open the switch
 	delete sim; delete model;
 	return 0;
 }
