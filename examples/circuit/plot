@@ -1,4 +1,6 @@
 reset
+set terminal png
+set output 'traj.png'
 set yrange [0:0.55]
 set y2range [0:2.0]
 set xrange [0:2]

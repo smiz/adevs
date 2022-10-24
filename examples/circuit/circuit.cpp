@@ -63,18 +63,24 @@ class Circuit: public ode_system<bool>
 		const double vs, C, Rs, Rl, vop, vcl;
 };
 
-class StateListener: public EventListener<bool>
+/// A switch that opens at t_open
+class OpenSwitch:
+	public Atomic<bool>
 {
 	public:
-		StateListener(Hybrid<bool>* c1, Circuit* c2):c1(c1),c2(c2){}
-		void stateChange(Atomic<bool>*,double t)
+		OpenSwitch(double t_open):
+			Atomic<bool>(),
+			t_open(t_open)
 		{
-			cout << t << " " << c1->getState(0) << " " << 
-				c2->getSwitch() << " " << c2->getDiode() << endl;
 		}
-		void outputEvent(Event<bool>,double){}
+		double ta() { return t_open; }
+		void delta_int() { t_open = adevs_inf<double>(); }
+		void delta_ext(double,const Bag<bool>&){}
+		void delta_conf(const Bag<bool>&){}
+		void output_func(Bag<bool>& yb) { yb.insert(false); }
+		void gc_output(Bag<bool>&){}
 	private:
-		Hybrid<bool>* c1; Circuit* c2;
+		double t_open;
 };
 
 int main()
@@ -84,16 +90,23 @@ int main()
 	Hybrid<bool>* hybrid_model = new Hybrid<bool>(
 			circuit,new corrected_euler<bool>(circuit,1E-5,0.01),
 			new linear_event_locator<bool>(circuit,1E-5));
+	OpenSwitch* open_switch = new OpenSwitch(1.0);
+	SimpleDigraph<bool>* model = new SimpleDigraph<bool>();
+	model->add(hybrid_model);
+	model->add(open_switch);
+	model->couple(open_switch,hybrid_model);
 	// Create the simulator
-	Simulator<bool>* sim = new Simulator<bool>(hybrid_model);
-	sim->addEventListener(new StateListener(hybrid_model,circuit));
+	Simulator<bool>* sim = new Simulator<bool>(model);
 	// Simulate until the switch opens
-	while (sim->nextEventTime() <= 1.0) sim->execNextEvent();
+	double tNow = 0.0;
+	while (sim->nextEventTime() <= 4.0)
+	{
+		cout << tNow << " " << hybrid_model->getState(0) << " " << 
+			circuit->getSwitch() << " " << circuit->getDiode() << endl;
+		tNow = sim->nextEventTime();
+		sim->execNextEvent();
+	}
 	// Open the switch
-	Bag<Event<bool> > xb; xb.insert(Event<bool>(hybrid_model,0));
-	sim->computeNextState(xb,1.0);
-	// Simulate for another second
-	while (sim->nextEventTime() <= 4.0) sim->execNextEvent();
-	delete sim; delete hybrid_model;
+	delete sim; delete model;
 	return 0;
 }
