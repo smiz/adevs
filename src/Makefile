@@ -15,10 +15,11 @@ java_adevs: CFLAGS += -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 # simulations.
 #
 
-# These are generic options for the GNU C++ compiler.
+# These are generic options for the GNU C++ compiler
+# or clang++ if you change CXX=clag++ and CC=clang
 
 # Compiler flags
-CFLAGS += ${OMP} -fPIC -Wall -I../include -I./ 
+CFLAGS += -fPIC -Wall -I../include -I./ 
 # Best bet for GNU compiler
 CXX = g++
 CC = gcc

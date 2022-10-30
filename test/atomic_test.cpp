@@ -9,7 +9,6 @@ class genr: public Atomic<char>
 	public:
 		genr(double period, int ticks):
 		Atomic<char>(),
-		period(period),
 		ticks(ticks),
 		count(0),
 		sigma(period)
@@ -49,7 +48,6 @@ class genr: public Atomic<char>
 			return count; 
 		}
 	private:
-		double period;
 		int ticks;
 		int count;
 		double sigma;

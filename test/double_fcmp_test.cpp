@@ -11,7 +11,6 @@ class genr: public Atomic<char, double_fcmp>
 	public:
 		genr(double period, int ticks):
 		Atomic<char, double_fcmp>(),
-		period(period),
 		ticks(ticks),
 		count(0),
 		sigma(period)
@@ -51,7 +50,6 @@ class genr: public Atomic<char, double_fcmp>
 			return count; 
 		}
 	private:
-		double period;
 		int ticks;
 		int count;
 		double_fcmp sigma;

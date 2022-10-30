@@ -25,9 +25,8 @@ class Listener:
 			// Save to check its validity
 			output.push_back(x);
 		}
-		void stateChange(Atomic<IO_Type>* model, double t, void* state)
+		void stateChange(Atomic<IO_Type>* model, double t)
 		{
-			assert(state == NULL);
 			assert(model == r);
 			// First input should set the relay value to something positive
 			if (t == 0.0) assert(r->getRelayValue() > 0);

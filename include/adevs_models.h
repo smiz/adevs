@@ -240,6 +240,15 @@ template <typename X, typename T = double> class Atomic: public Devs<X,T>
  * to do so.
  */
 
+
+// Clang complains about the output_func declaration.
+// Because what we wrote is what we intended, the
+// warning is disable just for this class definition.
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#endif
+
 template <typename X, typename T = double> class MealyAtomic:
 	public Atomic<X,T>
 {
@@ -264,6 +273,10 @@ template <typename X, typename T = double> class MealyAtomic:
 
 		bool imm;
 };
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 /**
  * Base class for DEVS network models.

@@ -92,6 +92,14 @@ template <typename X> class ode_system
 		const int N, M;
 };
 
+// Clang complains about the postTrialStep declaration.
+// Because what we wrote is what we intended, the
+// warning is disable just for this class definition.
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#endif
+
 /**
  * <p>This extension of the ode_system provides for modeling some semi-explicit
  * DAEs of index 1, specifically those in the form dx/dt = f(x,y), y = g(x,y).
@@ -286,6 +294,10 @@ template <typename X> class dae_se1_system:
 		// Number of failures
 		int failed;
 };
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 template <typename X>
 void dae_se1_system<X>::solve(const double* q)
