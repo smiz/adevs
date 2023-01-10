@@ -58,7 +58,13 @@ template <typename X> class ode_system
 		virtual void der_func(const double* q, double* dq) = 0;
 		/// Compute the state event functions for state q and put them in z
 		virtual void state_event_func(const double* q, double* z) = 0;
-		/// Compute the time event function using state q
+		/**
+		  * Compute the time event function using state q. The time to next
+		  * is measured as an interval from the present time. Therefore you
+		  * will need the current time, the time of your next event, and
+		  * the return value is the difference. An easy way to track the
+		  * current time is a state variable tnow with dtnow/dt = 1.
+		  */
 		virtual double time_event_func(const double* q) = 0;
 		/**
 		 * This method is invoked immediately following an update of the
@@ -72,7 +78,12 @@ template <typename X> class ode_system
 		 * while calculating the trial step. By default this method does nothing.
 		 */
 		virtual void postTrialStep(double* q){};
-		/// The internal transition function
+		/**
+		 * The internal transition function. The state_event array will contain
+	 	 * true if the corresponding level crossing function z triggered the
+	  	 * this internal event. If this is a time event, then entry numEvents()
+	 	 * will be true.
+		 */
 		virtual void internal_event(double* q,
 				const bool* state_event) = 0;
 		/// The external transition function

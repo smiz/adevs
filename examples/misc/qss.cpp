@@ -98,7 +98,7 @@ class qss:
 		}
 };
 
-const double qss::Q = 0.001;
+const double qss::Q = 0.01;
 double qss::y[3] = {1.0,1.0,0.0};
 
 int main()

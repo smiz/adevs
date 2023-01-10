@@ -6,7 +6,7 @@ check: check_cpp check_java check_fmi
 # Check cpp code only
 check_cpp: rvtest bag_test obj_pool sched atomic double_fcmp gcd_test gpt_test \
 tokenring_test dyn_devs_test zero_time_test ode_test listener_test \
-wrapper_test alt_time mealy
+wrapper_test alt_time mealy sd_time
 
 # Check the java library
 check_java: java_test
@@ -71,7 +71,7 @@ sd_time:
 	$(TEST_EXEC)
 	$(CC) $(CFLAGS) sd_time_test_2.cpp
 	$(TEST_EXEC) > tmp
-	$(DIFF) tmp sd_time_test2.ok
+	$(DIFF) tmp sd_time_test_2.ok
 
 atomic:
 	$(CC) $(CFLAGS) atomic_test.cpp 
