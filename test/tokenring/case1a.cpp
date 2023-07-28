@@ -10,7 +10,7 @@ using namespace std;
   */
 int main () 
 {
-	list<adevs::Atomic<PortValue>*> active;
+	list<adevs::Devs<PortValue>*> active;
 	adevs::Digraph<token_t*> model;
 	node* n1 = new node(0,1,new token_t());
 	node* n2 = new node(1,1,NULL);
