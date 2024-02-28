@@ -83,6 +83,8 @@ template <typename X>
 trap<X>::trap(ode_system<X>* sys, double err_tol, double h_max, double iter_limit):
 	ode_solver<X>(sys),err_tol(err_tol),h_max(h_max),tol(iter_limit),h_cur(h_max)
 {
+	if (!sys->get_jacobian(NULL,NULL))
+		throw adevs::exception("trap integrator requires a jacobian",this);
 	q_iter[0] = new double[sys->numVars()];
 	q_iter[1] = new double[sys->numVars()];
 	qq[0] = new double[sys->numVars()];
