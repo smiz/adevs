@@ -71,7 +71,7 @@ adevs::Devs<IOType>* make_model_with_modelica_inverters(CircuitOutput** circuit)
 		(
 			eqns, // Model to simulate
 			new trap<IOType>(eqns,tol,cint,true), // ODE solver
-			new discontinuous_event_locator<IOType>(eqns,event_tol) // Event locator
+			new fast_event_locator<IOType>(eqns,event_tol) // Event locator
 			// You must use this event locator for OpenModelica because it does
 			// not generate continuous zero crossing functions
 		);
@@ -249,7 +249,7 @@ adevs::Devs<IOType>* make_model_with_adevs_inverters(CircuitOutput** circuit)
 		(
 			eqns, // Model to simulate
 			new trap<IOType>(eqns,tol,cint,true), // ODE solver
-			new discontinuous_event_locator<IOType>(eqns,event_tol) // Event locator
+			new fast_event_locator<IOType>(eqns,event_tol) // Event locator
 			// You must use this event locator for OpenModelica because it does
 			// not generate continuous zero crossing functions
 		);

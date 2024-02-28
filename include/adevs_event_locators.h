@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, James Nutaro
+ * Copyright (c) 2013-2024, James Nutaro
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@
 #include "adevs_hybrid.h"
 #include <cmath>
 #include <iostream>
+#include <cstring>
 
 namespace adevs
 {
@@ -227,6 +228,118 @@ template <typename X> class null_event_locator:
 			return false;
 		}
 };
+
+/**
+ * This is a bisection search that always tries to locate the event in the
+ * interval rather than terminate early with a lower bound prior to the
+ * event occurence. This event locator will avoid creeping up on an event
+ * with the associated increase in simulation time.
+ */
+template <typename X> class fast_event_locator:
+	public event_locator<X>
+{
+	public:
+		/**
+		  * Create an event locator for a system. The error
+		  * tolerance is the width of the time bracket around
+		  * the event at which the algorithm stops looking and
+		  * reports success.
+		  * @param sys The system to solve
+		  * @param err_tol How close to the event should we
+		  * be when the search reports success.
+		  */
+		fast_event_locator(ode_system<X>* sys, double err_tol);
+		bool find_events(bool* events, const double *qstart, 
+				double* qend, ode_solver<X>* solver, double& h);
+		~fast_event_locator();
+	private:
+		const double err_tol;
+		double *z0, *zf;
+
+		bool is_sign_change() const;
+		bool is_sign_change(int i) const { return z0[i]*zf[i] <= 0.0; } 
+};
+
+template <typename X>
+fast_event_locator<X>::fast_event_locator(ode_system<X>* sys, double err_tol):
+	event_locator<X>(sys),
+	err_tol(err_tol),
+	z0(new double[sys->numEvents()]),
+	zf(new double[sys->numEvents()])
+{
+}
+
+template <typename X>
+fast_event_locator<X>::~fast_event_locator()
+{
+	delete [] z0;
+	delete [] zf;
+}
+
+template <typename X>
+bool fast_event_locator<X>::is_sign_change() const
+{
+	for (int i = 0; i < this->sys->numEvents(); i++)
+		if (is_sign_change(i)) return true;
+	return false;
+}
+
+template <typename X>
+bool fast_event_locator<X>::find_events(bool* events,
+	const double* qstart, double* qend, ode_solver<X>* solver, double& h)
+{
+	const int N = this->sys->numEvents();
+	bool sign_change;
+	double hl = 0.0, hh = h, hg = hh;
+	// No state events? Just return false
+	if (N == 0)
+		return false;
+	// Calculate the state event functions at the start and end
+	// of the interval
+	this->sys->state_event_func(qstart,z0);
+	this->sys->state_event_func(qend,zf);
+	sign_change = is_sign_change();
+	// No event? Don't change anything and report no event.
+	if (!sign_change)
+	{
+		memset(events,0,sizeof(bool)*N);
+		return false;
+	}
+	// Look for the nearest event in the interval
+repeat:
+	assert(hh >= hl);
+	// Event is between guess and low end of the bracket
+	if (sign_change)
+	{
+		// if low and high end guesses are close enough then
+		// we are on the right side of the event and can
+		// report success
+		if (hh-hl < err_tol)
+			goto success;
+		// Otherwise move the high end of the bracket
+		hh = hg;
+	}
+	// Event is between guess and high end of the bracket.
+	else
+		hl = hg;
+	// New guess is midpoint of low and high guesses
+	hg = (hh+hl)/2.0;
+	// Calculate solution at new guess
+	memcpy(qend,qstart,sizeof(double)*this->sys->numVars());
+	solver->advance(qend,hg);
+	// Calculate state event functions at new guess
+	this->sys->state_event_func(qend,zf);
+	// Did the event function change sign?
+	sign_change = is_sign_change();
+	// Try again
+	goto repeat;
+	// Success! Step is h and solution is qend
+success:
+	h = hg;
+	for (int i = 0; i < N; i++)
+		events[i] = is_sign_change(i);
+	return true;
+}
 
 } // end of namespace 
 

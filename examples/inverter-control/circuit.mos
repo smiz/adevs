@@ -15,5 +15,5 @@ buildModelFMU(TestCircuitModelica,"2.0"); getErrorString();
 buildModelFMU(TestCircuitAdevs,"2.0"); getErrorString();
 
 // Use this line instead if you want to simulate with DASSL that is native to openmodelica
-// simulate(TestCircuitModelica,outputFormat="csv",stopTime=1,numberOfIntervals=10000,variableFilter="circuit.a.i_load");getErrorString();
+//simulate(TestCircuitModelica,outputFormat="csv",stopTime=1,numberOfIntervals=10000,variableFilter="circuit.a.i_load");getErrorString();
 
