@@ -1,3 +1,9 @@
+/***
+   * This offers a template for optimizing the controller gain parameters.
+   * I've kept it as a starting point for working with the new, modelica
+   * based implement of the control. But this does not work (yet).
+   */
+
 #include "harmonic_compensator.h"
 #include "pwm.h"
 #include <iostream>

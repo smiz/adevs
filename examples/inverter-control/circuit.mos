@@ -1,9 +1,19 @@
 installPackage(Modelica); getErrorString();
 loadModel(Modelica); getErrorString();
 loadFile("circuit.mo");
-//instantiateModel(TestCircuit); getErrorString();
-//setCommandLineOptions("-d=initialization"); getErrorString();
-setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives"); getErrorString();
-buildModelFMU(TestCircuit,"2.0"); getErrorString();
-//simulate(TestCircuit,outputFormat="csv",stopTime=1,numberOfIntervals=10000,variableFilter="circuit.a.i_load");getErrorString();
+
+// If you want to see the equation set, uncomment this line
+//instantiateModel(TestCircuitAdevs); getErrorString();
+
+// OMC can't generate directional derivatives for this model because (I suspect)
+// of the discontinuities in it. Probably worth looking into.
+setCommandLineOptions("-d=initialization"); getErrorString();
+// setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives"); getErrorString();
+
+// This builds FMUs for the adevs and modelica based switching circuits
+buildModelFMU(TestCircuitModelica,"2.0"); getErrorString();
+buildModelFMU(TestCircuitAdevs,"2.0"); getErrorString();
+
+// Use this line instead if you want to simulate with DASSL that is native to openmodelica
+// simulate(TestCircuitModelica,outputFormat="csv",stopTime=1,numberOfIntervals=10000,variableFilter="circuit.a.i_load");getErrorString();
 

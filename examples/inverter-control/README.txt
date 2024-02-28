@@ -1,8 +1,10 @@
 This example simulates an inverter based control
 for harmonic compensation in an electrical power
-system. The sim.cpp file simulates a case for
-a simple set of parameter.s The opt.cpp file tries
-to optimize the parameter selection such that the
-60 Hz signal is diminished as little as possible
-while eliminating the harmonic and keeping the
-broad band noise small.
+system. This example uses OpenModelica to model
+the continous elements of the circuit. The switching
+elements can be modeled with OpenModelica or in
+adevs. You can compare the performance of the adevs
+solvers with and output state events and the DASSL
+solver that is native to OpenModelica (the latter
+having an advantage in not suffering from FMI
+overheads).

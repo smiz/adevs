@@ -182,16 +182,26 @@ initial equation
 	controller[3].x = 0;
 end HarmonicCompensator;
 
-/**
-  * A continuous in time form of the inverter switch.
+/** 
+  * Base class for our Modelica (state event) inverter
+  * and adevs (time event) inverter.
   */
-model Inverter
+partial model InverterInterface
 	// Duty cycle describing input
 	input Real duty_cycle(start=0);
 	// Ouput is the switch position
 	output Integer switch(start=0);
 	// Frequency of the switching element
 	parameter Real f;
+end InverterInterface;
+
+/**
+  * A continuous in time form of the inverter switch.
+  * This produces state events, which are very expensive
+  * to calculate.
+  */
+model ModelicaInverter
+	extends InverterInterface;
 	// Saw wave
 	Real s(start=0,fixed=true);
 equation
@@ -201,13 +211,31 @@ equation
 	end when;
 algorithm
 	switch := if (s < abs(duty_cycle)) then integer(duty_cycle/abs(duty_cycle)) else 0;
-end Inverter;
+end ModelicaInverter;
+
+/**
+  * This is an external inverter. It accepts input (via FMI)
+  * from and produces output for adevs. The switching dynamics
+  * are then schedules as time events (using the adevs
+  * scheduler). This should be much faster to simulate.
+  */
+model AdevsInverter
+	extends InverterInterface;
+	// Export duty cycle to adevs
+	output Real duty_cycle_for_de(start=0,fixed=true);
+equation
+	when sample(0,1.0/f) then
+		duty_cycle_for_de = duty_cycle;
+	end when;
+end AdevsInverter;
 
 // Circuit with its control system
-model TestCircuit
+partial model TestCircuit
+	// Ten times the harmonic we want to compensate for
+	parameter Real inverterHz = 3000;
 	ThreePhaseCircuit circuit;
 	HarmonicCompensator control(G=0.562996,H=0.100675);
-	Inverter inverter[3](each f = 15000);
+	replaceable InverterInterface inverter[3](each f = inverterHz);
 equation
 	circuit.i_load = control.iabc;
 	inverter[1].switch = circuit.inverter_switch[1];
@@ -217,3 +245,23 @@ equation
 	control.vabc[2] = inverter[2].duty_cycle;
 	control.vabc[3] = inverter[3].duty_cycle;
 end TestCircuit;
+
+// With Modelica inverters
+model TestCircuitModelica
+	extends TestCircuit(redeclare ModelicaInverter inverter);
+end TestCircuitModelica;
+
+// With adevs inverters
+model TestCircuitAdevs
+	extends TestCircuit(redeclare AdevsInverter inverter);
+	/** OpenModelica only permits external manipulation of
+	  * top level inputs. Therefore, we add three inputs
+	  * here for changing the inverter switch state from
+	  * outside the Modelica model via its FMI interface.
+	  */
+	input Integer adevs_switch[3](each start=0, each fixed=true);
+equation
+	adevs_switch[1] = inverter[1].switch;
+	adevs_switch[2] = inverter[2].switch;
+	adevs_switch[3] = inverter[3].switch;
+end TestCircuitAdevs;
