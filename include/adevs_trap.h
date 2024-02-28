@@ -70,7 +70,7 @@ template <typename X> class trap:
 		void advance(double* q, double h);
 	private:
 		double *k; // Fixed term in newton iteration
-		double *dq; // Derivatives at guess
+		double *dq[2]; // Derivatives at guess
 		double *qq[2]; // Solution for trial steps
 		const double err_tol;
 		const double h_max; // Maximum time step
@@ -78,8 +78,8 @@ template <typename X> class trap:
 
 		// Advance the solution q by h. Return result by overwriting q.
 		// Returns true on success. On failure, returns false and q is
-		// left alone. 
-		bool step(double* q, double h);
+		// left alone. The dq0 argument contains the derivative f(q).
+		bool step(double* q, double h, const double *dq0);
 
 		// Data for KINSOL non linear system solver
 		N_Vector y, scale;
@@ -212,7 +212,8 @@ trap<X>::trap(ode_system<X>* sys, double err_tol, double h_max, bool silent):
 {
 	qq[0] = new double[sys->numVars()];
 	qq[1] = new double[sys->numVars()];
-	dq = new double[sys->numVars()];
+	dq[0] = new double[sys->numVars()];
+	dq[1] = new double[sys->numVars()];
 	k = new double[sys->numVars()];
 
 	prep_kinsol(silent);
@@ -223,7 +224,8 @@ trap<X>::~trap()
 {
 	delete [] qq[0];
 	delete [] qq[1];
-	delete [] dq;
+	delete [] dq[0];
+	delete [] dq[1];
 	delete [] k;
 	N_VDestroy(y);
 	N_VDestroy(scale);
@@ -240,18 +242,16 @@ void trap<X>::advance(double* q, double h)
 }
 
 template <typename X>
-bool trap<X>::step(double* q, double h)
+bool trap<X>::step(double* q, double h, const double* dq0)
 {
 	const int N = this->sys->numVars();
 	realtype* yd = N_VGetArrayPointer(y);
-	// Get the derivatives at the current point
-	this->sys->der_func(q,dq);
 	// Fixed term in the trapezoidal integration rule
 	for (int i = 0; i < N; i++) 
 	{
-		k[i] = q[i]+(h/2.0)*dq[i];
+		k[i] = q[i]+(h/2.0)*dq0[i];
 		// Use Euler to get the initial guess
-		yd[i] = q[i]+h*dq[i];
+		yd[i] = q[i]+h*dq0[i];
 	}
 	kinsol_data.h = h;
 	int retval = KINSol(kmem,           /* KINSol memory block */
@@ -271,15 +271,18 @@ double trap<X>::integrate(double* q, double h_lim)
 	double trunc_err;
 	// Pick the step size step size
 	double h = std::min<double>(h_cur*1.1,std::min<double>(h_max,h_lim));
+	// Get the derivatives at the current point
+	this->sys->der_func(q,dq[0]);
 	// Look for a solution
 	again:
 		memcpy(qq[0],q,sizeof(double)*this->sys->numVars());
 		memcpy(qq[1],q,sizeof(double)*this->sys->numVars());
 		// Shrink the error until we get convergence of the nonlinear solver
-		while (!step(qq[0],h)) { h *= 0.8; h_cur = h; }
+		while (!step(qq[0],h,dq[0])) { h *= 0.8; h_cur = h; }
 		// Two half steps to estimate the error
-		step(qq[1],h/2.0);
-		step(qq[1],h/2.0);
+		step(qq[1],h/2.0,dq[0]);
+		this->sys->der_func(qq[1],dq[1]);
+		step(qq[1],h/2.0,dq[1]);
 		for (int i = 0; i < this->sys->numVars(); i++)
 		{
 			// Keep error with two small steps size below our tolerance

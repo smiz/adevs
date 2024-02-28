@@ -2,8 +2,8 @@ installPackage(Modelica); getErrorString();
 loadModel(Modelica); getErrorString();
 loadFile("circuit.mo");
 //instantiateModel(TestCircuit); getErrorString();
-setCommandLineOptions("-d=initialization"); getErrorString();
-//setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives"); getErrorString();
+//setCommandLineOptions("-d=initialization"); getErrorString();
+setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives"); getErrorString();
 buildModelFMU(TestCircuit,"2.0"); getErrorString();
 //simulate(TestCircuit,outputFormat="csv",stopTime=1,numberOfIntervals=10000,variableFilter="circuit.a.i_load");getErrorString();
 

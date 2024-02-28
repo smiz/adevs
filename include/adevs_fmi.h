@@ -234,7 +234,14 @@ template <typename X> class FMI:
 		  * default is false.
 		  */
 		const bool provides_jacobian;
-};
+		/// Identifiers for variables used to calculate the
+		/// jacobian column by column with a single FMI call
+		/// per column
+		fmi2ValueReference* jac_col;
+		// FMI derivative gain term
+		double* jac_v;
+};	
+
 
 template <typename X>
 FMI<X>::FMI(const char* modelname,
@@ -254,8 +261,23 @@ FMI<X>::FMI(const char* modelname,
 	so_hndl(NULL),
 	cont_time_mode(false),
 	num_extra_event_indicators(num_extra_event_indicators),
-	provides_jacobian(provides_jacobian)
+	provides_jacobian(provides_jacobian),
+	jac_col(NULL),
+	jac_v(NULL)
 {
+	// If we will get the jacobian, this holds everything except the time
+	// derivative that has been appended to the FMI equation set
+	if (provides_jacobian)
+	{
+		jac_col = new fmi2ValueReference[num_state_variables];
+		jac_v = new double[num_state_variables];
+		// References to each of our derivative functions f_1, f_2, etc.
+		for (int i = 0; i < num_state_variables; i++)
+		{
+			jac_col[i] = num_state_variables+i;
+			jac_v[i] = 1.0;
+		}
+	}
 	// Get points to the FMI functions
 	fmi2CallbackFunctions tmp = {adevs::FMI<X>::fmilogger,calloc,free,NULL,NULL};
 	callbackFuncs = new fmi2CallbackFunctions(tmp);
@@ -336,15 +358,9 @@ FMI<X>::FMI(const char* modelname,
 template <typename X>
 bool FMI<X>::get_jacobian(const double* q, double* J)
 {
-	// TODO: Add df/dt to jacobian. Do not assume no relation to time.
-	// TODO: Don't call get GetDirectionalDerivatives a bunch of times.
-	//       Set this up to call just once per row or less.
-	int idx;
 	fmi2Status status;
 	// Number of FMI variables. Does not include time.
 	const unsigned N = this->numVars()-1;
-	// FMI derivative gain term
-	const double v = 1.0;
 	// If we just checking for support then exit immediately
 	if (!provides_jacobian || J == NULL)
 		return provides_jacobian;
@@ -369,15 +385,13 @@ bool FMI<X>::get_jacobian(const double* q, double* J)
 	// For the moment, we assume this is the case.
 	for (fmi2ValueReference state_var = 0; state_var < N; state_var++)
 	{
-		for (fmi2ValueReference derivative_var = N; derivative_var < 2*N; derivative_var++)
-		{
-			// Index into the column-major J array
-			idx = N*state_var+(derivative_var-N);
-			status = _fmi2GetDirectionalDerivative(c,&derivative_var,1,&state_var,1,&v,J+idx);
-			assert(status == fmi2OK);
-		}
+		status = _fmi2GetDirectionalDerivative(c,jac_col,N,&state_var,1,jac_v,J+state_var*N);
+		assert(status == fmi2OK);
 	}
-	// Partial of time is 1 and nobody else depends on it
+	// Partial of time is 1 and nobody else depends on it. This, of course, may
+	// be wrong but FMI does not appear to support partials of f with respect to
+	// time. If you really need this, add dtau/dt = 1 to your equation set and use
+	// tau as your time variable.
 	J[(N+1)*(N+1)-1] = 1.0;
 	return true;
 }
@@ -573,6 +587,11 @@ FMI<X>::~FMI()
 {
 	_fmi2FreeInstance(c);
 	delete callbackFuncs;
+	if (jac_col != NULL)
+	{
+		delete [] jac_col;
+		delete [] jac_v;
+	}
 	CLOSE_LIB(so_hndl);
 }
 

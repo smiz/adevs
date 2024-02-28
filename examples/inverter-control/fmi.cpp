@@ -9,7 +9,7 @@ using namespace adevs;
 
 int main()
 {
-	double cint = 1E-3;
+	double cint = 1E-4;
 	// Create our model
 	TestCircuit* circuit = new TestCircuit();
 	// Wrap a set of solvers around it
