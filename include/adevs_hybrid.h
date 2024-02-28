@@ -475,6 +475,9 @@ template <typename X, class T = double> class Hybrid:
 		/**
 		 * Create and initialize a simulator for the system. All objects 
 		 * are adopted by the Hybrid object and are deleted when it is.
+		 * @param sys The system of equations to solver
+		 * @param solver The numerical solver for taking steps in time
+		 * @param event_finder The state event detection algorithm
 		 */
 		Hybrid(ode_system<X>* sys, ode_solver<X>* solver,
 				event_locator<X>* event_finder):

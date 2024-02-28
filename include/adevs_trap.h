@@ -58,8 +58,7 @@ template <typename X> class trap:
 		 * terminate the newton iteration used at each
 		 * integration step.
 		 * @param sys The system to solve
-		 * @param err_tol Truncation error limit. Setting to adevs_inf causes solver to use a
-		 * fixed step size.
+		 * @param err_tol Truncation error limit. 
 		 * @param h_max Maximum allowed step size
 		 * @param silent If set to true, the KINSOL error and info messages are surpressed.
 		 * The default value is false.
@@ -79,7 +78,7 @@ template <typename X> class trap:
 
 		// Advance the solution q by h. Return result by overwriting q.
 		// Returns true on success. On failure, returns false and q is
-		// left alone.
+		// left alone. 
 		bool step(double* q, double h);
 
 		// Data for KINSOL non linear system solver
@@ -191,10 +190,15 @@ void trap<X>::prep_kinsol(bool silent)
 	retval = KINSetLinearSolver(kmem, LS, J);
 	if (check_retval(&retval, "KINSetScaledStepTol", 1)) 
 		throw adevs::exception("KINSetScaledStepTol failed");
-	retval = KINSetJacFn(kmem, jac);
-	if (check_retval(&retval, "KINSetJacFn", 1))
-		throw adevs::exception("KINSetJacFn failed");
-
+	/* If there is support for symbolic jacobian, then register
+	   the function. Otherwise KINSOL provides a numerical
+	   approximation. */
+	if (this->sys->get_jacobian(NULL,NULL))
+	{
+		retval = KINSetJacFn(kmem, jac);
+		if (check_retval(&retval, "KINSetJacFn", 1))
+			throw adevs::exception("KINSetJacFn failed");
+	}
 	if (silent)
 	{
 		KINSetErrHandlerFn(kmem,silent_error_handler,NULL);
@@ -206,8 +210,6 @@ template <typename X>
 trap<X>::trap(ode_system<X>* sys, double err_tol, double h_max, bool silent):
 	ode_solver<X>(sys),err_tol(err_tol),h_max(h_max),h_cur(h_max)
 {
-	if (!sys->get_jacobian(NULL,NULL))
-		throw adevs::exception("trap integrator requires a jacobian",this);
 	qq[0] = new double[sys->numVars()];
 	qq[1] = new double[sys->numVars()];
 	dq = new double[sys->numVars()];
@@ -249,7 +251,7 @@ bool trap<X>::step(double* q, double h)
 	{
 		k[i] = q[i]+(h/2.0)*dq[i];
 		// Use Euler to get the initial guess
-		yd[i] = q[i] + h*dq[i];
+		yd[i] = q[i]+h*dq[i];
 	}
 	kinsol_data.h = h;
 	int retval = KINSol(kmem,           /* KINSol memory block */
@@ -266,45 +268,39 @@ bool trap<X>::step(double* q, double h)
 template <typename X>
 double trap<X>::integrate(double* q, double h_lim)
 {
-	bool again;
 	double trunc_err;
 	// Pick the step size step size
 	double h = std::min<double>(h_cur*1.1,std::min<double>(h_max,h_lim));
-	// Fixed step size of the error tolerance is infinite
-	if (err_tol == adevs_inf<double>())
-		step(q,h);
-	else for (;;)
-	{
-		again = false;
+	// Look for a solution
+	again:
 		memcpy(qq[0],q,sizeof(double)*this->sys->numVars());
 		memcpy(qq[1],q,sizeof(double)*this->sys->numVars());
 		// Shrink the error until we get convergence of the nonlinear solver
-		while (!step(qq[0],h)) { h *= 0.8; }
+		while (!step(qq[0],h)) { h *= 0.8; h_cur = h; }
+		// Two half steps to estimate the error
+		step(qq[1],h/2.0);
 		step(qq[1],h/2.0);
 		for (int i = 0; i < this->sys->numVars(); i++)
 		{
-			trunc_err = fabs(qq[0][i]-qq[1][i])*(7.0/8.0);
+			// Keep error with two small steps size below our tolerance
+			trunc_err = fabs(qq[0][i]-qq[1][i])/3.0;
 			// if the error is too big, try again with a smaller step
 			if (trunc_err > err_tol)
 			{
-				again = true;
 				h *= 0.8;
 				// Becomes the new step size because we had to take a
 				// smaller step to control the error
 				h_cur = h;
-				break;
+				// Try again
+				goto again;
 			}
 		}
-		// If the solution was ok
-		if (!again)
-		{
-			// Keep the new step size if it is larger than our current choice
-			if (h > h_cur) h_cur = h;
-			// Copy the solution and stop
-			memcpy(q,qq[0],sizeof(double)*this->sys->numVars());
-			break;
-		}
-	}
+	// If we get here, then we got a good solution.
+	// Keep the new step size if it is larger than our current choice
+	if (h > h_cur) h_cur = h;
+	// Copy the solution to the return array
+	memcpy(q,qq[1],sizeof(double)*this->sys->numVars());
+	// Return the step size that we used
 	return h;
 }
 

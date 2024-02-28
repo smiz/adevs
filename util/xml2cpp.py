@@ -3,6 +3,11 @@ import sys
 import re
 import xml.etree.ElementTree as ET
 
+""" Global set of variables. Entries can be repeated in the xml file and
+    we do not want to generate duplicate get_ and set_ methods in the C++
+    header file. """
+var_names = set();
+
 class ScalarVariable:
 	def __init__(self, node):
 		"""This class is responsible for generating strings from .xml <ScalarVariable> tags."""
@@ -31,6 +36,9 @@ class ScalarVariable:
 		else:
 			print ("Unknown attribute"+name)
 		return attributes
+	@property
+	def name(self):
+		return self.attributes["name"];
 
 	def getCPPString(self):
 		rs = "" # Return string
@@ -65,8 +73,16 @@ def interpret(filename): # Go through file and pick out important information.
 	print ("eventIndicators =",legend["indicatorNum"])
 	scalar_vars_list = doc.findall("ModelVariables/ScalarVariable")
 	for var in scalar_vars_list:
-		variables.append(ScalarVariable(var))
+		new_var = ScalarVariable(var);
+		if not new_var.name in var_names:
+			variables.append(new_var);
+			var_names.add(new_var.name);
 	return legend, variables
+
+def providesJacobian(filename):
+	doc = ET.parse(filename);
+	providesDirDerivative  = doc.findall("ModelExchange/[@providesDirectionalDerivative='true']");
+	return providesDirDerivative != None and len(providesDirDerivative) > 0;
 
 def countDerivatives(filename):
 	"""This function is responsible for counting the state variables"""
@@ -77,30 +93,24 @@ def countDerivatives(filename):
 		index_num=index_num+1
 	return index_num
 
-def compile_str(legend, variables, using_str):
+def compile_str(legend, variables, using_str, provides_jacobian):
 	"""This function is responsible for creating the header file"""
+	jacobian_init_str = "false";
+	if provides_jacobian:
+		jacobian_init_str = "true";
+	name = legend['modelName']
+	name = name.replace(".","")
+	legend['modelName'] = name
+	rs = "" # Return string variable.
 	if using_str:
-		name =  legend['modelName']
-		name = name.replace(".","")
-		legend['modelName'] = name
-		rs = "" # Return string variable.
 		rs += '#ifndef {0}_h_\n#define {0}_h_\n#include "adevs.h"\n#include "adevs_fmi.h"\n#include <string>\n\n'.format(legend['modelName']) # Format header default information
-		rs += 'class {0}:\n\tpublic adevs::FMI<{1}>\n{{\n\tpublic:\n\t\t{0}():\n'.format(legend['modelName'], legend['convType']) # Format first part of class
-		rs += '\t\t\tadevs::FMI<{1}>\n\t\t\t(\n\t\t\t\t"{0}",\n\t\t\t\t"{2}",\n\t\t\t\t"{3}",\n\t\t\t\t{4},\n\t\t\t\t{5},\n\t\t\t\t"{6}"\n\t\t\t)\n\t\t{{\n\t\t}}\n'.format(legend['modelName'], legend['convType'], legend['guid'], legend['resourceLocation'], legend['derNum'], legend['indicatorNum'], legend['sharedLocation'])  # Format FMI constructor call
-		for var in variables:
-			rs += var.getCPPString()
-		rs += '};\n\n#endif'
 	else:
-		name =  legend['modelName']
-		name = name.replace(".","")
-		legend['modelName'] = name
-		rs = "" # Return string variable.
 		rs += '#ifndef {0}_h_\n#define {0}_h_\n#include "adevs.h"\n#include "adevs_fmi.h"\n\n'.format(legend['modelName']) # Format header default information
-		rs += 'class {0}:\n\tpublic adevs::FMI<{1}>\n{{\n\tpublic:\n\t\t{0}():\n'.format(legend['modelName'], legend['convType']) # Format first part of class
-		rs += '\t\t\tadevs::FMI<{1}>\n\t\t\t(\n\t\t\t\t"{0}",\n\t\t\t\t"{2}",\n\t\t\t\t"{3}",\n\t\t\t\t{4},\n\t\t\t\t{5},\n\t\t\t\t"{6}"\n\t\t\t)\n\t\t{{\n\t\t}}\n'.format(legend['modelName'], legend['convType'], legend['guid'], legend['resourceLocation'], legend['derNum'], legend['indicatorNum'], legend['sharedLocation'])  # Format FMI constructor call
-		for var in variables:
-			rs += var.getCPPString()
-		rs += '};\n\n#endif'
+	rs += 'class {0}:\n\tpublic adevs::FMI<{1}>\n{{\n\tpublic:\n\t\t{0}():\n'.format(legend['modelName'], legend['convType']) # Format first part of class
+	rs += '\t\t\tadevs::FMI<{1}>\n\t\t\t(\n\t\t\t\t"{0}",\n\t\t\t\t"{2}",\n\t\t\t\t"{3}",\n\t\t\t\t{4},\n\t\t\t\t{5},\n\t\t\t\t"{6}",\n\t\t\t\t1E-8,0,0.0,\n\t\t\t\t{7}\n\t\t\t)\n\n\t\t{{\n\t\t}}\n'.format(legend['modelName'], legend['convType'], legend['guid'], legend['resourceLocation'], legend['derNum'], legend['indicatorNum'], legend['sharedLocation'], jacobian_init_str)  # Format FMI constructor call
+	for var in variables:
+		rs += var.getCPPString()
+	rs += '};\n\n#endif'
 	return rs
 
 def print_help():
@@ -153,4 +163,5 @@ if __name__=="__main__":
 	else:
 		output_file = output_file + ".h"
 
-	write_file(output_file, compile_str(legend, variables, USING_STRING))
+	write_file(output_file, compile_str(legend, variables, USING_STRING, providesJacobian(filename)))
+

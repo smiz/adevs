@@ -86,7 +86,8 @@ template <typename X> class FMI:
 			const char* shared_lib_name,
 			const double tolerance = 1E-8,
 			int num_extra_event_indicators = 0,
-			double start_time = 0.0);
+			double start_time = 0.0,
+			bool provides_jacobian = false);
 		/// Copy the initial state of the model to q
 		virtual void init(double* q);
 		/// Compute the derivative for state q and put it in dq
@@ -228,6 +229,11 @@ template <typename X> class FMI:
 		fmi2CallbackFunctions* callbackFuncs;
 
 		void iterate_events();
+		/** Set to true if this FMI provides directional
+		  * directives for calculating a jacobian. The
+		  * default is false.
+		  */
+		const bool provides_jacobian;
 };
 
 template <typename X>
@@ -239,14 +245,16 @@ FMI<X>::FMI(const char* modelname,
 			const char* so_file_name,
 			const double tolerance,
 			int num_extra_event_indicators,
-			double start_time):
+			double start_time,
+			bool provides_jacobian):
 	// One extra variable at the end for time
 	ode_system<X>(num_state_variables+1,num_event_indicators+num_extra_event_indicators),
 	next_time_event(adevs_inf<double>()),
 	t_now(start_time),
 	so_hndl(NULL),
 	cont_time_mode(false),
-	num_extra_event_indicators(num_extra_event_indicators)
+	num_extra_event_indicators(num_extra_event_indicators),
+	provides_jacobian(provides_jacobian)
 {
 	// Get points to the FMI functions
 	fmi2CallbackFunctions tmp = {adevs::FMI<X>::fmilogger,calloc,free,NULL,NULL};
@@ -328,16 +336,18 @@ FMI<X>::FMI(const char* modelname,
 template <typename X>
 bool FMI<X>::get_jacobian(const double* q, double* J)
 {
+	// TODO: Add df/dt to jacobian. Do not assume no relation to time.
+	// TODO: Don't call get GetDirectionalDerivatives a bunch of times.
+	//       Set this up to call just once per row or less.
 	int idx;
 	fmi2Status status;
 	// Number of FMI variables. Does not include time.
 	const unsigned N = this->numVars()-1;
-	bool supports = _fmi2GetDirectionalDerivative != NULL;
 	// FMI derivative gain term
 	const double v = 1.0;
 	// If we just checking for support then exit immediately
-	if (!supports || J == NULL)
-		return supports;
+	if (!provides_jacobian || J == NULL)
+		return provides_jacobian;
 	// Enter continuous time mode to calculate Jacobian entries
 	if (!cont_time_mode)
 	{
