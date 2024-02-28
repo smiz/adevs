@@ -6,7 +6,7 @@ CFLAGS += -I$(FMI_HOME)
 LIBS += -ldl
 PYTHON=python3
 
-all: t1 te tb tp tei tc se
+all: t1 te tb tp tei tc se lok_vol
 
 se:
 	rm -rf stairs; mkdir stairs; cd stairs; cp ../stairs.mo .; cp ../stairs.mos .; omc stairs.mos; unzip -o -qq stairs.fmu
@@ -51,6 +51,12 @@ tc:
 	$(CC) $(CFLAGS) main_circuit.cpp $(LIBS) 
 	$(TEST_EXEC)
 
+lok_vol:
+	rm -rf lk; mkdir lk; cd lk; cp ../lk.mo .; cp ../lk.mos .; omc lk.mos; unzip -o -qq lk.fmu
+	${PYTHON} ../../util/xml2cpp.py -x lk/modelDescription.xml -type double -f lk/binaries/linux64/lk.so -r file://${PWD}/lk/resources
+	$(CC) $(CFLAGS) main_lk.cpp $(LIBS) -llapack
+	$(TEST_EXEC)
+
 clean_all: clean
 	rm -rf bounce
 	rm -rf EventTests
@@ -59,3 +65,4 @@ clean_all: clean
 	rm -rf pendulum
 	rm -rf circuit
 	rm -rf stairs
+	rm -rf lk

@@ -162,6 +162,8 @@ template <typename X> class FMI:
 		std::string get_string(int k);
 		/// Set the value of a string variable
 		void set_string(int k, std::string& val);
+		/// Get the jacobian if this is supported by the FMI
+		bool get_jacobian(const double* q, double* J);
 	private:
 		// Reference to the FMI
 		fmi2Component c;
@@ -191,7 +193,8 @@ template <typename X> class FMI:
 		fmi2Status (*_fmi2GetDerivatives)(fmi2Component, fmi2Real*, size_t);
 		fmi2Status (*_fmi2GetEventIndicators)(fmi2Component, fmi2Real*, size_t);
 		fmi2Status (*_fmi2GetContinuousStates)(fmi2Component, fmi2Real*, size_t);	
-		
+		fmi2Status (*_fmi2GetDirectionalDerivative)(fmi2Component, const fmi2ValueReference*, size_t,
+			const fmi2ValueReference*, size_t, const fmi2Real*, fmi2Real*); 
 		// Instant of the next time event
 		double next_time_event;
 		// Current time
@@ -243,8 +246,9 @@ FMI<X>::FMI(const char* modelname,
 	t_now(start_time),
 	so_hndl(NULL),
 	cont_time_mode(false),
-	num_extra_event_indicators(num_extra_event_indicators)	
+	num_extra_event_indicators(num_extra_event_indicators)
 {
+	// Get points to the FMI functions
 	fmi2CallbackFunctions tmp = {adevs::FMI<X>::fmilogger,calloc,free,NULL,NULL};
 	callbackFuncs = new fmi2CallbackFunctions(tmp);
 	so_hndl = OPEN_LIB(so_file_name);
@@ -310,10 +314,62 @@ FMI<X>::FMI(const char* modelname,
 	assert(_fmi2GetEventIndicators != NULL);
 	_fmi2GetContinuousStates = (fmi2Status (*)(fmi2Component, fmi2Real*, size_t))GET_FUNC(so_hndl,"fmi2GetContinuousStates");
 	assert(_fmi2GetContinuousStates != NULL);
+	_fmi2GetContinuousStates = (fmi2Status (*)(fmi2Component, fmi2Real*, size_t))GET_FUNC(so_hndl,"fmi2GetContinuousStates");
+	assert(_fmi2GetContinuousStates != NULL);
+	// If this is NULL then the function is not supported
+	_fmi2GetDirectionalDerivative = (fmi2Status (*)(fmi2Component, const fmi2ValueReference*, size_t,
+			const fmi2ValueReference*, size_t, const fmi2Real*, fmi2Real*))GET_FUNC(so_hndl,"fmi2GetDirectionalDerivative");
 	// Create the FMI component
 	c = _fmi2Instantiate(modelname,fmi2ModelExchange,guid,resource_location,callbackFuncs,fmi2False,fmi2False);
 	assert(c != NULL);
 	_fmi2SetupExperiment(c,fmi2True,tolerance,-1.0,fmi2False,-1.0);
+}
+
+template <typename X>
+bool FMI<X>::get_jacobian(const double* q, double* J)
+{
+	int idx;
+	fmi2Status status;
+	// Number of FMI variables. Does not include time.
+	const unsigned N = this->numVars()-1;
+	bool supports = _fmi2GetDirectionalDerivative != NULL;
+	// FMI derivative gain term
+	const double v = 1.0;
+	// If we just checking for support then exit immediately
+	if (!supports || J == NULL)
+		return supports;
+	// Enter continuous time mode to calculate Jacobian entries
+	if (!cont_time_mode)
+	{
+		status = _fmi2EnterContinuousTimeMode(c);
+		assert(status == fmi2OK);
+		cont_time_mode = true;
+	}
+	// Set state variables to their current values
+	status =_fmi2SetTime(c,q[N]);
+	assert(status == fmi2OK);
+	status = _fmi2SetContinuousStates(c,q,N);
+	assert(status == fmi2OK);
+	// Zero out J
+	for (unsigned i = 0; i < (N+1)*(N+1); i++)
+		J[i] = 0.0;
+	// Calculate each entry of the Jacobian matrix. OpenModelica
+	// appears to use 0..N-1 for the state variable reference
+	// numbers and N..2N-1 for the corresponding derivative numbers.
+	// For the moment, we assume this is the case.
+	for (fmi2ValueReference state_var = 0; state_var < N; state_var++)
+	{
+		for (fmi2ValueReference derivative_var = N; derivative_var < 2*N; derivative_var++)
+		{
+			// Index into the column-major J array
+			idx = N*state_var+(derivative_var-N);
+			status = _fmi2GetDirectionalDerivative(c,&derivative_var,1,&state_var,1,&v,J+idx);
+			assert(status == fmi2OK);
+		}
+	}
+	// Partial of time is 1 and nobody else depends on it
+	J[(N+1)*(N+1)-1] = 1.0;
+	return true;
 }
 
 template <typename X>

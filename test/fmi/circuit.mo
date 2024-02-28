@@ -3,13 +3,13 @@ connector Pin
 	Real v(start=0);
 end Pin;
 
-class Ground
+model Ground
 	Pin T;
 equation
 	T.v = 0;
 end Ground;
 
-class Resistor
+model Resistor
 	parameter Real R = 1;
 	Pin T1;
 	Pin T2;
@@ -18,7 +18,7 @@ equation
 	T1.i+T2.i = 0;
 end Resistor;
 
-class VoltageSource
+model VoltageSource
 	parameter Real Vref =1;
 	Pin T;
 equation
@@ -27,7 +27,7 @@ initial equation
 	der(T.v) = 0;
 end VoltageSource;
 
-class Circuit
+model Circuit
 	VoltageSource Vsrc;
 	Resistor R1(R=1);
 	Resistor R2(R=1);

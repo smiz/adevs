@@ -97,6 +97,12 @@ template <typename X> class ode_system
 				Bag<X>& yb) = 0;
 		/// Garbage collection function. This works just like the Atomic gc_output method.
 		virtual void gc_output(Bag<X>& gb) = 0;
+		/// Get the N x N Jacobian matrix. The supplied array must be filled with the Jacobian
+		/// in column major ordering to make it compatible with LAPACK and similar
+		/// linear algebra packages. The default implementation is empty. The method
+		/// must return false if it is not supported and true if it is supported. If the
+		/// argument J is NULL then the call is just to test for support.
+		virtual bool get_jacobian(const double* q, double* J) { return false; }
 		/// Destructor
 		virtual ~ode_system(){}
 	private:

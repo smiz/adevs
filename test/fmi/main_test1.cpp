@@ -7,6 +7,8 @@ using namespace std;
 int main()
 {
 	test1* fmi = new test1();
+	double* J = new double[fmi->numVars()*fmi->numVars()];
+	double* q = new double[fmi->numVars()];
 	adevs::corrected_euler<int>* solver1 = new adevs::corrected_euler<int>(fmi,1E-6,0.001);
 	adevs::bisection_event_locator<int>* solver2 =
 		new adevs::bisection_event_locator<int>(fmi,1E-7);
@@ -16,11 +18,18 @@ int main()
 	assert(sim->nextEventTime() < 10.0);
 	while (sim->nextEventTime() < 10.0)
 	{
-		double t = fmi->get_time();
-		double x = fmi->get_x();
+		double t = q[1] = fmi->get_time();
+		double x = q[0] = fmi->get_x();
 		double a = fmi->get_a();
+		// Solution error
 		double err = fabs(x-exp(a*t));
 		assert(err < 1E-3);
+		// Jacobian values
+		fmi->get_jacobian(q,J);
+		assert(J[0] == a);
+		assert(J[1] == 0.0);
+		assert(J[2] == 0.0);
+		assert(J[3] == 1.0);
 		sim->execNextEvent();
 	}
 	assert(sim->nextEventTime() >= 10.0);

@@ -11,7 +11,7 @@ class Control:
 			adevs::FMI<IO_Type>
 			(
 				"Control",
-				"{0873e44c-e3e3-4bc1-92bd-e1c678ecd472}",
+				"{e2ca3e6c-14a5-469e-9d07-3cd8dfe05d5c}",
 				"file:///home/rotten/Code/adevs-code/examples/fmi/Example2/Control/resources",
 				0,
 				0,

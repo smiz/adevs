@@ -1,7 +1,7 @@
 PREFIX = ../..
 include ../make.common
 
-check: bnew dae dae2 con
+check: bnew dae dae2 con compare
 
 con:
 	$(CC) $(CFLAGS) confluent_test.cpp
@@ -19,3 +19,6 @@ bnew:
 	$(CC) $(CFLAGS) ball1d_new.cpp check_ball1d_solution.cpp
 	$(TEST_EXEC) > tmp
 
+compare:
+	$(CC) $(CFLAGS) ode.cpp -llapack
+	$(TEST_EXEC) > tmp
