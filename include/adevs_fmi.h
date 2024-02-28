@@ -108,7 +108,7 @@ template <typename X> class FMI:
 		 * are used to locate state events and to estimate numerical
 		 * errors. The state vector q passed to this method may not be
 		 * the final vector assigned to the model at the end of
-		 * the current integration step. The get that value use
+		 * the current integration step. To get that value use
 		 * the postStep() method.
 		 */
 		virtual void postTrialStep(double* q);
@@ -133,7 +133,7 @@ template <typename X> class FMI:
 		virtual void confluent_event(double *q, const bool* state_event,
 				const Bag<X>& xb);
 		/**
-		 * The output function. This can read variables for the FMI, but should
+		 * The output function. This can read variables from the FMI, but should
 		 * not make any modifications to those variables.
 		 */
 		virtual void output_func(const double *q, const bool* state_event,
