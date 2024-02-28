@@ -61,9 +61,10 @@ template <typename X> class trap:
 		 * @param err_tol Truncation error limit. Setting to adevs_inf causes solver to use a
 		 * fixed step size.
 		 * @param h_max Maximum allowed step size
-		 * @param iter_limit N*iter_limit is the convergence criteria for the newton solver.
+		 * @param silent If set to true, the KINSOL error and info messages are surpressed.
+		 * The default value is false.
 		 */
-		trap(ode_system<X>* sys, double err_tol, double h_max, double iter_limit = 1E-12);
+		trap(ode_system<X>* sys, double err_tol, double h_max, bool silent = false);
 		/// Destructor
 		~trap();
 		double integrate(double* q, double h_lim);
@@ -74,7 +75,6 @@ template <typename X> class trap:
 		double *qq[2]; // Solution for trial steps
 		const double err_tol;
 		const double h_max; // Maximum time step
-		const double tol;
 		double h_cur, h;
 
 		// Advance the solution q by h. Return result by overwriting q.
@@ -95,63 +95,73 @@ template <typename X> class trap:
 
 		kinsol_data_t kinsol_data;
 
-		void prep_kinsol();
+		void prep_kinsol(bool silent);
 
-		static int func(N_Vector y, N_Vector f, void* user_data)
-		{
-			realtype* yd = N_VGetArrayPointer(y);
-			realtype* fd = N_VGetArrayPointer(f);
-			kinsol_data_t* data = static_cast<kinsol_data_t*>(user_data);
-			data->self->sys->der_func(yd,fd);
-			for (int i = 0; i < data->self->sys->numVars(); i++)
-				fd[i] = data->self->k[i]+fd[i]*(data->self->h/2.0);
-			return 1;
-		}
-
+		static int func(N_Vector y, N_Vector f, void* user_data);
 		static int jac(N_Vector y, N_Vector f, SUNMatrix J,
-			void *user_data, N_Vector tmp1, N_Vector tmp2)
-		{
-			realtype* yd = N_VGetArrayPointer(y);
-			realtype* Jd = SUNDenseMatrix_Data(J);
-			kinsol_data_t* data = static_cast<kinsol_data_t*>(user_data);
-			const int N = data->self->sys->numVars();
-			data->self->sys->get_jacobian(yd,Jd);
-			// Get the matrix for the linear solver
-			for (int i = 0; i < N*N; i++)
-				Jd[i] *= data->self->h/2.0;
-			for (int i = 0; i < N; i++)
-				Jd[i*(N+1)] -= 1.0;
-			return 1;
-		} 
-
-		static int check_retval(void *retvalvalue, const char *funcname, int opt)
-		{
-			int *errretval;
-			/* Check if SUNDIALS function returned NULL pointer - no memory allocated */
-			if (opt == 0 && retvalvalue == NULL) {
-				return(1);
-			}
-			/* Check if retval < 0 */
-			else if (opt == 1) {
-				errretval = (int *) retvalvalue;
-				if (*errretval < 0) {
-					return(1);
-				}
-			}
-			/* Check if function returned NULL pointer - no memory allocated */
-			else if (opt == 2 && retvalvalue == NULL) {
-				return(1);
-			}
-			return(0);
-		}
+			void *user_data, N_Vector tmp1, N_Vector tmp2);
+		static int check_retval(void *retvalvalue, const char *funcname, int opt);
+		static void silent_error_handler(int,const char*,const char*,char*,void*){}
+		static void silent_info_handler(const char*,const char*,char*,void*){}
 };
 
 template <typename X>
-void trap<X>::prep_kinsol()
+int trap<X>::check_retval(void *retvalvalue, const char *funcname, int opt)
+{
+	int *errretval;
+	/* Check if SUNDIALS function returned NULL pointer - no memory allocated */
+	if (opt == 0 && retvalvalue == NULL) {
+		return(1);
+	}
+	/* Check if retval < 0 */
+	else if (opt == 1) {
+		errretval = (int *) retvalvalue;
+		if (*errretval < 0) {
+			return(1);
+		}
+	}
+	/* Check if function returned NULL pointer - no memory allocated */
+	else if (opt == 2 && retvalvalue == NULL) {
+		return(1);
+	}
+	return(0);
+}
+
+template <typename X>
+int trap<X>::func(N_Vector y, N_Vector f, void* user_data)
+{
+	realtype* yd = N_VGetArrayPointer(y);
+	realtype* fd = N_VGetArrayPointer(f);
+	kinsol_data_t* data = static_cast<kinsol_data_t*>(user_data);
+	data->self->sys->der_func(yd,fd);
+	for (int i = 0; i < data->self->sys->numVars(); i++)
+		fd[i] = data->self->k[i]+fd[i]*(data->self->h/2.0)-yd[i];
+	return 0;
+}
+
+template <typename X>
+int trap<X>::jac(N_Vector y, N_Vector f, SUNMatrix J,
+	void *user_data, N_Vector tmp1, N_Vector tmp2)
+{
+	realtype* yd = N_VGetArrayPointer(y);
+	realtype* Jd = SUNDenseMatrix_Data(J);
+	kinsol_data_t* data = static_cast<kinsol_data_t*>(user_data);
+	const int N = data->self->sys->numVars();
+	data->self->sys->get_jacobian(yd,Jd);
+	// Get the matrix for the linear solver
+	for (int i = 0; i < N*N; i++)
+		Jd[i] *= data->self->h/2.0;
+	for (int i = 0; i < N; i++)
+		Jd[i*(N+1)] -= 1.0;
+	return 0;
+} 
+
+template <typename X>
+void trap<X>::prep_kinsol(bool silent)
 {
 	int retval;
 	kinsol_data.self = this;
-	/* Create vectors for solution, scales, and constraints */
+	/* Create vectors for solution, scales, and jacobian */
 	y = N_VNew_Serial(this->sys->numVars());
 	if (check_retval((void *)y, "N_VNew_Serial", 0))
 		throw adevs::exception("N_VNew_Serial failed");
@@ -160,21 +170,6 @@ void trap<X>::prep_kinsol()
 		throw adevs::exception("N_VClone failed");
 	// No scaling
 	N_VConst(RCONST(1.0),scale);
-	/* Initialize and allocate memory for KINSOL */
-	kmem = KINCreate();
-	if (check_retval((void *)kmem, "KINCreate", 0))
-		throw adevs::exception("KINCreate failed");
-	retval = KINInit(kmem, func, y); /* y passed as a template */
-	if (check_retval(&retval, "KINInit", 1))
-		throw adevs::exception("KINInit failed");
-	/* Set the Jacobian function */
-	retval = KINSetJacFn(kmem, jac);
-	if (check_retval(&retval, "KINSetJacFn", 1))
-		throw adevs::exception("KINSetJacFn failed");
-	retval = KINSetUserData(kmem, &kinsol_data);
-	if (check_retval(&retval, "KINSetUserData", 1))
-		throw adevs::exception("KINSetUserData failed");
-	/* Create dense SUNMatrix */
 	J = SUNDenseMatrix(this->sys->numVars(), this->sys->numVars());
 	if(check_retval((void *)J, "SUNDenseMatrix", 0))
 		throw adevs::exception("SUNDenseMatrix failed");
@@ -182,17 +177,33 @@ void trap<X>::prep_kinsol()
 	LS = SUNLinSol_Dense(y, J);
 	if(check_retval((void *)LS, "SUNLinSol_Dense", 0))
 		throw adevs::exception("SUNLinSol_Dense failed");
-	retval = KINSetFuncNormTol(kmem, err_tol);
-	if (check_retval(&retval, "KINSetFuncNormTol", 1))
-		throw adevs::exception("KINSetFuncNormTol failed");
-	retval = KINSetScaledStepTol(kmem, err_tol);
+	/* Initialize and allocate memory for KINSOL */
+	kmem = KINCreate();
+	if (check_retval((void *)kmem, "KINCreate", 0))
+		throw adevs::exception("KINCreate failed");
+	retval = KINInit(kmem, func, y); /* y passed as a template */
+	if (check_retval(&retval, "KINInit", 1))
+		throw adevs::exception("KINInit failed");
+	retval = KINSetUserData(kmem, &kinsol_data);
+	if (check_retval(&retval, "KINSetUserData", 1))
+		throw adevs::exception("KINSetUserData failed");
+	retval = KINSetLinearSolver(kmem, LS, J);
 	if (check_retval(&retval, "KINSetScaledStepTol", 1)) 
 		throw adevs::exception("KINSetScaledStepTol failed");
+	retval = KINSetJacFn(kmem, jac);
+	if (check_retval(&retval, "KINSetJacFn", 1))
+		throw adevs::exception("KINSetJacFn failed");
+
+	if (silent)
+	{
+		KINSetErrHandlerFn(kmem,silent_error_handler,NULL);
+		KINSetInfoHandlerFn(kmem,silent_info_handler,NULL);
+	}
 }
 
 template <typename X>
-trap<X>::trap(ode_system<X>* sys, double err_tol, double h_max, double iter_limit):
-	ode_solver<X>(sys),err_tol(err_tol),h_max(h_max),tol(iter_limit),h_cur(h_max)
+trap<X>::trap(ode_system<X>* sys, double err_tol, double h_max, bool silent):
+	ode_solver<X>(sys),err_tol(err_tol),h_max(h_max),h_cur(h_max)
 {
 	if (!sys->get_jacobian(NULL,NULL))
 		throw adevs::exception("trap integrator requires a jacobian",this);
@@ -201,7 +212,7 @@ trap<X>::trap(ode_system<X>* sys, double err_tol, double h_max, double iter_limi
 	dq = new double[sys->numVars()];
 	k = new double[sys->numVars()];
 
-	prep_kinsol();
+	prep_kinsol(silent);
 }
 
 template <typename X>
@@ -242,12 +253,10 @@ bool trap<X>::step(double* q, double h)
 		KIN_LINESEARCH, /* global strategy choice */
 		scale,          /* scaling vector, for the variable cc */
 		scale);         /* scaling vector for function values fval */
-	if (check_retval(&retval, "KINSol", 1))
-	{
-		memcpy(q,yd,sizeof(double)*N);
-		return true;
-	}
-	return false;
+	if (retval < 0)
+		return false;
+	memcpy(q,yd,sizeof(double)*N);
+	return true;
 }
 
 template <typename X>

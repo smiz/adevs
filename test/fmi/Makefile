@@ -54,7 +54,7 @@ tc:
 lok_vol:
 	rm -rf lk; mkdir lk; cd lk; cp ../lk.mo .; cp ../lk.mos .; omc lk.mos; unzip -o -qq lk.fmu
 	${PYTHON} ../../util/xml2cpp.py -x lk/modelDescription.xml -type double -f lk/binaries/linux64/lk.so -r file://${PWD}/lk/resources
-	$(CC) $(CFLAGS) main_lk.cpp $(LIBS) -llapack
+	$(CC) $(CFLAGS) main_lk.cpp $(LIBS) -lsundials_kinsol
 	$(TEST_EXEC)
 
 clean_all: clean

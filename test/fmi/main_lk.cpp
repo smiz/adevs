@@ -18,7 +18,7 @@ void test(ode_system<double>* sys, adevs::ode_solver<double>* solver,
 	{
 		solver->advance(q,h);
 		cout << t;
-		traj.push_back(std::pair<double,double>(q[1],q[2]));
+		traj.push_back(std::pair<double,double>(q[0],q[1]));
 		for (int i = 0; i < sys->numVars(); i++)
 			cout << " " << q[i];
 		cout << endl;
@@ -32,7 +32,7 @@ int main()
 {
 	std::vector<std::pair<double,double> > t1, t2;
 	lk* model = new lk();
-	adevs::trap<double>* trap_solver = new adevs::trap<double>(model,1E-3,0.01);
+	adevs::trap<double>* trap_solver = new adevs::trap<double>(model,1E-4,0.01);
 	test(model,trap_solver,t1);
 	model = new lk();
 	adevs::rk_45<double>* rk_solver = new adevs::rk_45<double>(model,1E-8,0.01);
@@ -40,6 +40,12 @@ int main()
 	assert(t1.size() == t2.size());
 	for (unsigned i = 0; i < t1.size(); i++)
 	{
+		double diff = fabs(t1[i].first-t2[i].first);
+		if (diff > 1E-4)
+			std::cout << "V1 " << t1[i].first << " " << t2[i].first << " " << t1[i].first-t2[i].first << std::endl;
+		diff = fabs(t1[i].second-t2[i].second);
+		if (diff > 1E-4)
+			std::cout << "V2 " << t1[i].second << " " << t2[i].second << " " << t1[i].second-t2[i].second << std::endl;
 		assert(fabs(t1[i].first-t2[i].first) < 1E-4);
 		assert(fabs(t1[i].second-t2[i].second) < 1E-4);
 	}
