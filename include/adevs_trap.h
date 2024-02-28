@@ -33,6 +33,7 @@
 #include <cmath>
 #include <cassert>
 #include <algorithm>
+#include <cstring>
 #include "adevs_hybrid.h"
 
 namespace adevs
@@ -52,7 +53,8 @@ template <typename X> class trap:
 		 * terminate the newton iteration used at each
 		 * integration step.
 		 * @param sys The system to solve
-		 * @param err_tol Truncation error limit. Global error is approximately steps times this.
+		 * @param err_tol Truncation error limit. Setting to adevs_inf causes solver to use a
+		 * fixed step size.
 		 * @param h_max Maximum allowed step size
 		 * @param iter_limit N*iter_limit is the convergence criteria for the newton solver.
 		 */
@@ -66,18 +68,25 @@ template <typename X> class trap:
 		double *k; // Fixed term in newton iteration
 		double *dq; // Derivatives at guess
 		double *J; // jacobian
+		double *qq[2]; // Solution for trial steps
 		int *ipiv; // pivot array for LAPACK
 		const double err_tol;
 		const double h_max; // Maximum time step
 		const double tol;
+		double h_cur;
+
+		// Advance the solution q by h. Return result by overwriting q.
+		void step(double* q, double h);
 };
 
 template <typename X>
 trap<X>::trap(ode_system<X>* sys, double err_tol, double h_max, double iter_limit):
-	ode_solver<X>(sys),err_tol(err_tol),h_max(h_max),tol(iter_limit)
+	ode_solver<X>(sys),err_tol(err_tol),h_max(h_max),tol(iter_limit),h_cur(h_max)
 {
 	q_iter[0] = new double[sys->numVars()];
 	q_iter[1] = new double[sys->numVars()];
+	qq[0] = new double[sys->numVars()];
+	qq[1] = new double[sys->numVars()];
 	dq = new double[sys->numVars()];
 	k = new double[sys->numVars()];
 	J = new double[sys->numVars()*sys->numVars()];
@@ -108,15 +117,13 @@ extern "C" {
 };
 
 template <typename X>
-double trap<X>::integrate(double* q, double h_lim)
+void trap<X>::step(double* q, double h)
 {
 	double* tmp;
 	double err;
 	int info;
 	int NRHS = 1;
 	int N = this->sys->numVars();
-	// Pick the step size step size
-	double h = std::min<double>(h_max,h_lim);
 	// Get the derivatives at the current point
 	this->sys->der_func(q,dq);
 	// Fixed term in the trapezoidal integration rule
@@ -168,6 +175,49 @@ double trap<X>::integrate(double* q, double h_lim)
 	// Put the trial solution in q and return the selected step size
 	for (int i = 0; i < N; i++)
 		q[i] = q_iter[1][i];
+}
+
+template <typename X>
+double trap<X>::integrate(double* q, double h_lim)
+{
+	bool again;
+	double trunc_err;
+	// Pick the step size step size
+	double h = std::min<double>(h_cur*1.1,std::min<double>(h_max,h_lim));
+	// Fixed step size of the error tolerance is infinite
+	if (err_tol == adevs_inf<double>())
+		step(q,h);
+	else for (;;)
+	{
+		again = false;
+		memcpy(qq[0],q,sizeof(double)*this->sys->numVars());
+		memcpy(qq[1],q,sizeof(double)*this->sys->numVars());
+		step(qq[0],h);
+		step(qq[1],h/2.0);
+		for (int i = 0; i < this->sys->numVars(); i++)
+		{
+			trunc_err = fabs(qq[0][i]-qq[1][i])*(7.0/8.0);
+			// if the error is too big, try again with a smaller step
+			if (trunc_err > err_tol)
+			{
+				again = true;
+				h *= 0.8;
+				// Becomes the new step size because we had to take a
+				// smaller step to control the error
+				h_cur = h;
+				break;
+			}
+		}
+		// If the solution was ok
+		if (!again)
+		{
+			// Keep the new step size if it is larger than our current choice
+			if (h > h_cur) h_cur = h;
+			// Copy the solution and stop
+			memcpy(q,qq[0],sizeof(double)*this->sys->numVars());
+			break;
+		}
+	}
 	return h;
 }
 

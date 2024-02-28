@@ -32,7 +32,7 @@ int main()
 {
 	std::vector<std::pair<double,double> > t1, t2;
 	lk* model = new lk();
-	adevs::trap<double>* trap_solver = new adevs::trap<double>(model,1E-8,0.01);
+	adevs::trap<double>* trap_solver = new adevs::trap<double>(model,1E-3,0.01);
 	test(model,trap_solver,t1);
 	model = new lk();
 	adevs::rk_45<double>* rk_solver = new adevs::rk_45<double>(model,1E-8,0.01);

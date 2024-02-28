@@ -94,7 +94,7 @@ void test(ode_system<int>* sys, double tend)
 	double *q_trap = new double[sys->numVars()];
 	double *q_rk = new double[sys->numVars()];
 	const double h = 0.01;
-	adevs::trap<int>* trap_solver = new adevs::trap<int>(sys,1E-8,0.01);
+	adevs::trap<int>* trap_solver = new adevs::trap<int>(sys,1E-4,0.01);
 	adevs::rk_45<int>* rk_solver = new adevs::rk_45<int>(sys,1E-8,0.01);
 	sys->init(q_trap);
 	sys->init(q_rk);
@@ -120,7 +120,7 @@ void test(ode_system<int>* sys, double tend)
 
 int main()
 {
-	test(new simple_system(),1.0);
+	//test(new simple_system(),1.0);
 	test(new lk_system(),100.0);
 	return 0;
 }
