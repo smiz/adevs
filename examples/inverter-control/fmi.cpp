@@ -271,8 +271,8 @@ int main()
 {
 	CircuitOutput* circuit;
 	/* Pick one or the other! */
-	//adevs::Devs<IOType>* model = make_model_with_adevs_inverters(&circuit);
-	adevs::Devs<IOType>* model = make_model_with_modelica_inverters(&circuit);
+	adevs::Devs<IOType>* model = make_model_with_adevs_inverters(&circuit);
+	//adevs::Devs<IOType>* model = make_model_with_modelica_inverters(&circuit);
 
  	// Create the simulator
 	Simulator<IOType>* sim = new Simulator<IOType>(model);

@@ -250,9 +250,10 @@ template <typename X> class fast_event_locator:
 		  * be when the search reports success.
 		  * @param interpolate Interpolate using a spline instead of solving
 		  * directly using the solver while performing the event localization.
-		  * The solution at the h that is found will be computed using the 
-		  * ode solver. Interpolation is faster, but the localization with respect
-		  * to the ode solution will be somewhat less precise.
+		  * Interpolation is faster, but the localization with respect
+		  * to the ode solution will be somewhat less precise and you get
+		  * an interpolated solution rather than one computed with the ode
+		  * solver at the event instant.
 		  */
 		fast_event_locator(ode_system<X>* sys, double err_tol, bool interpolate = false);
 		bool find_events(bool* events, const double *qstart, 
@@ -371,11 +372,6 @@ success:
 	h = hg;
 	for (int i = 0; i < N; i++)
 		events[i] = is_sign_change(i);
-	if (p != NULL)
-	{
-		memcpy(qend,qstart,sizeof(double)*this->sys->numVars());
-		solver->advance(qend,h);
-	}
 	return true;
 }
 
