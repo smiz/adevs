@@ -10,61 +10,90 @@
 using namespace std;
 using namespace adevs;
 
-static const int num_agents = 100000;
+// Total number of agents in the population
+static int num_agents = 1000;
+// Fraction of the population that begins as infectious
 static const double init_sick = 0.01;
+// Encounter rate (contacts initiated by each agent per day)
+// This is a Poisson process with a mean of three events per
+// day.
 static const double r = 3.0;
+// Number of days that an infectious person stays infectious
+// before transitioning to recovered. Once again, a Poisson
+// process.
 static const double d = 5.0;
+// Probabiliy of a sick person making another person sick upon
+// contact
 static const double p = 0.1;
+// Our random number generator
 static gsl_rng *rnd = gsl_rng_alloc(gsl_rng_default);
+// The number of agents in the S, I, and R compartments
 static const int S = 0;
 static const int I = 1;
 static const int R = 2;
 static int pop[3] = { 0, 0, 0 };
 
+// A single agent in the model
 class Agent:
 	public Atomic<int>
 {
 	public:
 		Agent(int c0):
 			Atomic<int>(),
-			c(c0),
-			td(adevs_inf<double>()),
-			tr(adevs_inf<double>())
+			c(c0), // Initial state
+			td(adevs_inf<double>()), // time to recover
+			tr(adevs_inf<double>()) // time to next contact
 		{
+			// If we started sick
 			if (c == I)
 			{
+				// How long to recover?
 				td = gsl_ran_exponential(rnd,d);
+				// When is our first contact?
 				tr = gsl_ran_exponential(rnd,1.0/r);
 			}
+			// Update the population for our compartment
 			pop[c]++;
 		}
 		void delta_int()
 		{
+			// A healthy person never gets here
 			assert(c != S);
+			// If we have recovered
 			if (ta() == td)
 			{
+				// Must have been infectious
 				assert(c == I);
+				// Change from I to R
 				pop[c]--;
 				c = R;
 				pop[c]++;
+				// No more events for this agent!
 				td = tr = adevs_inf<double>();
 			}
+			// Otherwise, schedule our next contact
 			else if (ta() < td)
 			{
-				td -= ta();
+				td -= ta(); // Decrement time to recover by elapsed time
 				tr = gsl_ran_exponential(rnd,1.0/r);
 			}
 		}
 		void delta_ext(double e, const Bag<int>&)
 		{
+			// If we are susceptible and get unlucky
 			if (c == S && gsl_rng_uniform(rnd) < p)
 			{
+				// Switch from S to I
 				pop[c]--;
 				c = I;
 				pop[c]++;
+				// When will we get better?
 				td = gsl_ran_exponential(rnd,d);
+				// When do we make our first contact?
 				tr = gsl_ran_exponential(rnd,1.0/r);
 			}
+			// Otherwise, just bide our time until the
+			// next event (get better or contact)
 			else if (c == I)
 			{
 				td -= e;
@@ -78,16 +107,25 @@ class Agent:
 		}
 		void output_func(Bag<int>& yb)
 		{
+			// If this is our next contact, then
+			// send an event to some other agent
+			// that will be selected at random
 			if (tr == ta())
 				yb.insert(c);
 		}
 		void gc_output(Bag<int>&){}
+		// How long until our next event?
 		double ta() { return ::min(tr,td); }
 	private:
 		int c;
 		double td, tr;
 };
 
+/**
+  * This is an Euler's method solver for the continuous
+  * SIR equations. This is the "exact" solution for a
+  * sufficiently large population of agents.
+  */
 class SIR:
 	public Atomic<int>
 {
@@ -122,6 +160,7 @@ class SIR:
 		double ss, ii, rr;
 		const double h;
 
+		// Method does the numerical integration step
 		void update(double hh)
 		{
 			double di = p*r*ss*ii-ii/d;
@@ -140,6 +179,7 @@ class RandomNetwork:
 		RandomNetwork():
 			Network<int>()
 		{
+			// Create our population
 			for (int i = 0; i < num_agents; i++)
 			{
 				if (i < init_sick*num_agents)
@@ -148,6 +188,7 @@ class RandomNetwork:
 					pop.push_back(new Agent(S));
 				pop.back()->setParent(this);
 			}
+			// Evolve the ODE solution with it
 			sir = new SIR();
 			sir->setParent(this);
 		}
@@ -162,6 +203,7 @@ class RandomNetwork:
 		}
 		void route(const int &value, Devs<int>* model, Bag<Event<int> >& r)
 		{
+			// This implements our random contact network
 			Event<int> xx;
 			xx.value = value;
 			do
@@ -185,25 +227,36 @@ class RandomNetwork:
 
 void print(double t, RandomNetwork *world)
 {
-	cout << t << " " <<
-		((double)pop[S]/(double)num_agents) << " " <<
-		((double)pop[I]/(double)num_agents) << " " <<
-		((double)pop[R]/(double)num_agents) << " " <<
-		world->get_s() << " " <<	
-		world->get_i() << " " <<	
-		world->get_r() << " " << endl;
+	// Print the compartments each day
+	static int next_day = -1;
+	if (t > next_day)
+	{
+		next_day = (int)t;
+		cout << next_day << " " <<
+			// Agent model as fraction of population
+			((double)pop[S]/(double)num_agents) << " " <<
+			((double)pop[I]/(double)num_agents) << " " <<
+			((double)pop[R]/(double)num_agents) << " " <<
+			// ODE model as fraction of population
+			world->get_s() << " " <<	
+			world->get_i() << " " <<	
+			world->get_r() << " " << endl;
+		next_day++;
+	}
 }
 
-int main()
+int main(int argc, char** argv)
 {
+	num_agents = atoi(argv[1]);
+	gsl_rng_set(rnd,atoi(argv[2]));
 	RandomNetwork *world = new RandomNetwork();
 	Simulator<int> *sim = new Simulator<int>(world);
 	print(0.0,world);
 	while (sim->nextEventTime() < 200.0)
 	{
 		double t = sim->nextEventTime();
-		sim->execNextEvent();
 		print(t,world);
+		sim->execNextEvent();
 	}
 	delete sim;
 	delete world;

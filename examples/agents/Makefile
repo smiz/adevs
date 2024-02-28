@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -O3 -Wall -std=c++11
+CFLAGS = -Ofast -Wall -std=c++11
 PREFIX = ../..
 INCLUDE = -I${PREFIX}/include
 
