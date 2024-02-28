@@ -16,7 +16,7 @@ using namespace adevs;
 // Output interval and maximum step size
 const double cint = 1E-4;
 // Numerical error tolerance
-const double tol = 1E-3;
+const double tol = 1E-2;
 // Event locator tolerance
 const double event_tol = 1E-8;
 // Simulation end time
@@ -272,7 +272,7 @@ int main()
 	CircuitOutput* circuit;
 	/* Pick one or the other! */
 	adevs::Devs<IOType>* model = make_model_with_adevs_inverters(&circuit);
-//	adevs::Devs<IOType>* model = make_model_with_modelica_inverters(&circuit);
+	//adevs::Devs<IOType>* model = make_model_with_modelica_inverters(&circuit);
 
  	// Create the simulator
 	Simulator<IOType>* sim = new Simulator<IOType>(model);

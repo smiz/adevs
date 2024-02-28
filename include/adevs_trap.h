@@ -71,7 +71,7 @@ template <typename X> class trap:
 		void advance(double* q, double h);
 	private:
 		double *k; // Fixed term in newton iteration
-		double *dq[2]; // Derivatives at guess
+		double *dq; // Derivatives at guess
 		// The Euler initial guess which we also
 		// use for step size control
 		double *guess;
@@ -214,8 +214,7 @@ trap<X>::trap(ode_system<X>* sys, double err_tol, double h_max, bool silent):
 	ode_solver<X>(sys),err_tol(err_tol),h_max(h_max),h_cur(h_max)
 {
 	guess = new double[sys->numVars()];
-	dq[0] = new double[sys->numVars()];
-	dq[1] = new double[sys->numVars()];
+	dq = new double[sys->numVars()];
 	k = new double[sys->numVars()];
 
 	prep_kinsol(silent);
@@ -225,8 +224,7 @@ template <typename X>
 trap<X>::~trap()
 {
 	delete [] guess;
-	delete [] dq[0];
-	delete [] dq[1];
+	delete [] dq;
 	delete [] k;
 	N_VDestroy(y);
 	N_VDestroy(scale);
@@ -272,37 +270,32 @@ double trap<X>::integrate(double* q, double h_lim)
 	// Pick the step size based on our guess for the best
 	// and the supplied limits
 	double h = std::min<double>(h_cur,std::min<double>(h_max,h_lim));
+	if (h == 0.0)
+		return h;
 	// Next step size guess is our maximum allowed
 	h_cur = h_max;
 	// Get the derivatives at the current point
-	this->sys->der_func(q,dq[0]);
+	this->sys->der_func(q,dq);
 	// Shrink the error until we get convergence of the nonlinear solver.
 	// Shrink our next step size so that we are likely to get convergence
 	// next time around.
-	while (!step(q,h,dq[0])) { h *= 0.8; h_cur = h; }
-	// Calculate the derivative at t+h
-	this->sys->der_func(q,dq[1]);
-	// Euler step - Trap step. This is equal to
-	// y_n+h\dot{y}_n - (y_n+(h/2)(\dot{y}_n+\dot{y}_{n+1}) + (C/2) h^2 - O(h^3) \approx
-	// (h/2)(\dot{y}_n-\dot{y}_{n+1}) - (C/2)h^2
-	// where (C/2)h^2 = ah^2 is approximately the trunction error. We pick our next h so
-	// that this error is smaller than our tolerance.
-	// Now look for a smaller choice if we need one. This smaller choice will
-	// be smaller than the limit supplied by the user and the limit imposed
-	// by convergence of the nonlinear system solver
+	while (!step(q,h,dq)) { h *= 0.8; h_cur = h; }
+	// Euler step - Trap step. This is approximately equal to the
+	// Euler truncation error C h^2 where C is some constant.
+	// Use this to look for a smaller choice of step if we need one.
+	// This smaller choice will be smaller than the limit supplied by
+	// the user and the limit imposed by convergence of the nonlinear 
+	// system solver
 	for (int i = 0; i < this->sys->numVars(); i++)
 	{	
-		// If the difference in the derivatives is tiny,
-		// then the error is also tiny (because this is a line
-		// and the trap method is consistent) so skip the
-		// error estimate
-		double dqdiff = dq[0][i]-dq[1][i];
-		if (fabs(dqdiff) < FLT_MIN)
+		double C = fabs(guess[i]-q[i])/(h*h);
+		// If the guesses are very close, then don't bother with
+		// the error estimate
+		if (C < FLT_MIN)
 			continue;
-		// Difference in the solutions
-		double diff = guess[i]-q[i];
+		double hh = sqrt(err_tol/C);
 		// Next step size.
-		h_cur = std::min(h_cur,fabs(2.0*(diff-err_tol)/dqdiff));
+		h_cur = std::min(h_cur,hh);
 	}
 	// Return the step size that we used
 	return h;
