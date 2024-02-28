@@ -98,6 +98,8 @@ trap<X>::~trap()
 {
 	delete [] q_iter[0];
 	delete [] q_iter[1];
+	delete [] qq[0];
+	delete [] qq[1];
 	delete [] dq;
 	delete [] k;
 	delete [] J;
