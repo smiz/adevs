@@ -28,41 +28,46 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
-#ifndef _adevs_spline_h_
-#define _adevs_spline_h_
+#include "adevs_spline.h"
 
-namespace adevs
+adevs::spline::spline(const int N):
+	N(N),
+	a(new double[N]),
+	b(new double[N]),
+	c(new double[N]),
+	d(new double[N])
 {
+}
 
-/**
- * This provides a natural spline to interpolate two points
- * in and ODE solution. It is used by the event_locator
- * to look for zero crossings of state event functions.
- */
-class spline
+void adevs::spline::init(
+	const double* q0,
+	const double* dq0,
+	const double* qh,
+	const double* dqh,
+	const double h)
 {
-	public:
-		spline(const int N);
-		/**
-		 * Create a spline that interpolates over the interval h from q0
-		 * to qh.
-		 * @param q0 The state at t = 0
-		 * @param dq0 The state derivative at t = 0
-		 * @param qh The state at t = h
-		 * @param dqh The state derivative at t = h
-		 * @param h The interval over which to interpolate
-		 * @param N The number of equations to interpolate
-		 */
-		void init(const double* q0, const double* dq, const double* qh, const double* dqh, const double h);
-		/// Destructor
-		~spline();
-		void interpolate(double* q, double h);
-	private:
-		// Number of equations
-		const int N;
-		/// Parameters for cubic ax^3+bx^2_+x+d
-		double *a, *b, *c, *d;
-};
+	for (int i = 0; i < N; i++)
+	{
+		d[i] = q0[i];
+		c[i] = dq0[i];
+		a[i] = (2.0/(h*h*h))*((h/2.0)*(dqh[i]-c[i])-qh[i]+c[i]*h+d[i]);
+		b[i] = (1.0/(2.0*h))*(dqh[i]-c[i]-3.0*a[i]*h*h);
+	}
+}
 
-} // end of namespace
-#endif
+adevs::spline::~spline()
+{
+	delete [] a;
+	delete [] b;
+	delete [] c;
+	delete [] d;
+}
+
+void adevs::spline::interpolate(double* q, double h)
+{
+	const double hh = h*h;
+	const double hhh = hh*h;
+	for (int i = 0; i < N; i++)
+		q[i] = a[i]*hhh+b[i]*hh+c[i]*h+d[i];
+}
+

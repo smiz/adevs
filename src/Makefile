@@ -30,6 +30,7 @@ OPTFLAG = -O3
 #
 
 ADEVS_OBJS = \
+	spline.o \
 	rv.o \
 	poly.o 
 

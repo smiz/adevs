@@ -15,6 +15,7 @@ TEST_EXEC=./a.out
 endif
 DEL = rm -f
 LIBS = -L$(PREFIX)/src -ladevs 
+ODE_LIBS = -L$(PREFIX)/src -ladevs -lsundials_kinsol
 CMD_SEP = ;
 MOVE = mv
 DIFF = diff

@@ -70,7 +70,7 @@ adevs::Devs<IOType>* make_model_with_modelica_inverters(CircuitOutput** circuit)
 		new Hybrid<IOType>
 		(
 			eqns, // Model to simulate
-			new trap<IOType>(eqns,tol,cint,true), // ODE solver
+			new trap<IOType>(eqns,tol,cint), // ODE solver
 			new fast_event_locator<IOType>(eqns,event_tol) // Event locator
 			// You must use this event locator for OpenModelica because it does
 			// not generate continuous zero crossing functions
@@ -271,8 +271,8 @@ int main()
 {
 	CircuitOutput* circuit;
 	/* Pick one or the other! */
-	adevs::Devs<IOType>* model = make_model_with_adevs_inverters(&circuit);
-	//adevs::Devs<IOType>* model = make_model_with_modelica_inverters(&circuit);
+	//adevs::Devs<IOType>* model = make_model_with_adevs_inverters(&circuit);
+	adevs::Devs<IOType>* model = make_model_with_modelica_inverters(&circuit);
 
  	// Create the simulator
 	Simulator<IOType>* sim = new Simulator<IOType>(model);
