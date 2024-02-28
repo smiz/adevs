@@ -31,6 +31,7 @@
 #ifndef _adevs_event_locators_h_
 #define _adevs_event_locators_h_
 #include "adevs_hybrid.h"
+#include "adevs_spline.h"
 #include <cmath>
 #include <iostream>
 #include <cstring>
@@ -247,26 +248,41 @@ template <typename X> class fast_event_locator:
 		  * @param sys The system to solve
 		  * @param err_tol How close to the event should we
 		  * be when the search reports success.
+		  * @param interpolate Interpolate using a spline instead of solving
+		  * directly using the solver while performing the event localization.
+		  * The solution at the h that is found will be computed using the 
+		  * ode solver. Interpolation is faster, but the localization with respect
+		  * to the ode solution will be somewhat less precise.
 		  */
-		fast_event_locator(ode_system<X>* sys, double err_tol);
+		fast_event_locator(ode_system<X>* sys, double err_tol, bool interpolate = false);
 		bool find_events(bool* events, const double *qstart, 
 				double* qend, ode_solver<X>* solver, double& h);
 		~fast_event_locator();
 	private:
 		const double err_tol;
-		double *z0, *zf;
+		double *z0, *zf, *dq0, *dqh;
+		spline* p;
 
 		bool is_sign_change() const;
 		bool is_sign_change(int i) const { return z0[i]*zf[i] <= 0.0; } 
 };
 
 template <typename X>
-fast_event_locator<X>::fast_event_locator(ode_system<X>* sys, double err_tol):
+fast_event_locator<X>::fast_event_locator(ode_system<X>* sys, double err_tol, bool interpolate):
 	event_locator<X>(sys),
 	err_tol(err_tol),
 	z0(new double[sys->numEvents()]),
-	zf(new double[sys->numEvents()])
+	zf(new double[sys->numEvents()]),
+	dq0(NULL),
+	dqh(NULL),
+	p(NULL)
 {
+	if (interpolate)
+	{
+		p = new spline(sys->numVars());
+		dq0 = new double[sys->numVars()];
+		dqh = new double[sys->numVars()];
+	}
 }
 
 template <typename X>
@@ -274,6 +290,12 @@ fast_event_locator<X>::~fast_event_locator()
 {
 	delete [] z0;
 	delete [] zf;
+	if (p != NULL)
+	{
+		delete [] dq0;
+		delete [] dqh;
+		delete p;
+	}
 }
 
 template <typename X>
@@ -306,6 +328,12 @@ bool fast_event_locator<X>::find_events(bool* events,
 		return false;
 	}
 	// Look for the nearest event in the interval
+	if (p != NULL)
+	{
+		this->sys->der_func(qstart,dq0);
+		this->sys->der_func(qend,dqh);
+		p->init(qstart,dq0,qend,dqh,h);
+	}
 repeat:
 	assert(hh >= hl);
 	// Event is between guess and low end of the bracket
@@ -325,8 +353,13 @@ repeat:
 	// New guess is midpoint of low and high guesses
 	hg = (hh+hl)/2.0;
 	// Calculate solution at new guess
-	memcpy(qend,qstart,sizeof(double)*this->sys->numVars());
-	solver->advance(qend,hg);
+	if (p != NULL)
+		p->interpolate(qend,hg);
+	else
+	{
+		memcpy(qend,qstart,sizeof(double)*this->sys->numVars());
+		solver->advance(qend,hg);
+	}
 	// Calculate state event functions at new guess
 	this->sys->state_event_func(qend,zf);
 	// Did the event function change sign?
@@ -338,6 +371,11 @@ success:
 	h = hg;
 	for (int i = 0; i < N; i++)
 		events[i] = is_sign_change(i);
+	if (p != NULL)
+	{
+		memcpy(qend,qstart,sizeof(double)*this->sys->numVars());
+		solver->advance(qend,h);
+	}
 	return true;
 }
 

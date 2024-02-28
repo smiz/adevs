@@ -16,9 +16,9 @@ using namespace adevs;
 // Output interval and maximum step size
 const double cint = 1E-4;
 // Numerical error tolerance
-const double tol = 1E-2;
+const double tol = 1E-3;
 // Event locator tolerance
-const double event_tol = 1E-8;
+const double event_tol = 1E-9;
 // Simulation end time
 const double tEnd = 1.0;
 
@@ -249,7 +249,7 @@ adevs::Devs<IOType>* make_model_with_adevs_inverters(CircuitOutput** circuit)
 		(
 			eqns, // Model to simulate
 			new trap<IOType>(eqns,tol,cint,true), // ODE solver
-			new fast_event_locator<IOType>(eqns,event_tol) // Event locator
+			new fast_event_locator<IOType>(eqns,event_tol,true) // Event locator
 			// You must use this event locator for OpenModelica because it does
 			// not generate continuous zero crossing functions
 		);
@@ -271,8 +271,8 @@ int main()
 {
 	CircuitOutput* circuit;
 	/* Pick one or the other! */
-	adevs::Devs<IOType>* model = make_model_with_adevs_inverters(&circuit);
-	//adevs::Devs<IOType>* model = make_model_with_modelica_inverters(&circuit);
+	//adevs::Devs<IOType>* model = make_model_with_adevs_inverters(&circuit);
+	adevs::Devs<IOType>* model = make_model_with_modelica_inverters(&circuit);
 
  	// Create the simulator
 	Simulator<IOType>* sim = new Simulator<IOType>(model);

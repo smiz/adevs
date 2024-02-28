@@ -129,10 +129,14 @@ void run_test(ode_system<PortValue<double> >* b,
 
 int main()
 {
-	// Test fast algorithm
+	// Test fast algorithm without interpolation
 	bouncing_ball* ball = new bouncing_ball();
 	run_test(ball,new corrected_euler<PortValue<double> >(ball,1E-6,0.01),
 			new fast_event_locator<PortValue<double> >(ball,1E-7));
+	// Test fast algorithm with interpolation
+	ball = new bouncing_ball();
+	run_test(ball,new corrected_euler<PortValue<double> >(ball,1E-6,0.01),
+			new fast_event_locator<PortValue<double> >(ball,1E-7,true));
 	// Test linear algorithm
 	ball = new bouncing_ball();
 	run_test(ball,new corrected_euler<PortValue<double> >(ball,1E-6,0.01),
