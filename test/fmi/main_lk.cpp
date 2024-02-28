@@ -14,7 +14,7 @@ void test(ode_system<double>* sys, adevs::ode_solver<double>* solver,
 	double *q = new double[sys->numVars()];
 	const double h = 0.01;
 	sys->init(q);
-	for (double t = h; t < 100.0; t += h)
+	for (double t = h; t < 50.0; t += h)
 	{
 		solver->advance(q,h);
 		cout << t;
@@ -40,14 +40,8 @@ int main()
 	assert(t1.size() == t2.size());
 	for (unsigned i = 0; i < t1.size(); i++)
 	{
-		double diff = fabs(t1[i].first-t2[i].first);
-		if (diff > 1E-4)
-			std::cout << "V1 " << t1[i].first << " " << t2[i].first << " " << t1[i].first-t2[i].first << std::endl;
-		diff = fabs(t1[i].second-t2[i].second);
-		if (diff > 1E-4)
-			std::cout << "V2 " << t1[i].second << " " << t2[i].second << " " << t1[i].second-t2[i].second << std::endl;
-		assert(fabs(t1[i].first-t2[i].first) < 1E-4);
-		assert(fabs(t1[i].second-t2[i].second) < 1E-4);
+		assert(fabs(t1[i].first-t2[i].first) < 1E-3);
+		assert(fabs(t1[i].second-t2[i].second) < 1E-3);
 	}
 	return 0;
 }

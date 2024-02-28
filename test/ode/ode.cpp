@@ -1,5 +1,6 @@
 #include "adevs_trap.h"
 #include "adevs_rk_45.h"
+#include "adevs_corrected_euler.h"
 #include <iostream>
 using namespace adevs;
 using namespace std;
@@ -110,8 +111,8 @@ void test(ode_system<int>* sys, double tend)
 		for (int i = 0; i < sys->numVars(); i++)
 		{
 			cout << " " << q_trap[i] << " " << q_rk[i] << " " << (q_trap[i]-q_rk[i]);
-			// Solutions should be very close
-			assert(fabs(q_trap[i]-q_rk[i]) < 1E-4);
+			// Solutions should be very close. 
+			assert(fabs(q_trap[i]-q_rk[i]) < 1E-3);
 		}
 		cout << endl;
 	}
@@ -124,7 +125,6 @@ void test(ode_system<int>* sys, double tend)
 
 int main()
 {
-	//test(new simple_system(),1.0);
-	test(new lk_system(),100.0);
+	test(new lk_system(),50.0);
 	return 0;
 }

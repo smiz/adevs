@@ -75,7 +75,7 @@ template <typename X> class trap:
 		double *qq[2]; // Solution for trial steps
 		const double err_tol;
 		const double h_max; // Maximum time step
-		double h_cur, h;
+		double h_cur;
 
 		// Advance the solution q by h. Return result by overwriting q.
 		// Returns true on success. On failure, returns false and q is
@@ -91,6 +91,7 @@ template <typename X> class trap:
 		struct kinsol_data_t
 		{
 			trap<X>* self;
+			double h;
 		};
 
 		kinsol_data_t kinsol_data;
@@ -135,7 +136,7 @@ int trap<X>::func(N_Vector y, N_Vector f, void* user_data)
 	kinsol_data_t* data = static_cast<kinsol_data_t*>(user_data);
 	data->self->sys->der_func(yd,fd);
 	for (int i = 0; i < data->self->sys->numVars(); i++)
-		fd[i] = data->self->k[i]+fd[i]*(data->self->h/2.0)-yd[i];
+		fd[i] = data->self->k[i]+fd[i]*(data->h/2.0)-yd[i];
 	return 0;
 }
 
@@ -150,7 +151,7 @@ int trap<X>::jac(N_Vector y, N_Vector f, SUNMatrix J,
 	data->self->sys->get_jacobian(yd,Jd);
 	// Get the matrix for the linear solver
 	for (int i = 0; i < N*N; i++)
-		Jd[i] *= data->self->h/2.0;
+		Jd[i] *= data->h/2.0;
 	for (int i = 0; i < N; i++)
 		Jd[i*(N+1)] -= 1.0;
 	return 0;
@@ -239,15 +240,18 @@ void trap<X>::advance(double* q, double h)
 template <typename X>
 bool trap<X>::step(double* q, double h)
 {
-	int N = this->sys->numVars();
+	const int N = this->sys->numVars();
+	realtype* yd = N_VGetArrayPointer(y);
 	// Get the derivatives at the current point
 	this->sys->der_func(q,dq);
 	// Fixed term in the trapezoidal integration rule
 	for (int i = 0; i < N; i++) 
+	{
 		k[i] = q[i]+(h/2.0)*dq[i];
-	// Initial guess
-	realtype* yd = N_VGetArrayPointer(y);
-	memcpy(yd,q,sizeof(double)*N);
+		// Use Euler to get the initial guess
+		yd[i] = q[i] + h*dq[i];
+	}
+	kinsol_data.h = h;
 	int retval = KINSol(kmem,           /* KINSol memory block */
 		y,              /* initial guess on input; solution vector */
 		KIN_LINESEARCH, /* global strategy choice */
@@ -265,7 +269,7 @@ double trap<X>::integrate(double* q, double h_lim)
 	bool again;
 	double trunc_err;
 	// Pick the step size step size
-	h = std::min<double>(h_cur*1.1,std::min<double>(h_max,h_lim));
+	double h = std::min<double>(h_cur*1.1,std::min<double>(h_max,h_lim));
 	// Fixed step size of the error tolerance is infinite
 	if (err_tol == adevs_inf<double>())
 		step(q,h);

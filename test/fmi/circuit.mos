@@ -1,2 +1,2 @@
 loadFile("circuit.mo");
-translateModelFMU(Circuit,"2.0");
+buildModelFMU(Circuit,"2.0");

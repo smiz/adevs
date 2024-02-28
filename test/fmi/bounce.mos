@@ -1,2 +1,2 @@
 loadFile("bounce.mo");
-translateModelFMU(bounce,"2.0");
+buildModelFMU(bounce,"2.0");

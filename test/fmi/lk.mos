@@ -1,3 +1,3 @@
 loadFile("lk.mo");getErrorString();
 setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives"); getErrorString();
-translateModelFMU(lk,"2.0");getErrorString();
+buildModelFMU(lk,"2.0");getErrorString();
