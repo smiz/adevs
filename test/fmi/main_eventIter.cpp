@@ -32,14 +32,14 @@ void print(TestModel* model)
 	assert(model->get_floorc() == cfloor);
 }
 
-int main()
+void test(bool interpolate)
 {
 	TestModel* test_model = new TestModel();
 	Hybrid<double>* hybrid_model =
 		new Hybrid<double>(
 		test_model,
 		new corrected_euler<double>(test_model,1E-5,0.001),
-		new discontinuous_event_locator<double>(test_model,1E-6));
+		new fast_event_locator<double>(test_model,1E-6,interpolate));
         // Create the simulator
         Simulator<double>* sim =
 			new Simulator<double>(hybrid_model);
@@ -53,5 +53,11 @@ int main()
 		}
         delete sim;
 		delete hybrid_model;
-        return 0;
+}
+
+int main()
+{
+	test(false);
+	test(true);
+	return 0;
 }
