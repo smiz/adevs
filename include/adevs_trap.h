@@ -76,7 +76,9 @@ template <typename X> class trap:
 		double h_cur;
 
 		// Advance the solution q by h. Return result by overwriting q.
-		void step(double* q, double h);
+		// Returns true on success. On failure, returns false and q is
+		// left alone.
+		bool step(double* q, double h);
 };
 
 template <typename X>
@@ -121,13 +123,14 @@ extern "C" {
 };
 
 template <typename X>
-void trap<X>::step(double* q, double h)
+bool trap<X>::step(double* q, double h)
 {
 	double* tmp;
 	double err;
 	int info;
 	int NRHS = 1;
 	int N = this->sys->numVars();
+	int iters = 100;
 	// Get the derivatives at the current point
 	this->sys->der_func(q,dq);
 	// Fixed term in the trapezoidal integration rule
@@ -169,16 +172,20 @@ void trap<X>::step(double* q, double h)
 		err = fabs(q_iter[0][0]-q_iter[1][0]);
 		for (int i = 1; i < N; i++)
 			err += fabs(q_iter[0][i]-q_iter[1][i]);
-		if (err < tol*N)
+		if (err < tol*N || !isfinite(err) || iters <= 0)
 			break;
+		iters--;
 		// Swap solutions and repeat
 		tmp = q_iter[1];
 		q_iter[1] = q_iter[0];
 		q_iter[0] = tmp;
 	}
+	if (!isfinite(err))
+		return false;
 	// Put the trial solution in q and return the selected step size
 	for (int i = 0; i < N; i++)
 		q[i] = q_iter[1][i];
+	return true;
 }
 
 template <typename X>
@@ -196,7 +203,8 @@ double trap<X>::integrate(double* q, double h_lim)
 		again = false;
 		memcpy(qq[0],q,sizeof(double)*this->sys->numVars());
 		memcpy(qq[1],q,sizeof(double)*this->sys->numVars());
-		step(qq[0],h);
+		// Shrink the error until we get convergence of the nonlinear solver
+		while (!step(qq[0],h)) { h *= 0.8; }
 		step(qq[1],h/2.0);
 		for (int i = 0; i < this->sys->numVars(); i++)
 		{
