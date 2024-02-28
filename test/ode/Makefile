@@ -20,5 +20,5 @@ bnew:
 	$(TEST_EXEC) > tmp
 
 compare:
-	$(CC) $(CFLAGS) ode.cpp -llapack
+	$(CC) $(CFLAGS) ode.cpp -lsundials_kinsol
 	$(TEST_EXEC) > tmp

@@ -35,6 +35,11 @@
 #include <algorithm>
 #include <cstring>
 #include "adevs_hybrid.h"
+#include <kinsol/kinsol.h>
+#include <nvector/nvector_serial.h>
+#include <sunmatrix/sunmatrix_dense.h>
+#include <sundials/sundials_types.h> 
+#include <sunlinsol/sunlinsol_dense.h>
 
 namespace adevs
 {
@@ -64,22 +69,126 @@ template <typename X> class trap:
 		double integrate(double* q, double h_lim);
 		void advance(double* q, double h);
 	private:
-		double *q_iter[2]; // Solutions to use in newton iteration
 		double *k; // Fixed term in newton iteration
 		double *dq; // Derivatives at guess
-		double *J; // jacobian
 		double *qq[2]; // Solution for trial steps
-		int *ipiv; // pivot array for LAPACK
 		const double err_tol;
 		const double h_max; // Maximum time step
 		const double tol;
-		double h_cur;
+		double h_cur, h;
 
 		// Advance the solution q by h. Return result by overwriting q.
 		// Returns true on success. On failure, returns false and q is
 		// left alone.
 		bool step(double* q, double h);
+
+		// Data for KINSOL non linear system solver
+		N_Vector y, scale;
+		void *kmem;
+		SUNMatrix J;
+		SUNLinearSolver LS;
+
+		struct kinsol_data_t
+		{
+			trap<X>* self;
+		};
+
+		kinsol_data_t kinsol_data;
+
+		void prep_kinsol();
+
+		static int func(N_Vector y, N_Vector f, void* user_data)
+		{
+			realtype* yd = N_VGetArrayPointer(y);
+			realtype* fd = N_VGetArrayPointer(f);
+			kinsol_data_t* data = static_cast<kinsol_data_t*>(user_data);
+			data->self->sys->der_func(yd,fd);
+			for (int i = 0; i < data->self->sys->numVars(); i++)
+				fd[i] = data->self->k[i]+fd[i]*(data->self->h/2.0);
+			return 1;
+		}
+
+		static int jac(N_Vector y, N_Vector f, SUNMatrix J,
+			void *user_data, N_Vector tmp1, N_Vector tmp2)
+		{
+			realtype* yd = N_VGetArrayPointer(y);
+			realtype* Jd = SUNDenseMatrix_Data(J);
+			kinsol_data_t* data = static_cast<kinsol_data_t*>(user_data);
+			const int N = data->self->sys->numVars();
+			data->self->sys->get_jacobian(yd,Jd);
+			// Get the matrix for the linear solver
+			for (int i = 0; i < N*N; i++)
+				Jd[i] *= data->self->h/2.0;
+			for (int i = 0; i < N; i++)
+				Jd[i*(N+1)] -= 1.0;
+			return 1;
+		} 
+
+		static int check_retval(void *retvalvalue, const char *funcname, int opt)
+		{
+			int *errretval;
+			/* Check if SUNDIALS function returned NULL pointer - no memory allocated */
+			if (opt == 0 && retvalvalue == NULL) {
+				return(1);
+			}
+			/* Check if retval < 0 */
+			else if (opt == 1) {
+				errretval = (int *) retvalvalue;
+				if (*errretval < 0) {
+					return(1);
+				}
+			}
+			/* Check if function returned NULL pointer - no memory allocated */
+			else if (opt == 2 && retvalvalue == NULL) {
+				return(1);
+			}
+			return(0);
+		}
 };
+
+template <typename X>
+void trap<X>::prep_kinsol()
+{
+	int retval;
+	kinsol_data.self = this;
+	/* Create vectors for solution, scales, and constraints */
+	y = N_VNew_Serial(this->sys->numVars());
+	if (check_retval((void *)y, "N_VNew_Serial", 0))
+		throw adevs::exception("N_VNew_Serial failed");
+	scale = N_VClone(y);
+	if (check_retval((void *)scale, "N_VClone_Serial", 0))
+		throw adevs::exception("N_VClone failed");
+	// No scaling
+	N_VConst(RCONST(1.0),scale);
+	/* Initialize and allocate memory for KINSOL */
+	kmem = KINCreate();
+	if (check_retval((void *)kmem, "KINCreate", 0))
+		throw adevs::exception("KINCreate failed");
+	retval = KINInit(kmem, func, y); /* y passed as a template */
+	if (check_retval(&retval, "KINInit", 1))
+		throw adevs::exception("KINInit failed");
+	/* Set the Jacobian function */
+	retval = KINSetJacFn(kmem, jac);
+	if (check_retval(&retval, "KINSetJacFn", 1))
+		throw adevs::exception("KINSetJacFn failed");
+	retval = KINSetUserData(kmem, &kinsol_data);
+	if (check_retval(&retval, "KINSetUserData", 1))
+		throw adevs::exception("KINSetUserData failed");
+	/* Create dense SUNMatrix */
+	J = SUNDenseMatrix(this->sys->numVars(), this->sys->numVars());
+	if(check_retval((void *)J, "SUNDenseMatrix", 0))
+		throw adevs::exception("SUNDenseMatrix failed");
+	/* Create dense SUNLinearSolver object */
+	LS = SUNLinSol_Dense(y, J);
+	if(check_retval((void *)LS, "SUNLinSol_Dense", 0))
+		throw adevs::exception("SUNLinSol_Dense failed");
+	retval = KINSetFuncNormTol(kmem, err_tol);
+	if (check_retval(&retval, "KINSetFuncNormTol", 1))
+		throw adevs::exception("KINSetFuncNormTol failed");
+	retval = KINSetScaledStepTol(kmem, err_tol);
+	if (check_retval(&retval, "KINSetScaledStepTol", 1)) 
+		throw adevs::exception("KINSetScaledStepTol failed");
+}
 
 template <typename X>
 trap<X>::trap(ode_system<X>* sys, double err_tol, double h_max, double iter_limit):
@@ -87,27 +196,26 @@ trap<X>::trap(ode_system<X>* sys, double err_tol, double h_max, double iter_limi
 {
 	if (!sys->get_jacobian(NULL,NULL))
 		throw adevs::exception("trap integrator requires a jacobian",this);
-	q_iter[0] = new double[sys->numVars()];
-	q_iter[1] = new double[sys->numVars()];
 	qq[0] = new double[sys->numVars()];
 	qq[1] = new double[sys->numVars()];
 	dq = new double[sys->numVars()];
 	k = new double[sys->numVars()];
-	J = new double[sys->numVars()*sys->numVars()];
-	ipiv = new int[sys->numVars()];
+
+	prep_kinsol();
 }
 
 template <typename X>
 trap<X>::~trap()
 {
-	delete [] q_iter[0];
-	delete [] q_iter[1];
 	delete [] qq[0];
 	delete [] qq[1];
 	delete [] dq;
 	delete [] k;
-	delete [] J;
-	delete [] ipiv;
+	N_VDestroy(y);
+	N_VDestroy(scale);
+	KINFree(&kmem);
+	SUNLinSolFree(LS);
+	SUNMatDestroy(J);
 }
 
 template <typename X>
@@ -117,75 +225,29 @@ void trap<X>::advance(double* q, double h)
 	while ((dt = integrate(q,h)) < h) h -= dt;
 }
 
-// Linear solver from LAPAKC
-extern "C" {
-	void dgesv_(int*,int*,double*,int*,int*,double*,int*,int*);
-};
-
 template <typename X>
 bool trap<X>::step(double* q, double h)
 {
-	double* tmp;
-	double err;
-	int info;
-	int NRHS = 1;
 	int N = this->sys->numVars();
-	int iters = 100;
 	// Get the derivatives at the current point
 	this->sys->der_func(q,dq);
 	// Fixed term in the trapezoidal integration rule
-	for (int i = 0; i < N; i++) {
-		q_iter[0][i] = k[i] = q[i]+(h/2.0)*dq[i];
+	for (int i = 0; i < N; i++) 
+		k[i] = q[i]+(h/2.0)*dq[i];
+	// Initial guess
+	realtype* yd = N_VGetArrayPointer(y);
+	memcpy(yd,q,sizeof(double)*N);
+	int retval = KINSol(kmem,           /* KINSol memory block */
+		y,              /* initial guess on input; solution vector */
+		KIN_LINESEARCH, /* global strategy choice */
+		scale,          /* scaling vector, for the variable cc */
+		scale);         /* scaling vector for function values fval */
+	if (check_retval(&retval, "KINSol", 1))
+	{
+		memcpy(q,yd,sizeof(double)*N);
+		return true;
 	}
-	// Calculate the first guess assuming that J is the 
-	// transition matrix of a linear system. This will either
-	// get us to the next step if the system is, in fact,
-	// linear or get us close enough to start iterating.
-	this->sys->get_jacobian(q,J);
-	for (int i = 0; i < N*N; i++)
-		J[i] *= -h/2.0;
-	for (int i = 0; i < N; i++)
-		J[i*(N+1)] += 1.0;
-	dgesv_(&N,&NRHS,J,&N,ipiv,q_iter[0],&N,&info);
-	// Use Newton's method to solve the fixed point problem
-	for (;;) {
-		// Get the derivatives at the current point
-		this->sys->der_func(q_iter[0],dq);
-		// Get the jacobian at the current guess
-		this->sys->get_jacobian(q_iter[0],J);
-		// Get the A matrix for the linear solver
-		for (int i = 0; i < N*N; i++)
-			J[i] *= h/2.0;
-		for (int i = 0; i < N; i++)
-			J[i*(N+1)] -= 1.0;
-		// Calculate the b vector
-		for (int i = 0; i < N; i++) {
-			q_iter[1][i] = k[i]+(h/2.0)*dq[i]-q_iter[0][i];
-		}
-		// Solve for the new guess
-		dgesv_(&N,&NRHS,J,&N,ipiv,q_iter[1],&N,&info);
-		assert(info == 0);
-		for (int i = 0; i < N; i++) {
-			q_iter[1][i] = q_iter[0][i]-q_iter[1][i];
-		}
-		// If the two solutions are close enough, then we are done
-		err = fabs(q_iter[0][0]-q_iter[1][0]);
-		for (int i = 1; i < N; i++)
-			err += fabs(q_iter[0][i]-q_iter[1][i]);
-		if (err < tol*N || !isfinite(err) || iters <= 0)
-			break;
-		iters--;
-		// Swap solutions and repeat
-		tmp = q_iter[1];
-		q_iter[1] = q_iter[0];
-		q_iter[0] = tmp;
-	}
-	if (!isfinite(err))
-		return false;
-	// Put the trial solution in q and return the selected step size
-	for (int i = 0; i < N; i++)
-		q[i] = q_iter[1][i];
-	return true;
+	return false;
 }
 
 template <typename X>
@@ -194,7 +256,7 @@ double trap<X>::integrate(double* q, double h_lim)
 	bool again;
 	double trunc_err;
 	// Pick the step size step size
-	double h = std::min<double>(h_cur*1.1,std::min<double>(h_max,h_lim));
+	h = std::min<double>(h_cur*1.1,std::min<double>(h_max,h_lim));
 	// Fixed step size of the error tolerance is infinite
 	if (err_tol == adevs_inf<double>())
 		step(q,h);

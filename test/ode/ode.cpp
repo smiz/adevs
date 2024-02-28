@@ -35,6 +35,8 @@ class simple_system:
 		void gc_output(Bag<int>& g){}
 		bool get_jacobian(const double* q, double* J)
 		{
+			if (J == NULL)
+				return true;
 			J[0] = -1.0;
 			J[1] = -1.0;
 			J[2] = 1.0;
@@ -80,6 +82,8 @@ class lk_system:
 		void gc_output(Bag<int>& g){}
 		bool get_jacobian(const double* q, double* J)
 		{
+			if (J == NULL)
+				return true;
 			J[0] = a-b*q[1];
 			J[1] = d*q[1];
 			J[2] = -b*q[0];
