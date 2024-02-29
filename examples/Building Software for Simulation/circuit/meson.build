@@ -1,5 +1,5 @@
 # GNU gcc compiler
-CFLAGS = -pedantic -g -Wall -I../../include 
+CFLAGS = -O3 -Wall -I../../../include 
 CC = g++
 
 sim:
