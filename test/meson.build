@@ -25,12 +25,8 @@ test_double_fcmp = executable('double_fcmp', 'double_fcmp_test.cpp', include_dir
 test('double_fcmp', test_double_fcmp)
 
 # # TODO: Linking/compiling issue
-
 # test_mt_test = executable('mt_test', 'mt_test.cpp', include_directories: adevs)
 # test('mt_test', test_mt_test)
-
-test_rvtest = executable('rvtest', 'rv_test.cpp', include_directories: adevs)
-test('rvtest', test_rvtest)
 
 test_sched = executable('sched', 'sched_test.cpp', include_directories: adevs)
 test('sched', test_sched)

@@ -1,11 +1,13 @@
 #include <cmath>
 #include <iostream>
+#include <random>
 #include "Control.h"
 #include "Ethernet.h"
 #include "Robot.h"
 #include "adevs/adevs.h"
 #include "adevs/fmi.h"
 #include "io.h"
+
 using namespace std;
 using namespace adevs;
 
@@ -27,13 +29,22 @@ class App : public AtomicModel {
   public:
     static int const data_out;
 
-    App(double freq, int bytes) : AtomicModel(), freq(freq), bytes(bytes) {}
+    App(double frequency, int bytes)
+        : AtomicModel(),
+          bytes(bytes),
+          random(std ::exponential_distribution<>(1.0 / frequency)) {}
+
     /// Calculate the time to next packet
-    double ta() { return randVar.exponential(1.0 / freq); }
+    double ta() { return random(generator); }
+
     void delta_int() {}
+
     void delta_ext(double, Bag<IO_Type> const &) {}
+
     void delta_conf(Bag<IO_Type> const &) {}
+
     void gc_output(Bag<IO_Type> &) {}
+
     /// Put a packet on the network
     void output_func(Bag<IO_Type> &yb) {
         IO_Type y;
@@ -44,13 +55,13 @@ class App : public AtomicModel {
     }
 
   private:
-    double const freq;
     int const bytes;
-    static adevs::rv randVar;
+    std::random_device rd = std::random_device();
+    std::mt19937 generator = std::mt19937(rd());
+    std::exponential_distribution<> random;
 };
 
 int const App::data_out = 0;
-adevs::rv App::randVar(new crand());
 
 /// Extension of the Control modelica model that implements
 /// the control strategy.
