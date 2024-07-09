@@ -1,5 +1,0 @@
-This is a Conway's Game of Life implemented with the Java language bindings
-for adevs. Use 'javac *.java' to compile it and 'java Life' to run it.
-Be sure that java_adevs.dll (Windows) or libjava_adevs.so (UNIX) is in
-your PATH (Windows) or LD_LIBRARY_PATH (UNIX) and that adevs.jar is
-in your CLASSPATH.
