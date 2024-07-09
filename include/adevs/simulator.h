@@ -390,8 +390,8 @@ T Simulator<X, T>::computeNextState() {
      * special container that will be used when the structure changes are
      * computed.
      */
-    for (unsigned i = 0; i < activated.size(); i++) {
-        Atomic<X, T>* model = activated[i];
+    for (auto model : activated) {
+        //Atomic<X, T>* model = activated[i];
         // Internal event if no input
         if (model->x == NULL) {
             model->delta_int();
@@ -535,7 +535,7 @@ template <class X, class T>
 void Simulator<X, T>::unschedule_model(Devs<X, T>* model) {
     if (model->typeIsAtomic() != NULL) {
         sched.schedule(model->typeIsAtomic(), adevs_inf<T>());
-        activated.erase(model->typeIsAtomic());
+        activated.remove(model->typeIsAtomic());
     } else {
         Set<Devs<X, T>*> components;
         model->typeIsNetwork()->getComponents(components);

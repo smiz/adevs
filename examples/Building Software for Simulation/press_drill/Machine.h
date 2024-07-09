@@ -15,9 +15,8 @@ class Machine : public adevs::Atomic<int> {
         } else {
             sigma = tm;
         }
-        for (adevs::Bag<int>::iterator iter = xb.begin(); iter != xb.end();
-             iter++) {
-            p += (*iter);
+        for (auto pi : xb) {
+            p += pi;
         }
     }
     void delta_conf(adevs::Bag<int> const &xb) {

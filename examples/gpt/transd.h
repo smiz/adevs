@@ -56,9 +56,9 @@ class transd : public adevs::Atomic<PortValue> {
         // Save new jobs in order to compute statistics when they are
         // completed.
         adevs::Bag<PortValue>::iterator iter;
-        for (iter = x.begin(); iter != x.end(); iter++) {
-            if ((*iter).port == ariv) {
-                job j((*iter).value);
+        for (auto iter : x) {
+            if (iter.port == ariv) {
+                job j(iter.value);
                 j.t = t;
                 std::cout << "Start job " << j.id << " @ t = " << t
                           << std::endl;
@@ -66,9 +66,9 @@ class transd : public adevs::Atomic<PortValue> {
             }
         }
         // Compute time required to process completed jobs
-        for (iter = x.begin(); iter != x.end(); iter++) {
-            if ((*iter).port == solved) {
-                job j((*iter).value);
+        for (auto iter : x) {
+            if (iter.port == solved) {
+                job j(iter.value);
                 std::vector<job>::iterator i = jobs_arrived.begin();
                 for (; i != jobs_arrived.end(); i++) {
                     if ((*i).id == j.id) {

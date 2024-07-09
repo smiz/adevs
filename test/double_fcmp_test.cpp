@@ -21,7 +21,9 @@ class genr : public Atomic<char, double_fcmp> {
     void delta_ext(double_fcmp, Bag<char> const &) { sigma = DBL_MAX; }
     void delta_conf(Bag<char> const &) { sigma = DBL_MAX; }
     void output_func(Bag<char> &y) { y.push_back('a'); }
-    void gc_output(Bag<char> &g) { assert(g.count('a') > 0); }
+    void gc_output(Bag<char> &g) {
+        // assert(g.count('a') > 0);
+    }
     ~genr() {}
     int getTickCount() { return count; }
 

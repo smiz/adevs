@@ -53,8 +53,8 @@ class object_pool {
         if (pool.empty()) {
             obj = new T;
         } else {
-            obj = *((pool.end())--);
-            pool.erase(pool.end()--);
+            obj = (T*)*(pool.begin());
+            pool.erase(pool.begin());
         }
         return obj;
     }
