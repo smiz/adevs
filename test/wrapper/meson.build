@@ -1,9 +1,2 @@
-PREFIX = ../..
-include ../make.common
-
-check: test1
-
-test1:
-	$(CC) $(CFLAGS) test.cpp  
-	$(TEST_EXEC) 
-
+test_wrapper = executable('wrapper_test', 'test.cpp', include_directories: adevs)
+test('wrapper', test_wrapper)

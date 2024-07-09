@@ -1,24 +1,16 @@
-PREFIX = ../..
-include ../make.common
 
-check: bnew dae dae2 con compare
+test_con = executable('con', 'confluent_test.cpp', include_directories: adevs)
+test('ode-con', test_con)
 
-con:
-	$(CC) $(CFLAGS) confluent_test.cpp $(ODE_LIBS)
-	$(TEST_EXEC)
+test_dae2  = executable('dae2', 'dae_test2.cpp', include_directories: adevs)
+test('ode-dae2', test_dae2)
 
-dae2: 
-	$(CC) $(CFLAGS) dae_test2.cpp $(ODE_LIBS)
-	$(TEST_EXEC) 1> tmp1 2> tmp2
+test_dae = executable('dae', 'dae_test1.cpp', include_directories: adevs)
+test('ode-dae', test_dae)
 
-dae:
-	$(CC) $(CFLAGS) dae_test1.cpp $(ODE_LIBS)
-	$(TEST_EXEC) 1> tmp1 2> tmp2
+test_bnew = executable('bnew', 'ball1d_new.cpp', 'check_ball1d_solution.cpp', include_directories: adevs)
+test('ode-bnew', test_bnew)
 
-bnew:
-	$(CC) $(CFLAGS) ball1d_new.cpp check_ball1d_solution.cpp $(ODE_LIBS)
-	$(TEST_EXEC) > tmp
-
-compare:
-	$(CC) $(CFLAGS) ode.cpp $(ODE_LIBS) 
-	$(TEST_EXEC) > tmp
+# TODO: Linker/compiler issue
+# test_compare = executable('compare', 'ode.cpp', include_directories: adevs)
+# test('ode-compare', test_compare)

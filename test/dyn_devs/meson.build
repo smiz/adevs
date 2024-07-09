@@ -1,20 +1,11 @@
-PREFIX = ../..
-include ../make.common
+test_dyn_devs_add = executable('add_test', ['SimpleAtomic.cpp', 'add_test.cpp'], include_directories: adevs)
+test('dyn_devs_add', test_dyn_devs_add)
 
-check: add remove moved complex 
+test_dyn_devs_remove = executable('remove_test', ['SimpleAtomic.cpp', 'remove_test.cpp'], include_directories: adevs)
+test('dyn_devs_remove', test_dyn_devs_remove)
 
-add:
-	$(CC) $(CFLAGS) SimpleAtomic.cpp add_test.cpp 
-	$(TEST_EXEC)
+test_dyn_devs_moved = executable('moved_test', ['SimpleAtomic.cpp', 'moved_test.cpp'], include_directories: adevs)
+test('dyn_devs_moved', test_dyn_devs_moved)
 
-remove:
-	$(CC) $(CFLAGS) SimpleAtomic.cpp remove_test.cpp 
-	$(TEST_EXEC)
-
-moved:
-	$(CC) $(CFLAGS) SimpleAtomic.cpp moved_test.cpp 
-	$(TEST_EXEC)
-
-complex:
-	$(CC) $(CFLAGS) SimpleAtomic.cpp complex_test.cpp 
-	$(TEST_EXEC)
+test_dyn_devs_complex = executable('complex_test', ['SimpleAtomic.cpp', 'complex_test.cpp'], include_directories: adevs)
+test('dyn_devs_complex', test_dyn_devs_complex)

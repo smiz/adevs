@@ -1,54 +1,39 @@
-PREFIX = ../..
-include ../make.common
+test_x1 = executable('x1', 'xtest1.cpp', include_directories: adevs)
+test_x1_ok = fs.copyfile('test1x.ok')
+test('gcd-x1', compare, args: [test_x1.full_path(), test_x1_ok.full_path()])
 
-check: x1 x2 t1 t2 t3 t4 t5 t6 t7 t8 
+test_x2 = executable('x2', 'xtest2.cpp', include_directories: adevs)
+test_x2_ok = fs.copyfile('test2x.ok')
+test('gcd-x2', compare, args: [test_x2.full_path(), test_x2_ok.full_path()])
 
-x1:
-	$(CC) $(CFLAGS) xtest1.cpp  
-	$(TEST_EXEC) > tmp
-	$(COMPARE) test1x.ok tmp
+test_t1 = executable('t1', 'test1.cpp', include_directories: adevs)
+test_t1_ok = fs.copyfile('test1.ok')
+test('gcd-t1', compare, args: [test_t1.full_path(), test_t1_ok.full_path()])
 
-x2:
-	$(CC) $(CFLAGS) xtest2.cpp  
-	$(TEST_EXEC) > tmp
-	$(COMPARE) test2x.ok tmp
+test_t2 = executable('t2', 'test2.cpp', include_directories: adevs)
+test_t2_ok = fs.copyfile('test2.ok')
+test('gcd-t2', compare, args: [test_t2.full_path(), test_t2_ok.full_path()])
 
-t1:
-	$(CC) $(CFLAGS) test1.cpp
-	$(TEST_EXEC) > tmp
-	$(COMPARE) test1.ok tmp
+test_t3 = executable('t3', 'test3.cpp', include_directories: adevs)
+test_t3_ok = fs.copyfile('test3.ok')
+test('gcd-t3', compare, args: [test_t3.full_path(), test_t3_ok.full_path()])
 
-t2:
-	$(CC) $(CFLAGS) test2.cpp
-	$(TEST_EXEC) > tmp
-	$(COMPARE) test2.ok tmp
+test_t4 = executable('t4', 'test4.cpp', include_directories: adevs)
+test_t4_ok = fs.copyfile('test4.ok')
+test('gcd-t4', compare, args: [test_t4.full_path(), test_t4_ok.full_path()])
 
-t3:
-	$(CC) $(CFLAGS) test3.cpp
-	$(TEST_EXEC) > tmp
-	$(COMPARE) test3.ok tmp
+test_t5 = executable('t5', 'test5.cpp', include_directories: adevs)
+test_t5_ok = fs.copyfile('test5.ok')
+test('gcd-t5', compare, args: [test_t5.full_path(), test_t5_ok.full_path()])
 
-t4:
-	$(CC) $(CFLAGS) test4.cpp
-	$(TEST_EXEC) > tmp
-	$(COMPARE) test4.ok tmp
+test_t6 = executable('t6', 'test6.cpp', include_directories: adevs)
+test_t6_ok = fs.copyfile('test6.ok')
+test('gcd-t6', compare, args: [test_t6.full_path(), test_t6_ok.full_path()])
 
-t5:
-	$(CC) $(CFLAGS) test5.cpp
-	$(TEST_EXEC) > tmp
-	$(COMPARE) test5.ok tmp
+test_t7 = executable('t7', 'test7.cpp', include_directories: adevs)
+test_t7_ok = fs.copyfile('test7.ok')
+test('gcd-t7', compare, args: [test_t7.full_path(), test_t7_ok.full_path()])
 
-t6:
-	$(CC) $(CFLAGS) test6.cpp
-	$(TEST_EXEC) > tmp
-	$(COMPARE) test6.ok tmp
-
-t7:
-	$(CC) $(CFLAGS) test7.cpp
-	$(TEST_EXEC) > tmp
-	$(COMPARE) test7.ok tmp
-
-t8:
-	$(CC) $(CFLAGS) test8.cpp
-	$(TEST_EXEC) > tmp
-	$(COMPARE) test8.ok tmp
+test_t8 = executable('t8', 'test8.cpp', include_directories: adevs)
+test_t8_ok = fs.copyfile('test8.ok')
+test('gcd-t8', compare, args: [test_t8.full_path(), test_t8_ok.full_path()])

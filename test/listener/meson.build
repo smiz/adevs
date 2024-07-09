@@ -1,9 +1,5 @@
-PREFIX=../..
-include ../make.common
+test_listener1 = executable('listener1', 'main.cpp', include_directories: adevs)
+test('listener1', test_listener1)
 
-check: 
-	$(CC) $(CFLAGS) main.cpp
-	$(TEST_EXEC) 
-	$(CC) $(CFLAGS) test2.cpp
-	$(TEST_EXEC) 
-
+test_listener2 = executable('listener2', 'test2.cpp', include_directories: adevs)
+test('listener2', test_listener2)
