@@ -106,6 +106,9 @@ class Devs {
      */
     virtual bool model_transition() { return false; }
 
+    bool activated = false;
+    bool imminent = false;
+
   private:
     Network<X, T>* parent;
 };
@@ -156,10 +159,8 @@ class Atomic : public Devs<X, T> {
           tL(adevs_zero<T>()),
           q_index(0),  // The Schedule requires this to be zero
           proc(-1),
-          x(NULL),
-          y(NULL),
-          the_real_x(std::make_shared<Bag<X>>()),
-          the_real_y(std::make_shared<Bag<X>>()) {}
+          x(std::make_shared<Bag<X>>()),
+          y(std::make_shared<Bag<X>>()) {}
     /// Internal transition function.
     virtual void delta_int() = 0;
     /*
@@ -215,10 +216,8 @@ class Atomic : public Devs<X, T> {
     // Thread assigned to this model
     int proc;
     // Input and output event bags
-    Bag<X>*x, *y;
-
-    std::shared_ptr<Bag<X>> the_real_x;
-    std::shared_ptr<Bag<X>> the_real_y;
+    std::shared_ptr<Bag<X>> x;
+    std::shared_ptr<Bag<X>> y;
 };
 
 /*
