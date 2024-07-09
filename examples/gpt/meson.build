@@ -1,1 +1,5 @@
-executable('gpt', 'main.cpp', include_directories: adevs)
+executable(
+    'gpt',
+    'main.cpp',
+    include_directories: adevs,
+)

@@ -1,20 +1,40 @@
-#subdir('activity_scanning')
+# *** Copy test files ***
+
+fs = import('fs')
+
+# *** Dependencies ***
+
+# Get dependencies for all of the examples at a single time.
+
+cc = meson.get_compiler('cpp')
+d_png = cc.find_library('png')
+d_glut = cc.find_library('glut')
+
+d_gl = dependency('GL')
+d_gsl = dependency('gsl')
+d_blas = dependency('blas')
+d_sdl = dependency('SDL')
+d_lapack = dependency('lapack')
+
+
+# *** Examples ***
+
+subdir('activity_scanning')
 subdir('agents')
-#subdir('async_ca')
+subdir('async_ca')
 #subdir('Building Software for Simulation')
 subdir('checkout_line')
 subdir('cherry_bomb')
 subdir('circuit')
-#subdir('factory')
+subdir('factory')
 #subdir('fmi')
-#subdir('g2dca')
-#subdir('gfire')
-#subdir('glife')
+subdir('g2dca')
+subdir('gfire')
+subdir('glife')
 subdir('gpt')
-#subdir('grain_growth')
+subdir('grain_growth')
 #subdir('inverter-control')
 #subdir('java_life')
-#subdir('meson.buil')
 subdir('misc')
-#subdir('shared_resource')
+subdir('shared_resource')
 subdir('trivial')
