@@ -1,13 +1,6 @@
-# Copy the compare file to the build
-
-compare = find_program('helpers/compare.sh')
-run_and_compare = find_program('helpers/run_and_compare.sh')
-
 # Add tests in their own subdirectories
 
 subdir('dyn_devs')
-#subdir('fmi')
-
 subdir('gcd')
 subdir('gpt')
 subdir('listener')
@@ -18,7 +11,6 @@ subdir('wrapper')
 subdir('zero_time')
 
 # Tests in this directory
-
 
 test_alt_time = executable('alt_time', 'alt_time_tests.cpp', include_directories: adevs)
 test('alt_time', test_alt_time)
@@ -35,9 +27,7 @@ test('double_fcmp', test_double_fcmp)
 # # TODO: Linking/compiling issue
 
 # test_mt_test = executable('mt_test', 'mt_test.cpp', include_directories: adevs)
-
 # test('mt_test', test_mt_test)
-
 
 test_rvtest = executable('rvtest', 'rv_test.cpp', include_directories: adevs)
 test('rvtest', test_rvtest)

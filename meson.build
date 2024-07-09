@@ -1,11 +1,11 @@
 project(
-    'adevs',
-    'cpp',
-    version: '4.0-dev',
-    default_options: [
-      'warning_level=3',
-      'cpp_std=c++17',
-    ]
+  'adevs',
+  'cpp',
+  version: '4.0-dev',
+  default_options: [
+    'warning_level=3',
+    'cpp_std=c++17',
+  ],
 )
 
 project_description = '''
@@ -22,6 +22,10 @@ adevs = include_directories('include')
 
 # Imports used other places
 fs = import('fs')
+
+# Scripts/helpers for tests
+compare = find_program('utilities/compare.sh')
+run_and_compare = find_program('utilities/run_and_compare.sh')
 
 # Add all the subdirectoriess
 subdir('examples')
