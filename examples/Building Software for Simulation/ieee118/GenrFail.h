@@ -1,7 +1,7 @@
 #ifndef GenrFail_h_
 #define GenrFail_h_
 #include "ElectricalData.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 class GenrFail : public adevs::Atomic<adevs::PortValue<BasicEvent*>> {
   public:

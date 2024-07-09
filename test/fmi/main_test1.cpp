@@ -1,6 +1,6 @@
 #include <iostream>
-#include "adevs.h"
-#include "adevs_fmi.h"
+#include "adevs/adevs.h"
+#include "adevs/fmi.h"
 #include "test1/modelDescription.h"
 using namespace std;
 

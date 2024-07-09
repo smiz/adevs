@@ -2,7 +2,7 @@
 #define _observer_h_
 #include <fstream>
 #include "Customer.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 /**
  * The Observer records performance statistics for a Clerk model

@@ -1,5 +1,5 @@
 /**
- * Simulation of the system of equations 
+ * Simulation of the system of equations
  *
  * dA/dt = -2AB
  * dB/dt = -AB
@@ -8,7 +8,7 @@
  * with a first order QSS method.
  */
 #include <iostream>
-#include "adevs.h"
+#include "adevs/adevs.h"
 using namespace adevs;
 using namespace std;
 

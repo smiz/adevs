@@ -1,7 +1,7 @@
 #ifndef SimEventListener_h_
 #define SimEventListener_h_
 #include "SimEvents.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 /// Typedefs for adevs
 typedef adevs::Atomic<SimEvent> AtomicModel;

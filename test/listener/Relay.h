@@ -1,7 +1,7 @@
 #ifndef _Relay_h_
 #define _Relay_h_
 #include <cassert>
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 typedef adevs::PortValue<int> IO_Type;
 

@@ -2,7 +2,7 @@
 #define LoadControl_h_
 #include <map>
 #include "ElectricalData.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 class LoadControl : public adevs::Atomic<adevs::PortValue<BasicEvent*>> {
   public:

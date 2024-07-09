@@ -1,7 +1,7 @@
 #include <iostream>
-#include "adevs_corrected_euler.h"
-#include "adevs_rk_45.h"
-#include "adevs_trap.h"
+#include "adevs/corrected_euler.h"
+#include "adevs/rk_45.h"
+#include "adevs/trap.h"
 using namespace adevs;
 using namespace std;
 

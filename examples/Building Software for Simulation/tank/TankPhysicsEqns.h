@@ -2,8 +2,8 @@
 #define _TankPhysicsEqns_h_
 #include <fstream>
 #include "SimEvents.h"
-#include "adevs.h"
-#include "adevs_hybrid.h"
+#include "adevs/adevs.h"
+#include "adevs/hybrid.h"
 
 class TankPhysicsEqns : public adevs::ode_system<SimEvent> {
   public:

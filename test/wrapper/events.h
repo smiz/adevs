@@ -1,6 +1,6 @@
 #ifndef _events_h_
 #define _events_h_
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 /**
  * These two classes are the internal and external event types that

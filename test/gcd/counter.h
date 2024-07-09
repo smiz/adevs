@@ -2,7 +2,7 @@
 #define __counter_h_
 #include <cassert>
 #include <cstdio>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "object.h"
 
 class counter : public adevs::Atomic<PortValue> {

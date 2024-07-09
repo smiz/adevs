@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "job.h"
 /*
 The transducer computes various statistics about the

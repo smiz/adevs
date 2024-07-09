@@ -2,7 +2,7 @@
 #define Sq_h_
 #include <iostream>
 #include <list>
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 class Sq : public adevs::Atomic<int> {
   public:

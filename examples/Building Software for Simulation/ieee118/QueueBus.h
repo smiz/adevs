@@ -1,7 +1,7 @@
 #ifndef QUEUE_BUS_H
 #define QUEUE_BUS_H
 #include <list>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "events.h"
 
 class QueueBus : public adevs::Atomic<adevs::PortValue<BasicEvent*>> {

@@ -2,7 +2,7 @@
 #define des_h_
 #include <list>
 #include <vector>
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 class Partition;
 
@@ -87,7 +87,7 @@ class Partition : public adevs::Atomic<Event*> {
 
 /**
  * To create a model you must put your partitions into
- * a World object and if a partition A requires data 
+ * a World object and if a partition A requires data
  * from or has events scheduled for it by a partition B
  * the couple B to A so that B will notify A of its
  * activities. The World class is an instance of an

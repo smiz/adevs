@@ -1,7 +1,7 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
-#include "adevs.h"
+#include "adevs/adevs.h"
 using namespace std;
 using namespace adevs;
 

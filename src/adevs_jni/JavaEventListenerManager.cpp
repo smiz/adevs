@@ -1,4 +1,4 @@
-#include "adevs_jni.h"
+#include "adevs/jni.h"
 using namespace adevs;
 using namespace std;
 

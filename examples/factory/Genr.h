@@ -1,6 +1,6 @@
 #ifndef __Genr_h_
 #define __Genr_h_
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 /**
  * The Genr models factory demand. It creates new orders every 0.5 to 2 days.

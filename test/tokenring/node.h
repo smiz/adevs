@@ -3,7 +3,7 @@
 #include <cassert>
 #include <cstdio>
 #include <iostream>
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 struct token_t {
     int value;

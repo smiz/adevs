@@ -1,6 +1,6 @@
 #ifndef __gcd_h_
 #define __gcd_h_
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "counter.h"
 #include "delay.h"
 #include "genr.h"

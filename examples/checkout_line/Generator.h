@@ -2,7 +2,7 @@
 #define _generator_h_
 #include <list>
 #include "Customer.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 /**
  * This class produces Customers according to the provided schedule.

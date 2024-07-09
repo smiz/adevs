@@ -3,13 +3,13 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met: 
+ * modification, are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer. 
+ *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution. 
+ *    and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -23,7 +23,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies, 
+ * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the FreeBSD Project.
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
@@ -31,7 +31,7 @@
 #ifndef __adevs_rand_h_
 #define __adevs_rand_h_
 #include <cstdlib>
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 namespace adevs {
 
@@ -57,7 +57,7 @@ class random_seq {
  * The crand class provides random number sequences using the standard
  * C rand_r() function. Each instance of crand generates its own random
  * number sequence, and the clone method saves the state of the random
- * number generator. This class can be used in parallel simulations. 
+ * number generator. This class can be used in parallel simulations.
  */
 class crand : public random_seq {
   public:
@@ -95,7 +95,7 @@ class crand : public random_seq {
  * such as the ones included in the new C++ standards,
  * rather than use the one here.</p>
  * <p>The assortment of random variable types was contributed by
- * Alex Cave (who, at the time, was with the Intelligent 
+ * Alex Cave (who, at the time, was with the Intelligent
  * Systems Automation Group in the School of Engineering at
  * Deakin University).</p>
  */
@@ -122,7 +122,7 @@ class rv {
     /// Sample a uniform distribution in the range [a, b]
     double uniform(double a, double b);
     /**
-		 * Sample a normally distributed random variable with mean m and 
+		 * Sample a normally distributed random variable with mean m and
 		 * standard deviation s.
 		 */
     double normal(double m, double s);

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <typeinfo>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "check_ball1d_solution.h"
 #include "sampler.h"
 using namespace std;

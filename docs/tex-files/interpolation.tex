@@ -33,15 +33,15 @@ double derivative(double t) const
 \end{verbatim}
 The \methodname{interpolate} method and \methodname{operator()} method give the value of the interpolating polynomial at the time point t. The \methodname{derivative} method gives the value of the first time derivative of the interpolating polynomial, which may be used as an approximation of the first time derivative of the original function. For example, if the data describes the position of an object through time then the \methodname{derivative} method gives an approximation of the object's velocity.
 
-To demonstrate the \classname{InterPoly} class and give you a sense of what the interpolating polynomials look like, I've listed below a program that computes $\sin(t)$, its time derivative $\cos(t)$, and interpolated approximations of both. Interpolating polynomials built with 4, 5, and 6 data point in the interval $[0,2\pi]$ are illustrated in Figs. \ref{fig:sin_inter} and \ref{fig:cos_inter}. The quality of the approximation generally improves as more data points are added, but the function and interpolating polynomial diverge significantly outside of the interval spanned by the data points. Be careful if you extrapolate! 
+To demonstrate the \classname{InterPoly} class and give you a sense of what the interpolating polynomials look like, I've listed below a program that computes $\sin(t)$, its time derivative $\cos(t)$, and interpolated approximations of both. Interpolating polynomials built with 4, 5, and 6 data point in the interval $[0,2\pi]$ are illustrated in Figs. \ref{fig:sin_inter} and \ref{fig:cos_inter}. The quality of the approximation generally improves as more data points are added, but the function and interpolating polynomial diverge significantly outside of the interval spanned by the data points. Be careful if you extrapolate!
 \begin{verbatim}
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include <cmath>
 #include <iostream>
 using namespace std;
 
 int main(int argc, char** argv) {
-    // Get the number of data points to use and allocate 
+    // Get the number of data points to use and allocate
     // memory for the data points arrays
     int N = atoi(argv[1]);
     double* t = new double[N];
@@ -56,9 +56,9 @@ int main(int argc, char** argv) {
     // The data arrays can be deleted now
     delete [] t; delete [] u;
     // Compute several points with sin, its derivative, and the polynomial
-    // inside and a little beyond the interval spanned by the data 
-    for (double t = 0; t < 2.0*3.14159+0.5; t += 0.01) 
-       cout << t 
+    // inside and a little beyond the interval spanned by the data
+    for (double t = 0; t < 2.0*3.14159+0.5; t += 0.01)
+       cout << t
            << " " << sin(t) << " " << p(t)
            << " " << cos(t) << " " << p.derivative(t)
            << endl;

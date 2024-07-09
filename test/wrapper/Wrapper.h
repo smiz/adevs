@@ -1,7 +1,7 @@
 #ifndef _wrapper_h_
 #define _wrapper_h_
 #include <cassert>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "events.h"
 
 /**

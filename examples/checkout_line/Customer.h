@@ -1,6 +1,6 @@
 #ifndef __customer_h_
 #define __customer_h_
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 /**
 A Busy-Mart customer.

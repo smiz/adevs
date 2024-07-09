@@ -5,7 +5,7 @@
 #include "Generator.h"
 #include "MultiClerk.h"
 #include "Observer.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 using namespace std;
 using namespace adevs;
 

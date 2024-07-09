@@ -1,7 +1,7 @@
 #ifndef _simple_atomic_h_
 #define _simple_atomic_h_
 #include <cassert>
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 typedef adevs::PortValue<char> SimpleIO;
 

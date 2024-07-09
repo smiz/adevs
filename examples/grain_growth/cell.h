@@ -1,6 +1,6 @@
 #ifndef __cell_h_
 #define __cell_h_
-#include <adevs.h>
+#include <adevs/adevs.h>
 #include <iostream>
 #include <random>
 #include "params.h"  // Includes SIZE and W

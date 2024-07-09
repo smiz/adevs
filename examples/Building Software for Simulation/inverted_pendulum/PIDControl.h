@@ -1,6 +1,6 @@
 #ifndef PIDCONTROL_H
 #define PIDCONTROL_H
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 // This is a PID controller for the cart.
 class PIDControl : public adevs::Atomic<double> {

@@ -1,6 +1,6 @@
 #ifndef __fireCell_h_
 #define __fireCell_h_
-#include <adevs.h>
+#include <adevs/adevs.h>
 #include <iostream>
 
 /// The phase of the cell.

@@ -3,8 +3,8 @@
 #include <map>
 #include "ElectricalData.h"
 #include "ElectricalModelEqns.h"
-#include "adevs.h"
-#include "adevs_hybrid.h"
+#include "adevs/adevs.h"
+#include "adevs/hybrid.h"
 #include "events.h"
 
 /**

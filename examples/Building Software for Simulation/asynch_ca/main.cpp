@@ -2,7 +2,7 @@
 #include <fstream>
 #include "Display.h"
 #include "LookLeft.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 using namespace std;
 using namespace adevs;
 

@@ -12,7 +12,7 @@ include "adevs.h"
 #include "Customer.h"
 #include <list>
 
-class Clerk: public adevs::Atomic<IO_Type> 
+class Clerk: public adevs::Atomic<IO_Type>
 {
     public:
         /// Constructor.
@@ -23,7 +23,7 @@ class Clerk: public adevs::Atomic<IO_Type>
         void delta_ext(double e, const adevs::Bag<IO_Type>& xb);
         /// Confluent transition function.
         void delta_conf(const adevs::Bag<IO_Type>& xb);
-        /// Output function.  
+        /// Output function.
         void output_func(adevs::Bag<IO_Type>& yb);
         /// Time advance function.
         double ta();
@@ -87,14 +87,14 @@ void Clerk::delta_ext(double e, const Bag<IO_Type>& xb)
     cout << "Clerk: There are " << line.size() << " customers waiting." << endl;
     cout << "Clerk: The next customer will leave at t = " << t+ta() << "." << endl;
 }
-    
+
 void Clerk::delta_int()
 {
     // Print a notice of the internal transition
     cout << "Clerk: Computed the internal transition function at t = " << t+ta() << endl;
     // Update the clock
     t += ta();
-    // Reset the spent time 
+    // Reset the spent time
     t_spent = 0.0;
     // Remove the departing customer from the front of the line.
     line.pop_front();
@@ -115,7 +115,7 @@ void Clerk::output_func(Bag<IO_Type>& yb)
     Customer* leaving = line.front();
     // Set the departure time
     leaving->tleave = t + ta();
-    // Eject the customer 
+    // Eject the customer
     IO_Type y(depart,leaving);
     yb.insert(y);
     // Print a notice of the departure
@@ -152,7 +152,7 @@ Clerk::~Clerk()
 }
 \end{verbatim}
 
-Consider the simulation of the convenience store described in Section \ref{chapter:intro} (i.e., with the arrivals listed in Table \ref{tab:customer_data}). The arrival data is listed again here: 
+Consider the simulation of the convenience store described in Section \ref{chapter:intro} (i.e., with the arrivals listed in Table \ref{tab:customer_data}). The arrival data is listed again here:
 \begin{table}[h]
 \centering
 \begin{tabular}{|c|c|}
@@ -171,7 +171,7 @@ Enter checkout line & Time to process order \\ \hline
 \label{tab:customer_data_again}
 \end{table}
 
-Table \ref{tab:customer_data_again} describes an input sequence that is input to the \classname{Clerk} model. The algorithm for processing this, or any other, input sequence is listed below. The \classname{Atomic} model being simulated is called `model', t is the current simulation time (i.e., the time of the last event - internal, external, or confluent), and t\_input is the time of the next unprocessed event in the input sequence. 
+Table \ref{tab:customer_data_again} describes an input sequence that is input to the \classname{Clerk} model. The algorithm for processing this, or any other, input sequence is listed below. The \classname{Atomic} model being simulated is called `model', t is the current simulation time (i.e., the time of the last event - internal, external, or confluent), and t\_input is the time of the next unprocessed event in the input sequence.
 \begin{enumerate}
 \item Set the next event time tN to the smaller of the next internal event time t\_self = t + model.ta() and the next input event time t\_input.
 \item If t\_self = tN and t\_input < tN then produce an output event at time t\_self by calling model.output\_func() and then compute the next state by calling model.delta\_int().
@@ -183,9 +183,9 @@ Table \ref{tab:customer_data_again} describes an input sequence that is input to
 
 The first step of this algorithm computes the time of the next event as the sooner of the next input event and the next internal event. If the next internal event happens first, then the model produces an output and its next state is computed with the internal transition function.
 
-If the next input event happens first, then the next state of the model is computed with the external transition function; no output is produced in this case. The elapsed time argument given to the external transition function is the amount of time that has passed since the previous event - internal, external, or confluent - at that model. 
+If the next input event happens first, then the next state of the model is computed with the external transition function; no output is produced in this case. The elapsed time argument given to the external transition function is the amount of time that has passed since the previous event - internal, external, or confluent - at that model.
 
-If the next input and internal event happen at the same time, then the model produces an output and its next state is computed with the confluent transition function. The simulation clock is then advanced to the event time. These steps are repeated until there are no internal or external events remaining to process. 
+If the next input and internal event happen at the same time, then the model produces an output and its next state is computed with the confluent transition function. The simulation clock is then advanced to the event time. These steps are repeated until there are no internal or external events remaining to process.
 
 The output trace resulting from the input sequence in Table \ref{tab:customer_data_again} is shown below. It has been broken up to show where each simulation cycle begins and ends and the type of event occurring in each cycle.
 \begin{verbatim}
@@ -273,11 +273,11 @@ Now lets create a more sophisticated clerk. This clerk interrupts the checkout o
 
 This new clerk has two state variables. The first records the time remaining before the clerk is willing to interrupt the processing of a customer. The second is the list of customers waiting to be served. Here is the header file for the new clerk model, which is called \classname{Clerk2}.
 \begin{verbatim}
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "Customer.h"
 #include <list>
 
-class Clerk2: public adevs::Atomic<IO_Type> 
+class Clerk2: public adevs::Atomic<IO_Type>
 {
     public:
         /// Constructor.
@@ -290,7 +290,7 @@ class Clerk2: public adevs::Atomic<IO_Type>
         void delta_conf(const adevs::Bag<IO_Type>& xb);
         /// Time advance function.
         double ta();
-        /// Output function.  
+        /// Output function.
         void output_func(adevs::Bag<IO_Type>& yb);
         /// Output value garbage collection.
         void gc_output(adevs::Bag<IO_Type>& g);
@@ -300,7 +300,7 @@ class Clerk2: public adevs::Atomic<IO_Type>
         static const int arrive;
         /// Model output port.
         static const int depart;
-    private:    
+    private:
         /// Structure for storing information about customers in the line
         struct customer_info_t
         {
@@ -319,7 +319,7 @@ class Clerk2: public adevs::Atomic<IO_Type>
         static const double SMALL_ORDER;
         /// Minimum time between preemptions.
         static const double PREEMPT_TIME;
-}; 
+};
 \end{verbatim}
 
 The \classname{Clerk2} constructor sets the clerk's clock and interruption timer to zero.
@@ -381,7 +381,7 @@ void Clerk2::delta_ext(double e, const Bag<IO_Type>& xb)
             line.push_front(c);
         }
         /// otherwise just put the customer at the end of the line
-        else 
+        else
         {
             cout << "Clerk: The new customer is at the back of the line" << endl;
             line.push_back(c);

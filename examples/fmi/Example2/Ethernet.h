@@ -1,7 +1,7 @@
 #ifndef ETHERNET_MODEL_H_
 #define ETHERNET_MODEL_H_
 #include <list>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "io.h"
 
 class Rx : public AtomicModel {

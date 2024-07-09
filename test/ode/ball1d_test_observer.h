@@ -2,11 +2,11 @@
 #define ball1d_test_observer
 #include <cassert>
 #include <iostream>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "check_ball1d_solution.h"
 
 /**
- * This class checks the output values of the ball1d model for 
+ * This class checks the output values of the ball1d model for
  * accuracy relative to the known trajectory and the precision
  * of bounce event times.
  */

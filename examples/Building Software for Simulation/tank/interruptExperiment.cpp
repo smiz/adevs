@@ -1,6 +1,6 @@
 #include <iostream>
 #include "InterruptHandler.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 using namespace std;
 using namespace adevs;
 

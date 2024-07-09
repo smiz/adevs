@@ -1,7 +1,7 @@
 #ifndef INTERRUPT_HANDLER_H_
 #define INTERRUPT_HANDLER_H_
 #include "SimEvents.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 // This is the model of the computer's interrupt handler.
 class InterruptHandler : public adevs::Atomic<SimEvent> {

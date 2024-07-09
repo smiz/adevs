@@ -2,7 +2,7 @@
 #define PACKET_PROCESSING_H_
 #include <list>
 #include "SimEvents.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 // This is the model of the computer's packet processing code.
 // Input events must have the type SIM_PACKET or SIM_INTERRUPT.
 // Output events have have the type SIM_MOTOR_ON_TIME.

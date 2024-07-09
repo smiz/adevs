@@ -1,7 +1,7 @@
 #ifndef CherryBomb_h_
 #define CherryBomb_h_
-#include "adevs.h"
-#include "adevs_fmi.h"
+#include "adevs/adevs.h"
+#include "adevs/fmi.h"
 
 class CherryBomb : public adevs::FMI<std::string> {
   public:

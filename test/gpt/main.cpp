@@ -1,6 +1,6 @@
 #include <cstdlib>
 #include <iostream>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "genr.h"
 #include "job.h"
 #include "proc.h"

@@ -1,6 +1,6 @@
 #ifndef __cell_h_
 #define __cell_h_
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 /// Length of the rule array
 #define RULE_ARRAY_LEN 64

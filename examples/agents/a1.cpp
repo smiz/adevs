@@ -5,7 +5,7 @@
 #include <gsl/gsl_rng.h>
 #include <cmath>
 #include <iostream>
-#include "adevs.h"
+#include "adevs/adevs.h"
 using namespace std;
 using namespace adevs;
 

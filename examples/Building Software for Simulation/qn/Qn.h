@@ -3,7 +3,7 @@
 #include <iostream>
 #include "Genr.h"
 #include "Sq.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 class Qn : public adevs::Network<int> {
   public:

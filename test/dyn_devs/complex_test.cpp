@@ -2,7 +2,7 @@
 #include <iostream>
 #include <list>
 #include "SimpleAtomic.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 using namespace adevs;
 using namespace std;
 

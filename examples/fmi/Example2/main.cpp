@@ -3,8 +3,8 @@
 #include "Control.h"
 #include "Ethernet.h"
 #include "Robot.h"
-#include "adevs.h"
-#include "adevs_fmi.h"
+#include "adevs/adevs.h"
+#include "adevs/fmi.h"
 #include "io.h"
 using namespace std;
 using namespace adevs;

@@ -1,6 +1,6 @@
 #ifndef LookLeft_h_
 #define LookLeft_h_
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 #define BLACK 0
 #define WHITE 1

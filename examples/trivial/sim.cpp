@@ -1,5 +1,5 @@
 /**
- * This models two nodes in a network. Node A sends 
+ * This models two nodes in a network. Node A sends
  * a message to B, and then waits 60 seconds for
  * a reply. If it gets not reply, it reports failure.
  * If it gets the reply, it reports success. A
@@ -7,7 +7,7 @@
  */
 #include <cstdlib>
 #include <iostream>
-#include "adevs.h"
+#include "adevs/adevs.h"
 using namespace adevs;
 using namespace std;
 

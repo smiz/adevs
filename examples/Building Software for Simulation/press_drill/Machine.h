@@ -1,6 +1,6 @@
 #ifndef _Machine_h_
 #define _Machine_h_
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 class Machine : public adevs::Atomic<int> {
   public:

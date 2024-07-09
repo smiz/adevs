@@ -1,6 +1,6 @@
 #ifndef _genr_h_
 #define _genr_h_
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "job.h"
 
 /*

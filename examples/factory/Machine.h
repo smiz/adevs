@@ -2,12 +2,12 @@
 #define _Machine_h_
 #include <cassert>
 #include <deque>
-#include "adevs.h"
+#include "adevs/adevs.h"
 /**
  * This class models a machine as a fifo queue and server with fixed service time.
  * The model_transition method is used, in conjunction with the Factory model_transition
  * method, to add and remove machines as needed to satisfy a 6 day turnaround time
- * for orders. 
+ * for orders.
  */
 class Machine : public adevs::Atomic<int> {
   public:

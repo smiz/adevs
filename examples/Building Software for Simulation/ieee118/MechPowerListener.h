@@ -2,7 +2,7 @@
 #define _MechPowerListener_h_
 #include <fstream>
 #include "ElectricalModel.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 /**
  * This listener records frequency at the generators.

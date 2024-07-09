@@ -3,7 +3,7 @@
 #include <fstream>
 #include "SimEvents.h"
 #include "TankPhysicsEqns.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 class TankPhysics : public adevs::Hybrid<SimEvent> {
   public:

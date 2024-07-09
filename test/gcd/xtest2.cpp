@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <iostream>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "gcd.h"
 using namespace std;
 

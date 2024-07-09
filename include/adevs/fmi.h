@@ -3,13 +3,13 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met: 
+ * modification, are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer. 
+ *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution. 
+ *    and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -23,7 +23,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies, 
+ * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the FreeBSD Project.
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
@@ -36,7 +36,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
-#include "adevs_hybrid.h"
+#include "adevs/hybrid.h"
 #include "fmi2FunctionTypes.h"
 #include "fmi2Functions.h"
 #include "fmi2TypesPlatform.h"
@@ -60,7 +60,7 @@ namespace adevs {
  * Load an FMI wrapped continuous system model for use in a
  * discrete event simulation. The FMI can then be attached
  * to any of the ODE solvers and event detectors in adevs
- * for simulation with the Hybrid class. This FMI loader 
+ * for simulation with the Hybrid class. This FMI loader
  * does not automatically extract model information from the
  * description XML, and so that information must be provided
  * explicitly by the end-user, but you probably need to know
@@ -109,7 +109,7 @@ class FMI : public ode_system<X> {
 		 * The internal transition function. This function will process all events
 		 * required by the FMI. Any derived class should call this method for the
 		 * parent class, then set or get any variables as appropriate, and then
-		 * call the base class method again to account for these changes. 
+		 * call the base class method again to account for these changes.
 		 */
     virtual void internal_event(double* q, bool const* state_event);
     /**

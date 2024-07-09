@@ -1,6 +1,6 @@
 #include <iostream>
 #include <typeinfo>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "check_ball1d_solution.h"
 #include "sampler.h"
 using namespace std;
@@ -8,7 +8,7 @@ using namespace adevs;
 
 /**
  * Solves
- * 		dx/dt = -y 
+ * 		dx/dt = -y
  * 		y = (x-y)/2
  */
 class dae : public dae_se1_system<double> {

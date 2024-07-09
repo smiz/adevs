@@ -2,8 +2,8 @@
 #define _electrical_model_eqns_h_
 #include <map>
 #include "ElectricalData.h"
-#include "adevs.h"
-#include "adevs_rk45_improved.h"
+#include "adevs/adevs.h"
+#include "adevs/rk45_improved.h"
 #include "events.h"
 
 /**
@@ -22,7 +22,7 @@ class ElectricalModelEqns
 		*/
     static int const SetLoad;
     /**
-		 * This input port is used to set a sampling condition 
+		 * This input port is used to set a sampling condition
 		 * for a generator state variable. The input should be
 		 * a GenrSampleEvent that describes the sampling condition
 		 * for the generator. Only one condition can be pending at
@@ -43,8 +43,8 @@ class ElectricalModelEqns
 		 */
     static int const GenrTrip;
     /**
-		 * These output ports produces generator state variable samples in the form of 
-		 * GenrSampleEvent objects. There is one output port for each generator and the 
+		 * These output ports produces generator state variable samples in the form of
+		 * GenrSampleEvent objects. There is one output port for each generator and the
 		 * port number is equal to the generator bus number.
 		 */
     int* GenrSampleOutput;

@@ -1,8 +1,8 @@
+#include "adevs/fmi.h"
 #include <iostream>
-#include "adevs.h"
-#include "adevs_corrected_euler.h"
-#include "adevs_fmi.h"
-#include "adevs_trap.h"
+#include "adevs/adevs.h"
+#include "adevs/corrected_euler.h"
+#include "adevs/trap.h"
 
 typedef adevs::PortValue<double> IOType;
 typedef adevs::Bag<IOType> IOBag;

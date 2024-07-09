@@ -1,7 +1,7 @@
 #include <iostream>
 #include "CherryBomb.h"
-#include "adevs.h"
-#include "adevs_fmi.h"
+#include "adevs/adevs.h"
+#include "adevs/fmi.h"
 using namespace std;
 using namespace adevs;
 

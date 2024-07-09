@@ -1,6 +1,6 @@
+#include "adevs/sched.h"
 #include <cassert>
 #include <iostream>
-#include "adevs_sched.h"
 using namespace adevs;
 
 class bogus_atomic : public Atomic<char> {

@@ -1,7 +1,7 @@
 #ifndef _sampler_h_
 #define _sampler_h_
 #include <iostream>
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 /**
 Sampling function for continuous system simulator testing.

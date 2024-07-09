@@ -1,6 +1,6 @@
 #ifndef _job_h_
 #define _job_h_
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 /*
 A job to be processed by a processor.  The job has a timestamp field

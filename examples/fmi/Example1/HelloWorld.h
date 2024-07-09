@@ -1,7 +1,7 @@
 #ifndef HelloWorld_h_
 #define HelloWorld_h_
-#include "adevs.h"
-#include "adevs_fmi.h"
+#include "adevs/adevs.h"
+#include "adevs/fmi.h"
 
 class HelloWorld : public adevs::FMI<double> {
   public:

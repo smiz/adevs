@@ -2,7 +2,7 @@
 #define _clerk2_h_
 #include <list>
 #include "Customer.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 class Clerk2 : public adevs::Atomic<IO_Type> {
   public:

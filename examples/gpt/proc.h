@@ -1,7 +1,7 @@
 #ifndef __proc_h_
 #define __proc_h_
 #include <cstdlib>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "job.h"
 /*
 A processor requires a fixed period of time to service a job.

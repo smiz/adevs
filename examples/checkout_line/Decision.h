@@ -2,7 +2,7 @@
 #define __decision_h_
 #include <list>
 #include "Customer.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 // Number of lines to consider.
 #define NUM_LINES 2

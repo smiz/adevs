@@ -3,13 +3,13 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met: 
+ * modification, are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer. 
+ *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution. 
+ *    and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -23,7 +23,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies, 
+ * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the FreeBSD Project.
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
@@ -31,16 +31,16 @@
 #ifndef __adevs_models_h_
 #define __adevs_models_h_
 #include <cstdlib>
-#include "adevs_bag.h"
-#include "adevs_exception.h"
-#include "adevs_set.h"
-#include "adevs_time.h"
+#include "adevs/bag.h"
+#include "adevs/exception.h"
+#include "adevs/set.h"
+#include "adevs/time.h"
 
 namespace adevs {
 
 /*
  * Declare network and atomic model so types can be used as the type of
- * parent in the basic Devs model and for type ID functions.  
+ * parent in the basic Devs model and for type ID functions.
  */
 template <typename X, typename T>
 class Network;
@@ -55,7 +55,7 @@ class Simulator;
 
 /**
  * The Devs class provides basic operations for all devs models.
- * The model I/O type is set by the template argument X. The 
+ * The model I/O type is set by the template argument X. The
  * type to be used for time is set with the template argument
  * T. The default type for time is double.
  */
@@ -96,7 +96,7 @@ class Devs {
 		 * if a structure change is to occur, and false otherwise. False is the
 		 * default return value.
 		 * This method is used by the simulator to limit the execution
-		 * of potentially expensive structure changes. 
+		 * of potentially expensive structure changes.
 		 * If the return value is true, then the parent's model_transition()
 		 * will also be evaluated. For network models, the model_transition() function is
 		 * preceded and anteceded by a call to getComponents(). The difference
@@ -124,7 +124,7 @@ class Event {
 		 * Simulator and in a network's routing method,
 		 * the model is the target of the input value.
 		 * In a callback to an event listener, the model is the
-		 * source of the output value. 
+		 * source of the output value.
 		 */
     Event(Devs<X, T>* model, X const &value) : model(model), value(value) {}
     /// Copy constructor.
@@ -182,7 +182,7 @@ class Atomic : public Devs<X, T> {
     virtual T ta() = 0;
     /**
 		 * Garbage collection function.  The objects in g are
-		 * no longer in use by the simulation engine and should be disposed of. 
+		 * no longer in use by the simulation engine and should be disposed of.
 `		 * Note that the elements in g are only those objects produced as
 		 * output by this model.
 		 */
@@ -194,7 +194,7 @@ class Atomic : public Devs<X, T> {
 
   protected:
     /**
-		 * Get the last event time for this model. This is 
+		 * Get the last event time for this model. This is
 		 * provided primarily for use with the backwards compatibility
 		 * module and should not be relied on. It is likely to be
 		 * removed in later versions of the code.
@@ -269,7 +269,7 @@ class Network : public Devs<X, T> {
     Network() : Devs<X, T>() {}
     /**
 		 * This method should fill the
-		 * set c with all the Network's components, excluding the 
+		 * set c with all the Network's components, excluding the
 		 * Network model itself.
 		 * @param c An empty set to the filled with the Network's components.
 		 */
@@ -278,7 +278,7 @@ class Network : public Devs<X, T> {
 		 * This method is called by the Simulator to route an output value
 		 * produced by a model. This method should fill the bag r
 		 * with Events that point to the target model and carry the value
-		 * to be delivered to the target. The target may be a component 
+		 * to be delivered to the target. The target may be a component
 		 * of the Network or the Network itself, the latter causing the
 		 * Network to produce an output.
 		 * @param model The model that produced the output value

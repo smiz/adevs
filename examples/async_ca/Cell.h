@@ -1,6 +1,6 @@
 #ifndef __cell_h_
 #define __cell_h_
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 struct value_t {
     bool value;

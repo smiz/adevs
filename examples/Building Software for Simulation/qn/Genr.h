@@ -2,7 +2,7 @@
 #define _Sw_h_
 #include <cstdlib>
 #include <iostream>
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 class Genr : public adevs::Atomic<int> {
   public:

@@ -12,7 +12,7 @@ The modeling of discrete event systems is most easily introduced with an example
 
 To simulate this system, we need an object to represent each customer in the line. A class called \classname{Customer} is created for this purpose. Each customer object has three attributes. One attribute is the time needed to ring up the customer's bill. Because we want to know how long a customer has been waiting in line, we also include two attributes that record when the customer entered the line and when the customer left the line. The difference of these times is the amount of time the customer spent waiting in line. Below is the code for the customer class. This code is in a single header file called \filename{Customer.h}.
 \begin{verbatim}
-#include "adevs.h"
+#include "adevs/adevs.h"
 /// A Busy-Mart customer.
 struct Customer
 {
@@ -31,7 +31,7 @@ The DEVS model of the clerk is as follows. First, we specify the type of object 
 
 To complete the model of the clerk, we implement the four methods that model her behavior. First, lets construct the header file for the clerk. Then we can fill in the details.
 \begin{verbatim}
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "Customer.h"
 #include <list>
 /**
@@ -39,7 +39,7 @@ To complete the model of the clerk, we implement the four methods that model her
  * The Clerk's input/output type is specified using the template
  * parameter of the base class.
  */
-class Clerk: public adevs::Atomic<IO_Type> 
+class Clerk: public adevs::Atomic<IO_Type>
 {
     public:
         /// Constructor.
@@ -50,7 +50,7 @@ class Clerk: public adevs::Atomic<IO_Type>
         void delta_ext(double e, const adevs::Bag<IO_Type>& xb);
         /// Confluent transition function.
         void delta_conf(const adevs::Bag<IO_Type>& xb);
-        /// Output function.  
+        /// Output function.
         void output_func(adevs::Bag<IO_Type>& yb);
         /// Time advance function.
         double ta();
@@ -142,7 +142,7 @@ void Clerk::output_func(Bag<IO_Type>& yb)
     Customer* leaving = line.front();
     // Set the departure time
     leaving->tleave = t + ta();
-    // Eject the customer 
+    // Eject the customer
     IO_Type y(depart,leaving);
     yb.insert(y);
     // Print a notice of the departure
@@ -159,7 +159,7 @@ void Clerk::delta_int()
     cout << "Clerk: Computed the internal transition function at t = " << t+ta() << endl;
     // Update the clock
     t += ta();
-    // Reset the spent time 
+    // Reset the spent time
     t_spent = 0.0;
     // Remove the departing customer from the front of the line.
     line.pop_front();
@@ -275,13 +275,13 @@ To complete our simulation of the convenience store, we need two other \classnam
 
 We will create an \classname{Atomic} model called a \classname{Generator} to create customers. This model is driven by a table formatted like Table \ref{tab:customer_data}. The input file contains a line for each customer. Each line has the customer's time of arrival followed by the customer's time for service. The \classname{Generator} does not need to process input events because all of its activities are scripted in the input file. The \classname{Generator} has a single output port ``arrive" through which it exports arriving customers. The model state is the list of \classname{Customer}s yet to arrive at the store. Here is the header file for the \classname{Generator}.
 \begin{verbatim}
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "Customer.h"
 #include <list>
 /**
  * This class produces Customers according to the provided schedule.
  */
-class Generator: public adevs::Atomic<IO_Type> 
+class Generator: public adevs::Atomic<IO_Type>
 {
     public:
         /// Constructor.
@@ -292,7 +292,7 @@ class Generator: public adevs::Atomic<IO_Type>
         void delta_ext(double e, const adevs::Bag<IO_Type>& xb);
         /// Confluent transition function.
         void delta_conf(const adevs::Bag<IO_Type>& xb);
-        /// Output function.  
+        /// Output function.
         void output_func(adevs::Bag<IO_Type>& yb);
         /// Time advance function.
         double ta();
@@ -303,10 +303,10 @@ class Generator: public adevs::Atomic<IO_Type>
         /// Model output port.
         static const int arrive;
 
-    private:    
+    private:
         /// List of arriving customers.
         std::list<Customer*> arrivals;
-}; 
+};
 \end{verbatim}
 
 The behavior of this model is very simple. The constructor opens the file containing the customer data and uses it to create a list of \classname{Customer} objects. The inter-arrival times of the customers are stored in their tenter fields. Here is the constructor that initializes the model.
@@ -405,7 +405,7 @@ int main(int argc, char** argv)
     adevs::Digraph<Customer*> store;
     // Create and add the component models
     Clerk* clrk = new Clerk();
-    Generator* genr = new Generator(argv[1]); 
+    Generator* genr = new Generator(argv[1]);
     store.add(clrk);
     store.add(genr);
     // Couple the components
@@ -485,7 +485,7 @@ A better approach is to have an \classname{Observer} that is coupled to the \cla
 
 Below is the code for the \classname{Observer} class. This model is driven solely by external events. The observer reacts to an external event by recording the time that the \classname{Customer} departed the \classname{Clerk}'s queue (i.e., the current simulation time) and how long the \classname{Customer} waited in line. Here is the \classname{Observer} header file.
 \begin{verbatim}
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "Customer.h"
 #include <fstream>
 /**
@@ -507,16 +507,16 @@ class Observer: public adevs::Atomic<IO_Type>
         void delta_conf(const adevs::Bag<IO_Type>& xb);
         /// Time advance function.
         double ta();
-        /// Output function.  
+        /// Output function.
         void output_func(adevs::Bag<IO_Type>& yb);
         /// Output value garbage collection.
         void gc_output(adevs::Bag<IO_Type>& g);
         /// Destructor.
         ~Observer();
-    private:    
+    private:
         /// File for storing information about departing customers.
         std::ofstream output_strm;
-}; 
+};
 \end{verbatim}
 Below is the \classname{Observer} source file.
 \begin{verbatim}
@@ -558,7 +558,7 @@ void Observer::delta_ext(double e, const Bag<IO_Type>& xb)
     for (i = xb.begin(); i != xb.end(); i++)
     {
         const Customer* c = (*i).value;
-        // Compute the time spent waiting in line 
+        // Compute the time spent waiting in line
         double waiting_time = (c->tleave-c->tenter)-c->twait;
         // Dump stats to a file
         output_strm << c->tenter << " " << c->twait << " " <<
@@ -588,11 +588,11 @@ Observer::~Observer()
 }
 \end{verbatim}
 
-This model is coupled to the \classname{Clerk}'s ``depart" output port in the same manner as before. The resulting coupled model is illustrated in Figure \ref{fig:complete_store_model}. 
+This model is coupled to the \classname{Clerk}'s ``depart" output port in the same manner as before. The resulting coupled model is illustrated in Figure \ref{fig:complete_store_model}.
 \begin{figure}[ht]
 \centering
 \includegraphics{intro_figs/generator_and_clerk_and_observer.pdf}
-\caption{The \classname{Generator}, \classname{Clerk}, and \classname{Observer} model.} 
+\caption{The \classname{Generator}, \classname{Clerk}, and \classname{Observer} model.}
 \label{fig:complete_store_model}
 \end{figure}
 

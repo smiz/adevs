@@ -1,7 +1,7 @@
 #ifndef Control_h_
 #define Control_h_
-#include "adevs.h"
-#include "adevs_fmi.h"
+#include "adevs/adevs.h"
+#include "adevs/fmi.h"
 
 class Control : public adevs::FMI<IO_Type> {
   public:

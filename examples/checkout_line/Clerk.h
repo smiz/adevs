@@ -2,7 +2,7 @@
 #define __clerk_h_
 #include <list>
 #include "Customer.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 /**
  * The Clerk class is derived from the adevs Atomic class.

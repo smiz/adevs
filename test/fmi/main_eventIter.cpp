@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
-#include "adevs.h"
-#include "adevs_fmi.h"
+#include "adevs/adevs.h"
+#include "adevs/fmi.h"
 #include "eventIter/modelDescription.h"
 using namespace std;
 using namespace adevs;

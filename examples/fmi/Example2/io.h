@@ -1,6 +1,6 @@
 #ifndef _io_h_
 #define _io_h_
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 class SimObject {
   public:

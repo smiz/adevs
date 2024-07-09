@@ -3,7 +3,7 @@
 #include <cassert>
 #include <cstdio>
 #include <list>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "object.h"
 
 typedef std::list<std::pair<double, object*>> delay_q;

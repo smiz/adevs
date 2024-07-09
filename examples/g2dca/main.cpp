@@ -7,7 +7,7 @@
 #include <iostream>
 #include <sstream>
 #include "Cell.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 using namespace std;
 
 // Cellspace dimensions

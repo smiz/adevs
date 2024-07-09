@@ -3,7 +3,7 @@
 #include <list>
 #include <set>
 #include <vector>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "jni.h"
 
 /*
@@ -27,7 +27,7 @@ class JavaEventListenerManager;
     }
 
 /**
- * This Simulator implements the Java adevs.Simulator class. It adds to the Simulator 
+ * This Simulator implements the Java adevs.Simulator class. It adds to the Simulator
  * class a list of Java object peers that are in use by the simulation. This is used
  * for garbage collection when the Simulator is destroyed.
  */

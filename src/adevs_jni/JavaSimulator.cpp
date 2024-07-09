@@ -1,6 +1,6 @@
 #include <list>
-#include "adevs_jni/adevs_Simulator.h"
-#include "adevs_jni/adevs_jni.h"
+#include "adevs/jni/adevs_Simulator.h"
+#include "adevs/jni/adevs_jni.h"
 using namespace adevs;
 using namespace std;
 

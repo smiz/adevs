@@ -4,7 +4,7 @@
 #include <iostream>
 #include "CartModel.h"
 #include "PIDControl.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 class TrajRecorder : public adevs::EventListener<double> {
   public:

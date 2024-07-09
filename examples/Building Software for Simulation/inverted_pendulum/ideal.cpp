@@ -1,7 +1,7 @@
 #include "CartModel.h"
 #include "PIDControl.h"
 #include "TrajRecorder.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 using namespace std;
 using namespace adevs;
 

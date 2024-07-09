@@ -8,7 +8,7 @@ If, on the other hand, two systems interact continuously, then those interacting
 There are three possibly outcomes of this lumping process. One possibility is that we end up with a single assembly. In this case our model is essentially continuous and we are probably better off using a simulation tool for continuous systems. At the other extreme, we find that the continuous parts of our model are very simple, yielding to analytical solutions that are easily transformed into discrete event models. Between these extremes are models with continuous dynamics that are not simple but do not dominate the modeling problem. The continuous system simulation part of \adevs\ is aimed at this type of model.
 
 \section{Differential equation modeling with the \classname{ode\_system} class}
-Models described by ordinary differential equations are implemented by sub-classing the \classname{ode\_system} class. This class has two sets of methods: the first is for the model's continuous dynamics and the second is for the model's discrete event dynamics. I'll illustrate both with the simple, if somewhat contrived, example of a cherry bomb\footnote{A cherry bomb is a small red firecracker. They are dangerous and illegal in the United States. Nonetheless, every school seems to have at least one obnoxious kid who likes to put them into the toilets.}. This bomb is dropped from a height of 1 meter and bounces until it explodes or is doused with water. We'll assume that the cherry bomb only bounces up and down and is perfectly elastic. The cherry bomb explodes 2 seconds from the time it is lit unless doused first. Dousing the cherry bomb puts out the fuse\footnote{Cherry bomb fuses are frequently water proofed.}. Dousing is a discrete input event and the cherry bomb produces a discrete output event if it explodes. 
+Models described by ordinary differential equations are implemented by sub-classing the \classname{ode\_system} class. This class has two sets of methods: the first is for the model's continuous dynamics and the second is for the model's discrete event dynamics. I'll illustrate both with the simple, if somewhat contrived, example of a cherry bomb\footnote{A cherry bomb is a small red firecracker. They are dangerous and illegal in the United States. Nonetheless, every school seems to have at least one obnoxious kid who likes to put them into the toilets.}. This bomb is dropped from a height of 1 meter and bounces until it explodes or is doused with water. We'll assume that the cherry bomb only bounces up and down and is perfectly elastic. The cherry bomb explodes 2 seconds from the time it is lit unless doused first. Dousing the cherry bomb puts out the fuse\footnote{Cherry bomb fuses are frequently water proofed.}. Dousing is a discrete input event and the cherry bomb produces a discrete output event if it explodes.
 
 This model has two continuous state variables: the height and the velocity of the cherry bomb. Between events, these variables are governed by the pair of differential equations
 \begin{align}
@@ -23,7 +23,7 @@ whose solution is $t_0 + t$ or just $t$ if we set $t_0 = 0$. The ball bounces wh
 \begin{equation}
 h = 0 \ \& \ v < 0 \implies v \leftarrow -v \label{eqn:state_event}
 \end{equation}
-where $\implies$ is logical implication and $\leftarrow$ indicates an assignment. 
+where $\implies$ is logical implication and $\leftarrow$ indicates an assignment.
 
 Equations \ref{eqn:v}, \ref{eqn:h}, and \ref{eqn:t} are the state variable derivatives, and these equations are implemented in the \methodname{der\_func} method of the \classname{ode\_system} class. The signature for this method is
 \begin{verbatim}
@@ -35,7 +35,7 @@ Equation \ref{eqn:state_event} is a state event condition and it is implemented 
 \begin{verbatim}
 void state_event_func(const double *q, double *z)
 \end{verbatim}
-Again, the supplied q array contains the current state variable values. These are used to evaluate the state event condition and store the result in the z array. The simulator detects state events by looking for changes in the sign of the z array entries. Note that the event condition should be continuous in the state variables on which it depends. In the case of the cherry bomb this is simple to do. We simply use $z=h$ if $v < 0$ and $z=1$ if $v >= 0$.  
+Again, the supplied q array contains the current state variable values. These are used to evaluate the state event condition and store the result in the z array. The simulator detects state events by looking for changes in the sign of the z array entries. Note that the event condition should be continuous in the state variables on which it depends. In the case of the cherry bomb this is simple to do. We simply use $z=h$ if $v < 0$ and $z=1$ if $v >= 0$.
 
 The `then' part (right hand side) is implemented with the \methodname{internal\_event} method, which the simulator invokes when the state event condition is true. The signature of this method is
 \begin{verbatim}
@@ -53,7 +53,7 @@ The second event that can change the state of the fuse is dousing with water. Th
 \begin{verbatim}
 void external_event(double *q, double e, const Bag<X> &xb)
 \end{verbatim}
-The array q contains the values of the continuous state variables, e is the time since the last discrete event, and xb is the bag of input. The douse event is an input and it appears in the input bag xb when and if the event occurs. 
+The array q contains the values of the continuous state variables, e is the time since the last discrete event, and xb is the bag of input. The douse event is an input and it appears in the input bag xb when and if the event occurs.
 
 As before, it is possible for an external and internal event to coincide. When this happens, the simulator calls the method \methodname{confluent\_event}. Its signature is
 \begin{verbatim}
@@ -79,7 +79,7 @@ void init(double* q)
 \end{verbatim}
 where q is an array that should be filled with the initial values for the continuous variables $h$, $v$, and $t$. The complete implementation of the \classname{CherryBomb} is listed below.
 \begin{verbatim}
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include <iostream>
 using namespace std;
 using namespace adevs;
@@ -105,12 +105,12 @@ class CherryBomb: public ode_system<string> {
          q[T] = 0.0; // Start time at zero
       }
       void der_func(const double* q, double* dq) {
-         dq[V] = -9.8; 
-         dq[H] = q[V]; 
-         dq[T] = 1.0; 
+         dq[V] = -9.8;
+         dq[H] = q[V];
+         dq[T] = 1.0;
       }
       void state_event_func(const double* q, double *z) {
-         // Test for hitting the ground. 
+         // Test for hitting the ground.
          if (q[V] < 0.0) z[0] = q[H];
          else z[0] = 1.0;
       }
@@ -142,7 +142,7 @@ class CherryBomb: public ode_system<string> {
       // No garbage collection is needed
       void gc_output(Bag<string>&){}
       // Get the current value of the discrete variable
-      Phase getPhase() { return phase; } 
+      Phase getPhase() { return phase; }
    private:
       Phase phase;
 };
@@ -205,7 +205,7 @@ model CherryBomb
    Real v(start=0); // Velocity of the bomb
    parameter Real g = 9.8; // Gravity
    Real fuseTime(start=2.0); // Fuse duration
-   input Boolean dropped(start=false); 
+   input Boolean dropped(start=false);
    output Boolean exploded(start=false);
 equation
    // Accelerate downward if we have been lit
@@ -464,7 +464,7 @@ The CherryBomb class is constructed as a subclass of the adevs FMI class. The FM
 \item The model name that appears in the \filename{modelDescription.xml} within the tag "modelName".
 \item The GUID string for the FMI object that appears within the tag "guid" just beneath "modelName" in \filename{modelDescription.xml}.
 \item The number of continuous state variables in the Modelica model, which is determined by counting the number of variable descriptions containing the tagged "Real derivative". There are three of these for the CherryBomb model.
-\item The number of state event conditions in the model, which is contained in the tag "numberOfEventIndicators". 
+\item The number of state event conditions in the model, which is contained in the tag "numberOfEventIndicators".
 \item The name of the shared object file that contains the equations, etc. for the compiled Modelica model.
 \end{enumerate}
 The CherryBomb class inherits the functions of the ode\_system class described in the previous section, and the default implementation of these methods by the FMI class is sufficient to simulate the parts of the model's behavior that are described in the Modelica file. If these methods are overridden, then it is necessary to first invoke the method of the base class before performing any other action. If any of the Modelica variables are modified by the overridden method, then it is also necessary to invoke the method of the base class after the modifications have been made. Variables that are part of the Modelica model can be read and written using methods inherited from the FMI class. These methods have the forms \methodname{set\_int(int index, int val)}, \methodname{get\_int(int index): int}, \methodname{set\_double(int index, double val)}, \methodname{get\_double(int index): double}, \methodname{set\_bool(int index, bool val)}, and \methodname{get\_bool(int index): bool}. The index variable for each method should be valueReference number that appears in the file \filename{modelDescription.xml}. Each of these elements is illustrated in the implementation of the CherryBomb class below. \bf{A header file like the one shown below can be generated automatically using the \filename{xml2cpp.py} python script from the \filename{utils} directory.}
@@ -501,7 +501,7 @@ class CherryBomb:
          FMI<std::string>::external_event(q,e,xb);
          // Drop the ball
          set_dropped();
-         // Call the base class method again to 
+         // Call the base class method again to
          // recalculate variables that depend on
          // the dropped variable
          FMI<std::string>::external_event(q,e,xb);
@@ -521,7 +521,7 @@ class CherryBomb:
          if (state_event[1])
             yb.insert("boom!");
       }
-      // The exploded variable in the Modelica model is its 
+      // The exploded variable in the Modelica model is its
       // third boolean variable. This information is in the
       // modelDescription.xml file generated by the Modelica
       // compiler.

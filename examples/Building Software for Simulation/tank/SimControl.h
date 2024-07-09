@@ -4,7 +4,7 @@
 #include "Display.h"
 #include "SimEventListener.h"
 #include "Tank.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "cc++/socket.h"
 /**
  * This is the main simulation control class.

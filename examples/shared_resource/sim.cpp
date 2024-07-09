@@ -2,7 +2,7 @@
 #include <iostream>
 #include <list>
 #include <set>
-#include "adevs.h"
+#include "adevs/adevs.h"
 using namespace std;
 using namespace adevs;
 

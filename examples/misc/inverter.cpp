@@ -8,7 +8,7 @@
  * http://www.u.arizona.edu/!sricardo/index.php?n=Main.TechnicalReports
  */
 #include <iostream>
-#include "adevs.h"
+#include "adevs/adevs.h"
 using namespace std;
 using namespace adevs;
 

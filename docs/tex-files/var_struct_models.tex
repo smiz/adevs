@@ -48,7 +48,7 @@ The \methodname{model\_transition} method can break the strict hierarchy and mod
 
 The first approach is to allow only \classname{Network} models to effect structure changes and to restrict those changes to the \classname{Network}'s immediate sub-components. With this approach, an \classname{Atomic} model initiates a structure change by posting a structure change request for its parent. The \classname{Atomic} model's \methodname{model\_transition} method returns true causing its parent's \methodname{model\_transition} method to be invoked. The parent \classname{Network} model then retrieves and acts on the requests posted by its components. The \classname{Network} repeats this process if it wants to effect structure changes involving models other than its immediate children; i.e., it posts a request for its parent and returns true from its \methodname{model\_transition} method.
 
-The second approach allows arbitrary changes in structure by forcing the model at the top of the hierarchy to invoke its \methodname{model\_transition} method. This causes the simulator to consider every model in the aftermath of a structure change. As in the first approach, an \classname{Atomic} model that wants to effect a change of structure uses its \methodname{model\_transition} method to post a request for its parent. This request is percolated up the model hierarchy by the \classname{Network} models whose \methodname{model\_transition} methods always return true. 
+The second approach allows arbitrary changes in structure by forcing the model at the top of the hierarchy to invoke its \methodname{model\_transition} method. This causes the simulator to consider every model in the aftermath of a structure change. As in the first approach, an \classname{Atomic} model that wants to effect a change of structure uses its \methodname{model\_transition} method to post a request for its parent. This request is percolated up the model hierarchy by the \classname{Network} models whose \methodname{model\_transition} methods always return true.
 
 The first approach trades flexibility for execution time. The second approach trades execution time for flexibility. With the first approach, structure changes that involve a small number of components require a small amount of work by the simulator. The scope of change must, however, be carefully restricted. With the second approach, every structure change requires the simulator to include every part of the model in its calculations, regardless of the actual extent of the change in structure. In this case, however, the scope of a structure change may be unlimited.
 
@@ -65,7 +65,7 @@ We will use a variable structure model to answer these questions. This model has
 
 The generator creates new orders for the factory. Each order is identified with an integer label, and the generator produces orders at the rate anticipated by the factory engineers. Demand at the factory is expected to be steady with a new order arriving every 1/2 to 2 days. This expected demand is modeled with a random variable that is uniformly distributed in [0.5,2]. Here is the code for the generator:
 \begin{verbatim}
-#include "adevs.h"
+#include "adevs/adevs.h"
 // The Genr models factory demand. It creates new orders every 0.5 to 2 days.
 class Genr: public adevs::Atomic<int>
 {
@@ -98,20 +98,20 @@ class Genr: public adevs::Atomic<int>
         // Method to set the order time
         void set_time_to_order() { time_to_order = u.uniform(0.5,2.0); }
 };
-\end{verbatim} 
+\end{verbatim}
 
 The model of a machine is similar to the \classname{Clerk} in section \ref{chapter:intro}. A machine requires 3 days to make a gizmo, and orders for gizmos are processed first come, first serve. The \classname{Machine}'s \methodname{model\_transition} method is inherited from its \classname{Atomic} base class. I'll discuss the role of the \methodname{model\_transition} method after introducing the \classname{Factory} class. Here is the code for the \classname{Machine}.
 \begin{verbatim}
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include <cassert>
 #include <deque>
 /**
  * This class models a machine as a fifo queue and server with fixed service time.
  * The model_transition method is used, in conjunction with the Factory model_transition
  * method, to add and remove machines as needed to satisfy a 6 day turnaround time
- * for orders. 
+ * for orders.
  */
-class Machine: public adevs::Atomic<int> 
+class Machine: public adevs::Atomic<int>
 {
     public:
         Machine():adevs::Atomic<int>(),tleft(DBL_MAX){}
@@ -127,7 +127,7 @@ class Machine: public adevs::Atomic<int>
             if (!q.empty()) tleft -= e;
             // Put new orders into the queue
             adevs::Bag<int>::const_iterator iter = xb.begin();
-            for (; iter != xb.end(); iter++) 
+            for (; iter != xb.end(); iter++)
             {
                 // If the machine is idle then set the service time
                 if (q.empty()) tleft = 3.0;
@@ -160,19 +160,19 @@ class Machine: public adevs::Atomic<int>
         }
         // Get the number of orders in the queue
         unsigned int getQueueSize() const { return q.size(); }
-        // No garbage collection 
+        // No garbage collection
         void gc_output(adevs::Bag<int>&){}
     private:
         // Queue for orders that are waiting to be processed
         std::deque<int> q;
         // Time remaining on the order at the front of the queue
-        double tleft; 
+        double tleft;
 };
 \end{verbatim}
 
-The number of \classname{Machine} models contained in the \classname{Factory} model at any time is determined by the current demand for gizmos. The real factory, of course, will have a fixed number of machines on the factory floor, but the planners do not know how many machines are needed. A variable structure model that creates and destroys machines as needed is a good way to accommodate this uncertainty. 
+The number of \classname{Machine} models contained in the \classname{Factory} model at any time is determined by the current demand for gizmos. The real factory, of course, will have a fixed number of machines on the factory floor, but the planners do not know how many machines are needed. A variable structure model that creates and destroys machines as needed is a good way to accommodate this uncertainty.
 
-The Custom Widget and Gizmo Company has built its reputation on a guaranteed time of service, from order to delivery, of 15 days. This leaves only 6 days for the manufacturing process, the remaining time being consumed by order processing, delivery, etc. 
+The Custom Widget and Gizmo Company has built its reputation on a guaranteed time of service, from order to delivery, of 15 days. This leaves only 6 days for the manufacturing process, the remaining time being consumed by order processing, delivery, etc.
 
 A single machine can meet this schedule if it has at most one order waiting in its queue at any time. However, it costs a dollar a day to operate a machine and so the factory engineers want to minimize the number of machines working at any time. To accomplish this goal, the factory's operating policy has two rules:
 \begin{enumerate}
@@ -188,7 +188,7 @@ If we had used the second approached to build our variable structure model, then
 
 The \classname{Factory} is a \classname{Network} model and must implement all of the \classname{Network}'s virtual methods: \methodname{route}, \methodname{getComponents}, and \methodname{model\_transition}. The \methodname{route} method is responsible for assigning orders to machines. When an order arrives, it is sent to the machine that will most quickly satisfy the order. The \methodname{getComponents} method puts the current set of machines into the \classname{Set} c of components. The \methodname{model\_transition} method examines the status of each machine, deleting idle machines and adding new machines if they are needed to maintain reserve capacity. The \classname{Factory} implementation is shown below.
 \begin{verbatim}
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "Machine.h"
 #include <list>
 
@@ -230,7 +230,7 @@ void Factory::getComponents(Set<Devs<int>*>& c) {
 
 void Factory::route(const int& order, Devs<int>* src, Bag<Event<int> >& r) {
    // If this is a machine output, then it leaves the factory
-   if (src != this) { 
+   if (src != this) {
       r.insert(Event<int>(this,order));
       return;
    }
@@ -278,7 +278,7 @@ void Factory::add_machine() {
 double Factory::compute_service_time(Machine* m) {
    // If the machine is already working
    if (m->ta() < DBL_MAX) return 3.0+(m->getQueueSize()-1)*3.0+m->ta();
-   // Otherwise it is idle 
+   // Otherwise it is idle
    else return 3.0;
 }
 
@@ -307,8 +307,8 @@ Now the state transition methods for the two \classname{Machine}s are invoked. T
 Suppose no orders arrive in the next three days. At day six, both machines finish their work. The \classname{Machine}s' \methodname{output\_func} methods are invoked, producing the finished orders. These become output from the \classname{Factory} via the \classname{Factory}'s \methodname{route} method.
 
 Next, the \classname{Machine}s' \methodname{delta\_int} methods are called and both \classname{Machine}s become idle. After this, the \classname{Machine}s' \methodname{model\_transition} methods are invoked and these return true because the machines are idle. This causes the \classname{Factory}'s \methodname{model\_transition} method to be called. It examines each \classname{Machine}, sees that they are idle, and deletes both of them. Lastly the \classname{Factory} computes its available capacity, which is now zero, and creates a new machine. This returns the \classname{Factory} to its initial configuration with one idle \classname{Machine}.
- 
-The factory engineers have two questions: how many machines are needed and what is the factory's annual operating cost. These questions can be answered with a plot of the count of active machines versus time. The required number of machines is the maximum value of the active machine count. Each machine costs a dollar per day to operate, and so the operating cost is the one year time integral of the active machine count. A plot of the active machine count versus time is shown in Fig. \ref{fig:active_machine_plot}. The maximum count of active machines is four and the annual operating cost is \$944 (this plot is from the first simulation run listed in Table \ref{tab:monte_carlo_outcome}). 
+
+The factory engineers have two questions: how many machines are needed and what is the factory's annual operating cost. These questions can be answered with a plot of the count of active machines versus time. The required number of machines is the maximum value of the active machine count. Each machine costs a dollar per day to operate, and so the operating cost is the one year time integral of the active machine count. A plot of the active machine count versus time is shown in Fig. \ref{fig:active_machine_plot}. The maximum count of active machines is four and the annual operating cost is \$944 (this plot is from the first simulation run listed in Table \ref{tab:monte_carlo_outcome}).
 
 \begin{figure}[ht]
 \centering

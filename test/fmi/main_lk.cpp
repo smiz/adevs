@@ -1,9 +1,9 @@
 #include <iostream>
 #include <map>
 #include <vector>
-#include "adevs.h"
-#include "adevs_fmi.h"
-#include "adevs_trap.h"
+#include "adevs/adevs.h"
+#include "adevs/fmi.h"
+#include "adevs/trap.h"
 #include "lk/modelDescription.h"
 using namespace std;
 using namespace adevs;

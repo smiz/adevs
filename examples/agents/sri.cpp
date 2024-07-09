@@ -6,7 +6,7 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
-#include "adevs.h"
+#include "adevs/adevs.h"
 using namespace std;
 using namespace adevs;
 

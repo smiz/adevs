@@ -1,6 +1,6 @@
 #include <iostream>
 #include "Qn.h"
-#include "adevs_par_simulator.h"
+#include "adevs/par_simulator.h"
 using namespace adevs;
 using namespace std;
 

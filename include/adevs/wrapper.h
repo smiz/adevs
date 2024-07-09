@@ -3,13 +3,13 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met: 
+ * modification, are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer. 
+ *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution. 
+ *    and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -23,14 +23,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies, 
+ * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the FreeBSD Project.
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
 #ifndef __adevs_wrapper_h_
 #define __adevs_wrapper_h_
-#include "adevs_models.h"
+#include "adevs/models.h"
 
 namespace adevs {
 /**
@@ -73,7 +73,7 @@ class ModelWrapper : public Atomic<ExternalType, T>,
         Bag<Event<InternalType, T>> &internal_input) = 0;
     /**
 			 * This method is used to translate outgoing output objects
-			 * into objects that the ModelWrapper can produce. The 
+			 * into objects that the ModelWrapper can produce. The
 			 * internal_output bag contains all of the output events that the
 			 * were produced by the wrapped model. The external_output bag
 			 * should be filled with objects of type ExternalType that

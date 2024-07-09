@@ -2,7 +2,7 @@
 #define _Factory_h_
 #include <list>
 #include "Machine.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 /**
  * This class implements the Factory and it machine usage policy.

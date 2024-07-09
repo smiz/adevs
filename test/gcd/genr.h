@@ -3,7 +3,7 @@
 #include <cassert>
 #include <cstdio>
 #include <vector>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "object.h"
 
 class genr : public adevs::Atomic<PortValue> {

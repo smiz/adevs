@@ -2,7 +2,7 @@
 #define _BusFreqListener_h_
 #include <fstream>
 #include "ElectricalModel.h"
-#include "adevs.h"
+#include "adevs/adevs.h"
 
 /**
  * This listener records frequency at all of the busses, load and generation.
