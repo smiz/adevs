@@ -20,6 +20,10 @@ project_description = '''
 
 adevs = include_directories('include')
 
+# Imports used other places
+fs = import('fs')
+
+# Add all the subdirectoriess
 subdir('examples')
 subdir('src')
-#subdir('test')
+subdir('test')

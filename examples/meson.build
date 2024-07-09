@@ -1,9 +1,3 @@
-# *** Copy test files ***
-
-fs = import('fs')
-
-# *** Dependencies ***
-
 # Get dependencies for all of the examples at a single time.
 
 cc = meson.get_compiler('cpp')
@@ -16,8 +10,7 @@ d_blas = dependency('blas')
 d_sdl = dependency('SDL')
 d_lapack = dependency('lapack')
 
-
-# *** Examples ***
+# Subdirectories for each example
 
 subdir('activity_scanning')
 subdir('agents')
