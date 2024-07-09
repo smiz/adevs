@@ -159,8 +159,8 @@ class Atomic : public Devs<X, T> {
           tL(adevs_zero<T>()),
           q_index(0),  // The Schedule requires this to be zero
           proc(-1),
-          x(std::make_shared<Bag<X>>()),
-          y(std::make_shared<Bag<X>>()) {}
+          inputs(std::make_shared<Bag<X>>()),
+          outputs(std::make_shared<Bag<X>>()) {}
     /// Internal transition function.
     virtual void delta_int() = 0;
     /*
@@ -216,8 +216,8 @@ class Atomic : public Devs<X, T> {
     // Thread assigned to this model
     int proc;
     // Input and output event bags
-    std::shared_ptr<Bag<X>> x;
-    std::shared_ptr<Bag<X>> y;
+    std::shared_ptr<Bag<X>> inputs;
+    std::shared_ptr<Bag<X>> outputs;
 };
 
 /*
@@ -240,7 +240,7 @@ class Atomic : public Devs<X, T> {
 template <typename X, typename T = double>
 class MealyAtomic : public Atomic<X, T> {
   public:
-    MealyAtomic<X, T>() : Atomic<X, T>(), imm(false) {}
+    MealyAtomic<X, T>() : Atomic<X, T>() {}
     MealyAtomic<X, T>* typeIsMealyAtomic() { return this; }
     /*
      * Produce output at e < ta(q) in response to xb.
@@ -256,8 +256,6 @@ class MealyAtomic : public Atomic<X, T> {
 
   private:
     friend class Simulator<X, T>;
-
-    bool imm;
 };
 
 #ifdef __clang__

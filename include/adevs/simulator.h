@@ -267,18 +267,18 @@ Simulator<X, T>::Simulator(std::list<Devs<X, T>*> &active)
 
 template <class X, class T>
 void Simulator<X, T>::visit(Atomic<X, T>* model) {
-    assert(model->y->empty());
+    assert(model->outputs->empty());
     model->imminent = true;
     // Mealy models are processed after the Moore models
     if (model->typeIsMealyAtomic() != NULL) {
-        assert(model->y->empty());
+        assert(model->outputs->empty());
         // May be in the mealy list because of a route call
         if (!model->activated) {
             mealy.push_back(model->typeIsMealyAtomic());
         }
         return;
     }
-    model->y->clear();
+    //model->outputs->clear();
 
     // Put it in the active list if it is not already there
     if (!model->activated) {
@@ -288,10 +288,10 @@ void Simulator<X, T>::visit(Atomic<X, T>* model) {
 
     // Compute output functions and route the events. The bags of output
     // are held for garbage collection at a later time.
-    model->output_func(*(model->y));
+    model->output_func(*(model->outputs));
     // Route each event in y
-    for (typename Bag<X>::iterator y_iter = model->y->begin();
-         y_iter != model->y->end(); y_iter++) {
+    for (typename Bag<X>::iterator y_iter = model->outputs->begin();
+         y_iter != model->outputs->end(); y_iter++) {
         route(model->getParent(), model, *y_iter);
     }
 }
@@ -330,8 +330,8 @@ void Simulator<X, T>::computeNextOutput(Bag<Event<X, T>> &input, T t) {
     for (typename Bag<MealyAtomic<X, T>*>::iterator m_iter = mealy.begin();
          m_iter != mealy.end(); m_iter++) {
         MealyAtomic<X, T>* model = *m_iter;
-        assert(model->y->empty());
-        //model->y->clear();
+        assert(model->outputs->empty());
+        //model->outputs->clear();
 
         // Put it in the active set if it is not already there
         if (!model->activated) {
@@ -343,15 +343,15 @@ void Simulator<X, T>::computeNextOutput(Bag<Event<X, T>> &input, T t) {
         if (model->imminent)  // These are the imminent Mealy models
         {
             if (!model->activated) {
-                model->typeIsAtomic()->output_func(*(model->y));
+                model->typeIsAtomic()->output_func(*(model->outputs));
             } else {
-                model->output_func(*(model->x), *(model->y));
+                model->output_func(*(model->inputs), *(model->outputs));
             }
         } else {
             assert(model->activated);
             // These are the Mealy models activated by input
-            model->output_func(sched.minPriority() - model->tL, *(model->x),
-                               *(model->y));
+            model->output_func(sched.minPriority() - model->tL,
+                               *(model->inputs), *(model->outputs));
         }
     }
     // Translate Mealy output to inputs for Moore models. The route method
@@ -360,8 +360,8 @@ void Simulator<X, T>::computeNextOutput(Bag<Event<X, T>> &input, T t) {
          m_iter != mealy.end(); m_iter++) {
         MealyAtomic<X, T>* model = *m_iter;
         // Route each event in y
-        for (typename Bag<X>::iterator y_iter = model->y->begin();
-             y_iter != model->y->end(); y_iter++) {
+        for (typename Bag<X>::iterator y_iter = model->outputs->begin();
+             y_iter != model->outputs->end(); y_iter++) {
             route(model->getParent(), model, *y_iter);
         }
     }
@@ -398,14 +398,14 @@ T Simulator<X, T>::computeNextState() {
         //Atomic<X, T>* model = activated[i];
         // Internal event if no input
 
-        if (model->x->empty()) {
+        if (model->inputs->empty()) {
             model->delta_int();
         } else if (model->imminent) {
             // Confluent event if model is imminent and has input
-            model->delta_conf(*(model->x));
+            model->delta_conf(*(model->inputs));
         } else {
             // External event if model is not imminent and has input
-            model->delta_ext(t - model->tL, *(model->x));
+            model->delta_ext(t - model->tL, *(model->inputs));
         }
         // Notify listeners
         this->notify_state_listeners(model, tQ);
@@ -508,12 +508,12 @@ template <class X, class T>
 void Simulator<X, T>::clean_up(Devs<X, T>* model) {
     Atomic<X, T>* amodel = model->typeIsAtomic();
     if (amodel != NULL) {
-        if (!amodel->x->empty()) {
-            amodel->x->clear();
+        if (!amodel->inputs->empty()) {
+            amodel->inputs->clear();
         }
-        if (!amodel->y->empty()) {
-            amodel->gc_output(*(amodel->y));
-            amodel->y->clear();
+        if (!amodel->outputs->empty()) {
+            amodel->gc_output(*(amodel->outputs));
+            amodel->outputs->clear();
         }
     } else {
         Set<Devs<X, T>*> components;
@@ -593,10 +593,10 @@ void Simulator<X, T>::inject_event(Atomic<X, T>* model, X &value) {
             activated.push_back(model);
             model->activated = true;
         }
-        //model->x->clear();
+        //model->inputs->clear();
     }
     this->notify_input_listeners(model, value, io_time);
-    model->x->push_back(value);
+    model->inputs->push_back(value);
 }
 
 template <class X, class T>

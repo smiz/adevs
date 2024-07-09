@@ -35,7 +35,6 @@
 
 namespace adevs {
 
-// TODO: Temporary rename for testing.
 template <typename T>
 using Bag = std::list<T>;
 
