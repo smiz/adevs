@@ -3,7 +3,7 @@
 #include <map>
 #include "ElectricalData.h"
 #include "adevs/adevs.h"
-#include "adevs/rk45_improved.h"
+#include "adevs/rk_45.h"
 #include "events.h"
 
 /**

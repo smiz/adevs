@@ -1,52 +1,38 @@
-OPTFLAG = -O3 -mtune=native -march=native 
-CFLAGS = -Wall 
-CC = g++
+tank_common_cpp = [
+    'TankPhysics.cpp',
+    'TankPhysicsEqns.cpp',
+    'InterruptHandler.cpp',
+    'PacketProcessing.cpp',
+    'Computer.cpp',
+    'Tank.cpp',
+    'Display.cpp',
+    'SimControl.cpp',
+]
 
-# Adjust these as needed to find X11, GLUT and GL, and the GNU library
-# of utilities.
-LIBS = -lSDL -lglut -lccgnu2
-LIBPATH = -L/usr/X11R6/lib
-INCLUDE = -I../../../include
+tank_common = static_library(
+    'tank_common',
+    tank_common_cpp,
+    include_directories: adevs,
+    gnu_symbol_visibility: 'hidden',
+)
 
-BASE_OBJS = \
-	   TankPhysics.o \
-	   TankPhysicsEqns.o \
-	   InterruptHandler.o \
-	   PacketProcessing.o \
-	   Computer.o \
-	   Tank.o
+# Interactive simulation used in Chapter 2.
+executable('sim', 'main.cpp', include_directories: adevs, link_with: tank_common)
 
-# These objects are common to all variations on the simulator
-OBJS = ${BASE_OBJS} Display.o SimControl.o
+# Simulator for the lost power experiment in section 2.4.
+executable('exp', 'constInputExp.cpp', include_directories: adevs, link_with: tank_common)
 
-.SUFFIXES: .cpp
-.cpp.o:
-	${CC} ${CFLAGS} ${OPTFLAG} ${INCLUDE} -c $<
+# Simulator for the computer. This is discussed in section 4.4.
+executable('comp', 'computerTest.cpp', include_directories: adevs, link_with: tank_common)
 
-objs: ${OBJS}
+# Simulator for testing single manuevers
+executable('tank', 'tankTest.cpp', include_directories: adevs, link_with: tank_common)
 
-# Build the interactive simulation used in Chapter 2.
-sim: objs main.o
-	${CC} ${CFLAGS} ${OPTFLAG} main.o ${OBJS} ${LIBS} ${LIBPATH} ${INCLUDE}
+# LIBS = -lSDL -lglut -lccgnu2
 
-# Build the simulator for the lost power experiment in section 2.4.
-exp: objs constInputExp.o
-	${CC} ${CFLAGS} ${OPTFLAG} constInputExp.o ${OBJS} ${LIBS} ${LIBPATH} ${INCLUDE}
+# # Build the InterruptHandler simulation. This code is discussed in section 4.1.9.
+# ih: InterruptHandler.o interruptExperiment.o
+# 	${CC} ${CFLAGS} ${OPTFLAG} interruptExperiment.o InterruptHandler.o ${LIBS} ${LIBPATH} ${INCLUDE}
 
-# Build the simulator for the computer. This is discussed in section 4.4.
-comp: objs computerTest.o
-	${CC} ${CFLAGS} ${OPTFLAG} computerTest.o ${OBJS} ${LIBS} ${LIBPATH} ${INCLUDE}
-
-# Build the simulator for testing single manuevers 
-tank: objs tankTest.o
-	${CC} ${CFLAGS} ${OPTFLAG} tankTest.o ${OBJS} ${LIBS} ${LIBPATH} ${INCLUDE}
-
-# Build the InterruptHandler simulation. This code is discussed in section 4.1.9.
-ih: InterruptHandler.o interruptExperiment.o
-	${CC} ${CFLAGS} ${OPTFLAG} interruptExperiment.o InterruptHandler.o ${LIBS} ${LIBPATH} ${INCLUDE}
-
-modelica: ${BASE_OBJS} modelica_test.o
-	${CC} ${CFLAGS} ${OPTFLAG} modelica_test.o ${BASE_OBJS} ${INCLUDE}
-
-clean:
-	rm -f *.o core a.out
+# modelica: ${BASE_OBJS} modelica_test.o
+# 	${CC} ${CFLAGS} ${OPTFLAG} modelica_test.o ${BASE_OBJS} ${INCLUDE}

@@ -19,7 +19,7 @@ IEEE_CDF_Data::IEEE_CDF_Data(char const* data_file) {
     line = new char[LINE_LEN];
     buffer = new char[LINE_LEN];
     ifstream fin(data_file);
-    if (fin.bad() && fin == 0) {
+    if (fin.bad() || !fin.is_open()) {
         throw IEEE_CDF_FileException("Could not open file");
     }
     // Get the base power level
@@ -73,9 +73,9 @@ IEEE_CDF_Data::IEEE_CDF_Data(char const* data_file) {
             read_field(6, 9);
             line_data.to = atoi(buffer) - 1;  // End line
             read_field(20, 29);
-            real(line_data.y) = atof(buffer);  // Real line impedence
+            line_data.y.real(atof(buffer));  // Real line impedence
             read_field(30, 40);
-            imag(line_data.y) = atof(buffer);  // Complex line impendence
+            line_data.y.imag(atof(buffer));  // Complex line impendence
             line_data.y = 1.0 / line_data.y;
             lines.push_back(line_data);
         }
@@ -144,7 +144,7 @@ Complex IEEE_CDF_Data::getAdmittance(unsigned node) {
     bus_data_t b = nodes[node];
     Complex S(b.load_mw, b.load_mvar);
     if (b.genr_mw == 0.0) {
-        imag(S) -= b.genr_mvar;
+        S.imag(S.imag() - b.genr_mvar);
     }
     Complex V = polar(b.v, b.theta);
     Complex Ii = conj(S) / conj(V);

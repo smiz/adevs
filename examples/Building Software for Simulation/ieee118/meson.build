@@ -1,37 +1,23 @@
-# Compiler settings. Edit these as needed.
-CFLAGS = -Wall -O3
-CC = g++
+all_cpp = [
+    'AdmittanceNetwork.cpp',
+    'BusFreqListener.cpp',
+    'BusVoltsListener.cpp',
+    'ElectricalData.cpp',
+    'ElectricalModel.cpp',
+    'ElectricalModelEqns.cpp',
+    'GenrFail.cpp',
+    'GenrFreqListener.cpp',
+    'IEEE118.cpp',
+    'IEEE_CDF_Data.cpp',
+    'LoadControl.cpp',
+    'MechPowerListener.cpp',
+    'QueueBus.cpp',
+    'main.cpp',
+]
 
-# Adjust these as needed to find the adevs headers
-INCLUDE = -I../../../include 
-LIBS = -llapack -lblas 
-
-##
-# You should not need to edit below this line
-##
-
-OBJS = \
-	AdmittanceNetwork.o \
-	BusFreqListener.o \
-	BusVoltsListener.o \
-	ElectricalData.o \
-	ElectricalModel.o \
-	ElectricalModelEqns.o \
-	GenrFail.o \
-	GenrFreqListener.o \
-	IEEE118.o \
-	IEEE_CDF_Data.o \
-	LoadControl.o \
-	MechPowerListener.o \
-	QueueBus.o \
-	main.o
-
-.SUFFIXES: .cpp
-.cpp.o:
-	${CC} ${CFLAGS} ${INCLUDE} -c $<
-
-sim: ${OBJS}
-	${CC} ${CFLAGS} ${OBJS} ${LIBS}
-
-clean:
-	rm -f *.o core a.out *.a *.dat
+executable(
+    'sim',
+    all_cpp,
+    include_directories: adevs,
+    dependencies: [d_blas, d_lapack]
+)
