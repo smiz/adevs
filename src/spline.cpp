@@ -30,44 +30,35 @@
  */
 #include "adevs_spline.h"
 
-adevs::spline::spline(const int N):
-	N(N),
-	a(new double[N]),
-	b(new double[N]),
-	c(new double[N]),
-	d(new double[N])
-{
+adevs::spline::spline(int const N)
+    : N(N),
+      a(new double[N]),
+      b(new double[N]),
+      c(new double[N]),
+      d(new double[N]) {}
+
+void adevs::spline::init(double const* q0, double const* dq0, double const* qh,
+                         double const* dqh, double const h) {
+    for (int i = 0; i < N; i++) {
+        d[i] = q0[i];
+        c[i] = dq0[i];
+        a[i] = (2.0 / (h * h * h)) *
+               ((h / 2.0) * (dqh[i] - c[i]) - qh[i] + c[i] * h + d[i]);
+        b[i] = (1.0 / (2.0 * h)) * (dqh[i] - c[i] - 3.0 * a[i] * h * h);
+    }
 }
 
-void adevs::spline::init(
-	const double* q0,
-	const double* dq0,
-	const double* qh,
-	const double* dqh,
-	const double h)
-{
-	for (int i = 0; i < N; i++)
-	{
-		d[i] = q0[i];
-		c[i] = dq0[i];
-		a[i] = (2.0/(h*h*h))*((h/2.0)*(dqh[i]-c[i])-qh[i]+c[i]*h+d[i]);
-		b[i] = (1.0/(2.0*h))*(dqh[i]-c[i]-3.0*a[i]*h*h);
-	}
+adevs::spline::~spline() {
+    delete[] a;
+    delete[] b;
+    delete[] c;
+    delete[] d;
 }
 
-adevs::spline::~spline()
-{
-	delete [] a;
-	delete [] b;
-	delete [] c;
-	delete [] d;
+void adevs::spline::interpolate(double* q, double h) {
+    double const hh = h * h;
+    double const hhh = hh * h;
+    for (int i = 0; i < N; i++) {
+        q[i] = a[i] * hhh + b[i] * hh + c[i] * h + d[i];
+    }
 }
-
-void adevs::spline::interpolate(double* q, double h)
-{
-	const double hh = h*h;
-	const double hhh = hh*h;
-	for (int i = 0; i < N; i++)
-		q[i] = a[i]*hhh+b[i]*hh+c[i]*h+d[i];
-}
-

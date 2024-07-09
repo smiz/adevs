@@ -1,7 +1,7 @@
 #ifndef SimEventListener_h_
 #define SimEventListener_h_
-#include "adevs.h"
 #include "SimEvents.h"
+#include "adevs.h"
 
 /// Typedefs for adevs
 typedef adevs::Atomic<SimEvent> AtomicModel;
@@ -14,16 +14,13 @@ typedef adevs::Bag<ModelInput> ModelInputBag;
 /**
  * Class for listening to simulation events.
  */
-class SimEventListener:
-	public adevs::EventListener<SimEvent>
-{
-	public:
-		void outputEvent(ModelOutput x, double t) = 0;
-		void stateChange(AtomicModel *model, double t, void *state)
-		{
-			stateChange(model,t);
-		}
-		virtual void stateChange(AtomicModel* model, double t) = 0;
+class SimEventListener : public adevs::EventListener<SimEvent> {
+  public:
+    void outputEvent(ModelOutput x, double t) = 0;
+    void stateChange(AtomicModel* model, double t, void* state) {
+        stateChange(model, t);
+    }
+    virtual void stateChange(AtomicModel* model, double t) = 0;
 };
 
 #endif

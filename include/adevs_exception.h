@@ -30,69 +30,55 @@
  */
 #ifndef _adevs_exception_h_
 #define _adevs_exception_h_
-#include <string>
 #include <exception>
+#include <string>
 
-namespace adevs
-{
+namespace adevs {
 
 /**
  * The adevs::exception class is derived from the standard template
  * library exception class.
  */
-class exception: public std::exception
-{
-	public:
-		/**
+class exception : public std::exception {
+  public:
+    /**
 		 * Create an exception with an error message and, if appropriate,
 		 * a pointer to the model that created the error.  To avoid
 		 * templated exceptions, the model pointer is just a void*.
 		 */
-		exception(const char* msg, void* model = NULL):
-		std::exception(),
-		msg(msg),
-		model(model) 
-		{}
-		/// Copy constructor.
-		exception(const adevs::exception& src):
-		std::exception(src),
-		msg(src.msg),
-		model(src.model)
-		{}
-		/// Get the error message.
-		const char* what() const throw()
-		{
-			return msg.c_str();
-		}
-		/// Get a pointer to the model that created the error.
-		void* who() const { return model; }
-		/// Destructor.
-		~exception() throw(){}
-	private:
-		std::string msg;
-		void* model;
+    exception(char const* msg, void* model = NULL)
+        : std::exception(), msg(msg), model(model) {}
+    /// Copy constructor.
+    exception(adevs::exception const &src)
+        : std::exception(src), msg(src.msg), model(src.model) {}
+    /// Get the error message.
+    char const* what() const throw() { return msg.c_str(); }
+    /// Get a pointer to the model that created the error.
+    void* who() const { return model; }
+    /// Destructor.
+    ~exception() throw() {}
+
+  private:
+    std::string msg;
+    void* model;
 };
 
 /**
  * The unsupported method exception is raised if an optional virtual method
  * is not supported by a model.
  */
-class method_not_supported_exception:
-	public exception
-{
-	public:
-		/**
+class method_not_supported_exception : public exception {
+  public:
+    /**
 		 * Constructor should be supplied with the model throwing
 		 * the exception and the name of the method that is not supported.
 		 */
-		method_not_supported_exception(const char* method, void* model):
-			exception((std::string("Unsupported method: ")+std::string(method)).c_str(),
-					model)
-		{
-		}
+    method_not_supported_exception(char const* method, void* model)
+        : exception((std::string("Unsupported method: ") + std::string(method))
+                        .c_str(),
+                    model) {}
 };
 
-} // end of namespace
+}  // namespace adevs
 
 #endif
-

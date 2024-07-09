@@ -10,17 +10,15 @@ class Partition;
  * This is an event that acts to change the state
  * of a partition.
  */
-class Event
-{
-	public:
-		/**
+class Event {
+  public:
+    /**
 		 * Create an event to act on a partition. The timestamp
 		 * must be inf for a conditional event.
 		 */
-		Event(Partition* p, double t = adevs_inf<double>()):
-			p(p),t(t){}
-		virtual ~Event(){}
-		/**
+    Event(Partition* p, double t = adevs_inf<double>()) : p(p), t(t) {}
+    virtual ~Event() {}
+    /**
 		 * Gather the data that is needed to execute
 		 * this event. If this is a conditional event,
 		 * then return true if the event condition is
@@ -28,18 +26,19 @@ class Event
 		 * value is not used if this is not a conditional
 		 * event.
 		 */
-		virtual bool prep() = 0;
-		/// Execute the event.
-		virtual void exec() = 0;
-		/// Get the partition
-		Partition* partition() { return p; }
-		/// Get the timestamp
-		double timestamp() const { return t; }
-		/// Is this a conditional event?
-		bool conditional() const { return t == adevs_inf<double>(); }
-	private:
-		Partition* p;
-		const double t;
+    virtual bool prep() = 0;
+    /// Execute the event.
+    virtual void exec() = 0;
+    /// Get the partition
+    Partition* partition() { return p; }
+    /// Get the timestamp
+    double timestamp() const { return t; }
+    /// Is this a conditional event?
+    bool conditional() const { return t == adevs_inf<double>(); }
+
+  private:
+    Partition* p;
+    double const t;
 };
 
 /**
@@ -51,13 +50,11 @@ class Event
  * However, when executed that event must only change variables
  * within the partition.</p>
  */
-class Partition:
-	public adevs::Atomic<Event*>
-{
-	public:
-		Partition():adevs::Atomic<Event*>(),tNow(0.0),mode('F'){}
-		virtual ~Partition();
-		/**
+class Partition : public adevs::Atomic<Event*> {
+  public:
+    Partition() : adevs::Atomic<Event*>(), tNow(0.0), mode('F') {}
+    virtual ~Partition();
+    /**
 		 * <p>Execute the events that are imminent for this partition.
 		 * The events passed to this method are all of the events
 		 * that are scheduled or eligible for activation at the
@@ -66,25 +63,26 @@ class Partition:
 		 * way that is appropriate to the model.</p>
 		 * <p>All imminent events are deleted when exec returns.</p>
 		 */
-		virtual void exec(std::vector<Event*>& imm) = 0;
-		/// Get the simulation time
-		double now() const { return tNow; }
-		/// Schedule an event for this or another partition
-		void schedule(Event* ev);
-	private:
-		std::list<Event*> cel; // Conditional event list
-		std::list<Event*> fel; // Future event list
-		std::vector<Event*> other, // Events for other partitions
-		                    imm; // Imminent events at this partition
-		double tNow; // Current simulation time
-		char mode; // 'F' or 'C'
-	public:
-		void delta_int();
-		void delta_ext(double e, const adevs::Bag<Event*>& xb);
-		void delta_conf(const adevs::Bag<Event*>& xb);
-		void output_func(adevs::Bag<Event*>& yb);
-		void gc_output(adevs::Bag<Event*>&){}
-		double ta();
+    virtual void exec(std::vector<Event*> &imm) = 0;
+    /// Get the simulation time
+    double now() const { return tNow; }
+    /// Schedule an event for this or another partition
+    void schedule(Event* ev);
+
+  private:
+    std::list<Event*> cel;      // Conditional event list
+    std::list<Event*> fel;      // Future event list
+    std::vector<Event*> other,  // Events for other partitions
+        imm;                    // Imminent events at this partition
+    double tNow;                // Current simulation time
+    char mode;                  // 'F' or 'C'
+  public:
+    void delta_int();
+    void delta_ext(double e, adevs::Bag<Event*> const &xb);
+    void delta_conf(adevs::Bag<Event*> const &xb);
+    void output_func(adevs::Bag<Event*> &yb);
+    void gc_output(adevs::Bag<Event*> &) {}
+    double ta();
 };
 
 /**

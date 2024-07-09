@@ -31,19 +31,17 @@
 #ifndef _adevs_spline_h_
 #define _adevs_spline_h_
 
-namespace adevs
-{
+namespace adevs {
 
 /**
  * This provides a natural spline to interpolate two points
  * in and ODE solution. It is used by the event_locator
  * to look for zero crossings of state event functions.
  */
-class spline
-{
-	public:
-		spline(const int N);
-		/**
+class spline {
+  public:
+    spline(int const N);
+    /**
 		 * Create a spline that interpolates over the interval h from q0
 		 * to qh.
 		 * @param q0 The state at t = 0
@@ -53,16 +51,18 @@ class spline
 		 * @param h The interval over which to interpolate
 		 * @param N The number of equations to interpolate
 		 */
-		void init(const double* q0, const double* dq, const double* qh, const double* dqh, const double h);
-		/// Destructor
-		~spline();
-		void interpolate(double* q, double h);
-	private:
-		// Number of equations
-		const int N;
-		/// Parameters for cubic ax^3+bx^2_+x+d
-		double *a, *b, *c, *d;
+    void init(double const* q0, double const* dq, double const* qh,
+              double const* dqh, double const h);
+    /// Destructor
+    ~spline();
+    void interpolate(double* q, double h);
+
+  private:
+    // Number of equations
+    int const N;
+    /// Parameters for cubic ax^3+bx^2_+x+d
+    double *a, *b, *c, *d;
 };
 
-} // end of namespace
+}  // namespace adevs
 #endif

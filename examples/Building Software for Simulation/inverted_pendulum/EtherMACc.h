@@ -18,24 +18,23 @@
 #ifndef __INET_ETHERMACc_H
 #define __INET_ETHERMACc_H
 
+#include <omnetpp.h>
 #include <stdio.h>
 #include <string.h>
-#include <omnetpp.h>
-#include "INETDefs.h"
-#include "Ethernet.h"
 #include "EtherFrame_m.h"
 #include "EtherMACBase.h"
+#include "Ethernet.h"
+#include "INETDefs.h"
 
 // Length of autoconfig period: should be larger than delays
-#define AUTOCONFIG_PERIOD  0.001  /* well more than 4096 bit times at 10Mb */
+#define AUTOCONFIG_PERIOD 0.001 /* well more than 4096 bit times at 10Mb */
 
 class IPassiveQueue;
 
 /**
  * Ethernet MAC module.
  */
-class INET_API EtherMACc : public EtherMACBase
-{
+class INET_API EtherMACc : public EtherMACBase {
   public:
     EtherMACc();
     virtual ~EtherMACc();
@@ -43,36 +42,39 @@ class INET_API EtherMACc : public EtherMACBase
   protected:
     virtual void initialize();
     virtual void initializeTxrate();
-    virtual void handleMessage(cMessage *msg);
+    virtual void handleMessage(cMessage* msg);
     virtual void finish();
 
   protected:
     // parameters for autoconfig
-    bool autoconfigInProgress; // true if autoconfig is currently ongoing
+    bool autoconfigInProgress;  // true if autoconfig is currently ongoing
     double lowestTxrateSuggested;
     bool duplexVetoed;
 
     // states
-    int  backoffs;          // Value of backoff for exponential back-off algorithm
-	int  max_attempt;         // Maximum number of retries for a frame 
-    int  numConcurrentTransmissions; // number of colliding frames -- we must receive this many jams
+    int backoffs;     // Value of backoff for exponential back-off algorithm
+    int max_attempt;  // Maximum number of retries for a frame
+    int numConcurrentTransmissions;  // number of colliding frames -- we must receive this many jams
 
     // other variables
-    EtherFrame *frameBeingReceived;
+    EtherFrame* frameBeingReceived;
     cMessage *endRxMsg, *endBackoffMsg, *endJammingMsg;
 
     // statistics
-    simtime_t totalCollisionTime;      // total duration of collisions on channel
-    simtime_t totalSuccessfulRxTxTime; // total duration of successful transmissions on channel
-    simtime_t channelBusySince;        // needed for computing totalCollisionTime/totalSuccessfulRxTxTime
-    unsigned long numCollisions;       // collisions (NOT number of collided frames!) sensed
-    unsigned long numBackoffs;         // number of retransmissions
+    simtime_t totalCollisionTime;  // total duration of collisions on channel
+    simtime_t
+        totalSuccessfulRxTxTime;  // total duration of successful transmissions on channel
+    simtime_t
+        channelBusySince;  // needed for computing totalCollisionTime/totalSuccessfulRxTxTime
+    unsigned long
+        numCollisions;  // collisions (NOT number of collided frames!) sensed
+    unsigned long numBackoffs;  // number of retransmissions
     cOutVector numCollisionsVector;
     cOutVector numBackoffsVector;
 
     // event handlers
-    virtual void processFrameFromUpperLayer(EtherFrame *msg);
-    virtual void processMsgFromNetwork(cPacket *msg);
+    virtual void processFrameFromUpperLayer(EtherFrame* msg);
+    virtual void processMsgFromNetwork(cPacket* msg);
     virtual void handleEndIFGPeriod();
     virtual void handleEndTxPeriod();
     virtual void handleEndRxPeriod();
@@ -81,11 +83,11 @@ class INET_API EtherMACc : public EtherMACBase
 
     // setup, autoconfig
     virtual void startAutoconfig();
-    virtual void handleAutoconfigMessage(cMessage *msg);
+    virtual void handleAutoconfigMessage(cMessage* msg);
     virtual void printState();
 
     // helpers
-    virtual void scheduleEndRxPeriod(cPacket *);
+    virtual void scheduleEndRxPeriod(cPacket*);
     virtual void sendJamSignal();
     virtual void handleRetransmission();
     virtual void startFrameTransmission();
@@ -95,5 +97,3 @@ class INET_API EtherMACc : public EtherMACBase
 };
 
 #endif
-
-

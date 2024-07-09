@@ -30,30 +30,28 @@
  */
 #ifndef _adevs_set_h
 #define _adevs_set_h
-#include <set>
 #include <algorithm>
+#include <set>
 
-namespace adevs
-{
+namespace adevs {
 
 /**
  * This Set is just an STL set. 
  */
-template <class T> class Set: public std::set<T>
-{
-};
+template <class T>
+class Set : public std::set<T> {};
 
 /// Set difference operator. Returns the set A-B.
-template <class T> 
-void set_assign_diff(Bag<T>& result, const Set<T>& A, const Set<T>& B)
-{
-	typename Set<T>::const_iterator iter = A.begin();
-	for (; iter != A.end(); iter++)
-	{
-		if (B.find(*iter) == B.end()) result.insert(*iter);
-	}
+template <class T>
+void set_assign_diff(Bag<T> &result, Set<T> const &A, Set<T> const &B) {
+    typename Set<T>::const_iterator iter = A.begin();
+    for (; iter != A.end(); iter++) {
+        if (B.find(*iter) == B.end()) {
+            result.insert(*iter);
+        }
+    }
 }
 
-} // end of namespace
+}  // namespace adevs
 
 #endif

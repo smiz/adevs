@@ -30,183 +30,150 @@
  */
 #ifndef __adevs_digraph_h_
 #define __adevs_digraph_h_
-#include "adevs.h"
 #include <cassert>
+#include <cstdlib>
 #include <map>
 #include <set>
-#include <cstdlib>
+#include "adevs.h"
 
-namespace adevs
-{
+namespace adevs {
 
 /**
  * The components of a digraph model must use PortValue objects
  * as their basic I/O type: the port and value types are template
  * arguments. The default port type is an integer.
  */
-template <class VALUE, class PORT=int> class PortValue
-{
-	public:
-		/// Constructor
-		PortValue():
-		port(),
-		value()
-		{
-		}
-		/// Copy constructor
-		PortValue(const PortValue& src):
-		port(src.port),
-		value(src.value)
-		{
-		}
-		/// Create an object with the specified port and value
-		PortValue(PORT port, const VALUE& value):
-		port(port),
-		value(value)
-		{
-		}
-		/// Assignment operator
-		const PortValue<VALUE,PORT>& operator=(const PortValue<VALUE,PORT>& src)
-		{
-			port = src.port;
-			value = src.value;
-			return *this;
-		}
-		/// Destructor
-		~PortValue()
-		{
-		}
-		/// The port on which the value appears
-		PORT port;
-		/// The value appearing on the port
-		VALUE value;
+template <class VALUE, class PORT = int>
+class PortValue {
+  public:
+    /// Constructor
+    PortValue() : port(), value() {}
+    /// Copy constructor
+    PortValue(PortValue const &src) : port(src.port), value(src.value) {}
+    /// Create an object with the specified port and value
+    PortValue(PORT port, const VALUE &value) : port(port), value(value) {}
+    /// Assignment operator
+    PortValue<VALUE, PORT> const &operator=(PortValue<VALUE, PORT> const &src) {
+        port = src.port;
+        value = src.value;
+        return *this;
+    }
+    /// Destructor
+    ~PortValue() {}
+    /// The port on which the value appears
+    PORT port;
+    /// The value appearing on the port
+    VALUE value;
 };
 
 /**
  * The digraph model is used to build block-diagrams from network and atomic components.
  * Its components must have PortValue objects as their input/output type.
  */
-template <class VALUE, class PORT=int, class T = double> class Digraph: 
-public Network<PortValue<VALUE,PORT>,T>
-{
-	public:
-		/// An input or output to a component model
-		typedef PortValue<VALUE,PORT> IO_Type;
-		/// A component of the Digraph model
-		typedef Devs<IO_Type,T> Component;
+template <class VALUE, class PORT = int, class T = double>
+class Digraph : public Network<PortValue<VALUE, PORT>, T> {
+  public:
+    /// An input or output to a component model
+    typedef PortValue<VALUE, PORT> IO_Type;
+    /// A component of the Digraph model
+    typedef Devs<IO_Type, T> Component;
 
-		/// Construct a network with no components.
-		Digraph():
-		Network<IO_Type,T>()
-		{
-		}
-		/// Add a model to the network.
-		void add(Component* model);
-		/// Couple the source model to the destination model.  
-		void couple(Component* src, PORT srcPort, 
-		Component* dst, PORT dstPort);
-		/// Puts the network's components into to c
-		void getComponents(Set<Component*>& c);
-		/// Route an event based on the coupling information.
-		void route(const IO_Type& x, Component* model, 
-		Bag<Event<IO_Type,T> >& r);
-		/// Destructor.  Destroys all of the component models.
-		~Digraph();
+    /// Construct a network with no components.
+    Digraph() : Network<IO_Type, T>() {}
+    /// Add a model to the network.
+    void add(Component* model);
+    /// Couple the source model to the destination model.
+    void couple(Component* src, PORT srcPort, Component* dst, PORT dstPort);
+    /// Puts the network's components into to c
+    void getComponents(Set<Component*> &c);
+    /// Route an event based on the coupling information.
+    void route(IO_Type const &x, Component* model, Bag<Event<IO_Type, T>> &r);
+    /// Destructor.  Destroys all of the component models.
+    ~Digraph();
 
-	private:	
-		// A node in the coupling graph
-		struct node
-		{
-			node():
-			model(NULL),
-			port()
-			{
-			}
-			node(Component* model, PORT port):
-			model(model),
-			port(port)
-			{
-			}
-			const node& operator=(const node& src)
-			{
-				model = src.model;
-				port = src.port;
-				return *this;
-			}
-			Component* model;
-			PORT port;
-		
-			// Comparison for STL map
-			bool operator<(const node& other) const
-			{
-				if (model == other.model) return port < other.port;
-				return model < other.model;
-			}
-		};
-		// Component model set
-		Set<Component*> models;
-		// Coupling information
-		std::map<node,Bag<node> > graph;
+  private:
+    // A node in the coupling graph
+    struct node {
+        node() : model(NULL), port() {}
+        node(Component* model, PORT port) : model(model), port(port) {}
+        node const &operator=(node const &src) {
+            model = src.model;
+            port = src.port;
+            return *this;
+        }
+        Component* model;
+        PORT port;
+
+        // Comparison for STL map
+        bool operator<(node const &other) const {
+            if (model == other.model) {
+                return port < other.port;
+            }
+            return model < other.model;
+        }
+    };
+    // Component model set
+    Set<Component*> models;
+    // Coupling information
+    std::map<node, Bag<node>> graph;
 };
 
 template <class VALUE, class PORT, class T>
-void Digraph<VALUE,PORT,T>::add(Component* model)
-{
-	assert(model != this);
-	models.insert(model);
-	model->setParent(this);
+void Digraph<VALUE, PORT, T>::add(Component* model) {
+    assert(model != this);
+    models.insert(model);
+    model->setParent(this);
 }
 
 template <class VALUE, class PORT, class T>
-void Digraph<VALUE,PORT,T>::couple(Component* src, PORT srcPort, 
-Component* dst, PORT dstPort)
-{
-	if (src != this) add(src);
-	if (dst != this) add(dst);
-	node src_node(src,srcPort);
-	node dst_node(dst,dstPort);
-	graph[src_node].insert(dst_node);
+void Digraph<VALUE, PORT, T>::couple(Component* src, PORT srcPort,
+                                     Component* dst, PORT dstPort) {
+    if (src != this) {
+        add(src);
+    }
+    if (dst != this) {
+        add(dst);
+    }
+    node src_node(src, srcPort);
+    node dst_node(dst, dstPort);
+    graph[src_node].insert(dst_node);
 }
 
 template <class VALUE, class PORT, class T>
-void Digraph<VALUE,PORT,T>::getComponents(Set<Component*>& c)
-{
-	c = models;
+void Digraph<VALUE, PORT, T>::getComponents(Set<Component*> &c) {
+    c = models;
 }
 
 template <class VALUE, class PORT, class T>
-void Digraph<VALUE,PORT,T>::
-route(const IO_Type& x, Component* model, 
-Bag<Event<IO_Type,T> >& r)
-{
-	// Find the list of target models and ports
-	node src_node(model,x.port);
-	typename std::map<node,Bag<node> >::iterator graph_iter;
-	graph_iter = graph.find(src_node);
-	// If no target, just return
-	if (graph_iter == graph.end()) return;
-	// Otherwise, add the targets to the event bag
-	Event<IO_Type,T> event;
-	typename Bag<node>::iterator node_iter;
-	for (node_iter = (*graph_iter).second.begin();
-	node_iter != (*graph_iter).second.end(); node_iter++)
-	{
-		event.model = (*node_iter).model;
-		event.value.port = (*node_iter).port;
-		event.value.value = x.value;
-		r.insert(event);
-	}
+void Digraph<VALUE, PORT, T>::route(IO_Type const &x, Component* model,
+                                    Bag<Event<IO_Type, T>> &r) {
+    // Find the list of target models and ports
+    node src_node(model, x.port);
+    typename std::map<node, Bag<node>>::iterator graph_iter;
+    graph_iter = graph.find(src_node);
+    // If no target, just return
+    if (graph_iter == graph.end()) {
+        return;
+    }
+    // Otherwise, add the targets to the event bag
+    Event<IO_Type, T> event;
+    typename Bag<node>::iterator node_iter;
+    for (node_iter = (*graph_iter).second.begin();
+         node_iter != (*graph_iter).second.end(); node_iter++) {
+        event.model = (*node_iter).model;
+        event.value.port = (*node_iter).port;
+        event.value.value = x.value;
+        r.insert(event);
+    }
 }
 template <class VALUE, class PORT, class T>
-Digraph<VALUE,PORT,T>::~Digraph()
-{ 
-	typename Set<Component*>::iterator i;
-	for (i = models.begin(); i != models.end(); i++)
-	{
-		delete *i;
-	}
+Digraph<VALUE, PORT, T>::~Digraph() {
+    typename Set<Component*>::iterator i;
+    for (i = models.begin(); i != models.end(); i++) {
+        delete *i;
+    }
 }
 
-} // end of namespace 
+}  // namespace adevs
 
 #endif

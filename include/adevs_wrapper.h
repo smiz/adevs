@@ -32,9 +32,8 @@
 #define __adevs_wrapper_h_
 #include "adevs_models.h"
 
-namespace adevs
-{
-	/**
+namespace adevs {
+/**
 	 * <p>This class wraps a Network or Atomic model with interface type InternalType in an
 	 * Atomic model with interface type ExternalType. Input to the ModelWrapper is passed
 	 * through a user provided input translation method before being handed off
@@ -51,18 +50,17 @@ namespace adevs
 	 * gcInputEvents method to clean up events that are created during
 	 * the input translation process.
 	 */
-	template <typename ExternalType, typename InternalType, class T = double> class ModelWrapper:
-		public Atomic<ExternalType,T>,
-		public EventListener<InternalType,T>
-	{
-		public:
-			/**
+template <typename ExternalType, typename InternalType, class T = double>
+class ModelWrapper : public Atomic<ExternalType, T>,
+                     public EventListener<InternalType, T> {
+  public:
+    /**
 			 * Create a wrapper for the specified model. The ModelWrapper takes
 			 * ownership of the supplied model and will delete it when the
 			 * ModelWrapper is deleted.
 			 */
-			ModelWrapper(Devs<InternalType,T>* model);
-			/**
+    ModelWrapper(Devs<InternalType, T>* model);
+    /**
 			 * This method is used to translate incoming input objects into
 			 * input objects that the wrapped model can process. The supplied
 			 * internal_input bag should be filled with Events that contain the targeted
@@ -70,9 +68,10 @@ namespace adevs
 			 * bag contains the input values supplied to the wrapper's external or
 			 * confluent transition function.
 			 */
-			virtual void translateInput(const Bag<ExternalType>& external_input,
-					Bag<Event<InternalType,T> >& internal_input) = 0;
-			/**
+    virtual void translateInput(
+        Bag<ExternalType> const &external_input,
+        Bag<Event<InternalType, T>> &internal_input) = 0;
+    /**
 			 * This method is used to translate outgoing output objects
 			 * into objects that the ModelWrapper can produce. The 
 			 * internal_output bag contains all of the output events that the
@@ -80,128 +79,130 @@ namespace adevs
 			 * should be filled with objects of type ExternalType that
 			 * will be produced as output by the ModelWrapper.
 			 */
-			virtual void translateOutput(const Bag<Event<InternalType,T> >& internal_output,
-					Bag<ExternalType>& external_output) = 0;
-			/**
+    virtual void translateOutput(
+        Bag<Event<InternalType, T>> const &internal_output,
+        Bag<ExternalType> &external_output) = 0;
+    /**
 			 * This is the garbage collection method for internal input events.
 			 * It will be called when the wrapper is done with a set of events
 			 * that you created with the translateInput method. The supplied bag
 			 * is the same one that you filled out in the translateInput method.
 			 */
-			virtual void gc_input(Bag<Event<InternalType,T> >& g) = 0;
-			/// Get the model that is wrapped by this object
-			Devs<InternalType,T>* getWrappedModel() { return model; }
-			/// Atomic internal transition function
-			void delta_int();
-			/// Atomic external transition function
-			void delta_ext(T e, const Bag<ExternalType>& xb);
-			/// Atomic confluent transition function
-			void delta_conf(const Bag<ExternalType>& xb);
-			/// Atomic output function
-			void output_func(Bag<ExternalType>& yb);
-			/// Atomic time advance function
-			T ta();
-			/// EventListener outputEvent method
-			void outputEvent(Event<InternalType,T> y, T t);
-			/// Destructor. This destroys the wrapped model too.
-			~ModelWrapper();
-		private:
-			ModelWrapper(){}
-			ModelWrapper(const ModelWrapper&){}
-			void operator=(const ModelWrapper&){}
-			// Bag of events created by the input translation method 
-			Bag<Event<InternalType,T> > input;
-			// Output from the wrapped model
-			Bag<Event<InternalType,T> > output;
-			// The wrapped model
-			Devs<InternalType,T>* model;
-			// Simulator for driving the wrapped model
-			Simulator<InternalType,T>* sim;
-			// Last event time
-			T tL;
-	};
+    virtual void gc_input(Bag<Event<InternalType, T>> &g) = 0;
+    /// Get the model that is wrapped by this object
+    Devs<InternalType, T>* getWrappedModel() { return model; }
+    /// Atomic internal transition function
+    void delta_int();
+    /// Atomic external transition function
+    void delta_ext(T e, Bag<ExternalType> const &xb);
+    /// Atomic confluent transition function
+    void delta_conf(Bag<ExternalType> const &xb);
+    /// Atomic output function
+    void output_func(Bag<ExternalType> &yb);
+    /// Atomic time advance function
+    T ta();
+    /// EventListener outputEvent method
+    void outputEvent(Event<InternalType, T> y, T t);
+    /// Destructor. This destroys the wrapped model too.
+    ~ModelWrapper();
 
-template <typename ExternalType, typename InternalType, class T> 
-ModelWrapper<ExternalType,InternalType,T>::ModelWrapper(Devs<InternalType,T>* model):
-	Atomic<ExternalType,T>(),
-	EventListener<InternalType,T>(),
-	model(model),
-	tL(adevs_zero<T>())
-{
-	sim = new Simulator<InternalType,T>(model);
-	sim->addEventListener(this);
+  private:
+    ModelWrapper() {}
+    ModelWrapper(ModelWrapper const &) {}
+    void operator=(ModelWrapper const &) {}
+    // Bag of events created by the input translation method
+    Bag<Event<InternalType, T>> input;
+    // Output from the wrapped model
+    Bag<Event<InternalType, T>> output;
+    // The wrapped model
+    Devs<InternalType, T>* model;
+    // Simulator for driving the wrapped model
+    Simulator<InternalType, T>* sim;
+    // Last event time
+    T tL;
+};
+
+template <typename ExternalType, typename InternalType, class T>
+ModelWrapper<ExternalType, InternalType, T>::ModelWrapper(
+    Devs<InternalType, T>* model)
+    : Atomic<ExternalType, T>(),
+      EventListener<InternalType, T>(),
+      model(model),
+      tL(adevs_zero<T>()) {
+    sim = new Simulator<InternalType, T>(model);
+    sim->addEventListener(this);
 }
 
-template <typename ExternalType, typename InternalType, class T> 
-void ModelWrapper<ExternalType,InternalType,T>::delta_int()
-{
-	// Update the internal clock
-	tL = sim->nextEventTime();
-	// Execute the next autonomous event for the wrapped model
-	sim->execNextEvent();
+template <typename ExternalType, typename InternalType, class T>
+void ModelWrapper<ExternalType, InternalType, T>::delta_int() {
+    // Update the internal clock
+    tL = sim->nextEventTime();
+    // Execute the next autonomous event for the wrapped model
+    sim->execNextEvent();
 }
 
-template <typename ExternalType, typename InternalType, class T> 
-void ModelWrapper<ExternalType,InternalType,T>::delta_ext(T e, const Bag<ExternalType>& xb)
-{
-	// Update the internal clock
-	tL += e;
-	// Convert the external inputs to internal inputs
-	translateInput(xb,input);
-	// Apply the input
-	sim->computeNextState(input,tL);
-	// Clean up 
-	gc_input(input);
-	input.clear();
+template <typename ExternalType, typename InternalType, class T>
+void ModelWrapper<ExternalType, InternalType, T>::delta_ext(
+    T e, Bag<ExternalType> const &xb) {
+    // Update the internal clock
+    tL += e;
+    // Convert the external inputs to internal inputs
+    translateInput(xb, input);
+    // Apply the input
+    sim->computeNextState(input, tL);
+    // Clean up
+    gc_input(input);
+    input.clear();
 }
 
-template <typename ExternalType, typename InternalType, class T> 
-void ModelWrapper<ExternalType,InternalType,T>::delta_conf(const Bag<ExternalType>& xb)
-{
-	// Update the internal clock
-	tL = sim->nextEventTime();
-	// Convert the external inputs to internal inputs
-	translateInput(xb,input);
-	// Apply the input
-	sim->computeNextState(input,tL);
-	// Clean up 
-	gc_input(input);
-	input.clear();
+template <typename ExternalType, typename InternalType, class T>
+void ModelWrapper<ExternalType, InternalType, T>::delta_conf(
+    Bag<ExternalType> const &xb) {
+    // Update the internal clock
+    tL = sim->nextEventTime();
+    // Convert the external inputs to internal inputs
+    translateInput(xb, input);
+    // Apply the input
+    sim->computeNextState(input, tL);
+    // Clean up
+    gc_input(input);
+    input.clear();
 }
 
-template <typename ExternalType, typename InternalType, class T> 
-T ModelWrapper<ExternalType,InternalType,T>::ta()
-{
-	if (sim->nextEventTime() < adevs_inf<T>()) return sim->nextEventTime()-tL;
-	else return adevs_inf<T>();
+template <typename ExternalType, typename InternalType, class T>
+T ModelWrapper<ExternalType, InternalType, T>::ta() {
+    if (sim->nextEventTime() < adevs_inf<T>()) {
+        return sim->nextEventTime() - tL;
+    } else {
+        return adevs_inf<T>();
+    }
 }
 
-template <typename ExternalType, typename InternalType, class T> 
-void ModelWrapper<ExternalType,InternalType,T>::output_func(Bag<ExternalType>& yb)
-{
-	// Compute the model's output events; this causes the outputEvent method to be called
-	sim->computeNextOutput();
-	// Translate the output events to external output events
-	translateOutput(output,yb);
-	// Clean up; the contents of the output bag are deleted by the wrapped model's 
-	// gc_output method
-	output.clear();
+template <typename ExternalType, typename InternalType, class T>
+void ModelWrapper<ExternalType, InternalType, T>::output_func(
+    Bag<ExternalType> &yb) {
+    // Compute the model's output events; this causes the outputEvent method to be called
+    sim->computeNextOutput();
+    // Translate the output events to external output events
+    translateOutput(output, yb);
+    // Clean up; the contents of the output bag are deleted by the wrapped model's
+    // gc_output method
+    output.clear();
 }
 
-template <typename ExternalType, typename InternalType, class T> 
-void ModelWrapper<ExternalType,InternalType,T>::outputEvent(Event<InternalType,T> y, T t)
-{
-	// Just save the events for processing by the output_func
-	output.insert(y);
+template <typename ExternalType, typename InternalType, class T>
+void ModelWrapper<ExternalType, InternalType, T>::outputEvent(
+    Event<InternalType, T> y, T t) {
+    // Just save the events for processing by the output_func
+    output.insert(y);
 }
 
-template <typename ExternalType, typename InternalType, class T> 
-ModelWrapper<ExternalType,InternalType,T>::~ModelWrapper()
-{
-	delete sim;
-	delete model;
+template <typename ExternalType, typename InternalType, class T>
+ModelWrapper<ExternalType, InternalType, T>::~ModelWrapper() {
+    delete sim;
+    delete model;
 }
 
-} // end of namespace
+}  // namespace adevs
 
 #endif

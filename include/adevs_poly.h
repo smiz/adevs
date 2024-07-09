@@ -32,9 +32,8 @@
 #define _adevs_poly_h_
 #include <cstdlib>
 
-namespace adevs
-{
-    /**
+namespace adevs {
+/**
      * This class implements Lagrange interpolating
      * polynomials of arbitrary order for functions of
      * a single variable. This can be 
@@ -44,52 +43,52 @@ namespace adevs
      * in a discrete event system. GDEVS is one particular
      * example of this.
      */
-    class InterPoly
-    {
-	public:
-	    /**
+class InterPoly {
+  public:
+    /**
 	     * Construct a polynomial to interpolate
 	     * a function u(t). The u- values
 	     * are the dependent variable and t- the independent
 	     * variables.
 	     */
-	    InterPoly(const double* u, const double* t, unsigned int n);
-		/**
+    InterPoly(double const* u, double const* t, unsigned int n);
+    /**
 		 * Construct a polynomial to interpolate u(t) with data points
 		 * that are regularly spaced in time from an offset t0
 		 */
-		InterPoly(const double* u, double dt, unsigned int n, double t0 = 0.0);
-		/**
+    InterPoly(double const* u, double dt, unsigned int n, double t0 = 0.0);
+    /**
 		 * Assign new values to the data set. If t is NULL, then
 		 * only new u values will be assigned and the old t data is
 		 * kept.
 		 */
-		void setData(const double* u, const double* t = NULL);
-	    /**
+    void setData(double const* u, double const* t = NULL);
+    /**
 	     * Get the interpolated value at t
 	     */
-	    double interpolate(double t) const;
-	    /**
+    double interpolate(double t) const;
+    /**
 	     * Overloaded operator for the interpolate method
 	     */
-	    double operator()(double t) const;
-	    /**
+    double operator()(double t) const;
+    /**
 	     * Approximate the function derivative at t
 	     */
-	    double derivative(double t) const;
-	    /**
+    double derivative(double t) const;
+    /**
 	     * Destructor
 	     */
-	    ~InterPoly();
-	private:
-	    InterPoly(){}
-	    InterPoly(const InterPoly&){}
-	    void operator=(const InterPoly&){}
+    ~InterPoly();
 
-	    double* tdat;
-	    double* udat;
-	    unsigned int n;
-    };
-}
+  private:
+    InterPoly() {}
+    InterPoly(InterPoly const &) {}
+    void operator=(InterPoly const &) {}
+
+    double* tdat;
+    double* udat;
+    unsigned int n;
+};
+}  // namespace adevs
 
 #endif

@@ -32,47 +32,46 @@
 #define __adevs_object_pool_h_
 #include "adevs_bag.h"
 
-namespace adevs
-{
+namespace adevs {
 
 /**
  * A utility class for managing pools of objects that are stored on the heap.
  * Uses the new and delete operators to create and destroy objects.
  */
-template <class T> class object_pool
-{
-	public:
-		/// Construct a pool with a specific initial population
-		object_pool(unsigned int pop = 0):
-		pool()
-		{
-			for (unsigned int i = 0; i < pop; i++)
-				pool.insert(new T());
-		}
-		/// Create an object 
-		T* make_obj()
-		{
-			T* obj;
-			if (pool.empty()) obj = new T;
-			else
-			{
-				obj = *((pool.end())--);
-				pool.erase(pool.end()--);
-			}
-			return obj;
-		}
-		/// Return an object to the pool
-		void destroy_obj(T* obj) { pool.insert(obj); }
-		// Delete all objects in the pool
-		~object_pool()
-		{
-			typename Bag<T*>::iterator iter = pool.begin();
-			for (; iter != pool.end(); iter++) delete *iter;
-		}
-	private:
-		Bag<T*> pool;
+template <class T>
+class object_pool {
+  public:
+    /// Construct a pool with a specific initial population
+    object_pool(unsigned int pop = 0) : pool() {
+        for (unsigned int i = 0; i < pop; i++) {
+            pool.insert(new T());
+        }
+    }
+    /// Create an object
+    T* make_obj() {
+        T* obj;
+        if (pool.empty()) {
+            obj = new T;
+        } else {
+            obj = *((pool.end())--);
+            pool.erase(pool.end()--);
+        }
+        return obj;
+    }
+    /// Return an object to the pool
+    void destroy_obj(T* obj) { pool.insert(obj); }
+    // Delete all objects in the pool
+    ~object_pool() {
+        typename Bag<T*>::iterator iter = pool.begin();
+        for (; iter != pool.end(); iter++) {
+            delete *iter;
+        }
+    }
+
+  private:
+    Bag<T*> pool;
 };
 
-} // end of namespace
+}  // namespace adevs
 
 #endif

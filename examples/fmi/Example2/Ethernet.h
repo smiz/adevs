@@ -1,56 +1,52 @@
 #ifndef ETHERNET_MODEL_H_
 #define ETHERNET_MODEL_H_
+#include <list>
 #include "adevs.h"
 #include "io.h"
-#include <list>
 
-class Rx:
-	public AtomicModel
-{
-	public:
+class Rx : public AtomicModel {
+  public:
+    // Positive numbers are delivered to apps
+    static int const from_media;
+    static int const to_app;
 
-		// Positive numbers are delivered to apps
-		static const int from_media;
-		static const int to_app;
+    Rx(int addr);
+    void delta_int();
+    void delta_ext(double e, adevs::Bag<IO_Type> const &xb);
+    void delta_conf(adevs::Bag<IO_Type> const &xb);
+    void output_func(adevs::Bag<IO_Type> &yb);
+    double ta();
+    ~Rx();
 
-		Rx(int addr);
-		void delta_int();
-		void delta_ext(double e, const adevs::Bag<IO_Type>& xb);
-		void delta_conf(const adevs::Bag<IO_Type>& xb);
-		void output_func(adevs::Bag<IO_Type>& yb);
-		double ta();
-		~Rx();
-	private:
-		const int addr;
-		NetworkData* data;		
+  private:
+    int const addr;
+    NetworkData* data;
 };
 
-class Tx:
-	public AtomicModel
-{
-	public:
+class Tx : public AtomicModel {
+  public:
+    static int const to_media;
+    static int const from_media;
+    static int const from_app;
 
-		static const int to_media;
-		static const int from_media;
-		static const int from_app;
+    Tx(int maxTries);
+    void delta_int();
+    void delta_ext(double e, adevs::Bag<IO_Type> const &xb);
+    void delta_conf(adevs::Bag<IO_Type> const &xb);
+    void output_func(adevs::Bag<IO_Type> &yb);
+    double ta();
+    int getCollisions() const { return collisions; }
+    ~Tx();
 
-		Tx(int maxTries);
-		void delta_int();
-		void delta_ext(double e, const adevs::Bag<IO_Type>& xb);
-		void delta_conf(const adevs::Bag<IO_Type>& xb);
-		void output_func(adevs::Bag<IO_Type>& yb);
-		double ta();
-		int getCollisions() const { return collisions; }
-		~Tx();
-	private:
-		enum Mode { BACKOFF, FAIL, START, TRANSMIT, IDLE };
-		Mode mode;
-		list<NetworkData*> q;	
-		bool busy;
-		int tryCount;
-		const int maxTries;
-		double timeToTx;
-		int collisions;
+  private:
+    enum Mode { BACKOFF, FAIL, START, TRANSMIT, IDLE };
+    Mode mode;
+    list<NetworkData*> q;
+    bool busy;
+    int tryCount;
+    int const maxTries;
+    double timeToTx;
+    int collisions;
 };
 
 /**
@@ -58,34 +54,31 @@ class Tx:
  * This works only if a communicating pair have the
  * same address.
  */
-class NetworkCard:
-	public adevs::Digraph<SimObject*>
-{
-	public:
+class NetworkCard : public adevs::Digraph<SimObject*> {
+  public:
+    static int const to_media;
+    static int const from_media;
+    static int const to_app;
+    static int const from_app;
 
-		static const int to_media;
-		static const int from_media;
-		static const int to_app;
-		static const int from_app;
+    NetworkCard(int addr, int maxTries = 16);
+    int getCollisions() const { return tx->getCollisions(); }
 
-		NetworkCard(int addr, int maxTries = 16);
-		int getCollisions() const { return tx->getCollisions(); }
-	private:
-		Tx* tx;
+  private:
+    Tx* tx;
 };
 
 /**
  * A network to which cards can be attached.
  */
-class Ethernet:
-	public adevs::Digraph<SimObject*>
-{
-	public:
-		Ethernet();
-		// Returns the ports for attaching an application to the card
-		void attach(NetworkCard* card, int& to_app, int& from_app);
-	private:
-		std::vector<NetworkCard*> cards;
+class Ethernet : public adevs::Digraph<SimObject*> {
+  public:
+    Ethernet();
+    // Returns the ports for attaching an application to the card
+    void attach(NetworkCard* card, int &to_app, int &from_app);
+
+  private:
+    std::vector<NetworkCard*> cards;
 };
 
 #endif

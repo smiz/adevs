@@ -30,90 +30,79 @@
  */
 #ifndef __adevs_abstract_simulator_h_
 #define __adevs_abstract_simulator_h_
-#include "adevs_models.h"
-#include "adevs_event_listener.h"
 #include "adevs_bag.h"
+#include "adevs_event_listener.h"
+#include "adevs_models.h"
 
-namespace adevs
-{
+namespace adevs {
 
 /**
  * This is the base class for all simulators. It defines an interface that is
  * supported by all derived classes and provides some basic helper routines
  * for those derived classes.
  */
-template <class X, class T = double> class AbstractSimulator 
-{
-	public:
-		/// Constructor
-		AbstractSimulator(){}
-		/**
+template <class X, class T = double>
+class AbstractSimulator {
+  public:
+    /// Constructor
+    AbstractSimulator() {}
+    /**
 		 * Add an event listener that will be notified of output events 
 		 * produced by all components within the model.
 		 * @param l The listener to be notified
 		 */
-		void addEventListener(EventListener<X,T>* l)
-		{
-			listeners.insert(l);
-		}
-		/**
+    void addEventListener(EventListener<X, T>* l) { listeners.insert(l); }
+    /**
 		 * Remove an event listener that was previously added.
 		 * @param l The listener to be removed
 		 */
-		void removeEventListener(EventListener<X,T>* l)
-		{
-			listeners.erase(l);
-		}
-		/// Get the model's next event time
-		virtual T nextEventTime() = 0;
-		/// Execute the simulator until the next event time is greater than tend
-		virtual T execUntil(T tend) = 0;
-		/// Destructor leaves the model intact.
-		virtual ~AbstractSimulator(){}
-		/// Notify listeners of an output event.
-		void notify_output_listeners(Devs<X,T>* model, const X& value, T t);
-		/// Notify listeners of an input event.
-		void notify_input_listeners(Devs<X,T>* model, const X& value, T t);
-		/// Notify listeners of a state change.
-		void notify_state_listeners(Atomic<X,T>* model, T t);
-	private:
-		/// Eternal event listeners
-		Bag<EventListener<X,T>*> listeners;
+    void removeEventListener(EventListener<X, T>* l) { listeners.erase(l); }
+    /// Get the model's next event time
+    virtual T nextEventTime() = 0;
+    /// Execute the simulator until the next event time is greater than tend
+    virtual T execUntil(T tend) = 0;
+    /// Destructor leaves the model intact.
+    virtual ~AbstractSimulator() {}
+    /// Notify listeners of an output event.
+    void notify_output_listeners(Devs<X, T>* model, X const &value, T t);
+    /// Notify listeners of an input event.
+    void notify_input_listeners(Devs<X, T>* model, X const &value, T t);
+    /// Notify listeners of a state change.
+    void notify_state_listeners(Atomic<X, T>* model, T t);
 
+  private:
+    /// Eternal event listeners
+    Bag<EventListener<X, T>*> listeners;
 };
 
 template <class X, class T>
-void AbstractSimulator<X,T>::notify_output_listeners(Devs<X,T>* model, const X& value, T t)
-{
-	Event<X,T> event(model,value);
-	typename Bag<EventListener<X,T>*>::iterator iter;
-	for (iter = listeners.begin(); iter != listeners.end(); iter++)
-	{
-		(*iter)->outputEvent(event,t);
-	}
+void AbstractSimulator<X, T>::notify_output_listeners(Devs<X, T>* model,
+                                                      X const &value, T t) {
+    Event<X, T> event(model, value);
+    typename Bag<EventListener<X, T>*>::iterator iter;
+    for (iter = listeners.begin(); iter != listeners.end(); iter++) {
+        (*iter)->outputEvent(event, t);
+    }
 }
 
 template <class X, class T>
-void AbstractSimulator<X,T>::notify_input_listeners(Devs<X,T>* model, const X& value, T t)
-{
-	Event<X,T> event(model,value);
-	typename Bag<EventListener<X,T>*>::iterator iter;
-	for (iter = listeners.begin(); iter != listeners.end(); iter++)
-	{
-		(*iter)->inputEvent(event,t);
-	}
+void AbstractSimulator<X, T>::notify_input_listeners(Devs<X, T>* model,
+                                                     X const &value, T t) {
+    Event<X, T> event(model, value);
+    typename Bag<EventListener<X, T>*>::iterator iter;
+    for (iter = listeners.begin(); iter != listeners.end(); iter++) {
+        (*iter)->inputEvent(event, t);
+    }
 }
 
 template <class X, class T>
-void AbstractSimulator<X,T>::notify_state_listeners(Atomic<X,T>* model, T t)
-{
-	typename Bag<EventListener<X,T>*>::iterator iter;
-	for (iter = listeners.begin(); iter != listeners.end(); iter++)
-	{
-		(*iter)->stateChange(model,t);
-	}
+void AbstractSimulator<X, T>::notify_state_listeners(Atomic<X, T>* model, T t) {
+    typename Bag<EventListener<X, T>*>::iterator iter;
+    for (iter = listeners.begin(); iter != listeners.end(); iter++) {
+        (*iter)->stateChange(model, t);
+    }
 }
 
-} // end of namespace
+}  // namespace adevs
 
 #endif

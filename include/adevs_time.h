@@ -31,119 +31,112 @@
 #ifndef __adevs_time_h_
 #define __adevs_time_h_
 #include <cfloat>
-#include <iostream>
 #include <cmath>
+#include <iostream>
 #include <limits>
 
 /// Returns the maximum value for a time type
-template <class T> inline T adevs_inf();
+template <class T>
+inline T adevs_inf();
 /// Returns the zero value for a time type
-template <class T> inline T adevs_zero(); 
+template <class T>
+inline T adevs_zero();
 /// Returns a value less than adevs_zero()
-template <class T> inline T adevs_sentinel(); 
+template <class T>
+inline T adevs_sentinel();
 /// Returns the interval to the next instant of time
-template <class T> inline T adevs_epsilon(); 
+template <class T>
+inline T adevs_epsilon();
 
-namespace adevs
-{
+namespace adevs {
 
 /**
  * This time type allows models to evolve on R x Z.
  */
-template <typename T=double>
-class sd_time
-{
-	public:
-		/// Creates the identify (0,0)
-		sd_time():t(0),k(0){}
-		/// Create a time (t,k)
-		sd_time(T t, int k):t(t),k(k){}
-		/// Copy constructor
-		sd_time(const sd_time& other):t(other.t),k(other.k){}
-		/// Get the real part of time
-		T real() const { return t; }
-		/// Get the logical part of time
-		double integer() const { return k; }
-		/// Assignment operator
-		const sd_time& operator=(const sd_time& other)
-		{
-			t = other.t;
-			k = other.k;
-			return *this;
-		}
-		/// Equivalence
-		bool operator==(const sd_time& t2) const
-		{
-			return (t == t2.t && k == t2.k);
-		}
-		/// Not equal
-		bool operator!=(const sd_time& t2) const
-		{
-			return !(*this == t2);
-		}
-		/// Order by t then by c
-		bool operator<(const sd_time& t2) const
-		{
-			return (t < t2.t || (t == t2.t && k < t2.k));
-		}
-		/// Less than or equal
-		bool operator<=(const sd_time& t2) const
-		{
-			return (*this == t2 || *this < t2);
-		}
-		/// Greater than
-		bool operator>(const sd_time& t2) const
-		{
-			return !(*this <= t2);
-		}
-		/// Greater than or equal
-		bool operator>=(const sd_time& t2) const
-		{
-			return !(*this < t2);
-		}
-		/// Advance this value by a step size t2
-		sd_time operator+(const sd_time& t2) const
-		{
-			sd_time result(*this);
-			result += t2;
-			return result;
-		}
-		/// Advance this value by a step size t2
-		const sd_time& operator+=(const sd_time& t2) 
-		{
-			if (t2.t == 0) k += t2.k;
-			else { t += t2.t; k = t2.k; }
-			return *this;
-		}
-		/// Length of the interval from now to t2
-		sd_time operator-(const sd_time& t2) const
-		{
-			sd_time result(*this);
-			result -= t2;
-			return result;
-		}
-		/// Length of the interval from now to t2
-		const sd_time& operator-=(const sd_time& t2) 
-		{
-			if (t == t2.t) { t = 0; k -= t2.k; }
-			else t -= t2.t; 
-			return *this;
-		}
-		/// Print a time to the output stream
-		friend std::ostream& operator<<(std::ostream& out, const sd_time& t)
-		{
-			out << "(" << t.t << "," << t.k << ")";
-			return out;
-		}
-		/// Read a time from the input stream
-		friend std::istream& operator>>(std::istream& in, sd_time& t)
-		{
-			char junk;
-			in >> junk >> t.t >> junk >> t.k >> junk;
-			return in;
-		}
-	private:
-		T t; int k;
+template <typename T = double>
+class sd_time {
+  public:
+    /// Creates the identify (0,0)
+    sd_time() : t(0), k(0) {}
+    /// Create a time (t,k)
+    sd_time(T t, int k) : t(t), k(k) {}
+    /// Copy constructor
+    sd_time(sd_time const &other) : t(other.t), k(other.k) {}
+    /// Get the real part of time
+    T real() const { return t; }
+    /// Get the logical part of time
+    double integer() const { return k; }
+    /// Assignment operator
+    sd_time const &operator=(sd_time const &other) {
+        t = other.t;
+        k = other.k;
+        return *this;
+    }
+    /// Equivalence
+    bool operator==(sd_time const &t2) const {
+        return (t == t2.t && k == t2.k);
+    }
+    /// Not equal
+    bool operator!=(sd_time const &t2) const { return !(*this == t2); }
+    /// Order by t then by c
+    bool operator<(sd_time const &t2) const {
+        return (t < t2.t || (t == t2.t && k < t2.k));
+    }
+    /// Less than or equal
+    bool operator<=(sd_time const &t2) const {
+        return (*this == t2 || *this < t2);
+    }
+    /// Greater than
+    bool operator>(sd_time const &t2) const { return !(*this <= t2); }
+    /// Greater than or equal
+    bool operator>=(sd_time const &t2) const { return !(*this < t2); }
+    /// Advance this value by a step size t2
+    sd_time operator+(sd_time const &t2) const {
+        sd_time result(*this);
+        result += t2;
+        return result;
+    }
+    /// Advance this value by a step size t2
+    sd_time const &operator+=(sd_time const &t2) {
+        if (t2.t == 0) {
+            k += t2.k;
+        } else {
+            t += t2.t;
+            k = t2.k;
+        }
+        return *this;
+    }
+    /// Length of the interval from now to t2
+    sd_time operator-(sd_time const &t2) const {
+        sd_time result(*this);
+        result -= t2;
+        return result;
+    }
+    /// Length of the interval from now to t2
+    sd_time const &operator-=(sd_time const &t2) {
+        if (t == t2.t) {
+            t = 0;
+            k -= t2.k;
+        } else {
+            t -= t2.t;
+        }
+        return *this;
+    }
+    /// Print a time to the output stream
+    friend std::ostream &operator<<(std::ostream &out, sd_time const &t) {
+        out << "(" << t.t << "," << t.k << ")";
+        return out;
+    }
+    /// Read a time from the input stream
+    friend std::istream &operator>>(std::istream &in, sd_time &t) {
+        char junk;
+        in >> junk >> t.t >> junk >> t.k >> junk;
+        return in;
+    }
+
+  private:
+    T t;
+    int k;
 };
 
 /**
@@ -158,9 +151,8 @@ class sd_time
  * you can redistribute and modify it under the terms of the GNU Library
  * General Public License (LGPL), version 2 or later.  This software
  * comes with absolutely no warranty.</p>
- */ 
-inline int fcmp(double x1, double x2, double epsilon) 
-{
+ */
+inline int fcmp(double x1, double x2, double epsilon) {
     int exponent;
     double delta;
     double difference;
@@ -189,16 +181,17 @@ inline int fcmp(double x1, double x2, double epsilon)
     /* Otherwise x1 > x2 or x1 < x2, depending on which side of */
     /* the neighborhood x1 is on. */
 
-    delta = ldexp(epsilon, exponent); 
+    delta = ldexp(epsilon, exponent);
 
     difference = x1 - x2;
 
-    if (difference > delta)
+    if (difference > delta) {
         return 1; /* x1 > x2 */
-    else if (difference < -delta)
-        return -1;  /* x1 < x2 */
-    else /* -delta <= difference <= delta */
+    } else if (difference < -delta) {
+        return -1; /* x1 < x2 */
+    } else {       /* -delta <= difference <= delta */
         return 0;  /* x1 == x2 */
+    }
 }
 
 /**
@@ -210,112 +203,197 @@ inline int fcmp(double x1, double x2, double epsilon)
  */
 class double_fcmp {
 
-private:
-	double d;
+  private:
+    double d;
 
-public:
+  public:
     /**
 	 * The user must instantiate this static variable
 	 * and initialize as required by the fcmp function.
 	 */
     static double epsilon;
 
-    double_fcmp(double rhs = 0) 
-        : d(rhs) { }
+    double_fcmp(double rhs = 0) : d(rhs) {}
 
-    const double_fcmp& operator=(const double_fcmp& rhs)
-    {
+    double_fcmp const &operator=(double_fcmp const &rhs) {
         d = rhs.d;
         return *this;
     }
-    const double_fcmp& operator=(double rhs)
-    {
+    double_fcmp const &operator=(double rhs) {
         d = rhs;
         return *this;
     }
-    operator double()
-    {
-        return d;
-    }
-    bool operator<(double rhs) const
-    {
-        return (fcmp(d, rhs, epsilon) < 0);
-    }
-    bool operator<(const double_fcmp& rhs) const
-    {
+    operator double() { return d; }
+    bool operator<(double rhs) const { return (fcmp(d, rhs, epsilon) < 0); }
+    bool operator<(double_fcmp const &rhs) const {
         return (fcmp(d, rhs.d, epsilon) < 0);
     }
-    bool operator<=(const double_fcmp& rhs) const
-    {
+    bool operator<=(double_fcmp const &rhs) const {
         return (fcmp(d, rhs.d, epsilon) <= 0);
     }
-    bool operator>(const double_fcmp& rhs) const
-    {
+    bool operator>(double_fcmp const &rhs) const {
         return (fcmp(d, rhs.d, epsilon) > 0);
     }
-    bool operator>=(const double_fcmp& rhs) const
-    {
+    bool operator>=(double_fcmp const &rhs) const {
         return (fcmp(d, rhs.d, epsilon) >= 0);
     }
-    bool operator==(double rhs) const
-    {
-        return (fcmp(d, rhs, epsilon) == 0);
-    }
-    bool operator==(const double_fcmp& rhs) const
-    {
+    bool operator==(double rhs) const { return (fcmp(d, rhs, epsilon) == 0); }
+    bool operator==(double_fcmp const &rhs) const {
         return (fcmp(d, rhs.d, epsilon) == 0);
     }
 };
 
-} // end namespace
+}  // namespace adevs
 
-template <> inline float adevs_inf() {
-	return std::numeric_limits<float>::max(); }
-template <> inline long double adevs_inf() {
-	return std::numeric_limits<long double>::max(); }
-template <> inline double adevs_inf() {
-	return std::numeric_limits<double>::max(); }
-template <> inline int adevs_inf() {
-	return std::numeric_limits<int>::max(); }
-template <> inline long adevs_inf() {
-	return std::numeric_limits<long>::max(); }
-template <> inline adevs::double_fcmp adevs_inf() {
-	return std::numeric_limits<double>::max(); }
-template <> inline adevs::sd_time<double> adevs_inf() {
-	return adevs::sd_time<double>(std::numeric_limits<double>::max(),std::numeric_limits<int>::max()); }
-template <> inline adevs::sd_time<long> adevs_inf() {
-	return adevs::sd_time<long>(std::numeric_limits<long>::max(),std::numeric_limits<int>::max()); }
-template <> inline adevs::sd_time<int> adevs_inf() {
-	return adevs::sd_time<int>(std::numeric_limits<int>::max(),std::numeric_limits<int>::max()); }
+template <>
+inline float adevs_inf() {
+    return std::numeric_limits<float>::max();
+}
+template <>
+inline long double adevs_inf() {
+    return std::numeric_limits<long double>::max();
+}
+template <>
+inline double adevs_inf() {
+    return std::numeric_limits<double>::max();
+}
+template <>
+inline int adevs_inf() {
+    return std::numeric_limits<int>::max();
+}
+template <>
+inline long adevs_inf() {
+    return std::numeric_limits<long>::max();
+}
+template <>
+inline adevs::double_fcmp adevs_inf() {
+    return std::numeric_limits<double>::max();
+}
+template <>
+inline adevs::sd_time<double> adevs_inf() {
+    return adevs::sd_time<double>(std::numeric_limits<double>::max(),
+                                  std::numeric_limits<int>::max());
+}
+template <>
+inline adevs::sd_time<long> adevs_inf() {
+    return adevs::sd_time<long>(std::numeric_limits<long>::max(),
+                                std::numeric_limits<int>::max());
+}
+template <>
+inline adevs::sd_time<int> adevs_inf() {
+    return adevs::sd_time<int>(std::numeric_limits<int>::max(),
+                               std::numeric_limits<int>::max());
+}
 
-template <> inline float adevs_zero() { return 0.0f; }
-template <> inline long double adevs_zero() { return 0.0L; }
-template <> inline double adevs_zero() { return 0.0; }
-template <> inline int adevs_zero() { return 0; }
-template <> inline long adevs_zero() { return 0; }
-template <> inline adevs::double_fcmp adevs_zero() { return 0.0; }
-template <> inline adevs::sd_time<double> adevs_zero() { return adevs::sd_time<double>(0.0,0); }
-template <> inline adevs::sd_time<long> adevs_zero() { return adevs::sd_time<long>(0,0); }
-template <> inline adevs::sd_time<int> adevs_zero() { return adevs::sd_time<int>(0,0); }
+template <>
+inline float adevs_zero() {
+    return 0.0f;
+}
+template <>
+inline long double adevs_zero() {
+    return 0.0L;
+}
+template <>
+inline double adevs_zero() {
+    return 0.0;
+}
+template <>
+inline int adevs_zero() {
+    return 0;
+}
+template <>
+inline long adevs_zero() {
+    return 0;
+}
+template <>
+inline adevs::double_fcmp adevs_zero() {
+    return 0.0;
+}
+template <>
+inline adevs::sd_time<double> adevs_zero() {
+    return adevs::sd_time<double>(0.0, 0);
+}
+template <>
+inline adevs::sd_time<long> adevs_zero() {
+    return adevs::sd_time<long>(0, 0);
+}
+template <>
+inline adevs::sd_time<int> adevs_zero() {
+    return adevs::sd_time<int>(0, 0);
+}
 
-template <> inline float adevs_sentinel() { return -1.0f; }
-template <> inline long double adevs_sentinel() { return -1.0L; }
-template <> inline double adevs_sentinel() { return -1.0; }
-template <> inline int adevs_sentinel() { return -1; }
-template <> inline long adevs_sentinel() { return -1; }
-template <> inline adevs::double_fcmp adevs_sentinel() { return -1.0; }
-template <> inline adevs::sd_time<double> adevs_sentinel() { return adevs::sd_time<double>(-1.0,0); }
-template <> inline adevs::sd_time<long> adevs_sentinel() { return adevs::sd_time<long>(-1,0); }
-template <> inline adevs::sd_time<int> adevs_sentinel() { return adevs::sd_time<int>(-1,0); }
+template <>
+inline float adevs_sentinel() {
+    return -1.0f;
+}
+template <>
+inline long double adevs_sentinel() {
+    return -1.0L;
+}
+template <>
+inline double adevs_sentinel() {
+    return -1.0;
+}
+template <>
+inline int adevs_sentinel() {
+    return -1;
+}
+template <>
+inline long adevs_sentinel() {
+    return -1;
+}
+template <>
+inline adevs::double_fcmp adevs_sentinel() {
+    return -1.0;
+}
+template <>
+inline adevs::sd_time<double> adevs_sentinel() {
+    return adevs::sd_time<double>(-1.0, 0);
+}
+template <>
+inline adevs::sd_time<long> adevs_sentinel() {
+    return adevs::sd_time<long>(-1, 0);
+}
+template <>
+inline adevs::sd_time<int> adevs_sentinel() {
+    return adevs::sd_time<int>(-1, 0);
+}
 
-template <> inline float adevs_epsilon() { return 0.0f; }
-template <> inline long double adevs_epsilon() { return 0.0L; }
-template <> inline double adevs_epsilon() { return 0.0; }
-template <> inline int adevs_epsilon() { return 0; }
-template <> inline long adevs_epsilon() { return 0; }
-template <> inline adevs::double_fcmp adevs_epsilon() { return 0.0; }
-template <> inline adevs::sd_time<double> adevs_epsilon() { return adevs::sd_time<double>(0.0,1); }
-template <> inline adevs::sd_time<long> adevs_epsilon() { return adevs::sd_time<long>(0,1); }
-template <> inline adevs::sd_time<int> adevs_epsilon() { return adevs::sd_time<int>(0,1); }
+template <>
+inline float adevs_epsilon() {
+    return 0.0f;
+}
+template <>
+inline long double adevs_epsilon() {
+    return 0.0L;
+}
+template <>
+inline double adevs_epsilon() {
+    return 0.0;
+}
+template <>
+inline int adevs_epsilon() {
+    return 0;
+}
+template <>
+inline long adevs_epsilon() {
+    return 0;
+}
+template <>
+inline adevs::double_fcmp adevs_epsilon() {
+    return 0.0;
+}
+template <>
+inline adevs::sd_time<double> adevs_epsilon() {
+    return adevs::sd_time<double>(0.0, 1);
+}
+template <>
+inline adevs::sd_time<long> adevs_epsilon() {
+    return adevs::sd_time<long>(0, 1);
+}
+template <>
+inline adevs::sd_time<int> adevs_epsilon() {
+    return adevs::sd_time<int>(0, 1);
+}
 
 #endif

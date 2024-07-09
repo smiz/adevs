@@ -9,13 +9,12 @@
  * The initial data was produced using the cdf
  * example from THYME-1.0.3
  */
-class IEEE118:
-	public IEEE_CDF_Data
-{
-	public:
-		IEEE118();
-	private:
-		void initialize();
+class IEEE118 : public IEEE_CDF_Data {
+  public:
+    IEEE118();
+
+  private:
+    void initialize();
 };
 
 #endif
