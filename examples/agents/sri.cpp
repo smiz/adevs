@@ -100,7 +100,7 @@ class Agent : public Atomic<int> {
         // send an event to some other agent
         // that will be selected at random
         if (tr == ta()) {
-            yb.insert(c);
+            yb.push_back(c);
         }
     }
     void gc_output(Bag<int> &) {}
@@ -178,9 +178,9 @@ class RandomNetwork : public Network<int> {
         do {
             xx.model = pop[gsl_rng_uniform_int(rnd, pop.size())];
         } while (xx.model == model);
-        r.insert(xx);
+        r.push_back(xx);
         xx.model = sir;
-        r.insert(xx);
+        r.push_back(xx);
     }
     ~RandomNetwork() {
         for (auto agent : pop) {

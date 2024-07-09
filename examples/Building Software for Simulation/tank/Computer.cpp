@@ -16,15 +16,15 @@ void Computer::route(SimEvent const &value, Devs<SimEvent>* model,
                      Bag<Event<SimEvent>> &r) {
     // Packets and interrupts go to the packet processing model
     if (value.getType() == SIM_PACKET || value.getType() == SIM_INTERRUPT) {
-        r.insert(Event<SimEvent>(&p, value));
+        r.push_back(Event<SimEvent>(&p, value));
     }
     // Motor on times go to the interrupt handler
     else if (value.getType() == SIM_MOTOR_ON_TIME) {
-        r.insert(Event<SimEvent>(&i, value));
+        r.push_back(Event<SimEvent>(&i, value));
     }
     // Motor voltages are external outputs
     else if (value.getType() == SIM_MOTOR_VOLTAGE) {
-        r.insert(Event<SimEvent>(this, value));
+        r.push_back(Event<SimEvent>(this, value));
     }
     // Any other type is an error
     else {

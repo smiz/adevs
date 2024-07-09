@@ -104,7 +104,7 @@ void fireCell::output_func(adevs::Bag<CellEvent> &yb) {
                 e.y = y + dy;
                 // Don't send an event to self
                 if (e.x != x || e.y != y) {
-                    yb.insert(e);
+                    yb.push_back(e);
                 }
             }
         }

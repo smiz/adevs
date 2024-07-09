@@ -21,7 +21,9 @@ class SimpleModel : public adevs::Atomic<Internal*> {
         delta_ext(0.0, xb);
     }
     double ta() { return s.period; }
-    void output_func(adevs::Bag<Internal*> &yb) { yb.insert(new Internal(s)); }
+    void output_func(adevs::Bag<Internal*> &yb) {
+        yb.push_back(new Internal(s));
+    }
     void gc_output(adevs::Bag<Internal*> &g) {
         adevs::Bag<Internal*>::const_iterator iter = g.begin();
         for (; iter != g.end(); iter++) {

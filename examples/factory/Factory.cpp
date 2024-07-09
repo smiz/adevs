@@ -20,7 +20,7 @@ void Factory::getComponents(Set<Devs<int>*> &c) {
 void Factory::route(int const &order, Devs<int>* src, Bag<Event<int>> &r) {
     // If this is a machine output, then it leaves the factory
     if (src != this) {
-        r.insert(Event<int>(this, order));
+        r.push_back(Event<int>(this, order));
         return;
     }
     // Otherwise, look for the machine that has the shortest time to fill the order
@@ -41,7 +41,7 @@ void Factory::route(int const &order, Devs<int>* src, Bag<Event<int>> &r) {
     // Make sure we found a machine to use and that it has a small enough service time
     assert(pick != NULL && pick_time <= 6.0);
     // Use this machine to process the order
-    r.insert(Event<int>(pick, order));
+    r.push_back(Event<int>(pick, order));
 }
 
 bool Factory::model_transition() {

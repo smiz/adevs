@@ -106,7 +106,7 @@ class Switch : public Atomic<IOType> {
         IOType y;
         y.port = phase;
         y.value = next_position();
-        yb.insert(y);
+        yb.push_back(y);
     }
     double ta() { return h; }
 
@@ -150,21 +150,21 @@ class TestCircuitAdevsExt : public TestCircuitAdevs, public CircuitOutput {
         if (duty_cycle != duty[0]) {
             y.port = 0;
             y.value = duty_cycle;
-            yb.insert(y);
+            yb.push_back(y);
             duty[0] = this->get_inverter_1__duty_cycle_for_de();
         }
         duty_cycle = get_inverter_2__duty_cycle_for_de();
         if (duty_cycle != duty[1]) {
             y.port = 1;
             y.value = duty_cycle;
-            yb.insert(y);
+            yb.push_back(y);
             duty[1] = this->get_inverter_2__duty_cycle_for_de();
         }
         duty_cycle = get_inverter_3__duty_cycle_for_de();
         if (duty_cycle != duty[2]) {
             y.port = 2;
             y.value = duty_cycle;
-            yb.insert(y);
+            yb.push_back(y);
             duty[2] = this->get_inverter_3__duty_cycle_for_de();
         }
     }

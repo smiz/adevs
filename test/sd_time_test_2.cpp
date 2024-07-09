@@ -16,7 +16,7 @@ class Model : public Atomic<int, sd_time<int>> {
     void delta_int() { count++; }
     void delta_ext(sd_time<int> e, Bag<int> const &) {}
     void delta_conf(Bag<int> const &) { delta_int(); }
-    void output_func(Bag<int> &y) { y.insert(count); }
+    void output_func(Bag<int> &y) { y.push_back(count); }
     void gc_output(Bag<int> &) {}
     string get_name() const { return name; }
 

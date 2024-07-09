@@ -57,7 +57,7 @@ class Circuit : public ode_system<bool> {
     }
     void output_func(double const* q, bool const* events, Bag<bool> &yb) {
         assert(events[0]);
-        yb.insert(!d);
+        yb.push_back(!d);
     }
     void gc_output(Bag<bool> &) {}
     bool getDiode() const { return d; }
@@ -100,7 +100,7 @@ int main() {
     }
     // Open the switch
     Bag<Event<bool>> xb;
-    xb.insert(Event<bool>(hybrid_model, 0));
+    xb.push_back(Event<bool>(hybrid_model, 0));
     sim->computeNextState(xb, 1.0);
     // Simulate for another second
     while (sim->nextEventTime() <= 4.0) {

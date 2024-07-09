@@ -73,7 +73,7 @@ class Agent : public Atomic<io_type, sd_time<>> {
         } else if (yy.xtgt == XSIZE) {
             yy.xtgt = 0;
         }
-        yb.insert(yy);
+        yb.push_back(yy);
         output[x][y] = c;
     }
     void gc_output(Bag<io_type> &) {}
@@ -152,25 +152,25 @@ class Grid : public Network<io_type, sd_time<>> {
         } else {
             xx.model = grid[XSIZE - 1][value.ysrc];
         }
-        r.insert(xx);
+        r.push_back(xx);
         if (value.xsrc + 1 < XSIZE) {
             xx.model = grid[value.xsrc + 1][value.ysrc];
         } else {
             xx.model = grid[0][value.ysrc];
         }
-        r.insert(xx);
+        r.push_back(xx);
         if (value.ysrc - 1 >= 0) {
             xx.model = grid[value.xsrc][value.ysrc - 1];
         } else {
             xx.model = grid[value.xsrc][YSIZE - 1];
         }
-        r.insert(xx);
+        r.push_back(xx);
         if (value.ysrc + 1 < YSIZE) {
             xx.model = grid[value.xsrc][value.ysrc + 1];
         } else {
             xx.model = grid[value.xsrc][0];
         }
-        r.insert(xx);
+        r.push_back(xx);
     }
     ~Grid() {
         for (int i = 0; i < XSIZE; i++) {

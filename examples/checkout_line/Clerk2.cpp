@@ -101,7 +101,7 @@ void Clerk2::output_func(Bag<IO_Type> &yb) {
     line.front().customer->tleave = t + ta();
     /// Place the customer at the front of the line onto the depart port.
     IO_Type y(depart, line.front().customer);
-    yb.insert(y);
+    yb.push_back(y);
     // Report the departure
     cout << "Clerk: A customer departed at t = " << t + ta() << endl;
 }

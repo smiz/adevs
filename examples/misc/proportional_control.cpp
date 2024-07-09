@@ -54,7 +54,7 @@ class SISOPlantEqns : public adevs::ode_system<double> {
         external_event(q, 0.0, xb);
     }
     void output_func(double const* q, bool const*, IO_Bag &y) {
-        y.insert(q[1]);
+        y.push_back(q[1]);
     }
     void gc_output(IO_Bag &) {}
 
@@ -89,7 +89,7 @@ class Control : public adevs::Atomic<double> {
         }
         return adevs_inf<double>();
     }
-    void output_func(IO_Bag &yb) { yb.insert(u); }
+    void output_func(IO_Bag &yb) { yb.push_back(u); }
     void gc_output(IO_Bag &) {}
 
   private:

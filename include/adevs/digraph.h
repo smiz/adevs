@@ -136,7 +136,7 @@ void Digraph<VALUE, PORT, T>::couple(Component* src, PORT srcPort,
     }
     node src_node(src, srcPort);
     node dst_node(dst, dstPort);
-    graph[src_node].insert(dst_node);
+    graph[src_node].push_back(dst_node);
 }
 
 template <class VALUE, class PORT, class T>
@@ -163,7 +163,7 @@ void Digraph<VALUE, PORT, T>::route(IO_Type const &x, Component* model,
         event.model = (*node_iter).model;
         event.value.port = (*node_iter).port;
         event.value.value = x.value;
-        r.insert(event);
+        r.push_back(event);
     }
 }
 template <class VALUE, class PORT, class T>

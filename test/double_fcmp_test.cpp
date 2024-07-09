@@ -20,7 +20,7 @@ class genr : public Atomic<char, double_fcmp> {
     }
     void delta_ext(double_fcmp, Bag<char> const &) { sigma = DBL_MAX; }
     void delta_conf(Bag<char> const &) { sigma = DBL_MAX; }
-    void output_func(Bag<char> &y) { y.insert('a'); }
+    void output_func(Bag<char> &y) { y.push_back('a'); }
     void gc_output(Bag<char> &g) { assert(g.count('a') > 0); }
     ~genr() {}
     int getTickCount() { return count; }
@@ -109,7 +109,7 @@ void test5() {
     Simulator<char, double_fcmp> sim(g);
     Bag<Event<char, double_fcmp>> input;
     Event<char, double_fcmp> event(g, 'a');
-    input.insert(event);
+    input.push_back(event);
     sim.computeNextState(input, 5.0);
     assert(sim.nextEventTime() == DBL_MAX);
     assert(g->getTickCount() == 0);

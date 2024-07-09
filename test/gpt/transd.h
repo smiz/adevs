@@ -95,7 +95,7 @@ class transd : public adevs::Atomic<PortValue> {
         /// Generate an output event to stop the generator
         job j;
         PortValue pv(out, j);
-        y.insert(pv);
+        y.push_back(pv);
     }
     /// Time advance function
     double ta() { return sigma; }

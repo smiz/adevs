@@ -65,7 +65,7 @@ void Clerk::output_func(Bag<IO_Type> &yb) {
     leaving->tleave = t + ta();
     // Eject the customer
     IO_Type y(depart, leaving);
-    yb.insert(y);
+    yb.push_back(y);
     // Print a notice of the departure
     cout << "Clerk: Computed the output function at t = " << t + ta() << endl;
     cout << "Clerk: A customer just departed!" << endl;

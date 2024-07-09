@@ -38,7 +38,7 @@ class Parrot : public Atomic<PortValue<string>> {
     }
     void output_func(Bag<PortValue<string>> &yb) {
         PortValue<string> event(out, q);
-        yb.insert(event);
+        yb.push_back(event);
     }
     void gc_output(Bag<PortValue<string>> &) {}
     ~Parrot() {}
@@ -79,7 +79,7 @@ int main() {
     Simulator<PortValue<string>> sim(model);
     sim.addEventListener(new Listener());
     Bag<Event<PortValue<string>>> input;
-    input.insert(start);
+    input.push_back(start);
     sim.computeNextState(input, 0.0);
     while (sim.nextEventTime() < 10) {
         cout << "***" << endl;

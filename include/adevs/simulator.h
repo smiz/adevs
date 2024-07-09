@@ -275,14 +275,14 @@ void Simulator<X, T>::visit(Atomic<X, T>* model) {
         assert(model->y == NULL);
         // May be in the mealy list because of a route call
         if (model->x == NULL) {
-            mealy.insert(model->typeIsMealyAtomic());
+            mealy.push_back(model->typeIsMealyAtomic());
         }
         return;
     }
     model->y = io_pool.make_obj();
     // Put it in the active list if it is not already there
     if (model->x == NULL) {
-        activated.insert(model);
+        activated.push_back(model);
     }
     // Compute output functions and route the events. The bags of output
     // are held for garbage collection at a later time.
@@ -332,7 +332,7 @@ void Simulator<X, T>::computeNextOutput(Bag<Event<X, T>> &input, T t) {
         model->y = io_pool.make_obj();
         // Put it in the active set if it is not already there
         if (model->x == NULL) {
-            activated.insert(model);
+            activated.push_back(model);
         }
         // Compute output functions and route the events. The bags of output
         // are held for garbage collection at a later time.
@@ -585,7 +585,7 @@ void Simulator<X, T>::inject_event(Atomic<X, T>* model, X &value) {
             assert(model->y == NULL);
             // Add it to the list of its not already there
             if (model->x == NULL && !model->typeIsMealyAtomic()->imm) {
-                mealy.insert(model->typeIsMealyAtomic());
+                mealy.push_back(model->typeIsMealyAtomic());
             }
         } else {
             exception err("Mealy model coupled to a Mealy model", model);
@@ -595,12 +595,12 @@ void Simulator<X, T>::inject_event(Atomic<X, T>* model, X &value) {
     // Add the output to the model's bag of output to be processed
     if (model->x == NULL) {
         if (model->y == NULL) {
-            activated.insert(model);
+            activated.push_back(model);
         }
         model->x = io_pool.make_obj();
     }
     this->notify_input_listeners(model, value, io_time);
-    model->x->insert(value);
+    model->x->push_back(value);
 }
 
 template <class X, class T>

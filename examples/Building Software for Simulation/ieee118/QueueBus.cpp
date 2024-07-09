@@ -70,5 +70,5 @@ void QueueBus::output_func(Bag<PortValue<BasicEvent*>> &yb) {
         y.value = y.value->clone();
     }
     y.port = q.front().out_port;
-    yb.insert(y);
+    yb.push_back(y);
 }

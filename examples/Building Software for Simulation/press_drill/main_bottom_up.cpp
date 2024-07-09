@@ -67,7 +67,7 @@ int main() {
         }
         // Inject the input
         Event<int> input_event(assembly_line, blanks);
-        input.insert(input_event);
+        input.push_back(input_event);
         cout << endl;
         sim->computeNextState(input, t);
     }

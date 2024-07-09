@@ -649,7 +649,7 @@ class Hybrid : public Atomic<X, T> {
         if (!missedOutput.empty()) {
             typename Bag<X>::iterator iter = missedOutput.begin();
             for (; iter != missedOutput.end(); iter++) {
-                yb.insert(*iter);
+                yb.push_back(*iter);
             }
             if (sigma == 0.0) {  // Confluent event
                 sys->output_func(q_trial, event, yb);

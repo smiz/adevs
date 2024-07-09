@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     Bag<Event<SimEvent>> input;
     SimEvent cmd(sim_command);
     Event<SimEvent> event(computer, cmd);
-    input.insert(event);
+    input.push_back(event);
     sim->computeNextState(input, 0.0);
     // Run the simulation
     while (sim->nextEventTime() <= 0.004) {

@@ -188,7 +188,7 @@ void CellSpace<X, T>::route(CellEvent<X> const &event, Cell* model,
     if (target != NULL) {
         // Add an appropriate event to the receiver bag
         Event<CellEvent<X>, T> io(target, event);
-        r.insert(io);
+        r.push_back(io);
     }
 }
 

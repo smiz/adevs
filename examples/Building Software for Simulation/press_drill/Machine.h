@@ -24,7 +24,7 @@ class Machine : public adevs::Atomic<int> {
         delta_int();
         delta_ext(0.0, xb);
     }
-    void output_func(adevs::Bag<int> &yb) { yb.insert(1); }
+    void output_func(adevs::Bag<int> &yb) { yb.push_back(1); }
     double ta() {
         if (p > 0) {
             return sigma;

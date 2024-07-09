@@ -61,7 +61,7 @@ class dae : public dae_se1_system<double> {
         double z[1];
         state_event_func(q, a, z);
         assert(fabs(z[0]) < 1E-5);
-        yb.insert(q[0] * a[0]);
+        yb.push_back(q[0] * a[0]);
     }
     void gc_output(Bag<double> &g) {}
 

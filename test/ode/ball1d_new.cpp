@@ -67,7 +67,7 @@ class bouncing_ball : public ode_system<PortValue<double>> {
                      Bag<PortValue<double>> &yb) {
         assert(event_flag[0] || event_flag[1]);
         PortValue<double> event(0, q[0]);
-        yb.insert(event);
+        yb.push_back(event);
     }
     void gc_output(Bag<PortValue<double>> &g) {}
 

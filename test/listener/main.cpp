@@ -49,7 +49,7 @@ int main() {
     sim->addEventListener(new Listener());
     // This input should cause two outputEvent() calls at time 1
     Bag<Event<IO_Type>> b;
-    b.insert(Event<IO_Type>(d, IO_Type(0, 1)));
+    b.push_back(Event<IO_Type>(d, IO_Type(0, 1)));
     // Inject it at time 0
     sim->computeNextState(b, 0.0);
     // Next event at time 1?

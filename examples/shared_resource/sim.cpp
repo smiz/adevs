@@ -72,7 +72,7 @@ class Resource : public Atomic<IO_Type> {
         yy.port = grant;
         yy.value.resID = ID;
         yy.value.userID = q.front();
-        yb.insert(yy);
+        yb.push_back(yy);
     }
     void gc_output(IO_Bag &) {}
 
@@ -181,7 +181,7 @@ class User : public Atomic<IO_Type> {
         // Release or request them all
         for (int i = 0; i < howMany; i++) {
             yy.value.resID = i;
-            yb.insert(yy);
+            yb.push_back(yy);
         }
     }
     void gc_output(IO_Bag &) {}

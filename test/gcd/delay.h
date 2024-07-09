@@ -56,7 +56,7 @@ class delay : public adevs::Atomic<PortValue> {
                 PortValue pv;
                 pv.port = out;
                 pv.value = new object(*((*i).second));
-                y.insert(pv);
+                y.push_back(pv);
             }
         }
     }

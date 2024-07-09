@@ -47,7 +47,7 @@ void set_assign_diff(Bag<T> &result, Set<T> const &A, Set<T> const &B) {
     typename Set<T>::const_iterator iter = A.begin();
     for (; iter != A.end(); iter++) {
         if (B.find(*iter) == B.end()) {
-            result.insert(*iter);
+            result.push_back(*iter);
         }
     }
 }

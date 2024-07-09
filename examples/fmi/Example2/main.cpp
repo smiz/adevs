@@ -40,7 +40,7 @@ class App : public AtomicModel {
         y.port = data_out;
         y.value =
             new NetworkData(NetworkData::APP_DATA, 999, bytes, new SimObject());
-        yb.insert(y);
+        yb.push_back(y);
     }
 
   private:
@@ -107,7 +107,7 @@ class ControlExt : public Control {
         IO_Type msg;
         msg.port = command;
         msg.value = new NetworkData(NetworkData::APP_DATA, robotAddr, 100, sig);
-        yb.insert(msg);
+        yb.push_back(msg);
     }
     void gc_output(adevs::Bag<IO_Type> &g) {
         adevs::Bag<IO_Type>::iterator iter = g.begin();
@@ -194,7 +194,7 @@ class RobotExt : public Robot {
             msg.port = sample;
             msg.value =
                 new NetworkData(NetworkData::APP_DATA, controlAddr, 100, sig);
-            yb.insert(msg);
+            yb.push_back(msg);
         }
     }
     void gc_output(adevs::Bag<IO_Type> &g) {

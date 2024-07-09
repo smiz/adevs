@@ -44,7 +44,7 @@ class object_pool {
     /// Construct a pool with a specific initial population
     object_pool(unsigned int pop = 0) : pool() {
         for (unsigned int i = 0; i < pop; i++) {
-            pool.insert(new T());
+            pool.push_back(new T());
         }
     }
     /// Create an object
@@ -59,7 +59,7 @@ class object_pool {
         return obj;
     }
     /// Return an object to the pool
-    void destroy_obj(T* obj) { pool.insert(obj); }
+    void destroy_obj(T* obj) { pool.push_back(obj); }
     // Delete all objects in the pool
     ~object_pool() {
         typename Bag<T*>::iterator iter = pool.begin();

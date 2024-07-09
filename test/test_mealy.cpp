@@ -29,7 +29,7 @@ class Periodic : public Atomic<int> {
     void delta_int() { c++; }
     void delta_ext(double, Bag<int> const &) {}
     void delta_conf(Bag<int> const &) {}
-    void output_func(Bag<int> &yb) { yb.insert(1); }
+    void output_func(Bag<int> &yb) { yb.push_back(1); }
     void gc_output(Bag<int> &) {}
 
   private:
@@ -67,11 +67,11 @@ class Trigger : public MealyAtomic<int> {
     void delta_conf(Bag<int> const &xb) { ttg = 1.0; }
     void output_func(Bag<int> &yb) {
         // Turn off
-        yb.insert(0);
+        yb.push_back(0);
     }
     void output_func(Bag<int> const &xb, Bag<int> &yb) {
         // Turn on
-        yb.insert(*(xb.begin()));
+        yb.push_back(*(xb.begin()));
     }
     void output_func(double e, Bag<int> const &xb, Bag<int> &yb) {
         ee = e;

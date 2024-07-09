@@ -34,7 +34,7 @@ class AssemblyLine : public adevs::Network<int> {
         else if (model == &press) {
             x.model = &drill;
         }
-        r.insert(x);
+        r.push_back(x);
     }
     Machine* getPress() { return &press; }
     Machine* getDrill() { return &drill; }

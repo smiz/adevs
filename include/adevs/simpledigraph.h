@@ -83,7 +83,7 @@ void SimpleDigraph<VALUE, T>::couple(Component* src, Component* dst) {
     if (dst != this) {
         add(dst);
     }
-    graph[src].insert(dst);
+    graph[src].push_back(dst);
 }
 
 template <class VALUE, class T>
@@ -108,7 +108,7 @@ void SimpleDigraph<VALUE, T>::route(const VALUE &x, Component* model,
          node_iter != (*graph_iter).second.end(); node_iter++) {
         event.model = *node_iter;
         event.value = x;
-        r.insert(event);
+        r.push_back(event);
     }
 }
 

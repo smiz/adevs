@@ -54,7 +54,7 @@ void PacketProcessing::output_func(Bag<SimEvent> &yb) {
     on_time.right = fabs(q.front().right_power) * 255.0;
     on_time.reverse_left = q.front().left_power < 0.0;
     on_time.reverse_right = q.front().right_power < 0.0;
-    yb.insert(SimEvent(on_time));
+    yb.push_back(SimEvent(on_time));
 }
 
 double PacketProcessing::ta() {

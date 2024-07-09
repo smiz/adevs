@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
             sim->execNextEvent();
         }
         // Inject the input
-        input.insert(SimEvent(motor_setting));
+        input.push_back(SimEvent(motor_setting));
         cout << endl;
         sim->computeNextState(input, t);
     }

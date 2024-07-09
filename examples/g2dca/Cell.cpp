@@ -106,7 +106,7 @@ void Cell::output_func(adevs::Bag<CellEvent> &yb) {
             }
             // Don't send to self
             if (e.x != x || e.y != y) {
-                yb.insert(e);
+                yb.push_back(e);
             }
         }
     }

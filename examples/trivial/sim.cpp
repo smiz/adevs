@@ -54,7 +54,7 @@ class A : public Atomic<string> {
         delta_int();
         delta_ext(0.0, xb);
     }
-    void output_func(Bag<string> &xb) { xb.insert("Hello?"); }
+    void output_func(Bag<string> &xb) { xb.push_back("Hello?"); }
     void gc_output(Bag<string> &) {}
 
   private:
@@ -71,7 +71,7 @@ class B : public Atomic<string> {
     void delta_int() { mode = IDLE; }
     void delta_ext(double, Bag<string> const &) { mode = REPLY; }
     void delta_conf(Bag<string> const &) { mode = REPLY; }
-    void output_func(Bag<string> &yb) { yb.insert("Hi!"); }
+    void output_func(Bag<string> &yb) { yb.push_back("Hi!"); }
     double ta() {
         if (mode == REPLY) {
             return rand() % 100;

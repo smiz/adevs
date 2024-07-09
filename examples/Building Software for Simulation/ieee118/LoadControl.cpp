@@ -78,7 +78,7 @@ void LoadControl::delta_ext(double e, Bag<PortValue<BasicEvent*>> const &xb) {
 void LoadControl::output_func(Bag<PortValue<BasicEvent*>> &yb) {
     if (signal) {
         LoadAdjustEvent* load_adjust = new LoadAdjustEvent(adjustment);
-        yb.insert(PortValue<BasicEvent*>(load_change, load_adjust));
+        yb.push_back(PortValue<BasicEvent*>(load_change, load_adjust));
     }
     if (init) {
         map<unsigned, double>::iterator fiter = fdata.begin();
@@ -87,7 +87,7 @@ void LoadControl::output_func(Bag<PortValue<BasicEvent*>> &yb) {
             s->setRotorSpeedSensitivity(freq_threshold);
             s->outputImmediately(false);
             s->oneShot(false);
-            yb.insert(PortValue<BasicEvent*>(sample_setting, s));
+            yb.push_back(PortValue<BasicEvent*>(sample_setting, s));
         }
     }
 }

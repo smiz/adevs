@@ -56,7 +56,7 @@ void Cell::output_func(adevs::Bag<CellEvent<value_t>> &yb) {
     char bits = (n[0]) | (q << 1) | (n[1] << 2);
     vis[pos] = y.value.value = (rule >> bits) & 0x01;
     y.x = left;
-    yb.insert(y);
+    yb.push_back(y);
     y.x = right;
-    yb.insert(y);
+    yb.push_back(y);
 }

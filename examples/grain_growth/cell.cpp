@@ -137,7 +137,7 @@ void Cell::output_func(adevs::Bag<CellEvent> &yb) {
         for (int i = 0; i < 8; i++) {
             e.x = x + neighbors[i][0];
             e.y = y + neighbors[i][1];
-            yb.insert(e);
+            yb.push_back(e);
         }
     }
 }

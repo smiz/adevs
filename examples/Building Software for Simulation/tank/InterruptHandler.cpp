@@ -80,14 +80,14 @@ void InterruptHandler::output_func(Bag<SimEvent> &yb) {
             SimMotorVoltage volts;
             volts.el = left_v;
             volts.er = right_v;
-            yb.insert(SimEvent(volts));
+            yb.push_back(SimEvent(volts));
         }
         // Send the interrupt indicator
-        yb.insert(SimEvent(SIM_INTERRUPT));
+        yb.push_back(SimEvent(SIM_INTERRUPT));
     }
     // If this is the start of an interrupt
     else if (phase == WAIT) {
-        yb.insert(SimEvent(SIM_INTERRUPT));
+        yb.push_back(SimEvent(SIM_INTERRUPT));
     }
 }
 

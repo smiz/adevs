@@ -36,7 +36,7 @@ int main() {
                 event.model = c;
                 event.value.port = c->in;
                 event.value.value = (*iter).value.value;
-                y.insert(event);
+                y.push_back(event);
             }
         }
         listener.output.clear();

@@ -20,7 +20,7 @@ class Genr : public adevs::Atomic<int> {
         set_time_to_order();
     }
     // Output function produces the next order
-    void output_func(adevs::Bag<int> &yb) { yb.insert(next); }
+    void output_func(adevs::Bag<int> &yb) { yb.push_back(next); }
     // Time advance returns the time until the next order
     double ta() { return time_to_order; }
     // Model is input free, so these methods are empty

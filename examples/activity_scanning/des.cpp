@@ -80,7 +80,7 @@ double Partition::ta() {
 void Partition::output_func(adevs::Bag<Event*> &yb) {
     // Notify others
     for (unsigned k = 0; k < other.size(); k++) {
-        yb.insert(other[k]);
+        yb.push_back(other[k]);
     }
     other.clear();
     // Find the set of events that we will execute
@@ -106,6 +106,6 @@ void Partition::output_func(adevs::Bag<Event*> &yb) {
     // If we are going to execute an event, inform everyone
     // to scan their conditional event list in the next iteration
     if (!imm.empty() && yb.size() == 0) {
-        yb.insert(NULL);
+        yb.push_back(NULL);
     }
 }

@@ -49,7 +49,7 @@ class qss1 : public Atomic<event_t> {
         event_t yy;
         yy.k = i;
         yy.x = xn;
-        y.insert(yy);
+        y.push_back(yy);
     }
     void gc_output(Bag<event_t> &) {}
 
@@ -104,7 +104,7 @@ class qss2 : public Atomic<event_t> {
         event_t yy;
         yy.k = i;
         yy.x = xn;
-        y.insert(yy);
+        y.push_back(yy);
     }
     void gc_output(Bag<event_t> &) {}
 

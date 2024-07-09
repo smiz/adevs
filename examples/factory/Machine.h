@@ -42,7 +42,7 @@ class Machine : public adevs::Atomic<int> {
     }
     void output_func(adevs::Bag<int> &yb) {
         // Expel the completed order
-        yb.insert(q.front());
+        yb.push_back(q.front());
     }
     double ta() { return tleft; }
     // The model transition function returns true if another order can not

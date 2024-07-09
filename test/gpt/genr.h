@@ -57,7 +57,7 @@ class genr : public adevs::Atomic<PortValue> {
         // Place a new job on the output port
         job j(count);
         PortValue pv(out, j);
-        y.insert(pv);
+        y.push_back(pv);
     }
     /// Time advance function.
     double ta() { return sigma; }

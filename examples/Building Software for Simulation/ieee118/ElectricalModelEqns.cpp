@@ -255,7 +255,7 @@ void ElectricalModelEqns::output_func(double const* q, bool const* state_event,
                         data->getGenrParams((*siter).first).Xd;
             value->setLoad(voltage[(*siter).first] * conj(I));
             // Send the output event
-            yb.insert(e);
+            yb.push_back(e);
         }
     }
 }

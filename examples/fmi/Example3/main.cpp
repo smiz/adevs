@@ -50,7 +50,7 @@ class Miscreant : public adevs::Atomic<std::string> {
     void delta_conf(Bag<std::string> const &) {}
     void output_func(Bag<std::string> &yb) {
         if (start) {
-            yb.insert("light");
+            yb.push_back("light");
         }
     }
     void gc_output(Bag<std::string> &) {}

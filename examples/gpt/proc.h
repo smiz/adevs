@@ -57,7 +57,7 @@ class proc : public adevs::Atomic<PortValue> {
     void output_func(adevs::Bag<PortValue> &y) {
         // Produce a copy of the completed job on the out port
         PortValue pv(out, *val);
-        y.insert(pv);
+        y.push_back(pv);
     }
     /// Time advance function.
     double ta() { return sigma; }

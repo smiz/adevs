@@ -24,7 +24,7 @@ class template_test {
  */
 void test1() {
     Bag<int> b;
-    b.insert(0);
+    b.push_back(0);
     template_test<int> t;
     int* array = t.to_array(b);
     assert(array[0] == 0);
@@ -36,7 +36,7 @@ void test1() {
 void test2() {
     Bag<int> a, b;
     for (int i = 0; i < 10; i++) {
-        b.insert(i);
+        b.push_back(i);
     }
     a.swap(b);
     assert(a.size() == 10);

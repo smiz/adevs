@@ -68,7 +68,7 @@ class genr : public adevs::Atomic<PortValue> {
         PortValue pv;
         pv.port = signal;
         pv.value = new object();
-        y.insert(pv);
+        y.push_back(pv);
     }
     double ta() { return sigma; }
     void gc_output(adevs::Bag<PortValue> &g) {

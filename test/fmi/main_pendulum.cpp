@@ -42,7 +42,7 @@ class oracle : public ode_system<double> {
         assert(false);
     }
     void output_func(double const*, bool const*, Bag<double> &yb) {
-        yb.insert(0);
+        yb.push_back(0);
     }
     void gc_output(Bag<double> &) {}
     int getTestCount() { return test_count; }
@@ -73,7 +73,7 @@ class pendulum2 : public pendulum {
     void output_func(double const* q, bool const* state_events,
                      Bag<double> &yb) {
         pendulum::output_func(q, state_events, yb);
-        yb.insert(get_theta());
+        yb.push_back(get_theta());
     }
 
   private:

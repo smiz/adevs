@@ -13,7 +13,7 @@ class Genr : public Atomic<int> {
     void delta_int() {}
     void delta_ext(double, Bag<int> const &) {}
     void delta_conf(Bag<int> const &) {}
-    void output_func(Bag<int> &yb) { yb.insert(1); }
+    void output_func(Bag<int> &yb) { yb.push_back(1); }
     void gc_output(Bag<int> &) {}
 };
 

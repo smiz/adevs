@@ -16,7 +16,7 @@ class Incr : public Atomic<int, sd_time<double>> {
     void delta_int() { count++; }
     void delta_ext(sd_time<double>, Bag<int> const &) {}
     void delta_conf(Bag<int> const &) {}
-    void output_func(Bag<int> &y) { y.insert(count); }
+    void output_func(Bag<int> &y) { y.push_back(count); }
     void gc_output(Bag<int> &) {}
     int get_q() const { return count; }
 

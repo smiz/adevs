@@ -206,7 +206,7 @@ template <typename ExternalType, typename InternalType, class T>
 void ModelWrapper<ExternalType, InternalType, T>::outputEvent(
     Event<InternalType, T> y, T t) {
     // Just save the events for processing by the output_func
-    output.insert(y);
+    output.push_back(y);
 }
 
 template <typename ExternalType, typename InternalType, class T>

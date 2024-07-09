@@ -57,7 +57,7 @@ class node : public adevs::Atomic<PortValue> {
     }
     void output_func(adevs::Bag<PortValue> &y) {
         PortValue pv(out, out_token);
-        y.insert(pv);
+        y.push_back(pv);
     }
     void gc_output(adevs::Bag<PortValue> &) {}
     ~node() {}

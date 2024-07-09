@@ -57,7 +57,7 @@ void Generator::delta_conf(Bag<IO_Type> const &xb) {
 void Generator::output_func(Bag<IO_Type> &yb) {
     // First customer in the list is produced as output
     IO_Type output(arrive, arrivals.front());
-    yb.insert(output);
+    yb.push_back(output);
 }
 
 void Generator::gc_output(Bag<IO_Type> &g) {

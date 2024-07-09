@@ -68,7 +68,7 @@ void Decision::output_func(Bag<IO_Type> &y) {
     list<pair<int, Customer*>>::iterator i = deciding.begin();
     for (; i != deciding.end(); i++) {
         IO_Type event((*i).first, (*i).second);
-        y.insert(event);
+        y.push_back(event);
     }
 }
 

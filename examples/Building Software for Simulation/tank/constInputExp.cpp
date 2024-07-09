@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
     ModelInputBag input;
     SimEvent cmd(sim_command);
     ModelInput event(tank, cmd);
-    input.insert(event);
+    input.push_back(event);
     sim->computeNextState(input, 0.0);
     // Run the simulation for 3 seconds
     while (sim->nextEventTime() <= 3.0) {

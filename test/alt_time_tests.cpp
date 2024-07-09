@@ -54,7 +54,7 @@ T PingPong<T>::ta() {
 
 template <typename T>
 void PingPong<T>::output_func(Bag<int> &yb) {
-    yb.insert(1);
+    yb.push_back(1);
 }
 
 template <typename T>

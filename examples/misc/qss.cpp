@@ -44,7 +44,7 @@ class qss : public Atomic<double> {
     void delta_conf(Bag<double> const &x) { delta_int(); }
     void output_func(Bag<double> &yb) {
         y[species] = ql + sign(dqdx) * Q;
-        yb.insert(y[species]);
+        yb.push_back(y[species]);
     }
     double ta() {
         if (dqdx > 0.0) {

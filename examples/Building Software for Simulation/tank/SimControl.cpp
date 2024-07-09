@@ -44,7 +44,7 @@ void SimControl::run() {
             sim_command.right_power = command.getRightThrottle();
             SimEvent cmd(sim_command);
             ModelInput event(tank, cmd);
-            input.insert(event);
+            input.push_back(event);
         }
         // Advance the simulator to the current time
         unsigned long t_start = getTime();

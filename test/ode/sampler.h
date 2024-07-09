@@ -35,7 +35,7 @@ class sampler : public adevs::Atomic<adevs::PortValue<double>> {
     double ta() { return sigma; }
     void output_func(adevs::Bag<adevs::PortValue<double>> &yb) {
         adevs::PortValue<double> event(0, 0.0);
-        yb.insert(event);
+        yb.push_back(event);
     }
     void gc_output(adevs::Bag<adevs::PortValue<double>> &) {}
 

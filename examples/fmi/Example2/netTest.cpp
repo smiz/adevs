@@ -48,7 +48,7 @@ class App : public AtomicModel {
         y.port = data_out;
         y.value = new NetworkData(NetworkData::APP_DATA, (addr + 1) % numApps,
                                   100000, new SimObject());
-        yb.insert(y);
+        yb.push_back(y);
     }
     int getSent() const { return send; }
     int getRecv() const { return recv; }

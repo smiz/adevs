@@ -40,7 +40,7 @@ class HelloWorldExt : public HelloWorld {
         double a = get_a();
         assert(q[0] == x);  // These should match
         // Output our state
-        yb.insert(x);
+        yb.push_back(x);
         // Print the time, computed state, and exact state
         cout << get_time() << " " << x << " " << exp(a * get_time()) << endl;
     }

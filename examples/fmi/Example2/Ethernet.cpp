@@ -38,7 +38,7 @@ void Rx::output_func(Bag<IO_Type> &yb) {
     IO_Type msg;
     msg.port = to_app;
     msg.value = data;
-    yb.insert(msg);
+    yb.push_back(msg);
 }
 
 double Rx::ta() {
@@ -155,15 +155,15 @@ void Tx::output_func(Bag<IO_Type> &yb) {
     if (mode == START && tryCount <= maxTries) {
         q.front()->setType(NetworkData::TX_START);
         msg.value = q.front()->clone();
-        yb.insert(msg);
+        yb.push_back(msg);
     } else if (mode == FAIL) {
         q.front()->setType(NetworkData::TX_FAIL);
         msg.value = q.front()->clone();
-        yb.insert(msg);
+        yb.push_back(msg);
     } else if (mode == TRANSMIT) {
         q.front()->setType(NetworkData::TX_CMPLT);
         msg.value = q.front()->clone();
-        yb.insert(msg);
+        yb.push_back(msg);
     }
 }
 

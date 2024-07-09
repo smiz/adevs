@@ -43,7 +43,7 @@ int main() {
     e.model = model;
     e.value = new External(FAST, 1);
     Bag<Event<External*>> x;
-    x.insert(e);
+    x.push_back(e);
     sim->computeNextState(x, 0.0);
     assert(sim->nextEventTime() == 1.0);
     sim->execNextEvent();
@@ -53,7 +53,7 @@ int main() {
     l->setExpected(3.5, SLOW, 1);
     x.clear();
     e.value = new External(SLOW, 1);
-    x.insert(e);
+    x.push_back(e);
     sim->computeNextState(x, 1.5);
     assert(!output_happened);
     assert(sim->nextEventTime() == 3.5);
@@ -64,7 +64,7 @@ int main() {
     l->setExpected(5.5, SLOW, 2);
     x.clear();
     e.value = new External(STOP, 1);
-    x.insert(e);
+    x.push_back(e);
     assert(sim->nextEventTime() == 5.5);
     sim->computeNextState(x, sim->nextEventTime());
     assert(output_happened);

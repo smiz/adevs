@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
     Bag<Event<SimEvent>> input;
     SimEvent cmd(sim_command);
     Event<SimEvent> event(tank, cmd);
-    input.insert(event);
+    input.push_back(event);
     sim->computeNextState(input, 0.0);
     // Run the simulation
     while (sim->nextEventTime() <= 1.0) {
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
     sim_command.right_power = 0.0;
     event.value = sim_command;
     input.clear();
-    input.insert(event);
+    input.push_back(event);
     sim->computeNextState(input, 1.0);
     // Run a little longer
     while (sim->nextEventTime() <= tend) {

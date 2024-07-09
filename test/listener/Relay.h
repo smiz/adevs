@@ -25,7 +25,7 @@ class Relay : public adevs::Atomic<IO_Type> {
         }
         return DBL_MAX;
     }
-    void output_func(adevs::Bag<IO_Type> &y) { y.insert(IO_Type(1, relay)); }
+    void output_func(adevs::Bag<IO_Type> &y) { y.push_back(IO_Type(1, relay)); }
     void gc_output(adevs::Bag<IO_Type> &) {}
     int getRelayValue() const { return relay; }
 

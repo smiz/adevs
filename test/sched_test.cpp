@@ -159,7 +159,7 @@ void test9() {
 class test10visitor : public Schedule<char>::ImminentVisitor {
   public:
     test10visitor(Bag<Atomic<char>*> &imm) : imm(imm) {}
-    void visit(Atomic<char>* model) { imm.insert(model); }
+    void visit(Atomic<char>* model) { imm.push_back(model); }
 
   private:
     Bag<Atomic<char>*> &imm;

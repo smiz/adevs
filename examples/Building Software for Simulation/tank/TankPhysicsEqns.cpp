@@ -124,7 +124,7 @@ void TankPhysicsEqns::output_func(double const* q, bool const* events,
     pos.x = q[X];
     pos.y = q[Y];
     pos.theta = q[THETA];
-    yb.insert(SimEvent(pos));
+    yb.push_back(SimEvent(pos));
 }
 
 double TankPhysicsEqns::getLeftCurrent(double const* q) const {

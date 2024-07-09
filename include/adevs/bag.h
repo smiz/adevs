@@ -171,7 +171,7 @@ class Bag {
         return end();
     }
     /// Put t into the bag
-    void insert(T const &t) {
+    void push_back(T const &t) {
         if (cap_ == size_) {
             enlarge(2 * cap_);
         }

@@ -10,7 +10,7 @@ class Start : public adevs::Atomic<IO_Type> {
     void delta_ext(double, adevs::Bag<IO_Type> const &) {}
     void delta_conf(adevs::Bag<IO_Type> const &) {}
     double ta() { return (go) ? 0.0 : adevs_inf<double>(); }
-    void output_func(adevs::Bag<IO_Type> &y) { y.insert(IO_Type(0, 1)); }
+    void output_func(adevs::Bag<IO_Type> &y) { y.push_back(IO_Type(0, 1)); }
     void gc_output(adevs::Bag<IO_Type> &) {}
 
   private:

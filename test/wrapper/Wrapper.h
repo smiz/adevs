@@ -23,7 +23,7 @@ class Wrapper : public adevs::ModelWrapper<External*, Internal*> {
         } else if ((*iter)->speed == FAST) {
             event.value = new Internal(1.0, (*iter)->value);
         }
-        internal.insert(event);
+        internal.push_back(event);
     }
     void translateOutput(adevs::Bag<adevs::Event<Internal*>> const &internal,
                          adevs::Bag<External*> &external) {
@@ -41,7 +41,7 @@ class Wrapper : public adevs::ModelWrapper<External*, Internal*> {
         } else {
             assert(false);
         }
-        external.insert(e);
+        external.push_back(e);
     }
     void gc_output(adevs::Bag<External*> &g) {
         adevs::Bag<External*>::iterator iter = g.begin();

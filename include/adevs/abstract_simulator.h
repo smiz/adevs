@@ -51,7 +51,7 @@ class AbstractSimulator {
      * produced by all components within the model.
      * @param l The listener to be notified
      */
-    void addEventListener(EventListener<X, T>* l) { listeners.insert(l); }
+    void addEventListener(EventListener<X, T>* l) { listeners.push_back(l); }
     /*
      * Remove an event listener that was previously added.
      * @param l The listener to be removed

@@ -44,7 +44,7 @@ class LookLeft : public adevs::Atomic<adevs::CellEvent<int>> {
         adevs::CellEvent<int> y;
         y.x = (location + 1) % width;
         y.value = l;
-        yb.insert(y);
+        yb.push_back(y);
     }
     // The gc method is not needed
     void gc_output(adevs::Bag<adevs::CellEvent<int>> &) {}

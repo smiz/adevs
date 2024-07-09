@@ -51,7 +51,7 @@ int main() {
     }
     Bag<Event<double>> xb;
     Event<double> event(hybrid_model, 0.0);
-    xb.insert(event);
+    xb.push_back(event);
     sim->computeNextState(xb, 1.0);
     while (sim->nextEventTime() <= 5.0) {
         sim->execNextEvent();

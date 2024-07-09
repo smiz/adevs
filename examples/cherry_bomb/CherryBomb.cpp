@@ -62,7 +62,7 @@ class CherryBomb : public ode_system<string> {
     void output_func(double const* q, bool const* state_event,
                      Bag<string> &yb) {
         if (state_event[1] && phase == FUSE_LIT) {
-            yb.insert("BOOM!");  // Explode!
+            yb.push_back("BOOM!");  // Explode!
         }
     }
     void postStep(double* q) {
