@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2014, James Nutaro
  * All rights reserved.
  *
@@ -56,7 +56,7 @@
 
 namespace adevs {
 
-/**
+/*
  * Load an FMI wrapped continuous system model for use in a
  * discrete event simulation. The FMI can then be attached
  * to any of the ODE solvers and event detectors in adevs
@@ -70,12 +70,12 @@ namespace adevs {
 template <typename X>
 class FMI : public ode_system<X> {
   public:
-    /**
-		 * This constructs a wrapper around an FMI. The constructor
-		 * must be provided with the FMI's GUID, the number of state variables,
-		 * number of event indicators, and the path to the .so file
-		 * that contains the FMI functions for this model.
-		 */
+    /*
+     * This constructs a wrapper around an FMI. The constructor
+     * must be provided with the FMI's GUID, the number of state variables,
+     * number of event indicators, and the path to the .so file
+     * that contains the FMI functions for this model.
+     */
     FMI(char const* modelname, char const* guid, char const* resource_location,
         int num_state_variables, int num_event_indicators,
         char const* shared_lib_name, double const tolerance = 1E-8,
@@ -89,50 +89,50 @@ class FMI : public ode_system<X> {
     virtual void state_event_func(double const* q, double* z);
     /// Compute the time event function using state q
     virtual double time_event_func(double const* q);
-    /**
-		 * This method is invoked immediately following an update of the
-		 * continuous state variables and signal to the FMI the end
-		 * of an integration state.
-		 */
+    /*
+     * This method is invoked immediately following an update of the
+     * continuous state variables and signal to the FMI the end
+     * of an integration state.
+     */
     virtual void postStep(double* q);
-    /**
-		 * Like the postStep() method, but this is called at the end
-		 * of a trial step made by the numerical integrator. Trial steps
-		 * are used to locate state events and to estimate numerical
-		 * errors. The state vector q passed to this method may not be
-		 * the final vector assigned to the model at the end of
-		 * the current integration step. To get that value use
-		 * the postStep() method.
-		 */
+    /*
+     * Like the postStep() method, but this is called at the end
+     * of a trial step made by the numerical integrator. Trial steps
+     * are used to locate state events and to estimate numerical
+     * errors. The state vector q passed to this method may not be
+     * the final vector assigned to the model at the end of
+     * the current integration step. To get that value use
+     * the postStep() method.
+     */
     virtual void postTrialStep(double* q);
-    /**
-		 * The internal transition function. This function will process all events
-		 * required by the FMI. Any derived class should call this method for the
-		 * parent class, then set or get any variables as appropriate, and then
-		 * call the base class method again to account for these changes.
-		 */
+    /*
+     * The internal transition function. This function will process all events
+     * required by the FMI. Any derived class should call this method for the
+     * parent class, then set or get any variables as appropriate, and then
+     * call the base class method again to account for these changes.
+     */
     virtual void internal_event(double* q, bool const* state_event);
-    /**
-		 * The external transition See the notes on the internal_event function for
-		 * derived classes.
-		 */
+    /*
+     * The external transition See the notes on the internal_event function for
+     * derived classes.
+     */
     virtual void external_event(double* q, double e, Bag<X> const &xb);
-    /**
-		 * The confluent transition function. See the notes on the internal_event function for
-		 * derived classes.
-		 */
+    /*
+     * The confluent transition function. See the notes on the internal_event function for
+     * derived classes.
+     */
     virtual void confluent_event(double* q, bool const* state_event,
                                  Bag<X> const &xb);
-    /**
-		 * The output function. This can read variables from the FMI, but should
-		 * not make any modifications to those variables.
-		 */
+    /*
+     * The output function. This can read variables from the FMI, but should
+     * not make any modifications to those variables.
+     */
     virtual void output_func(double const* q, bool const* state_event,
                              Bag<X> &yb);
-    /**
-		 * Garbage collection function. This works just like the Atomic gc_output method.
-		 * The default implementation does nothing.
-		 */
+    /*
+     * Garbage collection function. This works just like the Atomic gc_output method.
+     * The default implementation does nothing.
+     */
     virtual void gc_output(Bag<X> &gb);
     /// Destructor
     virtual ~FMI();
@@ -228,10 +228,10 @@ class FMI : public ode_system<X> {
     fmi2CallbackFunctions* callbackFuncs;
 
     void iterate_events();
-    /** Set to true if this FMI provides directional
-		  * directives for calculating a jacobian. The
-		  * default is false.
-		  */
+    /* Set to true if this FMI provides directional
+          * directives for calculating a jacobian. The
+          * default is false.
+          */
     bool const provides_jacobian;
     /// Identifiers for variables used to calculate the
     /// jacobian column by column with a single FMI call

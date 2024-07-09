@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2013, James Nutaro
  * All rights reserved.
  *
@@ -36,7 +36,7 @@
 
 namespace adevs {
 
-/**
+/*
  * This is the base class for all simulators. It defines an interface that is
  * supported by all derived classes and provides some basic helper routines
  * for those derived classes.
@@ -46,16 +46,16 @@ class AbstractSimulator {
   public:
     /// Constructor
     AbstractSimulator() {}
-    /**
-		 * Add an event listener that will be notified of output events
-		 * produced by all components within the model.
-		 * @param l The listener to be notified
-		 */
+    /*
+     * Add an event listener that will be notified of output events
+     * produced by all components within the model.
+     * @param l The listener to be notified
+     */
     void addEventListener(EventListener<X, T>* l) { listeners.insert(l); }
-    /**
-		 * Remove an event listener that was previously added.
-		 * @param l The listener to be removed
-		 */
+    /*
+     * Remove an event listener that was previously added.
+     * @param l The listener to be removed
+     */
     void removeEventListener(EventListener<X, T>* l) { listeners.erase(l); }
     /// Get the model's next event time
     virtual T nextEventTime() = 0;

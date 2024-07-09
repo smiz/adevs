@@ -1,15 +1,15 @@
-/**
+/*
  * Copyright (c) 2024, James Nutaro
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met: 
+ * modification, are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer. 
+ *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution. 
+ *    and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -23,7 +23,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies, 
+ * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the FreeBSD Project.
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
@@ -33,7 +33,7 @@
 
 namespace adevs {
 
-/**
+/*
  * This provides a natural spline to interpolate two points
  * in and ODE solution. It is used by the event_locator
  * to look for zero crossings of state event functions.
@@ -41,16 +41,16 @@ namespace adevs {
 class spline {
   public:
     spline(int const N);
-    /**
-		 * Create a spline that interpolates over the interval h from q0
-		 * to qh.
-		 * @param q0 The state at t = 0
-		 * @param dq0 The state derivative at t = 0
-		 * @param qh The state at t = h
-		 * @param dqh The state derivative at t = h
-		 * @param h The interval over which to interpolate
-		 * @param N The number of equations to interpolate
-		 */
+    /*
+     * Create a spline that interpolates over the interval h from q0
+     * to qh.
+     * @param q0 The state at t = 0
+     * @param dq0 The state derivative at t = 0
+     * @param qh The state at t = h
+     * @param dqh The state derivative at t = h
+     * @param h The interval over which to interpolate
+     * @param N The number of equations to interpolate
+     */
     void init(double const* q0, double const* dq, double const* qh,
               double const* dqh, double const h);
     /// Destructor

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2013, James Nutaro
  * All rights reserved.
  *
@@ -36,17 +36,17 @@
 
 namespace adevs {
 
-/**
+/*
  * This is the second order accurate RK2 method with adaptive step sizing for
  * error control.
  */
 template <typename X>
 class corrected_euler : public ode_solver<X> {
   public:
-    /**
-		 * Create an integrator that will use the specified per step error
-		 * tolerance and maximum step size.
-		 */
+    /*
+     * Create an integrator that will use the specified per step error
+     * tolerance and maximum step size.
+     */
     corrected_euler(ode_system<X>* sys, double err_tol, double h_max);
     /// Destructor
     ~corrected_euler();

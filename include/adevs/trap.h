@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2023, James Nutaro
  * All rights reserved.
  *
@@ -44,24 +44,24 @@
 
 namespace adevs {
 
-/**
+/*
  * This is the second order accurate trapezoidal method. You must supply
  * a jacobian to use this integration method.
  */
 template <typename X>
 class trap : public ode_solver<X> {
   public:
-    /**
-		 * Create an integrator that will use the given
-		 * maximum step size. The tolerance is used to
-		 * terminate the newton iteration used at each
-		 * integration step.
-		 * @param sys The system to solve
-		 * @param err_tol Truncation error limit.
-		 * @param h_max Maximum allowed step size
-		 * @param silent If set to true, the KINSOL error and info messages are surpressed.
-		 * The default value is false.
-		 */
+    /*
+     * Create an integrator that will use the given
+     * maximum step size. The tolerance is used to
+     * terminate the newton iteration used at each
+     * integration step.
+     * @param sys The system to solve
+     * @param err_tol Truncation error limit.
+     * @param h_max Maximum allowed step size
+     * @param silent If set to true, the KINSOL error and info messages are surpressed.
+     * The default value is false.
+     */
     trap(ode_system<X>* sys, double err_tol, double h_max, bool silent = false);
     /// Destructor
     ~trap();
@@ -200,8 +200,8 @@ void trap<X>::prep_kinsol(bool silent) {
         throw adevs::exception("KINSetScaledStepTol failed");
     }
     /* If there is support for symbolic jacobian, then register
-	   the function. Otherwise KINSOL provides a numerical
-	   approximation. */
+       the function. Otherwise KINSOL provides a numerical
+       approximation. */
     if (this->sys->get_jacobian(NULL, NULL)) {
         retval = KINSetJacFn(kmem, jac);
         if (check_retval(&retval, "KINSetJacFn", 1)) {

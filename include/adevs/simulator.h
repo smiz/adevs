@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2013, James Nutaro
  * All rights reserved.
  *
@@ -43,7 +43,7 @@
 
 namespace adevs {
 
-/**
+/*
  * This Simulator class implements the DEVS simulation algorithm.
  * Its methods throw adevs::exception objects if any of the DEVS model
  * constraints are violated (i.e., a negative time advance, a model
@@ -54,41 +54,41 @@ template <class X, class T = double>
 class Simulator : public AbstractSimulator<X, T>,
                   private Schedule<X, T>::ImminentVisitor {
   public:
-    /**
-		 * Create a simulator for a model. The simulator
-		 * constructor will fail and throw an adevs::exception if the
-		 * time advance of any component atomic model is less than zero.
-		 * @param model The model to simulate
-		 */
+    /*
+     * Create a simulator for a model. The simulator
+     * constructor will fail and throw an adevs::exception if the
+     * time advance of any component atomic model is less than zero.
+     * @param model The model to simulate
+     */
     Simulator(Devs<X, T>* model)
         : AbstractSimulator<X, T>(),
           Schedule<X, T>::ImminentVisitor(),
           io_up_to_date(false) {
         schedule(model, adevs_zero<T>());
     }
-    /**
-		 * Initialize the simulator with a list of models
-		 * that will be active at the start. The constructor
-		 * only schedules the models in the list, which avoids
-		 * the overhead of constructing the full set of
-		 * models with recursive calls to Network::getComponents().
-		 * @param active The list of active models.
-		 */
+    /*
+     * Initialize the simulator with a list of models
+     * that will be active at the start. The constructor
+     * only schedules the models in the list, which avoids
+     * the overhead of constructing the full set of
+     * models with recursive calls to Network::getComponents().
+     * @param active The list of active models.
+     */
     Simulator(std::list<Devs<X, T>*> &active);
-    /**
-		 * Get the model's next event time
-		 * @return The absolute time of the next event
-		 */
+    /*
+     * Get the model's next event time
+     * @return The absolute time of the next event
+     */
     T nextEventTime() { return sched.minPriority(); }
-    /**
-		 * Execute the simulation cycle at time nextEventTime()
-		 * @return The updated simulation time
-		 */
+    /*
+     * Execute the simulation cycle at time nextEventTime()
+     * @return The updated simulation time
+     */
     T execNextEvent() { return computeNextState(); }
-    /**
-		 * Execute until nextEventTime() > tend.
-		 * @return The updated simulation time
-		 */
+    /*
+     * Execute until nextEventTime() > tend.
+     * @return The updated simulation time
+     */
     T execUntil(T tend) {
         T t = tend + adevs_epsilon<T>();
         while (nextEventTime() <= tend && nextEventTime() < adevs_inf<T>()) {
@@ -96,56 +96,56 @@ class Simulator : public AbstractSimulator<X, T>,
         }
         return t;
     }
-    /**
-		 * Compute the output values of the imminent component models
-		 * if these values have not already been computed.  This will
-		 * notify registered EventListeners as the outputs are produced.
-		 */
+    /*
+     * Compute the output values of the imminent component models
+     * if these values have not already been computed.  This will
+     * notify registered EventListeners as the outputs are produced.
+     */
     void computeNextOutput();
-    /**
-		 * Compute the output value of the model in response to an input
-		 * at some time in lastEventTime() <= t <= nextEventTime().
-		 * This will notify registered EventListeners as the outputs
-		 * are produced. If this is the first call since the prior
-		 * state change with the given t, then the new output is computed.
-		 * Subsequent calls for the same time t simply
-		 * append to the input already supplied at time t.
-		 * @param input A bag of (input target,value) pairs
-		 * @param t The time at which the input takes effect
-		 */
+    /*
+     * Compute the output value of the model in response to an input
+     * at some time in lastEventTime() <= t <= nextEventTime().
+     * This will notify registered EventListeners as the outputs
+     * are produced. If this is the first call since the prior
+     * state change with the given t, then the new output is computed.
+     * Subsequent calls for the same time t simply
+     * append to the input already supplied at time t.
+     * @param input A bag of (input target,value) pairs
+     * @param t The time at which the input takes effect
+     */
     void computeNextOutput(Bag<Event<X, T>> &input, T t);
-    /**
-		 * Apply the bag of inputs at time t and then compute the next model
-		 * states. Requires that lastEventTime() <= t <= nextEventTime().
-		 * This, in effect, implements the state transition function of
-		 * the resultant model. If the output has already been computed
-		 * at time t, then the new input at t is simply appended to the
-		 * prior input. Otherwise, the old results are discarded and input
-		 * is calculated at the given time.
-		 * @param input A bag of (input target,value) pairs
-		 * @param t The time at which the input takes effect
-		 * @return The new, current simulation time
-		 */
+    /*
+     * Apply the bag of inputs at time t and then compute the next model
+     * states. Requires that lastEventTime() <= t <= nextEventTime().
+     * This, in effect, implements the state transition function of
+     * the resultant model. If the output has already been computed
+     * at time t, then the new input at t is simply appended to the
+     * prior input. Otherwise, the old results are discarded and input
+     * is calculated at the given time.
+     * @param input A bag of (input target,value) pairs
+     * @param t The time at which the input takes effect
+     * @return The new, current simulation time
+     */
     T computeNextState(Bag<Event<X, T>> &input, T t);
-    /**
-		 * Compute the next state at the time at the time t and with
-		 * input supplied at the prior call to computeNextOutput
-		 * assuming no computeNextState has intervened. Assumes
-		 * t = nextEventTime() and input an empty bag if there was
-		 * no prior call to computeNextOutput.
-		 * @return The new, current simulation time
-		 */
+    /*
+     * Compute the next state at the time at the time t and with
+     * input supplied at the prior call to computeNextOutput
+     * assuming no computeNextState has intervened. Assumes
+     * t = nextEventTime() and input an empty bag if there was
+     * no prior call to computeNextOutput.
+     * @return The new, current simulation time
+     */
     T computeNextState();
-    /**
-		 * Deletes the simulator, but leaves the model intact. The model must
-		 * exist when the simulator is deleted.  Delete the model only after
-		 * the Simulator is deleted.
-		 */
+    /*
+     * Deletes the simulator, but leaves the model intact. The model must
+     * exist when the simulator is deleted.  Delete the model only after
+     * the Simulator is deleted.
+     */
     ~Simulator();
-    /**
-		 * Assign a model to the simulator. This has the same effect as passing
-		 * the model to the constructor.
-		 */
+    /*
+     * Assign a model to the simulator. This has the same effect as passing
+     * the model to the constructor.
+     */
     void addModel(Atomic<X, T>* model) { schedule(model, adevs_zero<T>()); }
 
   private:
@@ -217,37 +217,37 @@ class Simulator : public AbstractSimulator<X, T>,
     };
     std::set<Network<X, T>*, bottom_to_top_depth_compare> model_func_eval_set;
     std::set<Devs<X, T>*, top_to_bottom_depth_compare> sorted_removed;
-    /**
-		 * Recursively add the model and its elements to the schedule
-		 * using t as the time of last event.
-		 */
+    /*
+     * Recursively add the model and its elements to the schedule
+     * using t as the time of last event.
+     */
     void schedule(Devs<X, T>* model, T t);
     /// Route an event generated by the source model contained in the parent model.
     void route(Network<X, T>* parent, Devs<X, T>* src, X &x);
-    /**
-		 * Add an input to the input bag of an an atomic model. If the
-		 * model is not already active , then this method adds the model to
-		 * the activated bag.
-		 */
+    /*
+     * Add an input to the input bag of an an atomic model. If the
+     * model is not already active , then this method adds the model to
+     * the activated bag.
+     */
     void inject_event(Atomic<X, T>* model, X &value);
-    /**
-		 * Recursively remove a model and its components from the schedule
-		 * and the imminent/activated bags
-		 */
+    /*
+     * Recursively remove a model and its components from the schedule
+     * and the imminent/activated bags
+     */
     void unschedule_model(Devs<X, T>* model);
-    /**
-		 * Delete any thing in the output bag, and return the input
-		 * and output bags to the pools.
-		 * Recursively clean up network model components.
-		 */
+    /*
+     * Delete any thing in the output bag, and return the input
+     * and output bags to the pools.
+     * Recursively clean up network model components.
+     */
     void clean_up(Devs<X, T>* model);
-    /**
-		 * Construct the complete descendant set of a network model and store it in s.
-		 */
+    /*
+     * Construct the complete descendant set of a network model and store it in s.
+     */
     void getAllChildren(Network<X, T>* model, Set<Devs<X, T>*> &s);
-    /**
-		 * Visit method inhereted from ImminentVisitor
-		 */
+    /*
+     * Visit method inhereted from ImminentVisitor
+     */
     void visit(Atomic<X, T>* model);
 };
 
@@ -385,11 +385,11 @@ T Simulator<X, T>::computeNextState() {
     io_up_to_date = false;
     T t = io_time, tQ = io_time + adevs_epsilon<T>();
     /*
-	 * Compute the states of atomic models.  Store Network models that
-	 * need to have their model transition function evaluated in a
-	 * special container that will be used when the structure changes are
-	 * computed.
-	 */
+     * Compute the states of atomic models.  Store Network models that
+     * need to have their model transition function evaluated in a
+     * special container that will be used when the structure changes are
+     * computed.
+     */
     for (unsigned i = 0; i < activated.size(); i++) {
         Atomic<X, T>* model = activated[i];
         // Internal event if no input
@@ -415,16 +415,16 @@ T Simulator<X, T>::computeNextState() {
         // Adjust position in the schedule
         schedule(model, tQ);
     }
-    /**
-	 * The new states are in effect at t + eps so advance t
-	 */
+    /*
+     * The new states are in effect at t + eps so advance t
+     */
     t = tQ;
-    /**
-	 * Compute model transitions and build up the prev (pre-transition)
-	 * and next (post-transition) component sets. These sets are built
-	 * up from only the models that have the model_transition function
-	 * evaluated.
-	 */
+    /*
+     * Compute model transitions and build up the prev (pre-transition)
+     * and next (post-transition) component sets. These sets are built
+     * up from only the models that have the model_transition function
+     * evaluated.
+     */
     if (model_func_eval_set.empty() == false) {
         while (!model_func_eval_set.empty()) {
             Network<X, T>* network_model = *(model_func_eval_set.begin());
@@ -444,12 +444,12 @@ T Simulator<X, T>::computeNextState() {
         // for models in both (an earlier version of the code did this).
         next.clear();
         prev.clear();
-        /**
-		 * The model adds are processed first.  This is done so that, if any
-		 * of the added models are components something that was removed at
-		 * a higher level, then the models will not have been deleted when
-		 * trying to schedule them.
-		 */
+        /*
+         * The model adds are processed first.  This is done so that, if any
+         * of the added models are components something that was removed at
+         * a higher level, then the models will not have been deleted when
+         * trying to schedule them.
+         */
         for (typename Bag<Devs<X, T>*>::iterator iter = added.begin();
              iter != added.end(); iter++) {
             schedule(*iter, t);
@@ -472,10 +472,10 @@ T Simulator<X, T>::computeNextState() {
             Devs<X, T>* model_to_remove = *(sorted_removed.begin());
             // Remove the model
             sorted_removed.erase(sorted_removed.begin());
-            /**
-			 * If this model has children, then remove them from the
-			 * deletion set. This will avoid double delete problems.
-			 */
+            /*
+             * If this model has children, then remove them from the
+             * deletion set. This will avoid double delete problems.
+             */
             if (model_to_remove->typeIsNetwork() != NULL) {
                 getAllChildren(model_to_remove->typeIsNetwork(), prev);
                 typename Set<Devs<X, T>*>::iterator iter = prev.begin();
@@ -620,10 +620,10 @@ void Simulator<X, T>::route(Network<X, T>* parent, Devs<X, T>* src, X &x) {
     Atomic<X, T>* amodel = NULL;
     typename Bag<Event<X, T>>::iterator recv_iter = recvs->begin();
     for (; recv_iter != recvs->end(); recv_iter++) {
-        /**
-		 * If the destination is an atomic model, add the event to the IO bag
-		 * for that model and add model to the list of activated models
-		 */
+        /*
+         * If the destination is an atomic model, add the event to the IO bag
+         * for that model and add model to the list of activated models
+         */
         amodel = (*recv_iter).model->typeIsAtomic();
         if (amodel != NULL) {
             inject_event(amodel, (*recv_iter).value);

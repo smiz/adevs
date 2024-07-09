@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2013, James Nutaro
  * All rights reserved.
  *
@@ -35,7 +35,7 @@
 
 namespace adevs {
 
-/**
+/*
  * Input and output events produced by components of a CellSpace must
  * be of the type CellEvent.  A CellEvent has an event value (i.e., the actual
  * input/output value) and a target cell for the event.
@@ -66,7 +66,7 @@ class CellEvent {
     X value;
 };
 
-/**
+/*
  * This class describes a 3D cell space whose components accept and produce CellEvent objects.
  * This class is meant to be useful for solving PDEs, simulating
  * next event cell spaces, and for building other types of models represented as a space of

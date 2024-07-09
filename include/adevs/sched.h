@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2013, James Nutaro
  * All rights reserved.
  *
@@ -40,7 +40,7 @@ using namespace std;
 
 namespace adevs {
 
-/**
+/*
  * This is a binary heap for scheduling Atomic models. The Schedule uses
  * the q_index attribute of the Atomic model to keep track of the object's
  * position in the heap. Therefore, a model can be put into only one Schedule.
@@ -50,10 +50,10 @@ namespace adevs {
 template <class X, class T = double>
 class Schedule {
   public:
-    /**
-		 * An interface for objects that want to visit the imminent models
-		 * in the schedule.
-		 */
+    /*
+     * An interface for objects that want to visit the imminent models
+     * in the schedule.
+     */
     class ImminentVisitor {
       public:
         virtual void visit(Atomic<X, T>* model) = 0;

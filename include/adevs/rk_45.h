@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2013, James Nutaro
  * All rights reserved.
  *
@@ -35,18 +35,18 @@
 
 namespace adevs {
 
-/**
+/*
  * This ode_solver implements a 4th/5th order integrator that adjust
  * its step size to control error.
  */
 template <typename X>
 class rk_45 : public ode_solver<X> {
   public:
-    /**
-		 * The integrator will adjust its step size to maintain a per
-		 * step error less than err_tol, and will use a step size
-		 * strictly less than h_max.
-		 */
+    /*
+     * The integrator will adjust its step size to maintain a per
+     * step error less than err_tol, and will use a step size
+     * strictly less than h_max.
+     */
     rk_45(ode_system<X>* sys, double err_tol, double h_max);
     /// Destructor
     ~rk_45();

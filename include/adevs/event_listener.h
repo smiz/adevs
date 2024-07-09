@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2013, James Nutaro
  * All rights reserved.
  *
@@ -35,35 +35,38 @@
 
 namespace adevs {
 
-/**
+/*
  * The EventListener interface is used to receive output events produced
  * by model and to be notified of state changes at Atomic models.
  */
 template <class X, class T = double>
 class EventListener {
   public:
-    /**
-		 * This callback is invoked when a model, network or atomic,
-		 * produces an output. The default implementation is empty.
-		 * @param x The model that produced the output and the output's value
-		 * @param t The absolute time at which the output occurred
-		 */
+    /*
+     * This callback is invoked when a model, network or atomic,
+     * produces an output. The default implementation is empty.
+     * @param x The model that produced the output and the output's value
+     * @param t The absolute time at which the output occurred
+     */
     virtual void outputEvent(Event<X, T> x, T t) {}
-    /**
-		 * This callback is invoked when a model, network or atomic,
-		 * recieves an input. The default implementation is empty.
-		 * @param x The model and input value
-		 * @param t The absolute time at which the output occurred
-		 */
+
+    /*
+     * This callback is invoked when a model, network or atomic,
+     * recieves an input. The default implementation is empty.
+     * @param x The model and input value
+     * @param t The absolute time at which the output occurred
+     */
     virtual void inputEvent(Event<X, T> x, T t) {}
-    /**
-		 * This callback is invoked by the simulator after an Atomic
-		 * model changes its state. This method has an empty default
-		 * implementation.
-		 * @param model The model that changed state
-		 * @param t The absolute time at which the state change occurred
-		 */
+
+    /*
+     * This callback is invoked by the simulator after an Atomic
+     * model changes its state. This method has an empty default
+     * implementation.
+     * @param model The model that changed state
+     * @param t The absolute time at which the state change occurred
+     */
     virtual void stateChange(Atomic<X, T>* model, T t) {}
+
     /// Destructor
     virtual ~EventListener() {}
 };

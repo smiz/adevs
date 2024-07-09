@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2013, James Nutaro
  * All rights reserved.
  *
@@ -53,7 +53,7 @@ class Schedule;
 template <typename X, typename T>
 class Simulator;
 
-/**
+/*
  * The Devs class provides basic operations for all devs models.
  * The model I/O type is set by the template argument X. The
  * type to be used for time is set with the template argument
@@ -66,50 +66,50 @@ class Devs {
     Devs() : parent(NULL) {}
     /// Destructor.
     virtual ~Devs() {}
-    /**
-		 * Returns NULL if this is not a network model; returns a pointer to
-		 * itself otherwise. This method is used to avoid a relatively expensive
-		 * dynamic cast.
-		 */
+    /*
+     * Returns NULL if this is not a network model; returns a pointer to
+     * itself otherwise. This method is used to avoid a relatively expensive
+     * dynamic cast.
+     */
     virtual Network<X, T>* typeIsNetwork() { return NULL; }
     /// Returns NULL if this is not an atomic model; returns itself otherwise.
     virtual Atomic<X, T>* typeIsAtomic() { return NULL; }
     /// Returns NULL if this is not a mealy atomic model; returns itself otherwise.
     virtual MealyAtomic<X, T>* typeIsMealyAtomic() { return NULL; }
-    /**
-		 * Get the model that contains this model as a component.  Returns
-		 * NULL if this model is at the top of the hierarchy.
-		 */
+    /*
+     * Get the model that contains this model as a component.  Returns
+     * NULL if this model is at the top of the hierarchy.
+     */
     Network<X, T> const* getParent() const { return parent; }
     /// Get the model that contains this model as a component.
     Network<X, T>* getParent() { return parent; }
-    /**
-		 * Assign a new parent to this model. Network model's should always
-		 * call this method to make themselves the parent of their components.
-		 * If the parent is not set correctly, then the event routing algorithm
-		 * in the simulator will fail.
-		 */
+    /*
+     * Assign a new parent to this model. Network model's should always
+     * call this method to make themselves the parent of their components.
+     * If the parent is not set correctly, then the event routing algorithm
+     * in the simulator will fail.
+     */
     void setParent(Network<X, T>* parent) { this->parent = parent; }
-    /**
-		 * This is the structure transition function, which is evaluated following
-		 * every change of the model's state. It should return true
-		 * if a structure change is to occur, and false otherwise. False is the
-		 * default return value.
-		 * This method is used by the simulator to limit the execution
-		 * of potentially expensive structure changes.
-		 * If the return value is true, then the parent's model_transition()
-		 * will also be evaluated. For network models, the model_transition() function is
-		 * preceded and anteceded by a call to getComponents(). The difference
-		 * of these two sets is used to determine if any models were added or removed
-		 * as part of the model transition.
-		 */
+    /*
+     * This is the structure transition function, which is evaluated following
+     * every change of the model's state. It should return true
+     * if a structure change is to occur, and false otherwise. False is the
+     * default return value.
+     * This method is used by the simulator to limit the execution
+     * of potentially expensive structure changes.
+     * If the return value is true, then the parent's model_transition()
+     * will also be evaluated. For network models, the model_transition() function is
+     * preceded and anteceded by a call to getComponents(). The difference
+     * of these two sets is used to determine if any models were added or removed
+     * as part of the model transition.
+     */
     virtual bool model_transition() { return false; }
 
   private:
     Network<X, T>* parent;
 };
 
-/**
+/*
  * Event objects are used for routing within a network model,
  * for notifying event listeners of output events, and for injecting
  * input into a running simulation.
@@ -119,13 +119,13 @@ class Event {
   public:
     /// Constructor.  Sets the model to NULL.
     Event() : model(NULL), value() {}
-    /**
-		 * Constructor sets the model and value. The input into a
-		 * Simulator and in a network's routing method,
-		 * the model is the target of the input value.
-		 * In a callback to an event listener, the model is the
-		 * source of the output value.
-		 */
+    /*
+     * Constructor sets the model and value. The input into a
+     * Simulator and in a network's routing method,
+     * the model is the target of the input value.
+     * In a callback to an event listener, the model is the
+     * source of the output value.
+     */
     Event(Devs<X, T>* model, X const &value) : model(model), value(value) {}
     /// Copy constructor.
     Event(Event<X, T> const &src) : model(src.model), value(src.value) {}
@@ -143,7 +143,7 @@ class Event {
     ~Event() {}
 };
 
-/**
+/*
  * Base type for all atomic DEVS models.
  */
 template <typename X, typename T = double>
@@ -159,33 +159,33 @@ class Atomic : public Devs<X, T> {
           y(NULL) {}
     /// Internal transition function.
     virtual void delta_int() = 0;
-    /**
-		 * External transition function.
-		 * @param e Time elapsed since the last change of state
-		 * @param xb Input for the model.
-		 */
+    /*
+     * External transition function.
+     * @param e Time elapsed since the last change of state
+     * @param xb Input for the model.
+     */
     virtual void delta_ext(T e, Bag<X> const &xb) = 0;
-    /**
-		 * Confluent transition function.
-		 * @param xb Input for the model.
-		 */
+    /*
+     * Confluent transition function.
+     * @param xb Input for the model.
+     */
     virtual void delta_conf(Bag<X> const &xb) = 0;
-    /**
-		 * Output function.  Output values should be added to the bag yb.
-		 * @param yb Empty bag to be filled with the model's output
-		 */
+    /*
+     * Output function.  Output values should be added to the bag yb.
+     * @param yb Empty bag to be filled with the model's output
+     */
     virtual void output_func(Bag<X> &yb) = 0;
-    /**
-		 * Time advance function. adevs_inf<T>() is used for infinity.
-		 * @return The time to the next internal event
-		 */
+    /*
+     * Time advance function. adevs_inf<T>() is used for infinity.
+     * @return The time to the next internal event
+     */
     virtual T ta() = 0;
-    /**
-		 * Garbage collection function.  The objects in g are
-		 * no longer in use by the simulation engine and should be disposed of.
+    /*
+     * Garbage collection function.  The objects in g are
+     * no longer in use by the simulation engine and should be disposed of.
 `		 * Note that the elements in g are only those objects produced as
-		 * output by this model.
-		 */
+     * output by this model.
+     */
     virtual void gc_output(Bag<X> &g) = 0;
     /// Destructor.
     virtual ~Atomic() {}
@@ -193,12 +193,12 @@ class Atomic : public Devs<X, T> {
     Atomic<X, T>* typeIsAtomic() { return this; }
 
   protected:
-    /**
-		 * Get the last event time for this model. This is
-		 * provided primarily for use with the backwards compatibility
-		 * module and should not be relied on. It is likely to be
-		 * removed in later versions of the code.
-		 */
+    /*
+     * Get the last event time for this model. This is
+     * provided primarily for use with the backwards compatibility
+     * module and should not be relied on. It is likely to be
+     * removed in later versions of the code.
+     */
     T getLastEventTime() const { return tL; }
 
   private:
@@ -215,7 +215,7 @@ class Atomic : public Devs<X, T> {
     Bag<X>*x, *y;
 };
 
-/**
+/*
  * This is a Mealy type atomic model where its output
  * may depend on its input. Mealy machines cannot be
  * connected to other Mealy machines. An exception
@@ -237,15 +237,15 @@ class MealyAtomic : public Atomic<X, T> {
   public:
     MealyAtomic<X, T>() : Atomic<X, T>(), imm(false) {}
     MealyAtomic<X, T>* typeIsMealyAtomic() { return this; }
-    /**
-		 * Produce output at e < ta(q) in response to xb.
-		 * This is output preceding an external event.
-		 */
+    /*
+     * Produce output at e < ta(q) in response to xb.
+     * This is output preceding an external event.
+     */
     virtual void output_func(T e, Bag<X> const &xb, Bag<X> &yb) = 0;
-    /**
-		 * Produce output at e = ta(q) in response to xb.
-		 * This is output preceding a confluent event.
-		 */
+    /*
+     * Produce output at e = ta(q) in response to xb.
+     * This is output preceding a confluent event.
+     */
     virtual void output_func(Bag<X> const &xb, Bag<X> &yb) = 0;
     virtual ~MealyAtomic() {}
 
@@ -259,7 +259,7 @@ class MealyAtomic : public Atomic<X, T> {
 #pragma clang diagnostic pop
 #endif
 
-/**
+/*
  * Base class for DEVS network models.
  */
 template <typename X, typename T = double>
@@ -267,30 +267,30 @@ class Network : public Devs<X, T> {
   public:
     /// Constructor.
     Network() : Devs<X, T>() {}
-    /**
-		 * This method should fill the
-		 * set c with all the Network's components, excluding the
-		 * Network model itself.
-		 * @param c An empty set to the filled with the Network's components.
-		 */
+    /*
+     * This method should fill the
+     * set c with all the Network's components, excluding the
+     * Network model itself.
+     * @param c An empty set to the filled with the Network's components.
+     */
     virtual void getComponents(Set<Devs<X, T>*> &c) = 0;
-    /**
-		 * This method is called by the Simulator to route an output value
-		 * produced by a model. This method should fill the bag r
-		 * with Events that point to the target model and carry the value
-		 * to be delivered to the target. The target may be a component
-		 * of the Network or the Network itself, the latter causing the
-		 * Network to produce an output.
-		 * @param model The model that produced the output value
-		 * @param value The output value produced by the model
-		 * @param r A bag to be filled with (target,value) pairs
-		 */
+    /*
+     * This method is called by the Simulator to route an output value
+     * produced by a model. This method should fill the bag r
+     * with Events that point to the target model and carry the value
+     * to be delivered to the target. The target may be a component
+     * of the Network or the Network itself, the latter causing the
+     * Network to produce an output.
+     * @param model The model that produced the output value
+     * @param value The output value produced by the model
+     * @param r A bag to be filled with (target,value) pairs
+     */
     virtual void route(X const &value, Devs<X, T>* model,
                        Bag<Event<X, T>> &r) = 0;
-    /**
-		 * Destructor.  This destructor does not delete any component models.
-		 * Any necessary cleanup should be done by the derived class.
-		 */
+    /*
+     * Destructor.  This destructor does not delete any component models.
+     * Any necessary cleanup should be done by the derived class.
+     */
     virtual ~Network() {}
     /// Returns a pointer to this model.
     Network<X, T>* typeIsNetwork() { return this; }

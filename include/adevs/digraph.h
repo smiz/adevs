@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2013, James Nutaro
  * All rights reserved.
  *
@@ -38,7 +38,7 @@
 
 namespace adevs {
 
-/**
+/*
  * The components of a digraph model must use PortValue objects
  * as their basic I/O type: the port and value types are template
  * arguments. The default port type is an integer.
@@ -66,7 +66,7 @@ class PortValue {
     VALUE value;
 };
 
-/**
+/*
  * The digraph model is used to build block-diagrams from network and atomic components.
  * Its components must have PortValue objects as their input/output type.
  */

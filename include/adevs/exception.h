@@ -1,15 +1,15 @@
-/**
+/*
  * Copyright (c) 2013, James Nutaro
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met: 
+ * modification, are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer. 
+ *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution. 
+ *    and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -23,7 +23,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies, 
+ * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the FreeBSD Project.
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
@@ -35,17 +35,17 @@
 
 namespace adevs {
 
-/**
+/*
  * The adevs::exception class is derived from the standard template
  * library exception class.
  */
 class exception : public std::exception {
   public:
-    /**
-		 * Create an exception with an error message and, if appropriate,
-		 * a pointer to the model that created the error.  To avoid
-		 * templated exceptions, the model pointer is just a void*.
-		 */
+    /*
+     * Create an exception with an error message and, if appropriate,
+     * a pointer to the model that created the error.  To avoid
+     * templated exceptions, the model pointer is just a void*.
+     */
     exception(char const* msg, void* model = NULL)
         : std::exception(), msg(msg), model(model) {}
     /// Copy constructor.
@@ -63,16 +63,16 @@ class exception : public std::exception {
     void* model;
 };
 
-/**
+/*
  * The unsupported method exception is raised if an optional virtual method
  * is not supported by a model.
  */
 class method_not_supported_exception : public exception {
   public:
-    /**
-		 * Constructor should be supplied with the model throwing
-		 * the exception and the name of the method that is not supported.
-		 */
+    /*
+     * Constructor should be supplied with the model throwing
+     * the exception and the name of the method that is not supported.
+     */
     method_not_supported_exception(char const* method, void* model)
         : exception((std::string("Unsupported method: ") + std::string(method))
                         .c_str(),

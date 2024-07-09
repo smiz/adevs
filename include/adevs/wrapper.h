@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2013, James Nutaro
  * All rights reserved.
  *
@@ -33,76 +33,88 @@
 #include "adevs/models.h"
 
 namespace adevs {
-/**
-	 * <p>This class wraps a Network or Atomic model with interface type InternalType in an
-	 * Atomic model with interface type ExternalType. Input to the ModelWrapper is passed
-	 * through a user provided input translation method before being handed off
-	 * to the wrapped model for processing. Output from the wrapped model is
-	 * passed through a user provided output translation method before emerging
-	 * as output from the ModelWrapper. If the wrapped model is a Network, the input
-	 * translation method can create inputs for any of its components. Similarly
-	 * the output translation method is provided with every output produced by
-	 * every component in the Network. If the wrapped model is Atomic then there
-	 * is, of course, only one possible destination for incoming events and only
-	 * one source of outgoing events.
-	 * <p>You will need to implement the usual gc_output event for outputs
-	 * produced by the ModelWrapper. You will also need to implement
-	 * gcInputEvents method to clean up events that are created during
-	 * the input translation process.
-	 */
+
+/*
+ * <p>This class wraps a Network or Atomic model with interface type InternalType in an
+ * Atomic model with interface type ExternalType. Input to the ModelWrapper is passed
+ * through a user provided input translation method before being handed off
+ * to the wrapped model for processing. Output from the wrapped model is
+ * passed through a user provided output translation method before emerging
+ * as output from the ModelWrapper. If the wrapped model is a Network, the input
+ * translation method can create inputs for any of its components. Similarly
+ * the output translation method is provided with every output produced by
+ * every component in the Network. If the wrapped model is Atomic then there
+ * is, of course, only one possible destination for incoming events and only
+ * one source of outgoing events.
+ * <p>You will need to implement the usual gc_output event for outputs
+ * produced by the ModelWrapper. You will also need to implement
+ * gcInputEvents method to clean up events that are created during
+ * the input translation process.
+ */
 template <typename ExternalType, typename InternalType, class T = double>
 class ModelWrapper : public Atomic<ExternalType, T>,
                      public EventListener<InternalType, T> {
   public:
-    /**
-			 * Create a wrapper for the specified model. The ModelWrapper takes
-			 * ownership of the supplied model and will delete it when the
-			 * ModelWrapper is deleted.
-			 */
+    /*
+     * Create a wrapper for the specified model. The ModelWrapper takes
+     * ownership of the supplied model and will delete it when the
+     * ModelWrapper is deleted.
+     */
     ModelWrapper(Devs<InternalType, T>* model);
-    /**
-			 * This method is used to translate incoming input objects into
-			 * input objects that the wrapped model can process. The supplied
-			 * internal_input bag should be filled with Events that contain the targeted
-			 * internal models and the values to supply to them. The external_input
-			 * bag contains the input values supplied to the wrapper's external or
-			 * confluent transition function.
-			 */
+
+    /*
+     * This method is used to translate incoming input objects into
+     * input objects that the wrapped model can process. The supplied
+     * internal_input bag should be filled with Events that contain the targeted
+     * internal models and the values to supply to them. The external_input
+     * bag contains the input values supplied to the wrapper's external or
+     * confluent transition function.
+     */
     virtual void translateInput(
         Bag<ExternalType> const &external_input,
         Bag<Event<InternalType, T>> &internal_input) = 0;
-    /**
-			 * This method is used to translate outgoing output objects
-			 * into objects that the ModelWrapper can produce. The
-			 * internal_output bag contains all of the output events that the
-			 * were produced by the wrapped model. The external_output bag
-			 * should be filled with objects of type ExternalType that
-			 * will be produced as output by the ModelWrapper.
-			 */
+
+    /*
+     * This method is used to translate outgoing output objects
+     * into objects that the ModelWrapper can produce. The
+     * internal_output bag contains all of the output events that the
+     * were produced by the wrapped model. The external_output bag
+     * should be filled with objects of type ExternalType that
+     * will be produced as output by the ModelWrapper.
+     */
     virtual void translateOutput(
         Bag<Event<InternalType, T>> const &internal_output,
         Bag<ExternalType> &external_output) = 0;
-    /**
-			 * This is the garbage collection method for internal input events.
-			 * It will be called when the wrapper is done with a set of events
-			 * that you created with the translateInput method. The supplied bag
-			 * is the same one that you filled out in the translateInput method.
-			 */
+
+    /*
+     * This is the garbage collection method for internal input events.
+     * It will be called when the wrapper is done with a set of events
+     * that you created with the translateInput method. The supplied bag
+     * is the same one that you filled out in the translateInput method.
+     */
     virtual void gc_input(Bag<Event<InternalType, T>> &g) = 0;
+
     /// Get the model that is wrapped by this object
     Devs<InternalType, T>* getWrappedModel() { return model; }
+
     /// Atomic internal transition function
     void delta_int();
+
     /// Atomic external transition function
     void delta_ext(T e, Bag<ExternalType> const &xb);
+
     /// Atomic confluent transition function
     void delta_conf(Bag<ExternalType> const &xb);
+
     /// Atomic output function
     void output_func(Bag<ExternalType> &yb);
+
     /// Atomic time advance function
     T ta();
+
     /// EventListener outputEvent method
     void outputEvent(Event<InternalType, T> y, T t);
+
     /// Destructor. This destroys the wrapped model too.
     ~ModelWrapper();
 

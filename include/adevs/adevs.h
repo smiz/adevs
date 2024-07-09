@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2013, James Nutaro
  * All rights reserved.
  *
@@ -28,12 +28,12 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
-/**
+/*
  * \mainpage
  * Links to the user manual, tutorials on DEVS, and other such
  * stuff are <a href="../index.html">here</a>.
  */
-/**
+/*
  * Include everything needed to compile user models.
  */
 #include "adevs/cellspace.h"

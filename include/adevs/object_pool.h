@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2013, James Nutaro
  * All rights reserved.
  *
@@ -34,7 +34,7 @@
 
 namespace adevs {
 
-/**
+/*
  * A utility class for managing pools of objects that are stored on the heap.
  * Uses the new and delete operators to create and destroy objects.
  */

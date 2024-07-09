@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2013, James Nutaro
  * All rights reserved.
  *
@@ -35,7 +35,7 @@
 
 namespace adevs {
 
-/**
+/*
  * The random_seq class is an abstract interface to a random sequence
  * generator.
  */
@@ -53,7 +53,7 @@ class random_seq {
     virtual ~random_seq() {}
 };
 
-/**
+/*
  * The crand class provides random number sequences using the standard
  * C rand_r() function. Each instance of crand generates its own random
  * number sequence, and the clone method saves the state of the random
@@ -88,7 +88,7 @@ class crand : public random_seq {
     unsigned int seedp;
 };
 
-/**
+/*
  * <p>The rv class provides a random variable based on a selectable
  * implementation.  By default, this implementation is crand.
  * I recommend that you find a modern random variate generator,
@@ -103,10 +103,10 @@ class rv {
   public:
     /// Create a random variable with the default implementation.
     rv(unsigned long seed = 1);
-    /**
-		 * Create a random variable with the desired implementation.  The
-		 * implementation class is adopted by the rv.
-		 */
+    /*
+     * Create a random variable with the desired implementation.  The
+     * implementation class is adopted by the rv.
+     */
     rv(random_seq* rand);
     /// Copy constructor relies on copy method of underlying stream.
     rv(rv const &src);
@@ -121,22 +121,22 @@ class rv {
     double triangular(double a, double b, double c);
     /// Sample a uniform distribution in the range [a, b]
     double uniform(double a, double b);
-    /**
-		 * Sample a normally distributed random variable with mean m and
-		 * standard deviation s.
-		 */
+    /*
+     * Sample a normally distributed random variable with mean m and
+     * standard deviation s.
+     */
     double normal(double m, double s);
-    /**
-		 * return a negative exponentially distributed random number with
-		 * the mean as parameter
-		 */
+    /*
+     * return a negative exponentially distributed random number with
+     * the mean as parameter
+     */
     double exponential(double a);
-    /**
-		 * return a hyperexponentially distributed random number with
-		 * the means as parameters to two exponentially distributed variates,
-		 * the first with a chance of p of being generated, the second with a
-		 * chance of 1-p.
-		 */
+    /*
+     * return a hyperexponentially distributed random number with
+     * the means as parameters to two exponentially distributed variates,
+     * the first with a chance of p of being generated, the second with a
+     * chance of 1-p.
+     */
     double hyperexponential(double p, double a, double b);
     /// Return a laplace number with the given parameter
     double laplace(double a);
@@ -158,22 +158,22 @@ class rv {
     double poisson(double a);
     /// Sample a geometric random variable with event probability p
     double geometric(double p);
-    /**
-		 * return a variate from the hypergeometric distribution with m the
-		 * population, p the chance on success and n the number of items drawn
-		 */
+    /*
+     * return a variate from the hypergeometric distribution with m the
+     * population, p the chance on success and n the number of items drawn
+     */
     double hypergeometric(unsigned int m, unsigned int n, double p);
     /// Sample a weibull random variable
     double weibull(double a, double b);
-    /**
-		 *  An event count for a binomial distribution with event
-		 *  probability p and n the number of trials
-		 */
+    /*
+     *  An event count for a binomial distribution with event
+     *  probability p and n the number of trials
+     */
     double binomial(double p, unsigned int n);
-    /**
-		 * return a random variable with probabilty of success equal to p
-		 * and n as the number of successes
-		 */
+    /*
+     * return a random variable with probabilty of success equal to p
+     * and n as the number of successes
+     */
     double negativebinomial(double p, unsigned int n);
     /// Sample a triangular random variable
     double triangular(double a);
