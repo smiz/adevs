@@ -1,10 +1,13 @@
 # Copy the compare file to the build
+
 compare = find_program('helpers/compare.sh')
 run_and_compare = find_program('helpers/run_and_compare.sh')
 
 # Add tests in their own subdirectories
+
 subdir('dyn_devs')
 #subdir('fmi')
+
 subdir('gcd')
 subdir('gpt')
 subdir('listener')
@@ -14,8 +17,8 @@ subdir('tokenring')
 subdir('wrapper')
 subdir('zero_time')
 
-
 # Tests in this directory
+
 
 test_alt_time = executable('alt_time', 'alt_time_tests.cpp', include_directories: adevs)
 test('alt_time', test_alt_time)
@@ -30,11 +33,11 @@ test_double_fcmp = executable('double_fcmp', 'double_fcmp_test.cpp', include_dir
 test('double_fcmp', test_double_fcmp)
 
 # # TODO: Linking/compiling issue
+
 # test_mt_test = executable('mt_test', 'mt_test.cpp', include_directories: adevs)
+
 # test('mt_test', test_mt_test)
 
-test_obj_pool = executable('obj_pool', 'object_pool_test.cpp', include_directories: adevs)
-test('obj_pool', test_obj_pool)
 
 test_rvtest = executable('rvtest', 'rv_test.cpp', include_directories: adevs)
 test('rvtest', test_rvtest)
@@ -47,7 +50,11 @@ test('sd_time', test_sd_time)
 
 test_sd_time_2 = executable('sd_time_2', 'sd_time_test_2.cpp', include_directories: adevs)
 test_sd_time_2_ok = fs.copyfile('sd_time_test_2.ok')
-test('sd_time_2', compare, args: [test_sd_time_2.full_path(), test_sd_time_2_ok.full_path()])
+test(
+    'sd_time_2',
+    compare,
+    args: [test_sd_time_2.full_path(), test_sd_time_2_ok.full_path()],
+)
 
 test_mealy = executable('mealy', 'test_mealy.cpp', include_directories: adevs)
 test('mealy', test_mealy)

@@ -31,6 +31,7 @@
 #ifndef __adevs_models_h_
 #define __adevs_models_h_
 #include <cstdlib>
+#include <memory>
 #include "adevs/bag.h"
 #include "adevs/exception.h"
 #include "adevs/set.h"
@@ -156,7 +157,9 @@ class Atomic : public Devs<X, T> {
           q_index(0),  // The Schedule requires this to be zero
           proc(-1),
           x(NULL),
-          y(NULL) {}
+          y(NULL),
+          the_real_x(std::make_shared<Bag<X>>()),
+          the_real_y(std::make_shared<Bag<X>>()) {}
     /// Internal transition function.
     virtual void delta_int() = 0;
     /*
@@ -213,6 +216,9 @@ class Atomic : public Devs<X, T> {
     int proc;
     // Input and output event bags
     Bag<X>*x, *y;
+
+    std::shared_ptr<Bag<X>> the_real_x;
+    std::shared_ptr<Bag<X>> the_real_y;
 };
 
 /*

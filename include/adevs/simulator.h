@@ -39,7 +39,6 @@
 #include "adevs/models.h"
 #include "adevs/sched.h"
 #include "adevs/set.h"
-#include "object_pool.h"
 
 namespace adevs {
 
@@ -156,12 +155,12 @@ class Simulator : public AbstractSimulator<X, T>,
     // List of models that are imminent or activated by input
     Bag<Atomic<X, T>*> activated;
     // Mealy systems that we need to process
-    bool allow_mealy_input, io_up_to_date;
+    bool allow_mealy_input;
+    bool io_up_to_date;
+
     T io_time;
     Bag<MealyAtomic<X, T>*> mealy;
-    // Pools of preallocated, commonly used objects
-    object_pool<Bag<X>> io_pool;
-    object_pool<Bag<Event<X, T>>> recv_pool;
+
     // Sets for computing structure changes.
     Bag<Devs<X, T>*> added;
     Bag<Devs<X, T>*> removed;
@@ -279,7 +278,7 @@ void Simulator<X, T>::visit(Atomic<X, T>* model) {
         }
         return;
     }
-    model->y = io_pool.make_obj();
+    model->y = model->the_real_y.get();
     // Put it in the active list if it is not already there
     if (model->x == NULL) {
         activated.push_back(model);
@@ -329,7 +328,7 @@ void Simulator<X, T>::computeNextOutput(Bag<Event<X, T>> &input, T t) {
          m_iter != mealy.end(); m_iter++) {
         MealyAtomic<X, T>* model = *m_iter;
         assert(model->y == NULL);
-        model->y = io_pool.make_obj();
+        model->y = model->the_real_y.get();
         // Put it in the active set if it is not already there
         if (model->x == NULL) {
             activated.push_back(model);
@@ -509,13 +508,11 @@ void Simulator<X, T>::clean_up(Devs<X, T>* model) {
     if (amodel != NULL) {
         if (amodel->x != NULL) {
             amodel->x->clear();
-            io_pool.destroy_obj(amodel->x);
             amodel->x = NULL;
         }
         if (amodel->y != NULL) {
             amodel->gc_output(*(amodel->y));
             amodel->y->clear();
-            io_pool.destroy_obj(amodel->y);
             amodel->y = NULL;
         }
         if (amodel->typeIsMealyAtomic() != NULL) {
@@ -597,7 +594,7 @@ void Simulator<X, T>::inject_event(Atomic<X, T>* model, X &value) {
         if (model->y == NULL) {
             activated.push_back(model);
         }
-        model->x = io_pool.make_obj();
+        model->x = model->the_real_x.get();
     }
     this->notify_input_listeners(model, value, io_time);
     model->x->push_back(value);
@@ -614,12 +611,13 @@ void Simulator<X, T>::route(Network<X, T>* parent, Devs<X, T>* src, X &x) {
         return;
     }
     // Compute the set of receivers for this value
-    Bag<Event<X, T>>* recvs = recv_pool.make_obj();
-    parent->route(x, src, *recvs);
+    // TODO: Does it make sense to build this object every call?
+    Bag<Event<X, T>> recvs;
+    parent->route(x, src, recvs);
     // Deliver the event to each of its targets
     Atomic<X, T>* amodel = NULL;
-    typename Bag<Event<X, T>>::iterator recv_iter = recvs->begin();
-    for (; recv_iter != recvs->end(); recv_iter++) {
+    typename Bag<Event<X, T>>::iterator recv_iter = recvs.begin();
+    for (; recv_iter != recvs.end(); recv_iter++) {
         /*
          * If the destination is an atomic model, add the event to the IO bag
          * for that model and add model to the list of activated models
@@ -640,8 +638,7 @@ void Simulator<X, T>::route(Network<X, T>* parent, Devs<X, T>* src, X &x) {
                   (*recv_iter).value);
         }
     }
-    recvs->clear();
-    recv_pool.destroy_obj(recvs);
+    recvs.clear();
 }
 
 template <class X, class T>
