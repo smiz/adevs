@@ -51,40 +51,102 @@ class InterPoly {
     * are the dependent variable and t- the independent
     * variables.
     */
-    InterPoly(double const* u, double const* t, unsigned int n);
+    InterPoly(double const* u, double const* t, unsigned int n) {
+        this->n = n;
+        tdat = new double[n];
+        udat = new double[n];
+        for (unsigned i = 0; i < n; i++) {
+            tdat[i] = t[i];
+            udat[i] = u[i];
+        }
+    }
 
     /*
     * Construct a polynomial to interpolate u(t) with data points
     * that are regularly spaced in time from an offset t0
     */
-    InterPoly(double const* u, double dt, unsigned int n, double t0 = 0.0);
+    InterPoly(double const* u, double dt, unsigned int n, double t0 = 0.0) {
+        this->n = n;
+        tdat = new double[n];
+        udat = new double[n];
+        for (unsigned i = 0; i < n; i++) {
+            tdat[i] = t0 + (double)i * dt;
+            udat[i] = u[i];
+        }
+    }
 
     /*
     * Assign new values to the data set. If t is NULL, then
     * only new u values will be assigned and the old t data is
     * kept.
     */
-    void setData(double const* u, double const* t = NULL);
+    void setData(double const* u, double const* t = NULL) {
+        for (unsigned int i = 0; i < n; i++) {
+            if (t != NULL) {
+                tdat[i] = t[i];
+            }
+            udat[i] = u[i];
+        }
+    }
 
     /*
     * Get the interpolated value at t
     */
-    double interpolate(double t) const;
+    double interpolate(double t) const {
+        double result = 0.0;
+        for (unsigned k = 0; k < n; k++) {
+            double l = 1.0;
+            for (unsigned i = 0; i < n; i++) {
+                if (i != k) {
+                    l *= (t - tdat[i]) / (tdat[k] - tdat[i]);
+                }
+            }
+            result += l * udat[k];
+        }
+        return result;
+    }
 
     /*
     * Overloaded operator for the interpolate method
     */
-    double operator()(double t) const;
+    double operator()(double t) const { return interpolate(t); }
 
     /*
     * Approximate the function derivative at t
     */
-    double derivative(double t) const;
+    double derivative(double t) const {
+        double result = 0.0;
+        for (unsigned k = 0; k < n; k++) {
+            double fa = udat[k];
+            for (unsigned j = 0; j < n; j++) {
+                if (j != k) {
+                    fa *= 1.0 / (tdat[k] - tdat[j]);
+                }
+            }
+            double dl = 0.0;
+            for (unsigned j = 0; j < n; j++) {
+                if (j != k) {
+                    double ll = 1.0;
+                    for (unsigned i = 0; i < n; i++) {
+                        if (i != j && i != k) {
+                            ll *= t - tdat[i];
+                        }
+                    }
+                    dl += ll;
+                }
+            }
+            result += fa * dl;
+        }
+        return result;
+    }
 
     /*
     * Destructor
     */
-    ~InterPoly();
+    ~InterPoly() {
+        delete[] tdat;
+        delete[] udat;
+    }
 
   private:
     InterPoly() {}
