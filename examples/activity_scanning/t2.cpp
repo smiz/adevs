@@ -4,35 +4,38 @@ using namespace std;
 class Machine : public Partition {
   public:
     Machine(string name) : Partition(), name(name) {}
-    void exec(vector<Event*> &imm) {
+    void exec(vector<shared_ptr<Event>> &imm) {
         for (unsigned i = 0; i < imm.size(); i++) {
             imm[i]->exec();
         }
     }
-    int jobsFinished, jobsPending, jobsReceived;
+    unsigned int jobsFinished = 0;
+    unsigned int jobsPending = 0;
+    unsigned int jobsReceived = 0;
     string const name;
 };
 
-Machine *m1, *m2;
+shared_ptr<Machine> m1;
+shared_ptr<Machine> m2;
 
 class PartLeave : public Event {
   public:
-    PartLeave(Machine* m, double t) : Event(m, t), m(m) {}
+    PartLeave(shared_ptr<Machine> m, double t) : Event(m, t), m(m) {}
     void exec();
     bool prep() { return true; }
 
   private:
-    Machine* m;
+    shared_ptr<Machine> m;
 };
 
 class PartArrive : public Event {
   public:
-    PartArrive(Machine* m, double t) : Event(m, t), m(m) {}
+    PartArrive(shared_ptr<Machine> m, double t) : Event(m, t), m(m) {}
     void exec();
     bool prep() { return true; }
 
   private:
-    Machine* m;
+    shared_ptr<Machine> m;
 };
 
 void PartLeave::exec() {
@@ -41,10 +44,10 @@ void PartLeave::exec() {
     m->jobsPending--;
     m->jobsFinished++;
     if (m->jobsPending > 0) {
-        m->schedule(new PartLeave(m, m->now() + 1));
+        m->schedule(make_shared<PartLeave>(m, m->now() + 1));
     }
     if (m == m1) {
-        m->schedule(new PartArrive(m2, m->now()));
+        m->schedule(make_shared<PartArrive>(m2, m->now()));
     }
 }
 
@@ -53,21 +56,21 @@ void PartArrive::exec() {
     m->jobsReceived++;
     m->jobsPending++;
     if (m->jobsPending == 1) {
-        m->schedule(new PartLeave(m, m->now() + 1));
+        m->schedule(make_shared<PartLeave>(m, m->now() + 1));
     }
     if (m == m1) {
-        m->schedule(new PartArrive(m, m->now() + 1));
+        m->schedule(make_shared<PartArrive>(m, m->now() + 1));
     }
 }
 
 int main() {
-    m1 = new Machine("M1");
-    m2 = new Machine("M2");
-    m1->schedule(new PartArrive(m1, 0));
+    m1 = make_shared<Machine>("M1");
+    m2 = make_shared<Machine>("M2");
+    m1->schedule(make_shared<PartArrive>(m1, 0));
     World* world = new World();
-    world->add(m1);
-    world->add(m2);
-    world->couple(m1, m2);
+    world->add(m1.get());
+    world->add(m2.get());
+    world->couple(m1.get(), m2.get());
     Simulator* sim = new Simulator(world);
     sim->execUntil(5);
     cout << "Machine\tR\tP\tF" << endl;
@@ -75,7 +78,6 @@ int main() {
          << m1->jobsFinished << endl;
     cout << "M2\t" << m2->jobsReceived << "\t" << m2->jobsPending << "\t"
          << m2->jobsFinished << endl;
-    delete sim;
-    delete world;
+
     return 0;
 }

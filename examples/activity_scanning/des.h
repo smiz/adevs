@@ -1,10 +1,23 @@
 #ifndef des_h_
 #define des_h_
+
 #include <list>
+#include <memory>
 #include <vector>
+
 #include "adevs/adevs.h"
 
+using namespace std;
+
+
+enum class Mode {
+    FUTURE = 0,
+    CONDITIONAL = 1,
+};
+
+
 class Partition;
+
 
 /**
  * This is an event that acts to change the state
@@ -13,31 +26,32 @@ class Partition;
 class Event {
   public:
     /**
-		 * Create an event to act on a partition. The timestamp
-		 * must be inf for a conditional event.
-		 */
-    Event(Partition* p, double t = adevs_inf<double>()) : p(p), t(t) {}
+     * Create an event to act on a partition. The timestamp
+     * must be inf for a conditional event.
+     */
+    Event(shared_ptr<Partition> p, double t = adevs_inf<double>())
+        : p(p), t(t) {}
     virtual ~Event() {}
     /**
-		 * Gather the data that is needed to execute
-		 * this event. If this is a conditional event,
-		 * then return true if the event condition is
-		 * satisfied and false otherwise. The return
-		 * value is not used if this is not a conditional
-		 * event.
-		 */
+     * Gather the data that is needed to execute
+     * this event. If this is a conditional event,
+     * then return true if the event condition is
+     * satisfied and false otherwise. The return
+     * value is not used if this is not a conditional
+     * event.
+     */
     virtual bool prep() = 0;
     /// Execute the event.
     virtual void exec() = 0;
     /// Get the partition
-    Partition* partition() { return p; }
+    shared_ptr<Partition> partition() { return p; }
     /// Get the timestamp
     double timestamp() const { return t; }
     /// Is this a conditional event?
     bool conditional() const { return t == adevs_inf<double>(); }
 
   private:
-    Partition* p;
+    shared_ptr<Partition> p;
     double const t;
 };
 
@@ -50,38 +64,38 @@ class Event {
  * However, when executed that event must only change variables
  * within the partition.</p>
  */
-class Partition : public adevs::Atomic<Event*> {
+class Partition : public adevs::Atomic<shared_ptr<Event>> {
   public:
-    Partition() : adevs::Atomic<Event*>(), tNow(0.0), mode('F') {}
-    virtual ~Partition();
+    Partition() : adevs::Atomic<shared_ptr<Event>>(), tNow(0.0), mode('F') {}
+
     /**
-		 * <p>Execute the events that are imminent for this partition.
-		 * The events passed to this method are all of the events
-		 * that are scheduled or eligible for activation at the
-		 * current simulation time. If there are multiple events
-		 * in the list then the partition may act on them in any
-		 * way that is appropriate to the model.</p>
-		 * <p>All imminent events are deleted when exec returns.</p>
-		 */
-    virtual void exec(std::vector<Event*> &imm) = 0;
+     * <p>Execute the events that are imminent for this partition.
+     * The events passed to this method are all of the events
+     * that are scheduled or eligible for activation at the
+     * current simulation time. If there are multiple events
+     * in the list then the partition may act on them in any
+     * way that is appropriate to the model.</p>
+     * <p>All imminent events are deleted when exec returns.</p>
+     */
+    virtual void exec(std::vector<shared_ptr<Event>> &imm) = 0;
     /// Get the simulation time
     double now() const { return tNow; }
     /// Schedule an event for this or another partition
-    void schedule(Event* ev);
+    void schedule(shared_ptr<Event> ev);
 
   private:
-    std::list<Event*> cel;      // Conditional event list
-    std::list<Event*> fel;      // Future event list
-    std::vector<Event*> other,  // Events for other partitions
-        imm;                    // Imminent events at this partition
-    double tNow;                // Current simulation time
-    char mode;                  // 'F' or 'C'
+    std::list<shared_ptr<Event>> cel;      // Conditional event list
+    std::list<shared_ptr<Event>> fel;      // Future event list
+    std::vector<shared_ptr<Event>> other,  // Events for other partitions
+        imm;                               // Imminent events at this partition
+    double tNow;                           // Current simulation time
+    char mode;                             // 'F' or 'C'
   public:
     void delta_int();
-    void delta_ext(double e, adevs::Bag<Event*> const &xb);
-    void delta_conf(adevs::Bag<Event*> const &xb);
-    void output_func(adevs::Bag<Event*> &yb);
-    void gc_output(adevs::Bag<Event*> &) {}
+    void delta_ext(double e, adevs::Bag<shared_ptr<Event>> const &xb);
+    void delta_conf(adevs::Bag<shared_ptr<Event>> const &xb);
+    void output_func(adevs::Bag<shared_ptr<Event>> &yb);
+    void gc_output(adevs::Bag<shared_ptr<Event>> &) {}
     double ta();
 };
 
@@ -93,7 +107,7 @@ class Partition : public adevs::Atomic<Event*> {
  * activities. The World class is an instance of an
  * adevs::SimpleDigraph object.
  */
-typedef adevs::SimpleDigraph<Event*> World;
-typedef adevs::Simulator<Event*> Simulator;
+typedef adevs::SimpleDigraph<shared_ptr<Event>> World;
+typedef adevs::Simulator<shared_ptr<Event>> Simulator;
 
 #endif

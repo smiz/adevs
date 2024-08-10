@@ -1,23 +1,11 @@
 #include "des.h"
+
 using namespace std;
 
-Partition::~Partition() {
-    while (!fel.empty()) {
-        delete fel.front();
-        fel.pop_front();
-    }
-    while (!cel.empty()) {
-        delete cel.front();
-        cel.pop_front();
-    }
-    for (unsigned k = 0; k < imm.size(); k++) {
-        delete imm[k];
-    }
-}
 
-void Partition::schedule(Event* ev) {
+void Partition::schedule(shared_ptr<Event> ev) {
     // If this is not ours it must go to its owner
-    if (ev->partition() != this) {
+    if (ev->partition().get() != this) {
         other.push_back(ev);
     }
     // If this is a conditional event then
@@ -27,7 +15,7 @@ void Partition::schedule(Event* ev) {
     }
     // Otherwise put this into our schedule
     else {
-        list<Event*>::iterator iter = fel.begin();
+        list<shared_ptr<Event>>::iterator iter = fel.begin();
         for (; iter != fel.end(); iter++) {
             if ((*iter)->timestamp() > ev->timestamp()) {
                 fel.insert(iter, ev);
@@ -42,27 +30,24 @@ void Partition::delta_int() {
     if (!imm.empty()) {
         exec(imm);
         mode = 'C';
-        for (unsigned k = 0; k < imm.size(); k++) {
-            delete imm[k];
-        }
         imm.clear();
     } else {
         mode = 'F';
     }
 }
 
-void Partition::delta_ext(double e, adevs::Bag<Event*> const &xb) {
+void Partition::delta_ext(double e, adevs::Bag<shared_ptr<Event>> const &xb) {
     tNow += e;
     mode = 'C';
-    adevs::Bag<Event*>::const_iterator iter = xb.begin();
+    adevs::Bag<shared_ptr<Event>>::const_iterator iter = xb.begin();
     for (; iter != xb.end(); iter++) {
-        if (*iter != NULL && (*iter)->partition() == this) {
+        if (*iter != NULL && (*iter)->partition().get() == this) {
             schedule(*iter);
         }
     }
 }
 
-void Partition::delta_conf(adevs::Bag<Event*> const &xb) {
+void Partition::delta_conf(adevs::Bag<shared_ptr<Event>> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
@@ -77,7 +62,7 @@ double Partition::ta() {
     }
 }
 
-void Partition::output_func(adevs::Bag<Event*> &yb) {
+void Partition::output_func(adevs::Bag<shared_ptr<Event>> &yb) {
     // Notify others
     for (unsigned k = 0; k < other.size(); k++) {
         yb.push_back(other[k]);
@@ -93,7 +78,7 @@ void Partition::output_func(adevs::Bag<Event*> &yb) {
             fel.pop_front();
         } while (!fel.empty() && fel.front()->timestamp() == tNow);
     } else if (mode == 'C') {
-        list<Event*>::iterator iter = cel.begin();
+        list<shared_ptr<Event>>::iterator iter = cel.begin();
         while (iter != cel.end()) {
             if ((*iter)->prep()) {
                 imm.push_back(*iter);
