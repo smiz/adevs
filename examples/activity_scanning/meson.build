@@ -27,4 +27,9 @@ activity_test3 = executable(
     ['des.cpp', 't3.cpp'],
     include_directories: adevs,
 )
-test('activity_scanning-test3', activity_test3)
+activity_test3_ok = fs.copyfile('test3.ok')
+test(
+    'activity_scanning-test3',
+    compare,
+    args: [activity_test3.full_path(), activity_test3_ok.full_path()],
+)

@@ -30,7 +30,7 @@ class Event {
      * must be inf for a conditional event.
      */
     Event(shared_ptr<Partition> p, double t = adevs_inf<double>())
-        : p(p), t(t) {}
+        : _partition(p), _time(t) {}
     virtual ~Event() {}
     /**
      * Gather the data that is needed to execute
@@ -44,15 +44,15 @@ class Event {
     /// Execute the event.
     virtual void exec() = 0;
     /// Get the partition
-    shared_ptr<Partition> partition() { return p; }
+    shared_ptr<Partition> partition() { return _partition; }
     /// Get the timestamp
-    double timestamp() const { return t; }
+    double timestamp() const { return _time; }
     /// Is this a conditional event?
-    bool conditional() const { return t == adevs_inf<double>(); }
+    bool conditional() const { return _time == adevs_inf<double>(); }
 
   private:
-    shared_ptr<Partition> p;
-    double const t;
+    shared_ptr<Partition> _partition;
+    double const _time;
 };
 
 /**
@@ -66,7 +66,10 @@ class Event {
  */
 class Partition : public adevs::Atomic<shared_ptr<Event>> {
   public:
-    Partition() : adevs::Atomic<shared_ptr<Event>>(), tNow(0.0), mode('F') {}
+    Partition()
+        : adevs::Atomic<shared_ptr<Event>>(),
+          time_now(0.0),
+          mode(Mode::FUTURE) {}
 
     /**
      * <p>Execute the events that are imminent for this partition.
@@ -77,19 +80,20 @@ class Partition : public adevs::Atomic<shared_ptr<Event>> {
      * way that is appropriate to the model.</p>
      * <p>All imminent events are deleted when exec returns.</p>
      */
-    virtual void exec(std::vector<shared_ptr<Event>> &imm) = 0;
+    virtual void exec(std::vector<shared_ptr<Event>> &imminent) = 0;
     /// Get the simulation time
-    double now() const { return tNow; }
+    double now() const { return time_now; }
     /// Schedule an event for this or another partition
-    void schedule(shared_ptr<Event> ev);
+    void schedule(shared_ptr<Event> event);
 
   private:
-    std::list<shared_ptr<Event>> cel;      // Conditional event list
-    std::list<shared_ptr<Event>> fel;      // Future event list
-    std::vector<shared_ptr<Event>> other,  // Events for other partitions
-        imm;                               // Imminent events at this partition
-    double tNow;                           // Current simulation time
-    char mode;                             // 'F' or 'C'
+    std::list<shared_ptr<Event>> conditional_events;
+    std::list<shared_ptr<Event>> future_events;
+    std::vector<shared_ptr<Event>> other_events;
+    std::vector<shared_ptr<Event>> imminent_events;
+    double time_now;
+    Mode mode;
+
   public:
     void delta_int();
     void delta_ext(double e, adevs::Bag<shared_ptr<Event>> const &xb);
