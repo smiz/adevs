@@ -259,9 +259,8 @@ Simulator<X, T>::Simulator(std::list<Devs<X, T>*> &active)
     // tL correctly to zero, and so it is sufficient
     // to only worry about putting models with a
     // non infinite time advance into the schedule.
-    for (typename std::list<Devs<X, T>*>::iterator iter = active.begin();
-         iter != active.end(); iter++) {
-        schedule(*iter, adevs_zero<T>());
+    for (auto iter : active) {
+        schedule(iter, adevs_zero<T>());
     }
 }
 
@@ -301,8 +300,8 @@ void Simulator<X, T>::computeNextOutput(Bag<Event<X, T>> &input, T t) {
     // Undo any prior output calculation at another time
     if (io_up_to_date && !(io_time == t)) {
         typename Bag<Atomic<X, T>*>::iterator iter;
-        for (iter = activated.begin(); iter != activated.end(); iter++) {
-            clean_up(*iter);
+        for (auto iter : activated) {
+            clean_up(iter);
         }
         activated.clear();
     }
@@ -315,21 +314,19 @@ void Simulator<X, T>::computeNextOutput(Bag<Event<X, T>> &input, T t) {
         sched.visitImminent(this);
     }
     // Apply the injected inputs.
-    for (typename Bag<Event<X, T>>::iterator iter = input.begin();
-         iter != input.end(); iter++) {
-        Atomic<X, T>* amodel = (*iter).model->typeIsAtomic();
+    for (auto iter : input) {
+        Atomic<X, T>* amodel = iter.model->typeIsAtomic();
         if (amodel != NULL) {
-            inject_event(amodel, (*iter).value);
+            inject_event(amodel, iter.value);
         } else {
-            route((*iter).model->typeIsNetwork(), (*iter).model, (*iter).value);
+            route(iter.model->typeIsNetwork(), iter.model, iter.value);
         }
     }
     // Only Moore models can influence Mealy models.
     allow_mealy_input = false;
     // Iterate over activated Mealy models to calculate their output
-    for (typename Bag<MealyAtomic<X, T>*>::iterator m_iter = mealy.begin();
-         m_iter != mealy.end(); m_iter++) {
-        MealyAtomic<X, T>* model = *m_iter;
+    for (auto m_iter : mealy) {
+        MealyAtomic<X, T>* model = m_iter;
         assert(model->outputs->empty());
         //model->outputs->clear();
 
@@ -356,9 +353,8 @@ void Simulator<X, T>::computeNextOutput(Bag<Event<X, T>> &input, T t) {
     }
     // Translate Mealy output to inputs for Moore models. The route method
     // will throw an exception if an event is sent to a Mealy model.
-    for (typename Bag<MealyAtomic<X, T>*>::iterator m_iter = mealy.begin();
-         m_iter != mealy.end(); m_iter++) {
-        MealyAtomic<X, T>* model = *m_iter;
+    for (auto m_iter : mealy) {
+        MealyAtomic<X, T>* model = m_iter;
         // Route each event in y
         for (typename Bag<X>::iterator y_iter = model->outputs->begin();
              y_iter != model->outputs->end(); y_iter++) {
@@ -451,19 +447,17 @@ T Simulator<X, T>::computeNextState() {
          * a higher level, then the models will not have been deleted when
          * trying to schedule them.
          */
-        for (typename Bag<Devs<X, T>*>::iterator iter = added.begin();
-             iter != added.end(); iter++) {
-            schedule(*iter, t);
+        for (auto iter : added) {
+            schedule(iter, t);
         }
         // Done with the additions
         added.clear();
         // Remove the models that are in the removed set.
-        for (typename Bag<Devs<X, T>*>::iterator iter = removed.begin();
-             iter != removed.end(); iter++) {
-            clean_up(*iter);
-            unschedule_model(*iter);
+        for (auto iter : removed) {
+            clean_up(iter);
+            unschedule_model(iter);
             // Add to a sorted remove set for deletion
-            sorted_removed.insert(*iter);
+            sorted_removed.insert(iter);
         }
         // Done with the unsorted remove set
         removed.clear();
@@ -479,9 +473,8 @@ T Simulator<X, T>::computeNextState() {
              */
             if (model_to_remove->typeIsNetwork() != NULL) {
                 getAllChildren(model_to_remove->typeIsNetwork(), prev);
-                typename Set<Devs<X, T>*>::iterator iter = prev.begin();
-                for (; iter != prev.end(); iter++) {
-                    sorted_removed.erase(*iter);
+                for (auto iter : prev) {
+                    sorted_removed.erase(iter);
                 }
                 prev.clear();
             }
@@ -494,9 +487,8 @@ T Simulator<X, T>::computeNextState() {
     }  // End of the structure change
     // Cleanup and reschedule models that changed state in this iteration
     // and survived the structure change phase.
-    for (typename Bag<Atomic<X, T>*>::iterator iter = activated.begin();
-         iter != activated.end(); iter++) {
-        clean_up(*iter);
+    for (auto iter : activated) {
+        clean_up(iter);
     }
     // Empty the bags
     activated.clear();
@@ -518,9 +510,8 @@ void Simulator<X, T>::clean_up(Devs<X, T>* model) {
     } else {
         Set<Devs<X, T>*> components;
         model->typeIsNetwork()->getComponents(components);
-        for (typename Set<Devs<X, T>*>::iterator iter = components.begin();
-             iter != components.end(); iter++) {
-            clean_up(*iter);
+        for (auto iter : components) {
+            clean_up(iter);
         }
     }
     model->activated = false;
@@ -535,9 +526,8 @@ void Simulator<X, T>::unschedule_model(Devs<X, T>* model) {
     } else {
         Set<Devs<X, T>*> components;
         model->typeIsNetwork()->getComponents(components);
-        for (typename Set<Devs<X, T>*>::iterator iter = components.begin();
-             iter != components.end(); iter++) {
-            unschedule_model(*iter);
+        for (auto iter : components) {
+            unschedule_model(iter);
         }
     }
 }
@@ -561,9 +551,8 @@ void Simulator<X, T>::schedule(Devs<X, T>* model, T t) {
     } else {
         Set<Devs<X, T>*> components;
         model->typeIsNetwork()->getComponents(components);
-        typename Set<Devs<X, T>*>::iterator iter = components.begin();
-        for (; iter != components.end(); iter++) {
-            schedule(*iter, t);
+        for (auto iter : components) {
+            schedule(iter, t);
         }
     }
 }
@@ -611,33 +600,29 @@ void Simulator<X, T>::route(Network<X, T>* parent, Devs<X, T>* src, X &x) {
     }
     // Compute the set of receivers for this value
     // TODO: Does it make sense to build this object every call?
-    Bag<Event<X, T>> recvs;
-    parent->route(x, src, recvs);
+    Bag<Event<X, T>> receivers;
+    parent->route(x, src, receivers);
     // Deliver the event to each of its targets
     Atomic<X, T>* amodel = NULL;
-    typename Bag<Event<X, T>>::iterator recv_iter = recvs.begin();
-    for (; recv_iter != recvs.end(); recv_iter++) {
+
+    for (auto rr : receivers) {
         /*
          * If the destination is an atomic model, add the event to the IO bag
          * for that model and add model to the list of activated models
          */
-        amodel = (*recv_iter).model->typeIsAtomic();
+        amodel = rr.model->typeIsAtomic();
         if (amodel != NULL) {
-            inject_event(amodel, (*recv_iter).value);
-        }
-        // if this is an external output from the parent model
-        else if ((*recv_iter).model == parent) {
-            route(parent->getParent(), parent, (*recv_iter).value);
-        }
-        // otherwise it is an input to a coupled model
-        else {
-            this->notify_input_listeners((*recv_iter).model, (*recv_iter).value,
-                                         io_time);
-            route((*recv_iter).model->typeIsNetwork(), (*recv_iter).model,
-                  (*recv_iter).value);
+            inject_event(amodel, rr.value);
+        } else if (rr.model == parent) {
+            // This is an external output from the parent model
+            route(parent->getParent(), parent, rr.value);
+        } else {
+            // This is an input to a coupled model
+            this->notify_input_listeners(rr.model, rr.value, io_time);
+            route(rr.model->typeIsNetwork(), rr.model, rr.value);
         }
     }
-    recvs.clear();
+    receivers.clear();
 }
 
 template <class X, class T>
@@ -649,10 +634,10 @@ void Simulator<X, T>::getAllChildren(Network<X, T>* model,
     // Add all of the local level elements to s
     s.insert(tmp.begin(), tmp.end());
     // Find the components of type network and update s recursively
-    typename Set<Devs<X, T>*>::iterator iter;
-    for (iter = tmp.begin(); iter != tmp.end(); iter++) {
-        if ((*iter)->typeIsNetwork() != NULL) {
-            getAllChildren((*iter)->typeIsNetwork(), s);
+
+    for (auto iter : tmp) {
+        if (iter->typeIsNetwork() != NULL) {
+            getAllChildren(iter->typeIsNetwork(), s);
         }
     }
 }
@@ -660,9 +645,8 @@ void Simulator<X, T>::getAllChildren(Network<X, T>* model,
 template <class X, class T>
 Simulator<X, T>::~Simulator() {
     // Clean up the models with stale IO
-    typename Bag<Atomic<X, T>*>::iterator iter;
-    for (iter = activated.begin(); iter != activated.end(); iter++) {
-        clean_up(*iter);
+    for (auto iter : activated) {
+        clean_up(iter);
     }
 }
 

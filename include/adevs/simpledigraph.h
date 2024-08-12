@@ -103,10 +103,8 @@ void SimpleDigraph<VALUE, T>::route(const VALUE &x, Component* model,
     }
     // Otherwise, add the targets to the event bag
     Event<VALUE, T> event;
-    typename Bag<Component*>::iterator node_iter;
-    for (node_iter = (*graph_iter).second.begin();
-         node_iter != (*graph_iter).second.end(); node_iter++) {
-        event.model = *node_iter;
+    for (auto node_iter : (*graph_iter).second) {
+        event.model = node_iter;
         event.value = x;
         r.push_back(event);
     }
@@ -115,8 +113,8 @@ void SimpleDigraph<VALUE, T>::route(const VALUE &x, Component* model,
 template <class VALUE, class T>
 SimpleDigraph<VALUE, T>::~SimpleDigraph() {
     typename Set<Component*>::iterator i;
-    for (i = models.begin(); i != models.end(); i++) {
-        delete *i;
+    for (auto iter : models) {
+        delete iter;
     }
 }
 

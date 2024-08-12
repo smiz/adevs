@@ -44,10 +44,9 @@ class Set : public std::set<T> {};
 /// Set difference operator. Returns the set A-B.
 template <class T>
 void set_assign_diff(Bag<T> &result, Set<T> const &A, Set<T> const &B) {
-    typename Set<T>::const_iterator iter = A.begin();
-    for (; iter != A.end(); iter++) {
-        if (B.find(*iter) == B.end()) {
-            result.push_back(*iter);
+    for (auto iter : A) {
+        if (B.find(iter) == B.end()) {
+            result.push_back(iter);
         }
     }
 }

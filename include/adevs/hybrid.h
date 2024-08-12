@@ -647,9 +647,8 @@ class Hybrid : public Atomic<X, T> {
     /// Do not override. Invokes the ode_system output function as needed.
     void output_func(Bag<X> &yb) {
         if (!missedOutput.empty()) {
-            typename Bag<X>::iterator iter = missedOutput.begin();
-            for (; iter != missedOutput.end(); iter++) {
-                yb.push_back(*iter);
+            for (auto iter : missedOutput) {
+                yb.push_back(iter);
             }
             if (sigma == 0.0) {  // Confluent event
                 sys->output_func(q_trial, event, yb);

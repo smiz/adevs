@@ -157,20 +157,17 @@ void Digraph<VALUE, PORT, T>::route(IO_Type const &x, Component* model,
     }
     // Otherwise, add the targets to the event bag
     Event<IO_Type, T> event;
-    typename Bag<node>::iterator node_iter;
-    for (node_iter = (*graph_iter).second.begin();
-         node_iter != (*graph_iter).second.end(); node_iter++) {
-        event.model = (*node_iter).model;
-        event.value.port = (*node_iter).port;
+    for (auto node_iter : (*graph_iter).second) {
+        event.model = node_iter.model;
+        event.value.port = node_iter.port;
         event.value.value = x.value;
         r.push_back(event);
     }
 }
 template <class VALUE, class PORT, class T>
 Digraph<VALUE, PORT, T>::~Digraph() {
-    typename Set<Component*>::iterator i;
-    for (i = models.begin(); i != models.end(); i++) {
-        delete *i;
+    for (auto iter : models) {
+        delete iter;
     }
 }
 

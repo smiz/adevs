@@ -79,9 +79,8 @@ template <class X, class T>
 void AbstractSimulator<X, T>::notify_output_listeners(Devs<X, T>* model,
                                                       X const &value, T t) {
     Event<X, T> event(model, value);
-    typename Bag<EventListener<X, T>*>::iterator iter;
-    for (iter = listeners.begin(); iter != listeners.end(); iter++) {
-        (*iter)->outputEvent(event, t);
+    for (auto iter : listeners) {
+        iter->outputEvent(event, t);
     }
 }
 
@@ -89,17 +88,16 @@ template <class X, class T>
 void AbstractSimulator<X, T>::notify_input_listeners(Devs<X, T>* model,
                                                      X const &value, T t) {
     Event<X, T> event(model, value);
-    typename Bag<EventListener<X, T>*>::iterator iter;
-    for (iter = listeners.begin(); iter != listeners.end(); iter++) {
-        (*iter)->inputEvent(event, t);
+    for (auto iter : listeners) {
+        iter->inputEvent(event, t);
     }
 }
 
 template <class X, class T>
 void AbstractSimulator<X, T>::notify_state_listeners(Atomic<X, T>* model, T t) {
     typename Bag<EventListener<X, T>*>::iterator iter;
-    for (iter = listeners.begin(); iter != listeners.end(); iter++) {
-        (*iter)->stateChange(model, t);
+    for (auto iter : listeners) {
+        iter->stateChange(model, t);
     }
 }
 
