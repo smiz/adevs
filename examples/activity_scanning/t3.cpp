@@ -84,13 +84,16 @@ int main() {
     machine2 = make_shared<Machine>("M2");
     machine1->schedule(make_shared<Arrive>(machine1, 0));
     machine2->schedule(make_shared<Transfer>(machine1, machine2));
-    World* world = new World();
-    world->add(machine1.get());
-    world->add(machine2.get());
-    world->couple(machine1.get(), machine2.get());
-    world->couple(machine2.get(), machine1.get());
-    Simulator* sim = new Simulator(world);
+
+    shared_ptr<World> world = make_shared<World>();
+    world->add(machine1);
+    world->add(machine2);
+    world->couple(machine1, machine2);
+    world->couple(machine2, machine1);
+
+    shared_ptr<Simulator> sim = make_shared<Simulator>(world);
     sim->execUntil(10);
+
     cout << "Machine\tR\tP\tF" << endl;
     cout << "M1\t" << machine1->jobsReceived << "\t" << machine1->jobsPending
          << "\t" << machine1->jobsFinished << endl;

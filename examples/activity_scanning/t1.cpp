@@ -61,10 +61,13 @@ class Arrive : public Event {
 int main() {
     shared_ptr<Machine> machine = make_shared<Machine>();
     machine->schedule(make_shared<Arrive>(machine, 0));
-    World* world = new World();
-    world->add(machine.get());
-    Simulator* sim = new Simulator(world);
+
+    shared_ptr<World> world = make_shared<World>();
+    world->add(machine);
+
+    shared_ptr<Simulator> sim = make_shared<Simulator>(world);
     sim->execUntil(5);
+
     cout << "Machine\tR\tP\tF" << endl;
     cout << "M\t" << machine->jobsReceived << "\t" << machine->jobsPending
          << "\t" << machine->jobsFinished << endl;

@@ -5,9 +5,12 @@
 #include <gsl/gsl_rng.h>
 #include <cmath>
 #include <iostream>
+#include <memory>
 #include "adevs/adevs.h"
+
 using namespace std;
 using namespace adevs;
+
 
 bool const print_soln = false;
 static int num_agents = 2000000;
@@ -34,11 +37,12 @@ int Agent::pop = 0;
 
 double run() {
     double max_error = 0.0;
-    SimpleDigraph<int>* world = new SimpleDigraph<int>();
+    shared_ptr<SimpleDigraph<int>> world = make_shared<SimpleDigraph<int>>();
     for (int i = 0; i < num_agents; i++) {
         world->add(new Agent());
     }
-    Simulator<int>* sim = new Simulator<int>(world);
+
+    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(world);
     if (print_soln) {
         cout << 0 << " " << ((double)(Agent::getPop()) / (double)(num_agents))
              << " " << exp(-a * 0.0) << endl;
@@ -54,8 +58,6 @@ double run() {
             cout << t << " " << asoln << " " << tsoln << " " << err << endl;
         }
     }
-    delete sim;
-    delete world;
     return max_error;
 }
 

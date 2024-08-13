@@ -81,9 +81,10 @@ class Digraph : public Network<PortValue<VALUE, PORT>, T> {
     /// Construct a network with no components.
     Digraph() : Network<IO_Type, T>() {}
     /// Add a model to the network.
-    void add(Component* model);
+    void add(shared_ptr<Component> model);
     /// Couple the source model to the destination model.
-    void couple(Component* src, PORT srcPort, Component* dst, PORT dstPort);
+    void couple(shared_ptr<Component> src, PORT srcPort,
+                shared_ptr<Component> dst, PORT dstPort);
     /// Puts the network's components into to c
     void getComponents(set<Component*> &c);
     /// Route an event based on the coupling information.
@@ -119,23 +120,23 @@ class Digraph : public Network<PortValue<VALUE, PORT>, T> {
 };
 
 template <class VALUE, class PORT, class T>
-void Digraph<VALUE, PORT, T>::add(Component* model) {
+void Digraph<VALUE, PORT, T>::add(shared_ptr<Component> model) {
     assert(model != this);
-    models.insert(model);
+    models.insert(model.get());
     model->setParent(this);
 }
 
 template <class VALUE, class PORT, class T>
-void Digraph<VALUE, PORT, T>::couple(Component* src, PORT srcPort,
-                                     Component* dst, PORT dstPort) {
+void Digraph<VALUE, PORT, T>::couple(shared_ptr<Component> src, PORT srcPort,
+                                     shared_ptr<Component> dst, PORT dstPort) {
     if (src != this) {
-        add(src);
+        add(src.get());
     }
     if (dst != this) {
-        add(dst);
+        add(dst.get());
     }
-    node src_node(src, srcPort);
-    node dst_node(dst, dstPort);
+    node src_node(src.get(), srcPort);
+    node dst_node(dst.get(), dstPort);
     graph[src_node].push_back(dst_node);
 }
 
