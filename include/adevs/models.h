@@ -125,7 +125,7 @@ template <typename X, typename T = double>
 class Event {
   public:
     /// Constructor.  Sets the model to NULL.
-    Event() : model(NULL), value() {}
+    Event() : model(nullptr), value() {}
     /*
      * Constructor sets the model and value. The input into a
      * Simulator and in a network's routing method,
@@ -134,6 +134,10 @@ class Event {
      * source of the output value.
      */
     Event(Devs<X, T>* model, X const &value) : model(model), value(value) {}
+
+    Event(shared_ptr<Devs<X, T>> model, X const &value)
+        : model(model.get()), value(value) {}
+
     /// Copy constructor.
     Event(Event<X, T> const &src) : model(src.model), value(src.value) {}
     /// Assignment operator.

@@ -2,13 +2,13 @@
 #include "adevs/adevs.h"
 using namespace adevs;
 
-template <class X>
+template <class OutputType>
 class template_test {
   public:
-    X* to_array(Bag<X> const &b) {
+    OutputType* to_array(Bag<OutputType> const &b) {
         int i = 0;
-        X* array = new X[b.size()];
-        typename Bag<X>::const_iterator iter = b.begin();
+        OutputType* array = new OutputType[b.size()];
+        typename Bag<OutputType>::const_iterator iter = b.begin();
         for (; iter != b.end(); iter++) {
             array[i] = *iter;
             i++;

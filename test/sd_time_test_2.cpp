@@ -1,8 +1,11 @@
 #include <cassert>
 #include <iostream>
+#include <memory>
 #include "adevs/adevs.h"
+
 using namespace std;
 using namespace adevs;
+
 
 class Model : public Atomic<int, sd_time<int>> {
   public:
@@ -78,40 +81,39 @@ class MyEventListener : public EventListener<int, sd_time<int>> {
 
 void test1() {
     cout << "TEST 1" << endl;
-    Model* model = new Model("model");
-    Simulator<int, sd_time<int>>* sim = new Simulator<int, sd_time<int>>(model);
-    MyEventListener* listener = new MyEventListener();
+    shared_ptr<Model> model = make_shared<Model>("model");
+    shared_ptr<Simulator<int, sd_time<int>>> sim =
+        make_shared<Simulator<int, sd_time<int>>>(model);
+    shared_ptr<MyEventListener> listener = make_shared<MyEventListener>();
     sim->addEventListener(listener);
     while (sim->nextEventTime() < sd_time<int>(10, 0)) {
         sd_time<int> tnew =
             sim->nextEventTime() + adevs_epsilon<sd_time<int>>();
         assert(sim->execNextEvent() == tnew);
     }
-    delete sim;
-    delete model;
-    delete listener;
 }
 
 void test2() {
     cout << "TEST 2" << endl;
-    Model* A = new Model("A");
-    Passive* B = new Passive("B");
-    SimpleDigraph<int, sd_time<int>>* model =
-        new SimpleDigraph<int, sd_time<int>>();
+    shared_ptr<Model> A = make_shared<Model>("A");
+    shared_ptr<Passive> B = make_shared<Passive>("B");
+
+    shared_ptr<SimpleDigraph<int, sd_time<int>>> model =
+        make_shared<SimpleDigraph<int, sd_time<int>>>();
     model->add(A);
     model->add(B);
     model->couple(A, B);
-    Simulator<int, sd_time<int>>* sim = new Simulator<int, sd_time<int>>(model);
-    MyEventListener* listener = new MyEventListener();
+
+    shared_ptr<Simulator<int, sd_time<int>>> sim =
+        make_shared<Simulator<int, sd_time<int>>>(model);
+    shared_ptr<MyEventListener> listener = make_shared<MyEventListener>();
     sim->addEventListener(listener);
+
     while (sim->nextEventTime() < sd_time<int>(10, 0)) {
         sd_time<int> tnew =
             sim->nextEventTime() + adevs_epsilon<sd_time<int>>();
         assert(sim->execNextEvent() == tnew);
     }
-    delete sim;
-    delete model;
-    delete listener;
 }
 
 int main() {

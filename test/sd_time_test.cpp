@@ -1,8 +1,11 @@
 #include <cassert>
 #include <iostream>
+#include <memory>
 #include "adevs/adevs.h"
+
 using namespace std;
 using namespace adevs;
+
 
 class Incr : public Atomic<int, sd_time<double>> {
   public:
@@ -52,7 +55,7 @@ class MyEventListener : public EventListener<int, sd_time<double>> {
     }
     void stateChange(Atomic<int, sd_time<double>>* model, sd_time<double> t) {
         Incr* incr = dynamic_cast<Incr*>(model);
-        if (incr != NULL) {
+        if (incr != nullptr) {
             cout << "t = " << t << " , q = " << incr->get_q()
                  << " , ta = " << incr->ta() << endl;
         } else {
@@ -74,36 +77,36 @@ void test0() {
 
 void test1() {
     cout << "TEST 1" << endl;
-    Incr* model = new Incr();
-    Simulator<int, sd_time<>>* sim = new Simulator<int, sd_time<>>(model);
-    MyEventListener* listener = new MyEventListener();
+    shared_ptr<Incr> model = make_shared<Incr>();
+    shared_ptr<Simulator<int, sd_time<>>> sim =
+        make_shared<Simulator<int, sd_time<>>>(model);
+    shared_ptr<MyEventListener> listener = make_shared<MyEventListener>();
     sim->addEventListener(listener);
     while (sim->nextEventTime() < sd_time<>(10.0, 0)) {
         sim->execNextEvent();
     }
-    delete sim;
-    delete model;
-    delete listener;
     cout << "TEST 1 PASSED" << endl;
 }
 
 void test2() {
     cout << "TEST 2" << endl;
-    Incr* a = new Incr();
-    Watch* b = new Watch();
-    SimpleDigraph<int, sd_time<>>* model = new SimpleDigraph<int, sd_time<>>();
+    shared_ptr<Incr> a = make_shared<Incr>();
+    shared_ptr<Watch> b = make_shared<Watch>();
+
+    shared_ptr<SimpleDigraph<int, sd_time<>>> model =
+        make_shared<SimpleDigraph<int, sd_time<>>>();
     model->add(a);
     model->add(b);
     model->couple(a, b);
-    Simulator<int, sd_time<>>* sim = new Simulator<int, sd_time<>>(model);
-    MyEventListener* listener = new MyEventListener();
+
+    shared_ptr<Simulator<int, sd_time<>>> sim =
+        make_shared<Simulator<int, sd_time<>>>(model);
+    shared_ptr<MyEventListener> listener = make_shared<MyEventListener>();
+
     sim->addEventListener(listener);
     while (sim->nextEventTime() < sd_time<>(10.0, 0)) {
         sim->execNextEvent();
     }
-    delete sim;
-    delete model;
-    delete listener;
     cout << "TEST 2 PASSED" << endl;
 }
 

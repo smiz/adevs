@@ -30,9 +30,13 @@
  */
 #ifndef __adevs_abstract_simulator_h_
 #define __adevs_abstract_simulator_h_
+#include <memory>
 #include "adevs/bag.h"
 #include "adevs/event_listener.h"
 #include "adevs/models.h"
+
+using namespace std;
+
 
 namespace adevs {
 
@@ -51,12 +55,16 @@ class AbstractSimulator {
      * produced by all components within the model.
      * @param l The listener to be notified
      */
-    void addEventListener(EventListener<X, T>* l) { listeners.push_back(l); }
+    void addEventListener(shared_ptr<EventListener<X, T>> l) {
+        listeners.push_back(l);
+    }
     /*
      * Remove an event listener that was previously added.
      * @param l The listener to be removed
      */
-    void removeEventListener(EventListener<X, T>* l) { listeners.erase(l); }
+    void removeEventListener(shared_ptr<EventListener<X, T>> l) {
+        listeners.erase(l);
+    }
     /// Get the model's next event time
     virtual T nextEventTime() = 0;
     /// Execute the simulator until the next event time is greater than tend
@@ -72,7 +80,7 @@ class AbstractSimulator {
 
   private:
     /// Eternal event listeners
-    Bag<EventListener<X, T>*> listeners;
+    Bag<shared_ptr<EventListener<X, T>>> listeners;
 };
 
 template <class X, class T>
@@ -95,7 +103,6 @@ void AbstractSimulator<X, T>::notify_input_listeners(Devs<X, T>* model,
 
 template <class X, class T>
 void AbstractSimulator<X, T>::notify_state_listeners(Atomic<X, T>* model, T t) {
-    typename Bag<EventListener<X, T>*>::iterator iter;
     for (auto iter : listeners) {
         iter->stateChange(model, t);
     }

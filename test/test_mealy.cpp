@@ -1,9 +1,12 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
+#include <memory>
 #include "adevs/adevs.h"
+
 using namespace std;
 using namespace adevs;
+
 
 class Listener : public EventListener<int> {
   public:
@@ -85,14 +88,14 @@ class Trigger : public MealyAtomic<int> {
 };
 
 void test1() {
-    SimpleDigraph<int>* model = new SimpleDigraph<int>();
-    Trigger* trigger = new Trigger();
-    Periodic* periodic = new Periodic(sqrt(2.0));
+    shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
+    shared_ptr<Trigger> trigger = make_shared<Trigger>();
+    shared_ptr<Periodic> periodic = make_shared<Periodic>(sqrt(2.0));
     model->add(trigger);
     model->add(periodic);
     model->couple(periodic, trigger);
-    Listener* l = new Listener();
-    Simulator<int>* sim = new Simulator<int>(model);
+    shared_ptr<Listener> l = make_shared<Listener>();
+    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
     sim->addEventListener(l);
     while (sim->nextEventTime() < adevs_inf<double>()) {
         sim->execNextEvent();
@@ -101,23 +104,20 @@ void test1() {
         l->c = l->s = 0;
         l->value = -1;
     }
-    delete sim;
-    delete l;
-    delete model;
 }
 
 void test2() {
-    SimpleDigraph<int>* model = new SimpleDigraph<int>();
-    Trigger* triggera = new Trigger();
-    Trigger* triggerb = new Trigger();
-    Periodic* periodic = new Periodic(sqrt(2.0));
+    shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
+    shared_ptr<Trigger> triggera = make_shared<Trigger>();
+    shared_ptr<Trigger> triggerb = make_shared<Trigger>();
+    shared_ptr<Periodic> periodic = make_shared<Periodic>(sqrt(2.0));
     model->add(triggera);
     model->add(triggerb);
     model->add(periodic);
     model->couple(periodic, triggera);
     model->couple(periodic, triggerb);
-    Listener* l = new Listener();
-    Simulator<int>* sim = new Simulator<int>(model);
+    shared_ptr<Listener> l = make_shared<Listener>();
+    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
     sim->addEventListener(l);
     while (sim->nextEventTime() < adevs_inf<double>()) {
         sim->execNextEvent();
@@ -126,17 +126,14 @@ void test2() {
         l->c = l->s = 0;
         l->value = -1;
     }
-    delete sim;
-    delete l;
-    delete model;
 }
 
 void test3() {
-    SimpleDigraph<int>* model = new SimpleDigraph<int>();
-    Trigger* triggera = new Trigger();
-    Trigger* triggerb = new Trigger();
-    Periodic* periodic = new Periodic(sqrt(2.0));
-    Receiver* rx = new Receiver();
+    shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
+    shared_ptr<Trigger> triggera = make_shared<Trigger>();
+    shared_ptr<Trigger> triggerb = make_shared<Trigger>();
+    shared_ptr<Periodic> periodic = make_shared<Periodic>(sqrt(2.0));
+    shared_ptr<Receiver> rx = make_shared<Receiver>();
     model->add(triggera);
     model->add(triggerb);
     model->add(periodic);
@@ -145,8 +142,8 @@ void test3() {
     model->couple(periodic, triggerb);
     model->couple(triggera, rx);
     model->couple(triggerb, rx);
-    Listener* l = new Listener();
-    Simulator<int>* sim = new Simulator<int>(model);
+    shared_ptr<Listener> l = make_shared<Listener>();
+    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
     sim->addEventListener(l);
     while (sim->nextEventTime() < adevs_inf<double>()) {
         int c = rx->get_c();
@@ -157,24 +154,21 @@ void test3() {
         l->value = -1;
         assert(rx->get_c() == c + 2);
     }
-    delete sim;
-    delete l;
-    delete model;
 }
 
 void test4() {
     bool except = false;
-    SimpleDigraph<int>* model = new SimpleDigraph<int>();
-    Trigger* triggera = new Trigger();
-    Trigger* triggerb = new Trigger();
-    Periodic* periodic = new Periodic(sqrt(2.0));
+    shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
+    shared_ptr<Trigger> triggera = make_shared<Trigger>();
+    shared_ptr<Trigger> triggerb = make_shared<Trigger>();
+    shared_ptr<Periodic> periodic = make_shared<Periodic>(sqrt(2.0));
     model->add(triggera);
     model->add(triggerb);
     model->add(periodic);
     model->couple(periodic, triggera);
     model->couple(triggera, triggerb);
     model->couple(triggerb, triggera);
-    Simulator<int>* sim = new Simulator<int>(model);
+    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
     while (sim->nextEventTime() < adevs_inf<double>()) {
         try {
             sim->execNextEvent();
@@ -184,17 +178,15 @@ void test4() {
         }
     }
     assert(except);
-    delete sim;
-    delete model;
 }
 
 void test5() {
     cout << "TEST 5" << endl;
-    SimpleDigraph<int>* model = new SimpleDigraph<int>();
-    Trigger* triggera = new Trigger();
-    Trigger* triggerb = new Trigger();
-    Periodic* periodic = new Periodic(1.0);
-    Receiver* rx = new Receiver();
+    shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
+    shared_ptr<Trigger> triggera = make_shared<Trigger>();
+    shared_ptr<Trigger> triggerb = make_shared<Trigger>();
+    shared_ptr<Periodic> periodic = make_shared<Periodic>(1.0);
+    shared_ptr<Receiver> rx = make_shared<Receiver>();
     model->add(triggera);
     model->add(triggerb);
     model->add(periodic);
@@ -203,8 +195,8 @@ void test5() {
     model->couple(periodic, triggerb);
     model->couple(triggera, rx);
     model->couple(triggerb, rx);
-    Listener* l = new Listener();
-    Simulator<int>* sim = new Simulator<int>(model);
+    shared_ptr<Listener> l = make_shared<Listener>();
+    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
     sim->addEventListener(l);
     while (sim->nextEventTime() < adevs_inf<double>()) {
         int c = rx->get_c();
@@ -216,21 +208,18 @@ void test5() {
         l->value = -1;
         assert(rx->get_c() == c + 2);
     }
-    delete sim;
-    delete l;
-    delete model;
     cout << "TEST 5 PASSED" << endl;
 }
 
 void test6() {
     cout << "TEST 6" << endl;
-    SimpleDigraph<int>* model = new SimpleDigraph<int>();
-    Periodic* periodic = new Periodic(10.0);
-    Trigger* trigger = new Trigger();
+    shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
+    shared_ptr<Periodic> periodic = make_shared<Periodic>(10.0);
+    shared_ptr<Trigger> trigger = make_shared<Trigger>();
     model->add(periodic);
     model->add(trigger);
     model->couple(periodic, trigger);
-    Simulator<int>* sim = new Simulator<int>(model);
+    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
     while (sim->nextEventTime() < 12.0) {
         sim->execNextEvent();
     }

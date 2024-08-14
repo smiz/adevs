@@ -170,17 +170,15 @@ void test10() {
     bogus_atomic m[20];
     Schedule<char> q;
     Bag<Atomic<char>*> imm;
-    test10visitor* visitor = new test10visitor(imm);
-    q.visitImminent(visitor);
-    delete visitor;
+    shared_ptr<test10visitor> visitor = make_shared<test10visitor>(imm);
+    q.visitImminent(visitor.get());
     assert(imm.empty());
     for (i = 0; i < 10; i++) {
         q.schedule(&(m[i]), 1.0);
     }
     assert(q.minPriority() == 1.0);
-    visitor = new test10visitor(imm);
-    q.visitImminent(visitor);
-    delete visitor;
+    visitor = make_shared<test10visitor>(imm);
+    q.visitImminent(visitor.get());
     assert(imm.size() == 10);
     // for (i = 0; i < 10; i++) {
     //     assert(imm.find(&m[i]) != imm.end());
@@ -189,9 +187,8 @@ void test10() {
     for (i = 10; i < 20; i++) {
         q.schedule(&(m[i]), 2.0);
     }
-    visitor = new test10visitor(imm);
-    q.visitImminent(visitor);
-    delete visitor;
+    visitor = make_shared<test10visitor>(imm);
+    q.visitImminent(visitor.get());
     assert(imm.size() == 10);
     // for (i = 0; i < 10; i++) {
     //     assert(imm.find(&m[i]) != imm.end());
