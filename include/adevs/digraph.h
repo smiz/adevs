@@ -121,7 +121,7 @@ class Digraph : public Network<PortValue<VALUE, PORT>, T> {
 
 template <class VALUE, class PORT, class T>
 void Digraph<VALUE, PORT, T>::add(shared_ptr<Component> model) {
-    assert(model != this);
+    assert(model.get() != this);
     models.insert(model.get());
     model->setParent(this);
 }
@@ -129,11 +129,11 @@ void Digraph<VALUE, PORT, T>::add(shared_ptr<Component> model) {
 template <class VALUE, class PORT, class T>
 void Digraph<VALUE, PORT, T>::couple(shared_ptr<Component> src, PORT srcPort,
                                      shared_ptr<Component> dst, PORT dstPort) {
-    if (src != this) {
-        add(src.get());
+    if (src.get() != this) {
+        add(src);
     }
-    if (dst != this) {
-        add(dst.get());
+    if (dst.get() != this) {
+        add(dst);
     }
     node src_node(src.get(), srcPort);
     node dst_node(dst.get(), dstPort);
@@ -166,11 +166,7 @@ void Digraph<VALUE, PORT, T>::route(IO_Type const &x, Component* model,
     }
 }
 template <class VALUE, class PORT, class T>
-Digraph<VALUE, PORT, T>::~Digraph() {
-    for (auto iter : models) {
-        delete iter;
-    }
-}
+Digraph<VALUE, PORT, T>::~Digraph() {}
 
 }  // namespace adevs
 
