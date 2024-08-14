@@ -1,23 +1,32 @@
 #ifndef __node_h_
 #define __node_h_
+
 #include <cassert>
 #include <cstdio>
 #include <iostream>
+#include <memory>
 #include "adevs/adevs.h"
+
 
 struct token_t {
     int value;
     token_t(int value = 0) : value(value) {}
 };
 
-typedef adevs::PortValue<token_t*> PortValue;
+using PortValue = adevs::PortValue<shared_ptr<token_t>>;
+using Network = adevs::Digraph<shared_ptr<token_t>>;
+using Model = adevs::Devs<PortValue>;
+using Simulator = adevs::Simulator<PortValue>;
+using Devs = adevs::Devs<PortValue>;
 
-class node : public adevs::Atomic<PortValue> {
+
+class Node : public adevs::Atomic<PortValue> {
   public:
     static int const in;
     static int const out;
+    //enum class Port { IN = 0, OUT = 1 };
 
-    node(int ID, int holdtime, token_t* token)
+    Node(int ID, int holdtime, shared_ptr<token_t> token)
         : adevs::Atomic<PortValue>(),
           ID(ID),
           token(token),
@@ -29,7 +38,9 @@ class node : public adevs::Atomic<PortValue> {
             sigma = holdtime;
         }
     }
+
     double ta() { return sigma; }
+
     void delta_int() {
         assert(token != NULL);
         t += ta();
@@ -37,38 +48,44 @@ class node : public adevs::Atomic<PortValue> {
         out_token = token;
         sigma = DBL_MAX;
     }
+
     void delta_ext(double e, adevs::Bag<PortValue> const &x) {
         t += e;
         assert(x.size() == 1);
-        token = static_cast<token_t*>((*(x.begin())).value);
+        token = static_cast<shared_ptr<token_t>>((*(x.begin())).value);
         if (out_token == NULL) {
             out_token = token;
         }
         sigma = holdtime;
         printf("%d got %d @ t = %.0f\n", ID, token->value, t);
     }
+
     void delta_conf(adevs::Bag<PortValue> const &x) {
         t += ta();
         assert(x.size() == 1);
         printf("%d sent %d @ t = %.0f\n", ID, token->value, t);
-        out_token = token = static_cast<token_t*>((*(x.begin())).value);
+        out_token = token =
+            static_cast<shared_ptr<token_t>>((*(x.begin())).value);
         sigma = holdtime;
         printf("%d got %d @ t = %.0f\n", ID, token->value, t);
     }
+
     void output_func(adevs::Bag<PortValue> &y) {
         PortValue pv(out, out_token);
         y.push_back(pv);
     }
+
     void gc_output(adevs::Bag<PortValue> &) {}
-    ~node() {}
 
   private:
     int ID;
-    token_t *token, *out_token;
+    shared_ptr<token_t> token;
+    shared_ptr<token_t> out_token;
+
     double holdtime, sigma, t;
 };
 
-int const node::in(0);
-int const node::out(1);
+int const Node::in(0);
+int const Node::out(1);
 
 #endif

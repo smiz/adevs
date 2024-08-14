@@ -1,12 +1,13 @@
 # Add tests in their own subdirectories
 
 # subdir('dyn_devs')
+# subdir('fmi')
 # subdir('gcd')
-# subdir('gpt')
+subdir('gpt')
 subdir('listener')
 # subdir('ode')
-# subdir('poly')
-# subdir('tokenring')
+subdir('poly')
+subdir('tokenring')
 # subdir('wrapper')
 subdir('zero_time')
 
@@ -23,10 +24,6 @@ test('bag', test_bag)
 
 test_double_fcmp = executable('double_fcmp', 'double_fcmp_test.cpp', include_directories: adevs)
 test('double_fcmp', test_double_fcmp)
-
-# # TODO: Linking/compiling issue
-# test_mt_test = executable('mt_test', 'mt_test.cpp', include_directories: adevs)
-# test('mt_test', test_mt_test)
 
 test_sched = executable('sched', 'sched_test.cpp', include_directories: adevs)
 test('sched', test_sched)
