@@ -11,7 +11,7 @@ class Tank : public adevs::Network<SimEvent> {
     // the display at the given interval
     Tank(double freq, double x0, double y0, double theta0, double cint);
     // Get the components of the computer
-    void getComponents(adevs::Set<adevs::Devs<SimEvent>*> &c);
+    void getComponents(set<adevs::Devs<SimEvent>*> &c);
     // Route events within the computer
     void route(SimEvent const &value, adevs::Devs<SimEvent>* model,
                adevs::Bag<adevs::Event<SimEvent>> &r);

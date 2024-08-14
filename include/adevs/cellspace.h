@@ -31,6 +31,7 @@
 #ifndef __adevs_cellspace_h_
 #define __adevs_cellspace_h_
 #include <cstdlib>
+#include <set>
 #include "adevs/adevs.h"
 
 namespace adevs {
@@ -104,7 +105,7 @@ class CellSpace : public Network<CellEvent<X>, T> {
     /// Get the depth of the CellSpace.
     long int getDepth() const { return d; }
     /// Get the model's set of components
-    void getComponents(Set<Cell*> &c);
+    void getComponents(set<Cell*> &c);
     /// Route events within the Cellspace
     void route(CellEvent<X> const &event, Cell* model,
                Bag<Event<CellEvent<X>, T>> &r);
@@ -155,7 +156,7 @@ CellSpace<X, T>::~CellSpace() {
 
 // Implementation of the getComponents() method
 template <class X, class T>
-void CellSpace<X, T>::getComponents(Set<Cell*> &c) {
+void CellSpace<X, T>::getComponents(set<Cell*> &c) {
     // Add all non-null entries to the set c
     for (long int x = 0; x < w; x++) {
         for (long int y = 0; y < h; y++) {

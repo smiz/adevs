@@ -4,6 +4,7 @@
  */
 #include <cmath>
 #include <iostream>
+#include <set>
 #include <vector>
 #include "adevs/adevs.h"
 using namespace std;
@@ -136,7 +137,7 @@ class Grid : public Network<io_type, sd_time<>> {
             }
         }
     }
-    void getComponents(Set<Devs<io_type, sd_time<>>*> &c) {
+    void getComponents(set<Devs<io_type, sd_time<>>*> &c) {
         for (int i = 0; i < XSIZE; i++) {
             for (int j = 0; j < YSIZE; j++) {
                 c.insert(grid[i][j]);

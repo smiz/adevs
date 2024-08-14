@@ -33,12 +33,12 @@
 #include <cassert>
 #include <cstdlib>
 #include <list>
+#include <set>
 #include "adevs/abstract_simulator.h"
 #include "adevs/bag.h"
 #include "adevs/event_listener.h"
 #include "adevs/models.h"
 #include "adevs/sched.h"
-#include "adevs/set.h"
 
 namespace adevs {
 
@@ -161,61 +161,7 @@ class Simulator : public AbstractSimulator<X, T>,
     T io_time;
     Bag<MealyAtomic<X, T>*> mealy;
 
-    // Sets for computing structure changes.
-    Bag<Devs<X, T>*> added;
-    Bag<Devs<X, T>*> removed;
-    Set<Devs<X, T>*> next;
-    Set<Devs<X, T>*> prev;
-    // Model transition functions are evaluated from the bottom up!
-    struct bottom_to_top_depth_compare {
-        bool operator()(Network<X, T> const* m1,
-                        Network<X, T> const* m2) const {
-            unsigned long int d1 = 0, d2 = 0;
-            // Compute depth of m1
-            Network<X, T> const* m = m1->getParent();
-            while (m != NULL) {
-                d1++;
-                m = m->getParent();
-            }
-            // Compute depth of m2
-            m = m2->getParent();
-            while (m != NULL) {
-                d2++;
-                m = m->getParent();
-            }
-            // Models at the same depth are sorted by name
-            if (d1 == d2) {
-                return m1 < m2;
-            }
-            // Otherwise, sort by depth
-            return d1 > d2;
-        }
-    };
-    struct top_to_bottom_depth_compare {
-        bool operator()(Devs<X, T> const* m1, Devs<X, T> const* m2) const {
-            unsigned long int d1 = 0, d2 = 0;
-            // Compute depth of m1
-            Network<X, T> const* m = m1->getParent();
-            while (m != NULL) {
-                d1++;
-                m = m->getParent();
-            }
-            // Compute depth of m2
-            m = m2->getParent();
-            while (m != NULL) {
-                d2++;
-                m = m->getParent();
-            }
-            // Models at the same depth are sorted by name
-            if (d1 == d2) {
-                return m1 < m2;
-            }
-            // Otherwise, sort by depth
-            return d1 < d2;
-        }
-    };
-    std::set<Network<X, T>*, bottom_to_top_depth_compare> model_func_eval_set;
-    std::set<Devs<X, T>*, top_to_bottom_depth_compare> sorted_removed;
+
     /*
      * Recursively add the model and its elements to the schedule
      * using t as the time of last event.
@@ -243,7 +189,7 @@ class Simulator : public AbstractSimulator<X, T>,
     /*
      * Construct the complete descendant set of a network model and store it in s.
      */
-    void getAllChildren(Network<X, T>* model, Set<Devs<X, T>*> &s);
+    void getAllChildren(Network<X, T>* model, set<Devs<X, T>*> &s);
     /*
      * Visit method inhereted from ImminentVisitor
      */
@@ -406,91 +352,14 @@ T Simulator<X, T>::computeNextState() {
         // Notify listeners
         this->notify_state_listeners(model, tQ);
         // Check for a model transition
-        if (model->model_transition() && model->getParent() != NULL) {
-            model_func_eval_set.insert(model->getParent());
-        }
+
         // Adjust position in the schedule
         schedule(model, tQ);
+        clean_up(model);
     }
-    /*
-     * The new states are in effect at t + eps so advance t
-     */
+
+    // The new states are in effect at t + eps so advance t
     t = tQ;
-    /*
-     * Compute model transitions and build up the prev (pre-transition)
-     * and next (post-transition) component sets. These sets are built
-     * up from only the models that have the model_transition function
-     * evaluated.
-     */
-    if (model_func_eval_set.empty() == false) {
-        while (!model_func_eval_set.empty()) {
-            Network<X, T>* network_model = *(model_func_eval_set.begin());
-            model_func_eval_set.erase(model_func_eval_set.begin());
-            getAllChildren(network_model, prev);
-            if (network_model->model_transition() &&
-                network_model->getParent() != NULL) {
-                model_func_eval_set.insert(network_model->getParent());
-            }
-            getAllChildren(network_model, next);
-        }
-        // Find the set of models that were added.
-        set_assign_diff(added, next, prev);
-        // Find the set of models that were removed
-        set_assign_diff(removed, prev, next);
-        // Intersection of added and removed is always empty, so no need to look
-        // for models in both (an earlier version of the code did this).
-        next.clear();
-        prev.clear();
-        /*
-         * The model adds are processed first.  This is done so that, if any
-         * of the added models are components something that was removed at
-         * a higher level, then the models will not have been deleted when
-         * trying to schedule them.
-         */
-        for (auto iter : added) {
-            schedule(iter, t);
-        }
-        // Done with the additions
-        added.clear();
-        // Remove the models that are in the removed set.
-        for (auto iter : removed) {
-            clean_up(iter);
-            unschedule_model(iter);
-            // Add to a sorted remove set for deletion
-            sorted_removed.insert(iter);
-        }
-        // Done with the unsorted remove set
-        removed.clear();
-        // Delete the sorted removed models
-        while (!sorted_removed.empty()) {
-            // Get the model to erase
-            Devs<X, T>* model_to_remove = *(sorted_removed.begin());
-            // Remove the model
-            sorted_removed.erase(sorted_removed.begin());
-            /*
-             * If this model has children, then remove them from the
-             * deletion set. This will avoid double delete problems.
-             */
-            if (model_to_remove->typeIsNetwork() != NULL) {
-                getAllChildren(model_to_remove->typeIsNetwork(), prev);
-                for (auto iter : prev) {
-                    sorted_removed.erase(iter);
-                }
-                prev.clear();
-            }
-            // Delete the model and its children
-            delete model_to_remove;
-        }
-        // Removed sets should be empty now
-        assert(prev.empty());
-        assert(sorted_removed.empty());
-    }  // End of the structure change
-    // Cleanup and reschedule models that changed state in this iteration
-    // and survived the structure change phase.
-    for (auto iter : activated) {
-        clean_up(iter);
-    }
-    // Empty the bags
     activated.clear();
     // Return the current simulation time
     return t;
@@ -508,7 +377,7 @@ void Simulator<X, T>::clean_up(Devs<X, T>* model) {
             amodel->outputs->clear();
         }
     } else {
-        Set<Devs<X, T>*> components;
+        set<Devs<X, T>*> components;
         model->typeIsNetwork()->getComponents(components);
         for (auto iter : components) {
             clean_up(iter);
@@ -524,7 +393,7 @@ void Simulator<X, T>::unschedule_model(Devs<X, T>* model) {
         sched.schedule(model->typeIsAtomic(), adevs_inf<T>());
         activated.remove(model->typeIsAtomic());
     } else {
-        Set<Devs<X, T>*> components;
+        set<Devs<X, T>*> components;
         model->typeIsNetwork()->getComponents(components);
         for (auto iter : components) {
             unschedule_model(iter);
@@ -549,7 +418,7 @@ void Simulator<X, T>::schedule(Devs<X, T>* model, T t) {
             sched.schedule(a, tNext);
         }
     } else {
-        Set<Devs<X, T>*> components;
+        set<Devs<X, T>*> components;
         model->typeIsNetwork()->getComponents(components);
         for (auto iter : components) {
             schedule(iter, t);
@@ -627,8 +496,8 @@ void Simulator<X, T>::route(Network<X, T>* parent, Devs<X, T>* src, X &x) {
 
 template <class X, class T>
 void Simulator<X, T>::getAllChildren(Network<X, T>* model,
-                                     Set<Devs<X, T>*> &s) {
-    Set<Devs<X, T>*> tmp;
+                                     set<Devs<X, T>*> &s) {
+    set<Devs<X, T>*> tmp;
     // Get the component set
     model->getComponents(tmp);
     // Add all of the local level elements to s

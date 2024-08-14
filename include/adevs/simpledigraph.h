@@ -55,7 +55,7 @@ class SimpleDigraph : public Network<VALUE, T> {
     /// Couple the source model to the destination model.
     void couple(Component* src, Component* dst);
     /// Puts the network's set of components into c
-    void getComponents(Set<Component*> &c);
+    void getComponents(set<Component*> &c);
     /// Route an event according to the network's couplings
     void route(const VALUE &x, Component* model, Bag<Event<VALUE, T>> &r);
     /// Destructor.  Destroys all of the component models.
@@ -63,7 +63,7 @@ class SimpleDigraph : public Network<VALUE, T> {
 
   private:
     // The set of components
-    Set<Component*> models;
+    set<Component*> models;
     // Coupling information
     std::map<Component*, Bag<Component*>> graph;
 };
@@ -87,7 +87,7 @@ void SimpleDigraph<VALUE, T>::couple(Component* src, Component* dst) {
 }
 
 template <class VALUE, class T>
-void SimpleDigraph<VALUE, T>::getComponents(Set<Component*> &c) {
+void SimpleDigraph<VALUE, T>::getComponents(set<Component*> &c) {
     c = models;
 }
 
@@ -112,7 +112,7 @@ void SimpleDigraph<VALUE, T>::route(const VALUE &x, Component* model,
 
 template <class VALUE, class T>
 SimpleDigraph<VALUE, T>::~SimpleDigraph() {
-    typename Set<Component*>::iterator i;
+    typename set<Component*>::iterator i;
     for (auto iter : models) {
         delete iter;
     }

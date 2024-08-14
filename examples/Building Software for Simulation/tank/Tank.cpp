@@ -1,6 +1,8 @@
 #include "Tank.h"
 #include <cassert>
 #include <iostream>
+#include <set>
+
 using namespace std;
 using namespace adevs;
 
@@ -12,7 +14,7 @@ Tank::Tank(double freq, double x0, double y0, double theta0, double cint)
     physics.setParent(this);
 }
 
-void Tank::getComponents(Set<Devs<SimEvent>*> &c) {
+void Tank::getComponents(set<Devs<SimEvent>*> &c) {
     c.insert(&computer);
     c.insert(&physics);
 }

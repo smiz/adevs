@@ -32,10 +32,13 @@
 #define __adevs_models_h_
 #include <cstdlib>
 #include <memory>
+#include <set>
 #include "adevs/bag.h"
 #include "adevs/exception.h"
-#include "adevs/set.h"
 #include "adevs/time.h"
+
+using namespace std;
+
 
 namespace adevs {
 
@@ -276,7 +279,7 @@ class Network : public Devs<X, T> {
      * Network model itself.
      * @param c An empty set to the filled with the Network's components.
      */
-    virtual void getComponents(Set<Devs<X, T>*> &c) = 0;
+    virtual void getComponents(set<Devs<X, T>*> &c) = 0;
     /*
      * This method is called by the Simulator to route an output value
      * produced by a model. This method should fill the bag r

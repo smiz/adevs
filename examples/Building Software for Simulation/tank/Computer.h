@@ -1,5 +1,6 @@
 #ifndef Computer_h_
 #define Computer_h_
+#include <set>
 #include "InterruptHandler.h"
 #include "PacketProcessing.h"
 
@@ -11,7 +12,7 @@ class Computer : public adevs::Network<SimEvent> {
     // specified frequency.
     Computer(double freq);
     // Get the components of the computer
-    void getComponents(adevs::Set<adevs::Devs<SimEvent>*> &c);
+    void getComponents(set<adevs::Devs<SimEvent>*> &c);
     // Route events within the computer
     void route(SimEvent const &value, adevs::Devs<SimEvent>* model,
                adevs::Bag<adevs::Event<SimEvent>> &r);

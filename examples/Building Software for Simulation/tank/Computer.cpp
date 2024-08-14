@@ -1,5 +1,6 @@
 #include "Computer.h"
 #include <cassert>
+#include <set>
 using namespace adevs;
 
 Computer::Computer(double freq) : Network<SimEvent>(), p(), i(freq) {
@@ -7,7 +8,7 @@ Computer::Computer(double freq) : Network<SimEvent>(), p(), i(freq) {
     i.setParent(this);
 }
 
-void Computer::getComponents(Set<Devs<SimEvent>*> &c) {
+void Computer::getComponents(set<Devs<SimEvent>*> &c) {
     c.insert(&i);
     c.insert(&p);
 }

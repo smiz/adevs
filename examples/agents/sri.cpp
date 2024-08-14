@@ -5,8 +5,10 @@
 #include <gsl/gsl_rng.h>
 #include <cmath>
 #include <iostream>
+#include <set>
 #include <vector>
 #include "adevs/adevs.h"
+
 using namespace std;
 using namespace adevs;
 
@@ -165,7 +167,7 @@ class RandomNetwork : public Network<int> {
     double get_s() const { return sir->get_s(); }
     double get_i() const { return sir->get_i(); }
     double get_r() const { return sir->get_r(); }
-    void getComponents(Set<Devs<int>*> &c) {
+    void getComponents(set<Devs<int>*> &c) {
         for (auto agent : pop) {
             c.insert(agent);
         }

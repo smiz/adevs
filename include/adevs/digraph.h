@@ -85,7 +85,7 @@ class Digraph : public Network<PortValue<VALUE, PORT>, T> {
     /// Couple the source model to the destination model.
     void couple(Component* src, PORT srcPort, Component* dst, PORT dstPort);
     /// Puts the network's components into to c
-    void getComponents(Set<Component*> &c);
+    void getComponents(set<Component*> &c);
     /// Route an event based on the coupling information.
     void route(IO_Type const &x, Component* model, Bag<Event<IO_Type, T>> &r);
     /// Destructor.  Destroys all of the component models.
@@ -113,7 +113,7 @@ class Digraph : public Network<PortValue<VALUE, PORT>, T> {
         }
     };
     // Component model set
-    Set<Component*> models;
+    set<Component*> models;
     // Coupling information
     std::map<node, Bag<node>> graph;
 };
@@ -140,7 +140,7 @@ void Digraph<VALUE, PORT, T>::couple(Component* src, PORT srcPort,
 }
 
 template <class VALUE, class PORT, class T>
-void Digraph<VALUE, PORT, T>::getComponents(Set<Component*> &c) {
+void Digraph<VALUE, PORT, T>::getComponents(set<Component*> &c) {
     c = models;
 }
 

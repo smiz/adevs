@@ -1,6 +1,7 @@
 #ifndef _Factory_h_
 #define _Factory_h_
 #include <list>
+#include <set>
 #include "Machine.h"
 #include "adevs/adevs.h"
 
@@ -10,7 +11,7 @@
 class Factory : public adevs::Network<int> {
   public:
     Factory();
-    void getComponents(adevs::Set<adevs::Devs<int>*> &c);
+    void getComponents(set<adevs::Devs<int>*> &c);
     void route(int const &order, adevs::Devs<int>* src,
                adevs::Bag<adevs::Event<int>> &r);
     bool model_transition();

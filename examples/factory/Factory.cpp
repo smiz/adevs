@@ -1,4 +1,6 @@
 #include "Factory.h"
+#include <set>
+
 using namespace adevs;
 using namespace std;
 
@@ -9,7 +11,7 @@ Factory::Factory()
     add_machine();
 }
 
-void Factory::getComponents(Set<Devs<int>*> &c) {
+void Factory::getComponents(set<Devs<int>*> &c) {
     // Copy the machine set to c
     list<Machine*>::iterator iter;
     for (iter = machines.begin(); iter != machines.end(); iter++) {

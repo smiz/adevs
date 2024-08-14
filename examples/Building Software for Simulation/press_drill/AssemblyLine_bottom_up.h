@@ -1,5 +1,6 @@
 #ifndef _AssemblyLine_h_
 #define _AssemblyLine_h_
+#include <set>
 #include "Machine.h"
 
 class AssemblyLine : public adevs::Network<int> {
@@ -14,7 +15,7 @@ class AssemblyLine : public adevs::Network<int> {
         press.setParent(this);
         drill.setParent(this);
     }
-    void getComponents(adevs::Set<adevs::Devs<int>*> &c) {
+    void getComponents(set<adevs::Devs<int>*> &c) {
         c.insert(&press);
         c.insert(&drill);
     }
