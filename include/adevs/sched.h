@@ -89,7 +89,7 @@ class Schedule {
         Atomic<X, T>* item;
         T priority;
         // Constructor initializes the item and priority
-        heap_element() : item(NULL), priority(adevs_inf<T>()) {}
+        heap_element() : item(nullptr), priority(adevs_inf<T>()) {}
     };
     unsigned int capacity, size;
     heap_element* heap;
@@ -130,14 +130,14 @@ void Schedule<X, T>::removeMinimum() {
     // If the schedule is empty, set the priority of the last element to adevs_inf
     if (size == 0) {
         heap[1].priority = adevs_inf<T>();
-        heap[1].item = NULL;
+        heap[1].item = nullptr;
     }
     // Otherwise fill the hole left by the deleted model
     else {
         unsigned int i = percolate_down(1, heap[size + 1].priority);
         heap[i] = heap[size + 1];
         heap[i].item->q_index = i;
-        heap[size + 1].item = NULL;
+        heap[size + 1].item = nullptr;
     }
 }
 

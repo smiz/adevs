@@ -16,7 +16,7 @@ class SimpleNetwork : public Network<SimpleIO> {
         models.push_back(model);
     }
 
-    void getComponents(Set<Devs<SimpleIO>*> &c) {
+    void getComponents(set<Devs<SimpleIO>*> &c) {
         for (auto iter : models) {
             c.insert(iter.get());
         }
@@ -28,6 +28,9 @@ class SimpleNetwork : public Network<SimpleIO> {
         shared_ptr<SimpleAtomic> model = make_shared<SimpleAtomic>();
         model->setParent(this);
         models.push_back(model);
+        if (this->simulator != nullptr) {
+            this->simulator->pending_schedule.insert(model);
+        }
         return false;
     }
 

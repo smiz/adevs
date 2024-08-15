@@ -1,6 +1,6 @@
 # Add tests in their own subdirectories
 
-# subdir('dyn_devs')
+subdir('dyn_devs')
 # subdir('fmi')
 # subdir('gcd')
 subdir('gpt')

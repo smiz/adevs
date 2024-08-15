@@ -33,9 +33,6 @@ class Genr : public adevs::Atomic<int> {
 
     void delta_conf(adevs::Bag<int> const &) {}
 
-    // No explicit memory management is needed
-
-
   private:
     // Next order ID
     int next;
