@@ -13,7 +13,7 @@ class GenrFail : public adevs::Atomic<adevs::PortValue<BasicEvent*>> {
     double ta();
     void delta_ext(double, adevs::Bag<adevs::PortValue<BasicEvent*>> const &) {}
     void delta_conf(adevs::Bag<adevs::PortValue<BasicEvent*>> const &) {}
-    void gc_output(adevs::Bag<adevs::PortValue<BasicEvent*>> &);
+
 
   private:
     unsigned which;

@@ -41,7 +41,7 @@ class Generator : public adevs::Atomic<int> {
     void delta_conf(adevs::Bag<int> const &) {}
 
     // No explicit memory management is needed
-    void gc_output(adevs::Bag<int> &) {}
+
 
   private:
     // Next order ID

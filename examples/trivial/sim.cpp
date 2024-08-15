@@ -55,7 +55,6 @@ class A : public Atomic<string> {
         delta_ext(0.0, xb);
     }
     void output_func(Bag<string> &xb) { xb.push_back("Hello?"); }
-    void gc_output(Bag<string> &) {}
 
   private:
     enum Mode { SEND, WAIT, IDLE };
@@ -79,7 +78,6 @@ class B : public Atomic<string> {
             return DBL_MAX;
         }
     }
-    void gc_output(Bag<string> &) {}
 
   private:
     enum Mode { REPLY, IDLE };

@@ -61,13 +61,6 @@ class delay : public adevs::Atomic<PortValue> {
         }
     }
     double ta() { return sigma; }
-    void gc_output(adevs::Bag<PortValue> &g) {
-        adevs::Bag<PortValue>::const_iterator i;
-        for (i = g.begin(); i != g.end(); i++) {
-            delete (*i).value;
-        }
-    }
-    ~delay() {}
 
   private:
     double dt, sigma;

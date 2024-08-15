@@ -15,7 +15,7 @@ class QueueBus : public adevs::Atomic<adevs::PortValue<BasicEvent*>> {
     void delta_conf(adevs::Bag<adevs::PortValue<BasicEvent*>> const &xb);
     double ta();
     void output_func(adevs::Bag<adevs::PortValue<BasicEvent*>> &yb);
-    void gc_output(adevs::Bag<adevs::PortValue<BasicEvent*>> &);
+
     size_t getPacketCount() const { return q.size(); }
 
   private:

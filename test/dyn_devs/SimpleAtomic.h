@@ -13,7 +13,7 @@ class SimpleAtomic : public adevs::Atomic<SimpleIO> {
     void delta_conf(adevs::Bag<SimpleIO> const &) { assert(false); }
     double ta() { return 1.0; }
     void output_func(adevs::Bag<SimpleIO> &) {}
-    void gc_output(adevs::Bag<SimpleIO> &) {}
+
     bool model_transition() { return true; }
     ~SimpleAtomic();
 

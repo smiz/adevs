@@ -3,7 +3,6 @@
 using namespace std;
 using namespace adevs;
 
-// Counters for testing garbage collection
 int External::num_existing = 0;
 int Internal::num_existing = 0;
 

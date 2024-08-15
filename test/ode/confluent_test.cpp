@@ -14,7 +14,6 @@ class Genr : public Atomic<int> {
     void delta_ext(double, Bag<int> const &) {}
     void delta_conf(Bag<int> const &) {}
     void output_func(Bag<int> &yb) { yb.push_back(1); }
-    void gc_output(Bag<int> &) {}
 };
 
 // Also undergoes an internal transition every
@@ -43,7 +42,7 @@ class test_model : public ode_system<int> {
         is_confluent = false;
     }
     void output_func(double const*, bool const*, Bag<int> &) {}
-    void gc_output(Bag<int> &) {}
+
 
   private:
     bool is_confluent;

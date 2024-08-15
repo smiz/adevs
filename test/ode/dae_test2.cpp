@@ -45,7 +45,7 @@ class dae : public dae_se1_system<double> {
                      Bag<double> &yb) {
         assert(false);
     }
-    void gc_output(Bag<double> &g) {}
+
 
   private:
     void check_soln(double const* q, double const* a) {

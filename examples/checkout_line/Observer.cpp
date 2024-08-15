@@ -46,10 +46,6 @@ void Observer::output_func(Bag<IO_Type> &yb) {
     // The Observer produces no output, so do nothing
 }
 
-void Observer::gc_output(Bag<IO_Type> &g) {
-    // The Observer produces no output, so do nothing
-}
-
 Observer::~Observer() {
     // Close the statistics file
     output_strm.close();

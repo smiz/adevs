@@ -51,7 +51,7 @@ class qss1 : public Atomic<event_t> {
         yy.x = xn;
         y.push_back(yy);
     }
-    void gc_output(Bag<event_t> &) {}
+
 
   private:
     void pick_next(double D) {
@@ -106,7 +106,7 @@ class qss2 : public Atomic<event_t> {
         yy.x = xn;
         y.push_back(yy);
     }
-    void gc_output(Bag<event_t> &) {}
+
 
   private:
     void pick_next(double D) {
@@ -161,7 +161,7 @@ class report : public Atomic<event_t> {
     void delta_conf(Bag<event_t> const &xb) { delta_ext(ta(), xb); }
     void output_func(Bag<event_t> &) {}
     double ta() { return adevs_inf<double>(); }
-    void gc_output(Bag<event_t> &) {}
+
 
   private:
     double t;

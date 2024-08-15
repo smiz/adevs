@@ -33,7 +33,6 @@ class Periodic : public Atomic<int> {
     void delta_ext(double, Bag<int> const &) {}
     void delta_conf(Bag<int> const &) {}
     void output_func(Bag<int> &yb) { yb.push_back(1); }
-    void gc_output(Bag<int> &) {}
 
   private:
     double const p;
@@ -49,7 +48,6 @@ class Receiver : public Atomic<int> {
     void delta_conf(Bag<int> const &xb) { delta_ext(0.0, xb); }
     int get_c() const { return c; }
     void output_func(Bag<int> &) {}
-    void gc_output(Bag<int> &) {}
 
   private:
     int c;
@@ -80,7 +78,6 @@ class Trigger : public MealyAtomic<int> {
         ee = e;
         output_func(xb, yb);
     }
-    void gc_output(Bag<int> &gb) {}
 
   private:
     double ttg, ee;

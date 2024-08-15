@@ -77,7 +77,7 @@ class Agent : public Atomic<io_type, sd_time<>> {
         yb.push_back(yy);
         output[x][y] = c;
     }
-    void gc_output(Bag<io_type> &) {}
+
     sd_time<> ta() {
         if (output[x][y] != c) {
             return sd_time<>(0.0, 0);

@@ -29,7 +29,7 @@ class TankPhysicsEqns : public adevs::ode_system<SimEvent> {
     void output_func(double const* q, bool const* events,
                      adevs::Bag<SimEvent> &yb);
     // Garbage collection
-    void gc_output(adevs::Bag<SimEvent> &) {}
+
     // Get the resistance of the motor (left and right are the same)
     double getMotorOhms() const { return Rm; }
     // Is the tank turning?

@@ -150,8 +150,6 @@ class Event {
     Devs<X, T>* model;
     /// The value associated with the event.
     X value;
-    /// Destructor
-    ~Event() {}
 };
 
 /*
@@ -191,15 +189,7 @@ class Atomic : public Devs<X, T> {
      * @return The time to the next internal event
      */
     virtual T ta() = 0;
-    /*
-     * Garbage collection function.  The objects in g are
-     * no longer in use by the simulation engine and should be disposed of.
-`		 * Note that the elements in g are only those objects produced as
-     * output by this model.
-     */
-    virtual void gc_output(Bag<X> &g) = 0;
-    /// Destructor.
-    virtual ~Atomic() {}
+
     /// Returns a pointer to this model.
     Atomic<X, T>* typeIsAtomic() { return this; }
 
@@ -259,7 +249,6 @@ class MealyAtomic : public Atomic<X, T> {
      * This is output preceding a confluent event.
      */
     virtual void output_func(Bag<X> const &xb, Bag<X> &yb) = 0;
-    virtual ~MealyAtomic() {}
 
   private:
     friend class Simulator<X, T>;
@@ -297,11 +286,7 @@ class Network : public Devs<X, T> {
      */
     virtual void route(X const &value, Devs<X, T>* model,
                        Bag<Event<X, T>> &r) = 0;
-    /*
-     * Destructor.  This destructor does not delete any component models.
-     * Any necessary cleanup should be done by the derived class.
-     */
-    virtual ~Network() {}
+
     /// Returns a pointer to this model.
     Network<X, T>* typeIsNetwork() { return this; }
 };

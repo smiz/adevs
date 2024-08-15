@@ -26,7 +26,7 @@ class simple_system : public ode_system<int> {
     void confluent_event(double* q, bool const* event_flag,
                          Bag<int> const &xb) {}
     void output_func(double const* q, bool const* event_flag, Bag<int> &yb) {}
-    void gc_output(Bag<int> &g) {}
+
     bool get_jacobian(double const* q, double* J) {
         if (J == NULL) {
             return true;
@@ -63,7 +63,7 @@ class lk_system : public ode_system<int> {
     void confluent_event(double* q, bool const* event_flag,
                          Bag<int> const &xb) {}
     void output_func(double const* q, bool const* event_flag, Bag<int> &yb) {}
-    void gc_output(Bag<int> &g) {}
+
     bool get_jacobian(double const* q, double* J) {
         if (J == NULL) {
             return true;

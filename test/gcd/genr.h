@@ -71,13 +71,6 @@ class genr : public adevs::Atomic<PortValue> {
         y.push_back(pv);
     }
     double ta() { return sigma; }
-    void gc_output(adevs::Bag<PortValue> &g) {
-        adevs::Bag<PortValue>::iterator i;
-        for (i = g.begin(); i != g.end(); i++) {
-            delete (*i).value;
-        }
-    }
-    ~genr() {}
 
   private:
     std::vector<double> pattern;

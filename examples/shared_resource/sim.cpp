@@ -74,7 +74,6 @@ class Resource : public Atomic<IO_Type> {
         yy.value.userID = q.front();
         yb.push_back(yy);
     }
-    void gc_output(IO_Bag &) {}
 
   private:
     // ID for this resource
@@ -184,7 +183,7 @@ class User : public Atomic<IO_Type> {
             yb.push_back(yy);
         }
     }
-    void gc_output(IO_Bag &) {}
+
 
   private:
     int const ID, howMany;

@@ -23,10 +23,7 @@ class Clerk : public adevs::Atomic<IO_Type> {
     void output_func(adevs::Bag<IO_Type> &yb);
     /// Time advance function.
     double ta();
-    /// Output value garbage collection.
-    void gc_output(adevs::Bag<IO_Type> &g);
-    /// Destructor.
-    ~Clerk();
+
     /// Model input port.
     static int const arrive;
     /// Model output port.

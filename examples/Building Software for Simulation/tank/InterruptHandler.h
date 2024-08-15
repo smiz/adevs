@@ -19,7 +19,7 @@ class InterruptHandler : public adevs::Atomic<SimEvent> {
     void output_func(adevs::Bag<SimEvent> &yb);
     // Time advance function
     double ta();
-    void gc_output(adevs::Bag<SimEvent> &) {}
+
     // Methods for getting the values of the state variables
     unsigned int getCounter() const { return counter; }
     unsigned int getLeftOnTime() const { return left_on_time; }

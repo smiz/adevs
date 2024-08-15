@@ -462,13 +462,6 @@ void ElectricalModelEqns::solve_for_voltage() {
     Y.solve_for_voltage(current, voltage);
 }
 
-void ElectricalModelEqns::gc_output(Bag<PortValue<BasicEvent*>> &gb) {
-    for (Bag<PortValue<BasicEvent*>>::const_iterator iter = gb.begin();
-         iter != gb.end(); iter++) {
-        delete (*iter).value;
-    }
-}
-
 Complex ElectricalModelEqns::getVoltage(unsigned bus) {
     return voltage[bus];
 }

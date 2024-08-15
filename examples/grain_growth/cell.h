@@ -38,7 +38,7 @@ class Cell : public adevs::Atomic<CellEvent> {
     // Time advance function
     double ta();
     // Garbage collection. Does nothing.
-    void gc_output(adevs::Bag<CellEvent> &g) {}
+
     // Destructor
     ~Cell() {}
 

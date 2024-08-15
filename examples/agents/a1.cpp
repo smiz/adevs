@@ -24,7 +24,6 @@ class Agent : public Atomic<int> {
     void delta_ext(double, Bag<int> const &) {}
     void delta_conf(Bag<int> const &) {}
     void output_func(Bag<int> &) { pop--; }
-    void gc_output(Bag<int> &) {}
     double ta() { return ttg; }
     static int getPop() { return pop; }
 

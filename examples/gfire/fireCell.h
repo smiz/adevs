@@ -40,7 +40,7 @@ class fireCell : public adevs::Atomic<CellEvent> {
     // Time advance function
     double ta();
     // Garbage collection. Does nothing.
-    void gc_output(adevs::Bag<CellEvent> &g) {}
+
     // Destructor
     ~fireCell() {}
     // Cell phase of a the state

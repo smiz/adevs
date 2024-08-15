@@ -46,10 +46,6 @@ namespace adevs {
  * every component in the Network. If the wrapped model is Atomic then there
  * is, of course, only one possible destination for incoming events and only
  * one source of outgoing events.
- * <p>You will need to implement the usual gc_output event for outputs
- * produced by the ModelWrapper. You will also need to implement
- * gcInputEvents method to clean up events that are created during
- * the input translation process.
  */
 template <typename ExternalType, typename InternalType, class T = double>
 class ModelWrapper : public Atomic<ExternalType, T>,
@@ -85,14 +81,6 @@ class ModelWrapper : public Atomic<ExternalType, T>,
     virtual void translateOutput(
         Bag<Event<InternalType, T>> const &internal_output,
         Bag<ExternalType> &external_output) = 0;
-
-    /*
-     * This is the garbage collection method for internal input events.
-     * It will be called when the wrapper is done with a set of events
-     * that you created with the translateInput method. The supplied bag
-     * is the same one that you filled out in the translateInput method.
-     */
-    virtual void gc_input(Bag<Event<InternalType, T>> &g) = 0;
 
     /// Get the model that is wrapped by this object
     Devs<InternalType, T>* getWrappedModel() { return model; }
@@ -163,7 +151,6 @@ void ModelWrapper<ExternalType, InternalType, T>::delta_ext(
     // Apply the input
     sim->computeNextState(input, tL);
     // Clean up
-    gc_input(input);
     input.clear();
 }
 
@@ -177,7 +164,6 @@ void ModelWrapper<ExternalType, InternalType, T>::delta_conf(
     // Apply the input
     sim->computeNextState(input, tL);
     // Clean up
-    gc_input(input);
     input.clear();
 }
 
@@ -198,7 +184,6 @@ void ModelWrapper<ExternalType, InternalType, T>::output_func(
     // Translate the output events to external output events
     translateOutput(output, yb);
     // Clean up; the contents of the output bag are deleted by the wrapped model's
-    // gc_output method
     output.clear();
 }
 

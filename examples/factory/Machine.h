@@ -55,8 +55,6 @@ class Machine : public adevs::Atomic<int> {
     }
     // Get the number of orders in the queue
     unsigned int getQueueSize() const { return q.size(); }
-    // No garbage collection
-    void gc_output(adevs::Bag<int> &) {}
 
   private:
     // Queue for orders that are waiting to be processed

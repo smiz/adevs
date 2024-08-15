@@ -44,7 +44,6 @@ class oracle : public ode_system<double> {
     void output_func(double const*, bool const*, Bag<double> &yb) {
         yb.push_back(0);
     }
-    void gc_output(Bag<double> &) {}
     int getTestCount() { return test_count; }
 
   private:

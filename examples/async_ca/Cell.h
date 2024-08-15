@@ -15,14 +15,10 @@ class Cell : public adevs::Atomic<adevs::CellEvent<value_t>> {
     void delta_int();
     void delta_ext(double e, adevs::Bag<adevs::CellEvent<value_t>> const &xb);
     void delta_conf(adevs::Bag<adevs::CellEvent<value_t>> const &xb);
-    // Time advance function
     double ta();
-    // Output function
+
     void output_func(adevs::Bag<adevs::CellEvent<value_t>> &yb);
-    // Garbage collection method is not needed for this model
-    void gc_output(adevs::Bag<adevs::CellEvent<value_t>> &) {}
-    // Destructor
-    ~Cell() {}
+
     bool getState() { return q; }
     static void setParams(bool* vis, unsigned rule, int length);
 

@@ -53,7 +53,7 @@ class Miscreant : public adevs::Atomic<std::string> {
             yb.push_back("light");
         }
     }
-    void gc_output(Bag<std::string> &) {}
+
 
   private:
     bool start;

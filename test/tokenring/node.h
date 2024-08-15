@@ -75,7 +75,6 @@ class Node : public adevs::Atomic<PortValue> {
         y.push_back(pv);
     }
 
-    void gc_output(adevs::Bag<PortValue> &) {}
 
   private:
     int ID;

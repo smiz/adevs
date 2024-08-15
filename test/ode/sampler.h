@@ -14,10 +14,12 @@ class sampler : public adevs::Atomic<adevs::PortValue<double>> {
           dt(dt),
           sigma(dt),
           t(0.0) {}
+
     void delta_int() {
         t += sigma;
         sigma = dt;
     }
+
     void delta_ext(double e, adevs::Bag<adevs::PortValue<double>> const &xb) {
         sigma -= e;
         t += e;
@@ -28,16 +30,18 @@ class sampler : public adevs::Atomic<adevs::PortValue<double>> {
         }
         std::cout << std::endl;
     }
+
     void delta_conf(adevs::Bag<adevs::PortValue<double>> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
+
     double ta() { return sigma; }
+
     void output_func(adevs::Bag<adevs::PortValue<double>> &yb) {
         adevs::PortValue<double> event(0, 0.0);
         yb.push_back(event);
     }
-    void gc_output(adevs::Bag<adevs::PortValue<double>> &) {}
 
   private:
     double const dt;

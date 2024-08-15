@@ -31,7 +31,7 @@ class Machine : public adevs::Atomic<int> {
             return DBL_MAX;
         }
     }
-    void gc_output(adevs::Bag<int> &) {}
+
     double getSigma() const { return sigma; }
     int getParts() const { return p; }
 

@@ -59,7 +59,7 @@ class Circuit : public ode_system<bool> {
         assert(events[0]);
         yb.push_back(!d);
     }
-    void gc_output(Bag<bool> &) {}
+
     bool getDiode() const { return d; }
     bool getSwitch() const { return s; }
 

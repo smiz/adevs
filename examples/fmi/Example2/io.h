@@ -14,14 +14,6 @@ typedef adevs::PortValue<SimObject*> IO_Type;
 class AtomicModel : public adevs::Atomic<IO_Type> {
   public:
     AtomicModel() : adevs::Atomic<IO_Type>() {}
-    void gc_output(adevs::Bag<IO_Type> &g) {
-        adevs::Bag<IO_Type>::iterator iter = g.begin();
-        for (; iter != g.end(); iter++) {
-            if ((*iter).value != NULL) {
-                delete (*iter).value;
-            }
-        }
-    }
 };
 
 class CommandSig : public SimObject {

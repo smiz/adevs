@@ -15,7 +15,6 @@ class Start : public adevs::Atomic<IO_Type> {
 
     void output_func(adevs::Bag<IO_Type> &y) { y.push_back(IO_Type(0, 1)); }
 
-    void gc_output(adevs::Bag<IO_Type> &) {}
 
   private:
     bool go;

@@ -250,8 +250,7 @@ void Simulator<X, T>::visit(Atomic<X, T>* model) {
         model->activated = true;
     }
 
-    // Compute output functions and route the events. The bags of output
-    // are held for garbage collection at a later time.
+    // Compute output functions and route the events.
     model->output_func(*(model->outputs));
     // Route each event in y
     for (typename Bag<X>::iterator y_iter = model->outputs->begin();
@@ -300,8 +299,7 @@ void Simulator<X, T>::computeNextOutput(Bag<Event<X, T>> &input, T t) {
             activated.push_back(model);
             model->activated = true;
         }
-        // Compute output functions and route the events. The bags of output
-        // are held for garbage collection at a later time.
+        // Compute output functions and route the events.
         if (model->imminent)  // These are the imminent Mealy models
         {
             if (!model->activated) {
@@ -392,7 +390,7 @@ void Simulator<X, T>::clean_up(Devs<X, T>* model) {
             amodel->inputs->clear();
         }
         if (!amodel->outputs->empty()) {
-            amodel->gc_output(*(amodel->outputs));
+
             amodel->outputs->clear();
         }
     } else {

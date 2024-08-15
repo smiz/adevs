@@ -67,7 +67,7 @@ class ElectricalModelEqns
                          adevs::Bag<adevs::PortValue<BasicEvent*>> const &xb);
     void output_func(double const* q, bool const* state_event,
                      adevs::Bag<adevs::PortValue<BasicEvent*>> &yb);
-    void gc_output(adevs::Bag<adevs::PortValue<BasicEvent*>> &gb);
+
     /**
 		 * Update current and voltage calculates to reflect the state q.
 		 * Call this method before asking for the voltage or current. This
