@@ -44,7 +44,6 @@
 #include "adevs/hybrid.h"
 #include "adevs/models.h"
 #include "adevs/poly.h"
-#include "adevs/rand.h"
 #include "adevs/rk_45.h"
 #include "adevs/simpledigraph.h"
 #include "adevs/simulator.h"
