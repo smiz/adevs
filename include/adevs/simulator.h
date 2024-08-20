@@ -50,8 +50,7 @@ namespace adevs {
  * type systems).
  */
 template <class X, class T = double>
-class Simulator : public AbstractSimulator<X, T>,
-                  private Schedule<X, T>::ImminentVisitor {
+class Simulator : public AbstractSimulator<X, T> {
 
   public:
     /*
@@ -61,9 +60,7 @@ class Simulator : public AbstractSimulator<X, T>,
      * @param model The model to simulate
      */
     Simulator(shared_ptr<Devs<X, T>> model)
-        : AbstractSimulator<X, T>(),
-          Schedule<X, T>::ImminentVisitor(),
-          io_up_to_date(false) {
+        : AbstractSimulator<X, T>(), io_up_to_date(false) {
         schedule(model.get(), adevs_zero<T>());
     }
 
@@ -208,55 +205,17 @@ class Simulator : public AbstractSimulator<X, T>,
      * Construct the complete descendant set of a network model and store it in s.
      */
     void getAllChildren(Network<X, T>* model, set<Devs<X, T>*> &s);
-
-    /*
-     * Visit method inhereted from ImminentVisitor
-     */
-    void visit(Atomic<X, T>* model);
 };
 
 template <typename X, typename T>
 Simulator<X, T>::Simulator(std::list<shared_ptr<Devs<X, T>>> &active)
-    : AbstractSimulator<X, T>(),
-      Schedule<X, T>::ImminentVisitor(),
-      io_up_to_date(false) {
+    : AbstractSimulator<X, T>(), io_up_to_date(false) {
     // The Atomic constructor sets the atomic model's
     // tL correctly to zero, and so it is sufficient
     // to only worry about putting models with a
     // non infinite time advance into the schedule.
     for (auto iter : active) {
         schedule(iter.get(), adevs_zero<T>());
-    }
-}
-
-template <class X, class T>
-void Simulator<X, T>::visit(Atomic<X, T>* model) {
-    assert(model->outputs->empty());
-    model->imminent = true;
-    // Mealy models are processed after the Moore models
-    if (model->typeIsMealyAtomic() != NULL) {
-        assert(model->outputs->empty());
-        // May be in the mealy list because of a route call
-        if (!model->activated) {
-            mealy.push_back(model->typeIsMealyAtomic());
-        }
-        return;
-    }
-    //model->outputs->clear();
-
-    // Put it in the active list if it is not already there
-    if (!model->activated) {
-        activated.push_back(model);
-        model->activated = true;
-    }
-
-    // Compute output functions and route the events. The bags of output
-    // are held for garbage collection at a later time.
-    model->output_func(*(model->outputs));
-    // Route each event in y
-    for (typename Bag<X>::iterator y_iter = model->outputs->begin();
-         y_iter != model->outputs->end(); y_iter++) {
-        route(model->getParent(), model, *y_iter);
     }
 }
 
@@ -276,7 +235,33 @@ void Simulator<X, T>::computeNextOutput(Bag<Event<X, T>> &input, T t) {
     // already done so.
     allow_mealy_input = true;
     if (t == sched.minPriority() && !io_up_to_date) {
-        sched.visitImminent(this);
+        // get the list of activated models
+        auto activated_models = sched.visitImminent();
+
+        // process moore models
+        for (auto model : activated_models) {
+            Atomic<X, T>* atmoic_model = model->typeIsAtomic();
+            // need to do this because a MealyAtomic is technically both an
+            // Atomic and a MealyAtomic (by inheritance)
+            if (atmoic_model != NULL && model->typeIsMealyAtomic() == NULL) {
+                assert(model->outputs->empty());
+                activated.push_back(model);
+                model->output_func(*(model->outputs));
+
+                for (auto y_iter : *(model->outputs)) {
+                    route(model->getParent(), model, y_iter);
+                }
+            }
+        }
+
+        // process mealy models
+        for (auto model : activated_models) {
+            auto mealy_model = model->typeIsMealyAtomic();
+            if (mealy_model != NULL) {
+                assert(mealy_model->outputs->empty());
+                mealy.push_back(mealy_model);
+            }
+        }
     }
     // Apply the injected inputs.
     for (auto iter : input) {
@@ -293,7 +278,6 @@ void Simulator<X, T>::computeNextOutput(Bag<Event<X, T>> &input, T t) {
     for (auto m_iter : mealy) {
         MealyAtomic<X, T>* model = m_iter;
         assert(model->outputs->empty());
-        //model->outputs->clear();
 
         // Put it in the active set if it is not already there
         if (!model->activated) {
@@ -356,9 +340,7 @@ T Simulator<X, T>::computeNextState() {
      * computed.
      */
     for (auto model : activated) {
-        //Atomic<X, T>* model = activated[i];
         // Internal event if no input
-
         if (model->inputs->empty()) {
             model->delta_int();
         } else if (model->imminent) {

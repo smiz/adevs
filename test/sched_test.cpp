@@ -1,6 +1,7 @@
-#include "adevs/sched.h"
 #include <cassert>
 #include <iostream>
+#include "adevs/sched.h"
+
 using namespace adevs;
 
 class bogus_atomic : public Atomic<char> {
@@ -156,45 +157,6 @@ void test9() {
     assert(q.minPriority() == 1.0);
 }
 
-class test10visitor : public Schedule<char>::ImminentVisitor {
-  public:
-    test10visitor(Bag<Atomic<char>*> &imm) : imm(imm) {}
-    void visit(Atomic<char>* model) { imm.push_back(model); }
-
-  private:
-    Bag<Atomic<char>*> &imm;
-};
-
-void test10() {
-    int i;
-    bogus_atomic m[20];
-    Schedule<char> q;
-    Bag<Atomic<char>*> imm;
-    shared_ptr<test10visitor> visitor = make_shared<test10visitor>(imm);
-    q.visitImminent(visitor.get());
-    assert(imm.empty());
-    for (i = 0; i < 10; i++) {
-        q.schedule(&(m[i]), 1.0);
-    }
-    assert(q.minPriority() == 1.0);
-    visitor = make_shared<test10visitor>(imm);
-    q.visitImminent(visitor.get());
-    assert(imm.size() == 10);
-    // for (i = 0; i < 10; i++) {
-    //     assert(imm.find(&m[i]) != imm.end());
-    // }
-    imm.clear();
-    for (i = 10; i < 20; i++) {
-        q.schedule(&(m[i]), 2.0);
-    }
-    visitor = make_shared<test10visitor>(imm);
-    q.visitImminent(visitor.get());
-    assert(imm.size() == 10);
-    // for (i = 0; i < 10; i++) {
-    //     assert(imm.find(&m[i]) != imm.end());
-    // }
-}
-
 int main() {
     testa();
     test1();
@@ -206,6 +168,5 @@ int main() {
     test7();
     test8();
     test9();
-    test10();
     return 0;
 }
