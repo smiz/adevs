@@ -55,7 +55,6 @@ class qss : public Atomic<double> {
             return adevs_inf<double>();
         }
     }
-    void gc_output(Bag<double> &) {}
 
     double get_y() const { return y[species]; }
     int get_count() const { return count; }

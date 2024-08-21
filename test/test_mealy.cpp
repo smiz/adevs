@@ -56,7 +56,6 @@ class Receiver : public Atomic<int> {
     void delta_conf(Bag<int> const &xb) { delta_ext(0.0, xb); }
     int get_event_count() const { return event_count; }
     void output_func(Bag<int> &) {}
-    void gc_output(Bag<int> &) {}
 
   private:
     int event_count;

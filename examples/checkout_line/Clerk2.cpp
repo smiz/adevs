@@ -56,8 +56,6 @@ void Clerk2::delta_int() {
     // Update the preemption timer
     preempt -= ta();
     // Remove the departing customer from the front of the line.
-    // The departing customer will be deleted later by our garbage
-    // collection method.
     line.pop_front();
     // Check to see if any customers are waiting.
     if (line.empty()) {
@@ -104,18 +102,4 @@ void Clerk2::output_func(Bag<IO_Type> &yb) {
     yb.push_back(y);
     // Report the departure
     cout << "Clerk: A customer departed at t = " << t + ta() << endl;
-}
-
-void Clerk2::gc_output(Bag<IO_Type> &g) {
-    Bag<IO_Type>::iterator iter = g.begin();
-    for (; iter != g.end(); iter++) {
-        delete (*iter).value;
-    }
-}
-
-Clerk2::~Clerk2() {
-    list<customer_info_t>::iterator iter = line.begin();
-    for (; iter != line.end(); iter++) {
-        delete (*iter).customer;
-    }
 }

@@ -105,7 +105,7 @@ class Agent : public Atomic<int> {
             yb.push_back(c);
         }
     }
-    void gc_output(Bag<int> &) {}
+
     // How long until our next event?
     double ta() { return ::min(tr, td); }
 
@@ -128,7 +128,7 @@ class SIR : public Atomic<int> {
     void delta_ext(double e, Bag<int> const &) { update(e); }
     void delta_conf(Bag<int> const &) { update(h); }
     void output_func(Bag<int> &) {}
-    void gc_output(Bag<int> &) {}
+
     double get_s() const { return ss; }
     double get_i() const { return ii; }
     double get_r() const { return rr; }

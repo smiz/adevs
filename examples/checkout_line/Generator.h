@@ -21,10 +21,7 @@ class Generator : public adevs::Atomic<IO_Type> {
     void output_func(adevs::Bag<IO_Type> &yb);
     /// Time advance function.
     double ta();
-    /// Output value garbage collection.
-    void gc_output(adevs::Bag<IO_Type> &g);
-    /// Destructor.
-    ~Generator();
+
     /// Model output port.
     static int const arrive;
 

@@ -65,7 +65,7 @@ class proc : public adevs::Atomic<PortValue> {
 		Garbage collection. No heap allocation in output_func, so
 		do nothing.
 		*/
-    void gc_output(adevs::Bag<PortValue> &) {}
+
     /// Destructor
     ~proc() {
         if (val != NULL) {

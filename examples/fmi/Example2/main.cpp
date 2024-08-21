@@ -43,7 +43,6 @@ class App : public AtomicModel {
 
     void delta_conf(Bag<IO_Type> const &) {}
 
-    void gc_output(Bag<IO_Type> &) {}
 
     /// Put a packet on the network
     void output_func(Bag<IO_Type> &yb) {
@@ -119,12 +118,6 @@ class ControlExt : public Control {
         msg.port = command;
         msg.value = new NetworkData(NetworkData::APP_DATA, robotAddr, 100, sig);
         yb.push_back(msg);
-    }
-    void gc_output(adevs::Bag<IO_Type> &g) {
-        adevs::Bag<IO_Type>::iterator iter = g.begin();
-        for (; iter != g.end(); iter++) {
-            delete (*iter).value;
-        }
     }
 
   private:
@@ -206,12 +199,6 @@ class RobotExt : public Robot {
             msg.value =
                 new NetworkData(NetworkData::APP_DATA, controlAddr, 100, sig);
             yb.push_back(msg);
-        }
-    }
-    void gc_output(adevs::Bag<IO_Type> &g) {
-        adevs::Bag<IO_Type>::iterator iter = g.begin();
-        for (; iter != g.end(); iter++) {
-            delete (*iter).value;
         }
     }
 

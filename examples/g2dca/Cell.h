@@ -28,7 +28,7 @@ class Cell : public adevs::Atomic<CellEvent, int> {
     // Output function
     void output_func(adevs::Bag<CellEvent> &yb);
     // Garbage collection method is not needed for this model
-    void gc_output(adevs::Bag<CellEvent> &g) {}
+
     // Destructor
     ~Cell() {}
     // Initialize the global variables

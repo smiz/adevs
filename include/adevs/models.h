@@ -67,22 +67,22 @@ template <typename X, typename T = double>
 class Devs {
   public:
     /// Default constructor.
-    Devs() : parent(NULL) {}
+    Devs() : parent(nullptr) {}
     /// Destructor.
     virtual ~Devs() {}
     /*
-     * Returns NULL if this is not a network model; returns a pointer to
+     * Returns nullptr if this is not a network model; returns a pointer to
      * itself otherwise. This method is used to avoid a relatively expensive
      * dynamic cast.
      */
-    virtual Network<X, T>* typeIsNetwork() { return NULL; }
-    /// Returns NULL if this is not an atomic model; returns itself otherwise.
-    virtual Atomic<X, T>* typeIsAtomic() { return NULL; }
-    /// Returns NULL if this is not a mealy atomic model; returns itself otherwise.
-    virtual MealyAtomic<X, T>* typeIsMealyAtomic() { return NULL; }
+    virtual Network<X, T>* typeIsNetwork() { return nullptr; }
+    /// Returns nullptr if this is not an atomic model; returns itself otherwise.
+    virtual Atomic<X, T>* typeIsAtomic() { return nullptr; }
+    /// Returns nullptr if this is not a mealy atomic model; returns itself otherwise.
+    virtual MealyAtomic<X, T>* typeIsMealyAtomic() { return nullptr; }
     /*
      * Get the model that contains this model as a component.  Returns
-     * NULL if this model is at the top of the hierarchy.
+     * nullptr if this model is at the top of the hierarchy.
      */
     Network<X, T> const* getParent() const { return parent; }
     /// Get the model that contains this model as a component.
@@ -112,6 +112,8 @@ class Devs {
     bool activated = false;
     bool imminent = false;
 
+    Simulator<X, T>* simulator = nullptr;
+
   private:
     Network<X, T>* parent;
 };
@@ -124,7 +126,7 @@ class Devs {
 template <typename X, typename T = double>
 class Event {
   public:
-    /// Constructor.  Sets the model to NULL.
+    /// Constructor.  Sets the model to nullptr.
     Event() : model(nullptr), value() {}
     /*
      * Constructor sets the model and value. The input into a
@@ -150,8 +152,6 @@ class Event {
     Devs<X, T>* model;
     /// The value associated with the event.
     X value;
-    /// Destructor
-    ~Event() {}
 };
 
 /*
@@ -191,15 +191,7 @@ class Atomic : public Devs<X, T> {
      * @return The time to the next internal event
      */
     virtual T ta() = 0;
-    /*
-     * Garbage collection function.  The objects in g are
-     * no longer in use by the simulation engine and should be disposed of.
-`		 * Note that the elements in g are only those objects produced as
-     * output by this model.
-     */
-    virtual void gc_output(Bag<X> &g) = 0;
-    /// Destructor.
-    virtual ~Atomic() {}
+
     /// Returns a pointer to this model.
     Atomic<X, T>* typeIsAtomic() { return this; }
 
@@ -259,7 +251,6 @@ class MealyAtomic : public Atomic<X, T> {
      * This is output preceding a confluent event.
      */
     virtual void output_func(Bag<X> const &xb, Bag<X> &yb) = 0;
-    virtual ~MealyAtomic() {}
 
   private:
     friend class Simulator<X, T>;
@@ -297,11 +288,7 @@ class Network : public Devs<X, T> {
      */
     virtual void route(X const &value, Devs<X, T>* model,
                        Bag<Event<X, T>> &r) = 0;
-    /*
-     * Destructor.  This destructor does not delete any component models.
-     * Any necessary cleanup should be done by the derived class.
-     */
-    virtual ~Network() {}
+
     /// Returns a pointer to this model.
     Network<X, T>* typeIsNetwork() { return this; }
 };

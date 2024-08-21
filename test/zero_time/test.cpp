@@ -46,9 +46,6 @@ class Parrot : public Atomic<PortValue<string>> {
         yb.push_back(event);
     }
 
-    void gc_output(Bag<PortValue<string>> &) {}
-    ~Parrot() {}
-
   private:
     int k;
     string q;

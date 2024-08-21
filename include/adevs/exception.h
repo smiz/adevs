@@ -46,7 +46,7 @@ class exception : public std::exception {
      * a pointer to the model that created the error.  To avoid
      * templated exceptions, the model pointer is just a void*.
      */
-    exception(char const* msg, void* model = NULL)
+    exception(char const* msg, void* model = nullptr)
         : std::exception(), msg(msg), model(model) {}
     /// Copy constructor.
     exception(adevs::exception const &src)

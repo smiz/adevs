@@ -129,13 +129,7 @@ class FMI : public ode_system<X> {
      */
     virtual void output_func(double const* q, bool const* state_event,
                              Bag<X> &yb);
-    /*
-     * Garbage collection function. This works just like the Atomic gc_output method.
-     * The default implementation does nothing.
-     */
-    virtual void gc_output(Bag<X> &gb);
-    /// Destructor
-    virtual ~FMI();
+
     /// Get the current time
     double get_time() const { return t_now; }
     /// Get the value of a real variable
@@ -587,9 +581,6 @@ void FMI<X>::confluent_event(double* q, bool const* state_event,
 template <typename X>
 void FMI<X>::output_func(double const* q, bool const* state_event, Bag<X> &yb) {
 }
-
-template <typename X>
-void FMI<X>::gc_output(Bag<X> &gb) {}
 
 template <typename X>
 FMI<X>::~FMI() {

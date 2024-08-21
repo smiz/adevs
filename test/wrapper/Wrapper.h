@@ -43,18 +43,6 @@ class Wrapper : public adevs::ModelWrapper<External*, Internal*> {
         }
         external.push_back(e);
     }
-    void gc_output(adevs::Bag<External*> &g) {
-        adevs::Bag<External*>::iterator iter = g.begin();
-        for (; iter != g.end(); iter++) {
-            delete *iter;
-        }
-    }
-    void gc_input(adevs::Bag<adevs::Event<Internal*>> &g) {
-        adevs::Bag<adevs::Event<Internal*>>::iterator iter = g.begin();
-        for (; iter != g.end(); iter++) {
-            delete (*iter).value;
-        }
-    }
 };
 
 #endif

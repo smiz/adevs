@@ -20,8 +20,6 @@ class counter : public adevs::Atomic<PortValue> {
     void delta_conf(adevs::Bag<PortValue> const &) { assert(false); }
     void output_func(adevs::Bag<PortValue> &) { assert(false); }
     double ta() { return sigma; }
-    void gc_output(adevs::Bag<PortValue> &g) { assert(g.size() == 0); }
-    ~counter() {}
 
   private:
     int count;

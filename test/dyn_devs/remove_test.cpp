@@ -1,44 +1,46 @@
 #include <iostream>
 #include <list>
+#include <memory>
 #include "SimpleAtomic.h"
 #include "adevs/adevs.h"
+
 using namespace adevs;
 using namespace std;
+
 
 class SimpleNetwork : public Network<SimpleIO> {
   public:
     SimpleNetwork() : Network<SimpleIO>() {
         for (int i = 0; i < 10; i++) {
-            SimpleAtomic* model = new SimpleAtomic();
+            shared_ptr<SimpleAtomic> model = make_shared<SimpleAtomic>();
             model->setParent(this);
             models.push_back(model);
         }
     }
-    void getComponents(Set<Devs<SimpleIO>*> &c) {
-        list<Devs<SimpleIO>*>::iterator iter;
-        for (iter = models.begin(); iter != models.end(); iter++) {
-            c.insert(*iter);
+    void getComponents(set<Devs<SimpleIO>*> &c) {
+        for (auto iter : models) {
+            c.insert(iter.get());
         }
     }
     void route(SimpleIO const &, Devs<SimpleIO>*, Bag<Event<SimpleIO>> &) {}
+
     bool model_transition() {
+        if (this->simulator != nullptr) {
+            this->simulator->pending_unschedule.insert(models.back());
+        }
         models.pop_back();
         return false;
     }
-    ~SimpleNetwork() {
-        list<Devs<SimpleIO>*>::iterator iter;
-        for (iter = models.begin(); iter != models.end(); iter++) {
-            delete *iter;
-        }
-    }
 
   private:
-    list<Devs<SimpleIO>*> models;
+    list<shared_ptr<Devs<SimpleIO>>> models;
 };
 
 int main() {
-    SimpleNetwork* model = new SimpleNetwork();
-    Simulator<SimpleIO>* sim = new Simulator<SimpleIO>(model);
+    shared_ptr<SimpleNetwork> model = make_shared<SimpleNetwork>();
+    shared_ptr<Simulator<SimpleIO>> sim =
+        make_shared<Simulator<SimpleIO>>(model);
+
     while (sim->nextEventTime() < DBL_MAX && SimpleAtomic::atomic_number != 0) {
         sim->execNextEvent();
         assert(SimpleAtomic::internal_execs == SimpleAtomic::atomic_number + 1);

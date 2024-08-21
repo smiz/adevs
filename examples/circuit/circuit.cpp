@@ -59,7 +59,7 @@ class Circuit : public ode_system<bool> {
         assert(events[0]);
         yb.push_back(!d);
     }
-    void gc_output(Bag<bool> &) {}
+
     bool getDiode() const { return d; }
     bool getSwitch() const { return s; }
 
@@ -77,7 +77,7 @@ class OpenSwitch : public Atomic<bool> {
     void delta_ext(double, Bag<bool> const &) {}
     void delta_conf(Bag<bool> const &) {}
     void output_func(Bag<bool> &yb) { yb.push_back(false); }
-    void gc_output(Bag<bool> &) {}
+
 
   private:
     double t_open;

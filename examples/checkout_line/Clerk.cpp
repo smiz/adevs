@@ -79,19 +79,3 @@ double Clerk::ta() {
     // Otherwise, return the time remaining to process the current customer
     return line.front()->twait - t_spent;
 }
-
-void Clerk::gc_output(Bag<IO_Type> &g) {
-    // Delete the outgoing customer objects
-    Bag<IO_Type>::iterator i;
-    for (i = g.begin(); i != g.end(); i++) {
-        delete (*i).value;
-    }
-}
-
-Clerk::~Clerk() {
-    // Delete anything remaining in the customer queue
-    list<Customer*>::iterator i;
-    for (i = line.begin(); i != line.end(); i++) {
-        delete *i;
-    }
-}

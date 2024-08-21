@@ -19,7 +19,6 @@ class PingPong : public Atomic<int, T> {
     void delta_ext(T e, Bag<int> const &xb);
     void delta_conf(Bag<int> const &xb);
     void output_func(Bag<int> &yb);
-    void gc_output(Bag<int> &) {}
     T ta();
     int getCount() const { return count; }
 

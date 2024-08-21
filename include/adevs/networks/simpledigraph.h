@@ -86,6 +86,9 @@ void SimpleDigraph<OutputType, TimeType>::add(shared_ptr<Component> model) {
     assert(model.get() != this);
     models.insert(model);
     model->setParent(this);
+    if (this->simulator != nullptr) {
+        this->simulator->pending_schedule.insert(model);
+    }
 }
 
 template <class OutputType, class TimeType>

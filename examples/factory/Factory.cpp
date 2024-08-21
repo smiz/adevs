@@ -1,21 +1,19 @@
 #include "Factory.h"
+#include <memory>
 #include <set>
 
 using namespace adevs;
 using namespace std;
 
-Factory::Factory()
-    : Network<int>()  // call the parent constructor
-{
+
+Factory::Factory() : Network<int>() {
     // Add the first machine the the machine set
     add_machine();
 }
 
 void Factory::getComponents(set<Devs<int>*> &c) {
-    // Copy the machine set to c
-    list<Machine*>::iterator iter;
-    for (iter = machines.begin(); iter != machines.end(); iter++) {
-        c.insert(*iter);
+    for (auto iter : machines) {
+        c.insert(iter.get());
     }
 }
 
@@ -25,32 +23,36 @@ void Factory::route(int const &order, Devs<int>* src, Bag<Event<int>> &r) {
         r.push_back(Event<int>(this, order));
         return;
     }
+
     // Otherwise, look for the machine that has the shortest time to fill the order
-    Machine* pick = NULL;        // No machine
-    double pick_time = DBL_MAX;  // Infinite time for service
-    list<Machine*>::iterator iter;
-    for (iter = machines.begin(); iter != machines.end(); iter++) {
+    shared_ptr<Machine> pick = nullptr;  // No machine
+    double pick_time = DBL_MAX;          // Infinite time for service
+
+    for (auto iter : machines) {
         // If the machine is available
-        if ((*iter)->getQueueSize() <= 1) {
-            double candidate_time = compute_service_time(*iter);
+        if (iter->getQueueSize() <= 1) {
+            double candidate_time = compute_service_time(iter);
             // If the candidate machine service time is smaller than the current pick service time
             if (candidate_time < pick_time) {
                 pick_time = candidate_time;
-                pick = *iter;
+                pick = iter;
             }
         }
     }
     // Make sure we found a machine to use and that it has a small enough service time
-    assert(pick != NULL && pick_time <= 6.0);
+    assert(pick != nullptr && pick_time <= 6.0);
     // Use this machine to process the order
     r.push_back(Event<int>(pick, order));
 }
 
 bool Factory::model_transition() {
     // Remove idle machines
-    list<Machine*>::iterator iter = machines.begin();
+    list<shared_ptr<Machine>>::iterator iter = machines.begin();
     while (iter != machines.end()) {
         if ((*iter)->getQueueSize() == 0) {
+            if (this->simulator != nullptr) {
+                this->simulator->pending_unschedule.insert(*iter);
+            }
             iter = machines.erase(iter);
         } else {
             iter++;
@@ -58,8 +60,8 @@ bool Factory::model_transition() {
     }
     // Add the new machine if we need it
     int spare_cap = 0;
-    for (iter = machines.begin(); iter != machines.end(); iter++) {
-        spare_cap += 2 - (*iter)->getQueueSize();
+    for (auto iter : machines) {
+        spare_cap += 2 - iter->getQueueSize();
     }
     if (spare_cap == 0) {
         add_machine();
@@ -68,11 +70,15 @@ bool Factory::model_transition() {
 }
 
 void Factory::add_machine() {
-    machines.push_back(new Machine());
-    machines.back()->setParent(this);
+    shared_ptr<Machine> machine = make_shared<Machine>();
+    machine->setParent(this);
+    if (this->simulator != nullptr) {
+        this->simulator->pending_schedule.insert(machine);
+    }
+    machines.push_back(machine);
 }
 
-double Factory::compute_service_time(Machine* m) {
+double Factory::compute_service_time(shared_ptr<Machine> m) {
     // If the machine is working 3 days + queued orders * 3 + time for current order
     if (m->ta() < DBL_MAX) {
         return 3.0 + (m->getQueueSize() - 1) * 3.0 + m->ta();
@@ -83,14 +89,6 @@ double Factory::compute_service_time(Machine* m) {
     }
 }
 
-int Factory::getMachineCount() {
+int Factory::get_machine_count() {
     return machines.size();
-}
-
-Factory::~Factory() {
-    // Delete all of the machines
-    list<Machine*>::iterator iter;
-    for (iter = machines.begin(); iter != machines.end(); iter++) {
-        delete *iter;
-    }
 }

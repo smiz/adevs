@@ -53,15 +53,6 @@ double QueueBus::ta() {
     return ttg;
 }
 
-void QueueBus::gc_output(Bag<PortValue<BasicEvent*>> &gb) {
-    for (Bag<PortValue<BasicEvent*>>::const_iterator iter = gb.begin();
-         iter != gb.end(); iter++) {
-        if ((*iter).value != NULL) {
-            delete (*iter).value;
-        }
-    }
-}
-
 void QueueBus::output_func(Bag<PortValue<BasicEvent*>> &yb) {
     assert(!q.empty());
     PortValue<BasicEvent*> y;

@@ -32,7 +32,7 @@
 #define _adevs_corrected_euler_h_
 #include <algorithm>
 #include <cmath>
-#include "adevs/hybrid.h"
+#include "adevs/solvers/hybrid.h"
 
 namespace adevs {
 

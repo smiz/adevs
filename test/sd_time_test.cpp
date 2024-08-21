@@ -20,7 +20,6 @@ class Incr : public Atomic<int, sd_time<double>> {
     void delta_ext(sd_time<double>, Bag<int> const &) {}
     void delta_conf(Bag<int> const &) {}
     void output_func(Bag<int> &y) { y.push_back(count); }
-    void gc_output(Bag<int> &) {}
     int get_q() const { return count; }
 
   private:
@@ -44,7 +43,6 @@ class Watch : public Atomic<int, sd_time<double>> {
     }
     void delta_conf(Bag<int> const &) { assert(false); }
     void output_func(Bag<int> &y) { assert(false); }
-    void gc_output(Bag<int> &) {}
 };
 
 class MyEventListener : public EventListener<int, sd_time<double>> {

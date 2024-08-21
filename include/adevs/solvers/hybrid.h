@@ -104,9 +104,6 @@ class ode_system {
     virtual void output_func(double const* q, bool const* state_event,
                              Bag<X> &yb) = 0;
 
-    /// Garbage collection function. This works just like the Atomic gc_output method.
-    virtual void gc_output(Bag<X> &gb) = 0;
-
     /// Get the N x N Jacobian matrix. The supplied array must be filled with the Jacobian
     /// in column major ordering to make it compatible with LAPACK and similar
     /// linear algebra packages. The default implementation is empty. The method
@@ -660,19 +657,6 @@ class Hybrid : public Atomic<X, T> {
                 sys->output_func(q_trial, event, yb);
             }
         }
-    }
-
-    /// Do not override. Invokes the ode_system gc_output method as needed.
-    void gc_output(Bag<X> &gb) { sys->gc_output(gb); }
-
-    /// Destructor deletes everything.
-    virtual ~Hybrid() {
-        delete[] q;
-        delete[] q_trial;
-        delete[] event;
-        delete event_finder;
-        delete solver;
-        delete sys;
     }
 
   private:

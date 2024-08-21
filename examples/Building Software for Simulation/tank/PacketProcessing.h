@@ -17,7 +17,7 @@ class PacketProcessing : public adevs::Atomic<SimEvent> {
     void output_func(adevs::Bag<SimEvent> &yb);
     // Time advance function
     double ta();
-    void gc_output(adevs::Bag<SimEvent> &) {}
+
 
   private:
     // Computer time needed to process one packet

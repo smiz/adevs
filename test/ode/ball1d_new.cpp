@@ -69,7 +69,7 @@ class bouncing_ball : public ode_system<PortValue<double>> {
         PortValue<double> event(0, q[0]);
         yb.push_back(event);
     }
-    void gc_output(Bag<PortValue<double>> &g) {}
+
 
   private:
     bool sample;

@@ -62,7 +62,7 @@ class genr : public adevs::Atomic<PortValue> {
     /// Time advance function.
     double ta() { return sigma; }
     /// Output doesn't require heap allocation, so don't do anything
-    void gc_output(adevs::Bag<PortValue> &) {}
+
     /// Model input ports
     static int const start;
     static int const stop;

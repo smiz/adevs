@@ -91,10 +91,3 @@ void LoadControl::output_func(Bag<PortValue<BasicEvent*>> &yb) {
         }
     }
 }
-
-void LoadControl::gc_output(Bag<PortValue<BasicEvent*>> &gb) {
-    Bag<PortValue<BasicEvent*>>::iterator iter = gb.begin();
-    for (; iter != gb.end(); iter++) {
-        delete (*iter).value;
-    }
-}

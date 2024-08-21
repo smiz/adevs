@@ -72,25 +72,6 @@ void Decision::output_func(Bag<IO_Type> &y) {
     }
 }
 
-void Decision::gc_output(Bag<IO_Type> &g) {
-    Bag<IO_Type>::iterator iter = g.begin();
-    for (; iter != g.end(); iter++) {
-        delete (*iter).value;
-    }
-}
-
-Decision::~Decision() {
-    clear_deciders();
-}
-
-void Decision::clear_deciders() {
-    list<pair<int, Customer*>>::iterator i = deciding.begin();
-    for (; i != deciding.end(); i++) {
-        delete (*i).second;
-    }
-    deciding.clear();
-}
-
 int Decision::find_shortest_line() {
     int shortest = 0;
     for (int i = 0; i < NUM_LINES; i++) {

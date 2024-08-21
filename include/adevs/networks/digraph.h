@@ -89,13 +89,11 @@ class Digraph : public Network<PortValue<VALUE, PORT>, T> {
     void getComponents(set<Component*> &c);
     /// Route an event based on the coupling information.
     void route(IO_Type const &x, Component* model, Bag<Event<IO_Type, T>> &r);
-    /// Destructor.  Destroys all of the component models.
-    ~Digraph();
 
   private:
     // A node in the coupling graph
     struct node {
-        node() : model(NULL), port() {}
+        node() : model(nullptr), port() {}
         node(Component* model, PORT port) : model(model), port(port) {}
         node const &operator=(node const &src) {
             model = src.model;
@@ -124,6 +122,9 @@ void Digraph<VALUE, PORT, T>::add(shared_ptr<Component> model) {
     assert(model.get() != this);
     models.insert(model.get());
     model->setParent(this);
+    if (this->simulator != nullptr) {
+        this->simulator->pending_schedule.insert(model);
+    }
 }
 
 template <class VALUE, class PORT, class T>
@@ -165,8 +166,6 @@ void Digraph<VALUE, PORT, T>::route(IO_Type const &x, Component* model,
         r.push_back(event);
     }
 }
-template <class VALUE, class PORT, class T>
-Digraph<VALUE, PORT, T>::~Digraph() {}
 
 }  // namespace adevs
 

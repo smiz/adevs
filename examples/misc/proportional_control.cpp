@@ -56,7 +56,7 @@ class SISOPlantEqns : public adevs::ode_system<double> {
     void output_func(double const* q, bool const*, IO_Bag &y) {
         y.push_back(q[1]);
     }
-    void gc_output(IO_Bag &) {}
+
 
   private:
     double const a, b;
@@ -90,7 +90,6 @@ class Control : public adevs::Atomic<double> {
         return adevs_inf<double>();
     }
     void output_func(IO_Bag &yb) { yb.push_back(u); }
-    void gc_output(IO_Bag &) {}
 
   private:
     double const xRef;

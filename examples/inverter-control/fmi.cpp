@@ -101,7 +101,7 @@ class Switch : public Atomic<IOType> {
         duty = ::max(-1.0, ::min(1.0, xb[0].value));
         sched_next();
     }
-    void gc_output(IOBag &) {}
+
     void output_func(IOBag &yb) {
         IOType y;
         y.port = phase;

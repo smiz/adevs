@@ -11,7 +11,7 @@ class bogus_atomic : public Atomic<char> {
     void delta_ext(double, Bag<char> const &) {}
     void delta_conf(Bag<char> const &) {}
     void output_func(Bag<char> &) {}
-    void gc_output(Bag<char> &) {}
+
     double ta() { return 0.0; }
 };
 

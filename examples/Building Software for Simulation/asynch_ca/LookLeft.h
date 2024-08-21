@@ -46,8 +46,7 @@ class LookLeft : public adevs::Atomic<adevs::CellEvent<int>> {
         y.value = l;
         yb.push_back(y);
     }
-    // The gc method is not needed
-    void gc_output(adevs::Bag<adevs::CellEvent<int>> &) {}
+
     // Get the location of the cell
     int getLocation() const { return location; }
     // Get the state of the cell

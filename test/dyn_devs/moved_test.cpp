@@ -11,56 +11,62 @@ class SimpleNetwork : public Network<PortValue<char>> {
         : Network<PortValue<char>>(), networks(networks), id(id) {
         networks[id] = this;
         if (id == 0) {
-            model = new SimpleAtomic();
+            model = make_shared<SimpleAtomic>();
             model->setParent(this);
         } else {
             model = NULL;
         }
     }
-    void getComponents(Set<Devs<PortValue<char>>*> &c) {
-        if (model != NULL) {
-            c.insert(model);
+
+    void getComponents(set<Devs<PortValue<char>>*> &c) {
+        if (model != nullptr) {
+            c.insert(model.get());
         }
     }
+
     void route(PortValue<char> const &, Devs<PortValue<char>>*,
                Bag<Event<PortValue<char>>> &) {}
+
     bool model_transition() {
-        if (model != NULL) {
+        if (model != nullptr) {
             int next = (id + 1) % 2;
             networks[next]->model = model;
             model->setParent(networks[next]);
-            model = NULL;
+            // Shouldn't need to unschedule or schedule anything.
+            // The model is still active on a different network
+            model = nullptr;
             return true;
         } else {
             return false;
         }
     }
-    ~SimpleNetwork() {
-        if (model != NULL) {
-            delete model;
-        }
-    }
 
   private:
-    Devs<PortValue<char>>* model;
+    shared_ptr<Devs<PortValue<char>>> model = nullptr;
     SimpleNetwork** networks;
     int id;
 };
 
 int main() {
-    Digraph<char> top_model;
+    shared_ptr<Digraph<char>> top_model = make_shared<Digraph<char>>();
+
     SimpleNetwork* networks[2];
-    SimpleNetwork* model = new SimpleNetwork(networks, 0);
-    top_model.add(model);
-    model = new SimpleNetwork(networks, 1);
-    top_model.add(model);
-    Simulator<PortValue<char>>* sim =
-        new Simulator<PortValue<char>>(&top_model);
+
+    shared_ptr<SimpleNetwork> model0 = make_shared<SimpleNetwork>(networks, 0);
+    shared_ptr<SimpleNetwork> model1 = make_shared<SimpleNetwork>(networks, 1);
+
+    top_model->add(model0);
+    top_model->add(model1);
+
+    shared_ptr<Simulator<PortValue<char>>> sim =
+        make_shared<Simulator<PortValue<char>>>(top_model);
+
     while (sim->nextEventTime() < 10.0) {
         assert(SimpleAtomic::atomic_number == 1);
         sim->execNextEvent();
         assert(SimpleAtomic::internal_execs == 1);
         SimpleAtomic::internal_execs = 0;
     }
+
     return 0;
 }

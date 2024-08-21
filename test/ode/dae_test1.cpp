@@ -63,7 +63,7 @@ class dae : public dae_se1_system<double> {
         assert(fabs(z[0]) < 1E-5);
         yb.push_back(q[0] * a[0]);
     }
-    void gc_output(Bag<double> &g) {}
+
 
   private:
     double const k;

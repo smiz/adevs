@@ -12,7 +12,7 @@ using namespace std;
 using namespace adevs;
 
 
-bool const print_soln = false;
+bool const verbose = false;
 static int num_agents = 2000000;
 static double const a = 1.0;
 static gsl_rng* rnd = gsl_rng_alloc(gsl_rng_default);
@@ -24,7 +24,6 @@ class Agent : public Atomic<int> {
     void delta_ext(double, Bag<int> const &) {}
     void delta_conf(Bag<int> const &) {}
     void output_func(Bag<int> &) { pop--; }
-    void gc_output(Bag<int> &) {}
     double ta() { return ttg; }
     static int getPop() { return pop; }
 
@@ -36,17 +35,22 @@ class Agent : public Atomic<int> {
 int Agent::pop = 0;
 
 double run() {
+
     double max_error = 0.0;
+
     shared_ptr<SimpleDigraph<int>> world = make_shared<SimpleDigraph<int>>();
+
     for (int i = 0; i < num_agents; i++) {
-        world->add(new Agent());
+        world->add(make_shared<Agent>());
     }
 
     shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(world);
-    if (print_soln) {
+
+    if (verbose) {
         cout << 0 << " " << ((double)(Agent::getPop()) / (double)(num_agents))
              << " " << exp(-a * 0.0) << endl;
     }
+
     while (sim->nextEventTime() < adevs_inf<double>()) {
         double t = sim->nextEventTime();
         sim->execNextEvent();
@@ -54,7 +58,7 @@ double run() {
         double tsoln = exp(-a * t);
         double err = asoln - tsoln;
         max_error = ::max(fabs(err), max_error);
-        if (print_soln) {
+        if (verbose) {
             cout << t << " " << asoln << " " << tsoln << " " << err << endl;
         }
     }
@@ -62,7 +66,8 @@ double run() {
 }
 
 int main() {
-    for (num_agents = 10000; num_agents < 5000000; num_agents += 10000) {
+    //for (num_agents = 10000; num_agents < 5000000; num_agents += 10000) {
+    for (num_agents = 10000; num_agents < 100000; num_agents += 10000) {
         double err = run();
         cout << num_agents << " " << err << endl;
     }

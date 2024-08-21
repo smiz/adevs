@@ -100,7 +100,7 @@ class transd : public adevs::Atomic<PortValue> {
     /// Time advance function
     double ta() { return sigma; }
     /// Garbage collection. No heap allocation in output, so do nothing
-    void gc_output(adevs::Bag<PortValue> &g) {}
+
     /// Destructor
     ~transd() {
         jobs_arrived.clear();

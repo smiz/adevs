@@ -69,8 +69,7 @@ class CherryBomb : public ode_system<string> {
         // Write the current state to std out
         cout << q[T] << " " << q[H] << " " << q[V] << " " << phase << endl;
     }
-    // No garbage collection is needed
-    void gc_output(Bag<string> &) {}
+
     // Get the current value of the discrete variable
     Phase getPhase() { return phase; }
 

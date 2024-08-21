@@ -21,10 +21,6 @@ class Decision : public adevs::Atomic<IO_Type> {
     void output_func(adevs::Bag<IO_Type> &y);
     /// Time advance function.
     double ta();
-    /// Output value garbage collection.
-    void gc_output(adevs::Bag<IO_Type> &g);
-    /// Destructor.
-    ~Decision();
     /// Input port that receives new customers
     static int const decide;
     /// Input ports that receive customers leaving the two lines

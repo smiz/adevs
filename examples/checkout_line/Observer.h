@@ -24,10 +24,6 @@ class Observer : public adevs::Atomic<IO_Type> {
     double ta();
     /// Output function.
     void output_func(adevs::Bag<IO_Type> &yb);
-    /// Output value garbage collection.
-    void gc_output(adevs::Bag<IO_Type> &g);
-    /// Destructor.
-    ~Observer();
 
   private:
     /// File for storing information about departing customers.

@@ -18,10 +18,7 @@ class Clerk2 : public adevs::Atomic<IO_Type> {
     double ta();
     /// Output function.
     void output_func(adevs::Bag<IO_Type> &yb);
-    /// Output value garbage collection.
-    void gc_output(adevs::Bag<IO_Type> &g);
-    /// Destructor.
-    ~Clerk2();
+
     /// Model input port.
     static int const arrive;
     /// Model output port.
