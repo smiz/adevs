@@ -242,9 +242,11 @@ void Simulator<X, T>::computeNextOutput(Bag<Event<X, T>> &input, T t) {
         // process moore models
         for (auto model : activated_models) {
             Atomic<X, T>* atmoic_model = model->typeIsAtomic();
+            MealyAtomic<X, T>* mealy_model = model->typeIsMealyAtomic();
+
             // need to do this because a MealyAtomic is technically both an
             // Atomic and a MealyAtomic (by inheritance)
-            if (atmoic_model != NULL && model->typeIsMealyAtomic() == NULL) {
+            if (atmoic_model != nullptr && mealy_model == nullptr) {
                 assert(model->outputs->empty());
                 activated.push_back(model);
                 model->output_func(*(model->outputs));
@@ -252,13 +254,8 @@ void Simulator<X, T>::computeNextOutput(Bag<Event<X, T>> &input, T t) {
                 for (auto y_iter : *(model->outputs)) {
                     route(model->getParent(), model, y_iter);
                 }
-            }
-        }
-
-        // process mealy models
-        for (auto model : activated_models) {
-            auto mealy_model = model->typeIsMealyAtomic();
-            if (mealy_model != NULL) {
+            } else {
+                assert(mealy_model != nullptr);
                 assert(mealy_model->outputs->empty());
                 mealy.push_back(mealy_model);
             }

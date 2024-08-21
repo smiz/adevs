@@ -110,7 +110,7 @@ void Schedule<X, T>::visit(Atomic<X, T>* model) {
     // Put it in the active list if it is not already there
     if (!model->activated) {
         activated.push_back(model);
-        if (model->typeIsMealyAtomic() == NULL) {
+        if (model->typeIsMealyAtomic() == nullptr) {
             model->activated = true;
         }
     }
