@@ -1,5 +1,5 @@
-#ifndef __node_h_
-#define __node_h_
+#ifndef _node_h_
+#define _node_h_
 
 #include <cassert>
 #include <cstdio>
@@ -49,7 +49,7 @@ class Node : public adevs::Atomic<PortValue> {
         sigma = DBL_MAX;
     }
 
-    void delta_ext(double e, adevs::Bag<PortValue> const &x) {
+    void delta_ext(double e, list<PortValue> const &x) {
         t += e;
         assert(x.size() == 1);
         token = static_cast<shared_ptr<token_t>>((*(x.begin())).value);
@@ -60,7 +60,7 @@ class Node : public adevs::Atomic<PortValue> {
         printf("%d got %d @ t = %.0f\n", ID, token->value, t);
     }
 
-    void delta_conf(adevs::Bag<PortValue> const &x) {
+    void delta_conf(list<PortValue> const &x) {
         t += ta();
         assert(x.size() == 1);
         printf("%d sent %d @ t = %.0f\n", ID, token->value, t);
@@ -70,7 +70,7 @@ class Node : public adevs::Atomic<PortValue> {
         printf("%d got %d @ t = %.0f\n", ID, token->value, t);
     }
 
-    void output_func(adevs::Bag<PortValue> &y) {
+    void output_func(list<PortValue> &y) {
         PortValue pv(out, out_token);
         y.push_back(pv);
     }

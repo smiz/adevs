@@ -10,11 +10,10 @@ class QueueBus : public adevs::Atomic<adevs::PortValue<BasicEvent*>> {
     /// Create a Bus with a throughput
     QueueBus(double packets_per_second);
     void delta_int();
-    void delta_ext(double e,
-                   adevs::Bag<adevs::PortValue<BasicEvent*>> const &xb);
-    void delta_conf(adevs::Bag<adevs::PortValue<BasicEvent*>> const &xb);
+    void delta_ext(double e, list<adevs::PortValue<BasicEvent*>> const &xb);
+    void delta_conf(list<adevs::PortValue<BasicEvent*>> const &xb);
     double ta();
-    void output_func(adevs::Bag<adevs::PortValue<BasicEvent*>> &yb);
+    void output_func(list<adevs::PortValue<BasicEvent*>> &yb);
 
     size_t getPacketCount() const { return q.size(); }
 

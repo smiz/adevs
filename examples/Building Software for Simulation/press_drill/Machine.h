@@ -9,7 +9,7 @@ class Machine : public adevs::Atomic<int> {
         p--;
         sigma = tm;
     }
-    void delta_ext(double e, adevs::Bag<int> const &xb) {
+    void delta_ext(double e, list<int> const &xb) {
         if (p > 0) {
             sigma -= e;
         } else {
@@ -19,11 +19,11 @@ class Machine : public adevs::Atomic<int> {
             p += pi;
         }
     }
-    void delta_conf(adevs::Bag<int> const &xb) {
+    void delta_conf(list<int> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
-    void output_func(adevs::Bag<int> &yb) { yb.push_back(1); }
+    void output_func(list<int> &yb) { yb.push_back(1); }
     double ta() {
         if (p > 0) {
             return sigma;

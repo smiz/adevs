@@ -14,11 +14,11 @@ class Generator : public adevs::Atomic<IO_Type> {
     /// Internal transition function.
     void delta_int();
     /// External transition function.
-    void delta_ext(double e, adevs::Bag<IO_Type> const &xb);
+    void delta_ext(double e, list<IO_Type> const &xb);
     /// Confluent transition function.
-    void delta_conf(adevs::Bag<IO_Type> const &xb);
+    void delta_conf(list<IO_Type> const &xb);
     /// Output function.
-    void output_func(adevs::Bag<IO_Type> &yb);
+    void output_func(list<IO_Type> &yb);
     /// Time advance function.
     double ta();
 

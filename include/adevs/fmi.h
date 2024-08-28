@@ -116,19 +116,19 @@ class FMI : public ode_system<X> {
      * The external transition See the notes on the internal_event function for
      * derived classes.
      */
-    virtual void external_event(double* q, double e, Bag<X> const &xb);
+    virtual void external_event(double* q, double e, list<X> const &xb);
     /*
      * The confluent transition function. See the notes on the internal_event function for
      * derived classes.
      */
     virtual void confluent_event(double* q, bool const* state_event,
-                                 Bag<X> const &xb);
+                                 list<X> const &xb);
     /*
      * The output function. This can read variables from the FMI, but should
      * not make any modifications to those variables.
      */
     virtual void output_func(double const* q, bool const* state_event,
-                             Bag<X> &yb);
+                             list<X> &yb);
 
     /// Get the current time
     double get_time() const { return t_now; }
@@ -548,7 +548,7 @@ void FMI<X>::internal_event(double* q, bool const* state_event) {
 }
 
 template <typename X>
-void FMI<X>::external_event(double* q, double e, Bag<X> const &xb) {
+void FMI<X>::external_event(double* q, double e, list<X> const &xb) {
     fmi2Status status;
     // Go to event mode if we have not yet done so
     if (cont_time_mode) {
@@ -564,7 +564,7 @@ void FMI<X>::external_event(double* q, double e, Bag<X> const &xb) {
 
 template <typename X>
 void FMI<X>::confluent_event(double* q, bool const* state_event,
-                             Bag<X> const &xb) {
+                             list<X> const &xb) {
     fmi2Status status;
     // postStep will have updated the continuous variables, so
     // we just process discrete events here.
@@ -579,8 +579,8 @@ void FMI<X>::confluent_event(double* q, bool const* state_event,
 }
 
 template <typename X>
-void FMI<X>::output_func(double const* q, bool const* state_event, Bag<X> &yb) {
-}
+void FMI<X>::output_func(double const* q, bool const* state_event,
+                         list<X> &yb) {}
 
 template <typename X>
 FMI<X>::~FMI() {

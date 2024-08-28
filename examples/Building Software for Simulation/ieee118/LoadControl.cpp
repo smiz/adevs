@@ -36,13 +36,13 @@ void LoadControl::delta_int() {
     init = signal = false;
 }
 
-void LoadControl::delta_conf(Bag<PortValue<BasicEvent*>> const &xb) {
+void LoadControl::delta_conf(list<PortValue<BasicEvent*>> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
 
-void LoadControl::delta_ext(double e, Bag<PortValue<BasicEvent*>> const &xb) {
-    Bag<PortValue<BasicEvent*>>::const_iterator iter = xb.begin();
+void LoadControl::delta_ext(double e, list<PortValue<BasicEvent*>> const &xb) {
+    list<PortValue<BasicEvent*>>::const_iterator iter = xb.begin();
     for (; iter != xb.end(); iter++) {
         GenrSampleEvent* measurement =
             dynamic_cast<GenrSampleEvent*>((*iter).value);
@@ -75,7 +75,7 @@ void LoadControl::delta_ext(double e, Bag<PortValue<BasicEvent*>> const &xb) {
     assert(fabs(adjustment) <= max_adjust);
 }
 
-void LoadControl::output_func(Bag<PortValue<BasicEvent*>> &yb) {
+void LoadControl::output_func(list<PortValue<BasicEvent*>> &yb) {
     if (signal) {
         LoadAdjustEvent* load_adjust = new LoadAdjustEvent(adjustment);
         yb.push_back(PortValue<BasicEvent*>(load_change, load_adjust));

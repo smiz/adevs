@@ -28,8 +28,8 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
-#ifndef __adevs_simpledigraph_h_
-#define __adevs_simpledigraph_h_
+#ifndef _adevs_simpledigraph_h_
+#define _adevs_simpledigraph_h_
 
 #include <cstdlib>
 #include <list>
@@ -72,7 +72,7 @@ class SimpleDigraph : public Network<OutputType, TimeType> {
 
     /// Route an event according to the network's couplings
     void route(OutputType const &x, Component* model,
-               Bag<Event<OutputType, TimeType>> &r);
+               list<Event<OutputType, TimeType>> &r);
 
   private:
     set<shared_ptr<Component>> models;
@@ -118,7 +118,7 @@ void SimpleDigraph<OutputType, TimeType>::getComponents(set<Component*> &c) {
 template <class OutputType, class TimeType>
 void SimpleDigraph<OutputType, TimeType>::route(
     OutputType const &x, Component* model,
-    Bag<Event<OutputType, TimeType>> &r) {
+    list<Event<OutputType, TimeType>> &r) {
 
     // Find the list of target models and ports
     typename std::map<Component*, list<shared_ptr<Component>>>::iterator
@@ -128,7 +128,7 @@ void SimpleDigraph<OutputType, TimeType>::route(
     if (graph_iter == graph.end()) {
         return;
     }
-    // Otherwise, add the targets to the event bag
+    // Otherwise, add the targets to the event list
     Event<OutputType, TimeType> event;
     for (auto node_iter : (*graph_iter).second) {
         event.model = node_iter.get();

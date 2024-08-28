@@ -37,12 +37,12 @@ class qss : public Atomic<double> {
         q = ql = y[species];
         dqdx = der(species);
     }
-    void delta_ext(double e, Bag<double> const &x) {
+    void delta_ext(double e, list<double> const &x) {
         q += dqdx * e;
         dqdx = der(species);
     }
-    void delta_conf(Bag<double> const &x) { delta_int(); }
-    void output_func(Bag<double> &yb) {
+    void delta_conf(list<double> const &x) { delta_int(); }
+    void output_func(list<double> &yb) {
         y[species] = ql + sign(dqdx) * Q;
         yb.push_back(y[species]);
     }

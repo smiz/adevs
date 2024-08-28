@@ -22,7 +22,7 @@ class SimpleNetwork : public Network<SimpleIO> {
             c.insert(iter.get());
         }
     }
-    void route(SimpleIO const &, Devs<SimpleIO>*, Bag<Event<SimpleIO>> &) {}
+    void route(SimpleIO const &, Devs<SimpleIO>*, list<Event<SimpleIO>> &) {}
 
     bool model_transition() {
         if (this->simulator != nullptr) {

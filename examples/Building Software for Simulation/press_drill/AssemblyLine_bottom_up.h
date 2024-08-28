@@ -20,7 +20,7 @@ class AssemblyLine : public adevs::Network<int> {
         c.insert(&drill);
     }
     void route(int const &value, adevs::Devs<int>* model,
-               adevs::Bag<adevs::Event<int>> &r) {
+               list<adevs::Event<int>> &r) {
         adevs::Event<int> x;
         x.value = value;
         // External input to the network goes to the press

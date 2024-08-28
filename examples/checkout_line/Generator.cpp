@@ -43,16 +43,16 @@ void Generator::delta_int() {
     arrivals.pop_front();
 }
 
-void Generator::delta_ext(double e, Bag<IO_Type> const &xb) {
+void Generator::delta_ext(double e, list<IO_Type> const &xb) {
     /// The generator is input free, and so it ignores external events.
 }
 
-void Generator::delta_conf(Bag<IO_Type> const &xb) {
+void Generator::delta_conf(list<IO_Type> const &xb) {
     /// The generator is input free, and so it ignores input.
     delta_int();
 }
 
-void Generator::output_func(Bag<IO_Type> &yb) {
+void Generator::output_func(list<IO_Type> &yb) {
     // First customer in the list is produced as output
     IO_Type output(arrive, arrivals.front());
     yb.push_back(output);

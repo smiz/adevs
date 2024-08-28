@@ -18,9 +18,9 @@ class genr : public Atomic<char, double_fcmp> {
             sigma = DBL_MAX;
         }
     }
-    void delta_ext(double_fcmp, Bag<char> const &) { sigma = DBL_MAX; }
-    void delta_conf(Bag<char> const &) { sigma = DBL_MAX; }
-    void output_func(Bag<char> &y) { y.push_back('a'); }
+    void delta_ext(double_fcmp, list<char> const &) { sigma = DBL_MAX; }
+    void delta_conf(list<char> const &) { sigma = DBL_MAX; }
+    void output_func(list<char> &y) { y.push_back('a'); }
     int getTickCount() { return count; }
 
   private:
@@ -79,7 +79,7 @@ void test3() {
 void test4() {
     shared_ptr<genr> g = make_shared<genr>(10.0, 10);
     Simulator<char, double_fcmp> sim(g);
-    Bag<Event<char, double_fcmp>> input;
+    list<Event<char, double_fcmp>> input;
     sim.computeNextState(input, 5.0);
     assert(sim.nextEventTime() == 10.0);
     sim.computeNextState(input, 6.0);
@@ -101,7 +101,7 @@ void test4() {
 void test5() {
     shared_ptr<genr> g = make_shared<genr>(10.0, 10);
     Simulator<char, double_fcmp> sim(g);
-    Bag<Event<char, double_fcmp>> input;
+    list<Event<char, double_fcmp>> input;
     Event<char, double_fcmp> event(g, 'a');
     input.push_back(event);
     sim.computeNextState(input, 5.0);

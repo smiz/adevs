@@ -1,5 +1,5 @@
-#ifndef __cell_h_
-#define __cell_h_
+#ifndef _cell_h_
+#define _cell_h_
 #include "adevs/adevs.h"
 
 /// Length of the rule array
@@ -21,13 +21,12 @@ class Cell : public adevs::Atomic<CellEvent, int> {
     Cell(int x, int y, Phase phase, Phase* vis_phase = NULL);
     // State transition functions
     void delta_int();
-    void delta_ext(int e, adevs::Bag<CellEvent> const &xb);
-    void delta_conf(adevs::Bag<CellEvent> const &xb);
+    void delta_ext(int e, list<CellEvent> const &xb);
+    void delta_conf(list<CellEvent> const &xb);
     // Time advance function
     int ta();
     // Output function
-    void output_func(adevs::Bag<CellEvent> &yb);
-    // Garbage collection method is not needed for this model
+    void output_func(list<CellEvent> &yb);
 
     // Destructor
     ~Cell() {}

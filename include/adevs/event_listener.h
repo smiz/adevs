@@ -28,9 +28,8 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
-#ifndef __adevs_event_listener_h_
-#define __adevs_event_listener_h_
-#include "adevs/bag.h"
+#ifndef _adevs_event_listener_h_
+#define _adevs_event_listener_h_
 #include "adevs/models.h"
 
 namespace adevs {

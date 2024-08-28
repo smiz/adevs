@@ -17,7 +17,7 @@ void Factory::getComponents(set<Devs<int>*> &c) {
     }
 }
 
-void Factory::route(int const &order, Devs<int>* src, Bag<Event<int>> &r) {
+void Factory::route(int const &order, Devs<int>* src, list<Event<int>> &r) {
     // If this is a machine output, then it leaves the factory
     if (src != this) {
         r.push_back(Event<int>(this, order));

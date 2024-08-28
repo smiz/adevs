@@ -1,5 +1,5 @@
-#ifndef __Genr_h_
-#define __Genr_h_
+#ifndef _Genr_h_
+#define _Genr_h_
 #include <random>
 #include "adevs/adevs.h"
 
@@ -23,15 +23,15 @@ class Genr : public adevs::Atomic<int> {
     }
 
     // Output function produces the next order
-    void output_func(adevs::Bag<int> &yb) { yb.push_back(next); }
+    void output_func(list<int> &yb) { yb.push_back(next); }
 
     // Time advance returns the time until the next order
     double ta() { return time_to_order; }
 
     // Model is input free, so these methods are empty
-    void delta_ext(double, adevs::Bag<int> const &) {}
+    void delta_ext(double, list<int> const &) {}
 
-    void delta_conf(adevs::Bag<int> const &) {}
+    void delta_conf(list<int> const &) {}
 
   private:
     // Next order ID

@@ -49,7 +49,7 @@ class SimpleNetwork : public Network<SimpleIO>, public flagged {
         }
     }
 
-    void route(SimpleIO const &, Devs<SimpleIO>*, Bag<Event<SimpleIO>> &) {}
+    void route(SimpleIO const &, Devs<SimpleIO>*, list<Event<SimpleIO>> &) {}
 
     bool model_transition() {
         flag = true;

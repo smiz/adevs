@@ -9,10 +9,10 @@ class SimpleAtomic : public adevs::Atomic<SimpleIO> {
   public:
     SimpleAtomic();
     void delta_int();
-    void delta_ext(double, adevs::Bag<SimpleIO> const &) { assert(false); }
-    void delta_conf(adevs::Bag<SimpleIO> const &) { assert(false); }
+    void delta_ext(double, list<SimpleIO> const &) { assert(false); }
+    void delta_conf(list<SimpleIO> const &) { assert(false); }
     double ta() { return 1.0; }
-    void output_func(adevs::Bag<SimpleIO> &) {}
+    void output_func(list<SimpleIO> &) {}
 
     bool model_transition() { return true; }
     ~SimpleAtomic();

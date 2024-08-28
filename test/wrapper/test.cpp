@@ -41,7 +41,7 @@ int main() {
     Event<External*> e;
     e.model = model;
     e.value = new External(FAST, 1);
-    Bag<Event<External*>> x;
+    list<Event<External*>> x;
     x.push_back(e);
     sim->computeNextState(x, 0.0);
     assert(sim->nextEventTime() == 1.0);

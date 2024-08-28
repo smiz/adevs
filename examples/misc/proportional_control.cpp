@@ -2,7 +2,7 @@
 #include "adevs/adevs.h"
 using namespace std;
 
-typedef adevs::Bag<double> IO_Bag;
+typedef list<double> IO_List;
 
 /**
  * Linear SISO model of a plant in the form
@@ -46,14 +46,15 @@ class SISOPlantEqns : public adevs::ode_system<double> {
     void state_event_func(double const*, double*) {}
     double time_event_func(double const* q) { return q[0]; }
     void internal_event(double* q, bool const*) { q[0] = sampleInterval; }
-    void external_event(double*, double, IO_Bag const &xb) {
+    void external_event(double*, double, IO_List const &xb) {
         u = *(xb.begin());
     }
-    void confluent_event(double* q, bool const* state_event, IO_Bag const &xb) {
+    void confluent_event(double* q, bool const* state_event,
+                         IO_List const &xb) {
         internal_event(q, state_event);
         external_event(q, 0.0, xb);
     }
-    void output_func(double const* q, bool const*, IO_Bag &y) {
+    void output_func(double const* q, bool const*, IO_List &y) {
         y.push_back(q[1]);
     }
 
@@ -75,11 +76,11 @@ class Control : public adevs::Atomic<double> {
     Control(double xRef)
         : adevs::Atomic<double>(), xRef(xRef), u(0.0), active(false) {}
     void delta_int() { active = !active; }
-    void delta_ext(double, IO_Bag const &xb) {
+    void delta_ext(double, IO_List const &xb) {
         active = true;
         u = xRef - (*(xb.begin()));
     }
-    void delta_conf(IO_Bag const &xb) {
+    void delta_conf(IO_List const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
@@ -89,7 +90,7 @@ class Control : public adevs::Atomic<double> {
         }
         return adevs_inf<double>();
     }
-    void output_func(IO_Bag &yb) { yb.push_back(u); }
+    void output_func(IO_List &yb) { yb.push_back(u); }
 
   private:
     double const xRef;

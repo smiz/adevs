@@ -24,10 +24,10 @@ void Observer::delta_int() {
     // The Observer has no autonomous behavior, so do nothing
 }
 
-void Observer::delta_ext(double e, Bag<IO_Type> const &xb) {
+void Observer::delta_ext(double e, list<IO_Type> const &xb) {
     // Record the times at which the customer left the line and the
     // time spent in it.
-    Bag<IO_Type>::const_iterator i;
+    list<IO_Type>::const_iterator i;
     for (i = xb.begin(); i != xb.end(); i++) {
         Customer const* c = (*i).value;
         // Compute the time spent waiting in line
@@ -38,11 +38,11 @@ void Observer::delta_ext(double e, Bag<IO_Type> const &xb) {
     }
 }
 
-void Observer::delta_conf(Bag<IO_Type> const &xb) {
+void Observer::delta_conf(list<IO_Type> const &xb) {
     // The Observer has no autonomous behavior, so do nothing
 }
 
-void Observer::output_func(Bag<IO_Type> &yb) {
+void Observer::output_func(list<IO_Type> &yb) {
     // The Observer produces no output, so do nothing
 }
 

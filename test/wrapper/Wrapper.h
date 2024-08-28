@@ -11,9 +11,9 @@ class Wrapper : public adevs::ModelWrapper<External*, Internal*> {
   public:
     Wrapper(adevs::Atomic<Internal*>* model)
         : adevs::ModelWrapper<External*, Internal*>(model) {}
-    void translateInput(adevs::Bag<External*> const &external,
-                        adevs::Bag<adevs::Event<Internal*>> &internal) {
-        adevs::Bag<External*>::const_iterator iter = external.begin();
+    void translateInput(list<External*> const &external,
+                        list<adevs::Event<Internal*>> &internal) {
+        list<External*>::const_iterator iter = external.begin();
         adevs::Event<Internal*> event;
         event.model = getWrappedModel();
         if ((*iter)->speed == STOP) {
@@ -25,10 +25,9 @@ class Wrapper : public adevs::ModelWrapper<External*, Internal*> {
         }
         internal.push_back(event);
     }
-    void translateOutput(adevs::Bag<adevs::Event<Internal*>> const &internal,
-                         adevs::Bag<External*> &external) {
-        adevs::Bag<adevs::Event<Internal*>>::const_iterator iter =
-            internal.begin();
+    void translateOutput(list<adevs::Event<Internal*>> const &internal,
+                         list<External*> &external) {
+        list<adevs::Event<Internal*>>::const_iterator iter = internal.begin();
         assert((*iter).model == getWrappedModel());
         External* e = new External();
         e->value = (*iter).value->value;

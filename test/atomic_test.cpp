@@ -16,9 +16,9 @@ class genr : public Atomic<char> {
             sigma = DBL_MAX;
         }
     }
-    void delta_ext(double, Bag<char> const &) { sigma = DBL_MAX; }
-    void delta_conf(Bag<char> const &) { sigma = DBL_MAX; }
-    void output_func(Bag<char> &y) { y.push_back('a'); }
+    void delta_ext(double, list<char> const &) { sigma = DBL_MAX; }
+    void delta_conf(list<char> const &) { sigma = DBL_MAX; }
+    void output_func(list<char> &y) { y.push_back('a'); }
     int getTickCount() { return count; }
 
   private:
@@ -77,7 +77,7 @@ void test3() {
 void test4() {
     shared_ptr<genr> g = make_shared<genr>(10.0, 10);
     Simulator<char> sim(g);
-    Bag<Event<char>> input;
+    list<Event<char>> input;
     sim.computeNextState(input, 5.0);
     assert(sim.nextEventTime() == 10.0);
     sim.computeNextState(input, 6.0);
@@ -99,7 +99,7 @@ void test4() {
 void test5() {
     shared_ptr<genr> g = make_shared<genr>(10.0, 10);
     Simulator<char> sim(g);
-    Bag<Event<char>> input;
+    list<Event<char>> input;
     Event<char> event(g, 'a');
     input.push_back(event);
     sim.computeNextState(input, 5.0);

@@ -25,7 +25,7 @@ class SimpleNetwork : public Network<PortValue<char>> {
     }
 
     void route(PortValue<char> const &, Devs<PortValue<char>>*,
-               Bag<Event<PortValue<char>>> &) {}
+               list<Event<PortValue<char>>> &) {}
 
     bool model_transition() {
         if (model != nullptr) {

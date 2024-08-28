@@ -1,8 +1,9 @@
-#ifndef __proc_h_
-#define __proc_h_
+#ifndef _proc_h_
+#define _proc_h_
 #include <cstdlib>
 #include "adevs/adevs.h"
 #include "job.h"
+
 /*
 A processor requires a fixed period of time to service a job.
 The processor can serve only one job at a time.  It the processor
@@ -10,7 +11,6 @@ is busy, it simply discards incoming jobs.
 */
 class proc : public adevs::Atomic<PortValue> {
   public:
-    /// Constructor.  The processing time is provided as an argument.
     proc(double proc_time)
         : adevs::Atomic<PortValue>(),
           processing_time(proc_time),
@@ -18,7 +18,7 @@ class proc : public adevs::Atomic<PortValue> {
           val(NULL) {
         t = 0.0;
     }
-    /// Internal transition function
+
     void delta_int() {
         t += sigma;
         // Done with the job, so set time of next event to infinity
@@ -29,8 +29,8 @@ class proc : public adevs::Atomic<PortValue> {
         }
         val = NULL;
     }
-    /// External transition function
-    void delta_ext(double e, adevs::Bag<PortValue> const &x) {
+
+    void delta_ext(double e, list<PortValue> const &x) {
         t += e;
         // If we are waiting for a job
         if (sigma == DBL_MAX) {
@@ -46,27 +46,22 @@ class proc : public adevs::Atomic<PortValue> {
             sigma -= e;
         }
     }
-    /// Confluent transition function.
-    void delta_conf(adevs::Bag<PortValue> const &x) {
+
+    void delta_conf(list<PortValue> const &x) {
         // Discard the old job
         delta_int();
         // Process the incoming job
         delta_ext(0.0, x);
     }
-    /// Output function.
-    void output_func(adevs::Bag<PortValue> &y) {
+
+    void output_func(list<PortValue> &y) {
         // Produce a copy of the completed job on the out port
         PortValue pv(out, *val);
         y.push_back(pv);
     }
-    /// Time advance function.
-    double ta() { return sigma; }
-    /**
-		Garbage collection. No heap allocation in output_func, so
-		do nothing.
-		*/
 
-    /// Destructor
+    double ta() { return sigma; }
+
     ~proc() {
         if (val != NULL) {
             delete val;

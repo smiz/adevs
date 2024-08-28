@@ -1,5 +1,5 @@
-#ifndef __fireCell_h_
-#define __fireCell_h_
+#ifndef _fireCell_h_
+#define _fireCell_h_
 #include <adevs/adevs.h>
 #include <iostream>
 
@@ -32,14 +32,13 @@ class fireCell : public adevs::Atomic<CellEvent> {
     // Internal transition function
     void delta_int();
     // External transition function
-    void delta_ext(double e, adevs::Bag<CellEvent> const &xb);
+    void delta_ext(double e, list<CellEvent> const &xb);
     // Confluent transition function
-    void delta_conf(adevs::Bag<CellEvent> const &xb);
+    void delta_conf(list<CellEvent> const &xb);
     // Output function
-    void output_func(adevs::Bag<CellEvent> &yb);
+    void output_func(list<CellEvent> &yb);
     // Time advance function
     double ta();
-    // Garbage collection. Does nothing.
 
     // Destructor
     ~fireCell() {}

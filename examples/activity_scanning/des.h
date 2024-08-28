@@ -96,9 +96,9 @@ class Partition : public adevs::Atomic<shared_ptr<Event>> {
 
   public:
     void delta_int();
-    void delta_ext(double e, adevs::Bag<shared_ptr<Event>> const &xb);
-    void delta_conf(adevs::Bag<shared_ptr<Event>> const &xb);
-    void output_func(adevs::Bag<shared_ptr<Event>> &yb);
+    void delta_ext(double e, list<shared_ptr<Event>> const &xb);
+    void delta_conf(list<shared_ptr<Event>> const &xb);
+    void output_func(list<shared_ptr<Event>> &yb);
     double ta();
 };
 

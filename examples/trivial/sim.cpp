@@ -37,7 +37,7 @@ class Sender : public Atomic<string> {
         }
     }
 
-    void delta_ext(double e, Bag<string> const &xb) {
+    void delta_ext(double e, list<string> const &xb) {
         cout << "Recvd " << *(xb.begin()) << endl;
         if (mode == Sender::Mode::IDLE) {
             cout << "Late reply" << endl;
@@ -47,12 +47,12 @@ class Sender : public Atomic<string> {
         mode = Sender::Mode::IDLE;
     }
 
-    void delta_conf(Bag<string> const &xb) {
+    void delta_conf(list<string> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
 
-    void output_func(Bag<string> &xb) { xb.push_back("Hello?"); }
+    void output_func(list<string> &xb) { xb.push_back("Hello?"); }
 
   private:
     enum class Mode { SEND, WAIT, IDLE };
@@ -65,13 +65,13 @@ class Receiver : public Atomic<string> {
 
     void delta_int() { mode = Receiver::Mode::IDLE; }
 
-    void delta_ext(double, Bag<string> const &) {
+    void delta_ext(double, list<string> const &) {
         mode = Receiver::Mode::REPLY;
     }
 
-    void delta_conf(Bag<string> const &) { mode = Receiver::Mode::REPLY; }
+    void delta_conf(list<string> const &) { mode = Receiver::Mode::REPLY; }
 
-    void output_func(Bag<string> &yb) { yb.push_back("Hi!"); }
+    void output_func(list<string> &yb) { yb.push_back("Hi!"); }
 
     double ta() {
         if (mode == Receiver::Mode::REPLY) {

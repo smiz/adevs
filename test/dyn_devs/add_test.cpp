@@ -22,7 +22,7 @@ class SimpleNetwork : public Network<SimpleIO> {
         }
     }
 
-    void route(SimpleIO const &, Devs<SimpleIO>*, Bag<Event<SimpleIO>> &) {}
+    void route(SimpleIO const &, Devs<SimpleIO>*, list<Event<SimpleIO>> &) {}
 
     bool model_transition() {
         shared_ptr<SimpleAtomic> model = make_shared<SimpleAtomic>();

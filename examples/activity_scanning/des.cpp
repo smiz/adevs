@@ -1,4 +1,5 @@
 #include "des.h"
+#include <list>
 
 using namespace std;
 
@@ -36,10 +37,10 @@ void Partition::delta_int() {
     }
 }
 
-void Partition::delta_ext(double e, adevs::Bag<shared_ptr<Event>> const &xb) {
+void Partition::delta_ext(double e, list<shared_ptr<Event>> const &xb) {
     time_now += e;
     mode = Mode::CONDITIONAL;
-    adevs::Bag<shared_ptr<Event>>::const_iterator iter = xb.begin();
+    list<shared_ptr<Event>>::const_iterator iter = xb.begin();
     for (; iter != xb.end(); iter++) {
         if (*iter != NULL && (*iter)->partition().get() == this) {
             schedule(*iter);
@@ -47,7 +48,7 @@ void Partition::delta_ext(double e, adevs::Bag<shared_ptr<Event>> const &xb) {
     }
 }
 
-void Partition::delta_conf(adevs::Bag<shared_ptr<Event>> const &xb) {
+void Partition::delta_conf(list<shared_ptr<Event>> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
@@ -62,7 +63,7 @@ double Partition::ta() {
     }
 }
 
-void Partition::output_func(adevs::Bag<shared_ptr<Event>> &yb) {
+void Partition::output_func(list<shared_ptr<Event>> &yb) {
     // Notify others
     for (auto ii : other_events) {
         yb.push_back(ii);

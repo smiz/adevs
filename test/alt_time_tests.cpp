@@ -16,9 +16,9 @@ class PingPong : public Atomic<int, T> {
   public:
     PingPong(bool active = false);
     void delta_int();
-    void delta_ext(T e, Bag<int> const &xb);
-    void delta_conf(Bag<int> const &xb);
-    void output_func(Bag<int> &yb);
+    void delta_ext(T e, list<int> const &xb);
+    void delta_conf(list<int> const &xb);
+    void output_func(list<int> &yb);
     T ta();
     int getCount() const { return count; }
 
@@ -38,12 +38,12 @@ void PingPong<T>::delta_int() {
 }
 
 template <typename T>
-void PingPong<T>::delta_ext(T e, Bag<int> const &xb) {
+void PingPong<T>::delta_ext(T e, list<int> const &xb) {
     active = xb.size() == 1;
 }
 
 template <typename T>
-void PingPong<T>::delta_conf(Bag<int> const &xb) {
+void PingPong<T>::delta_conf(list<int> const &xb) {
     delta_int();
     delta_ext(0, xb);
 }
@@ -58,7 +58,7 @@ T PingPong<T>::ta() {
 }
 
 template <typename T>
-void PingPong<T>::output_func(Bag<int> &yb) {
+void PingPong<T>::output_func(list<int> &yb) {
     yb.push_back(1);
 }
 

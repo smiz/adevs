@@ -28,8 +28,8 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
-#ifndef __adevs_cellspace_h_
-#define __adevs_cellspace_h_
+#ifndef _adevs_cellspace_h_
+#define _adevs_cellspace_h_
 #include <cstdlib>
 #include <set>
 #include "adevs/adevs.h"
@@ -108,7 +108,7 @@ class CellSpace : public Network<CellEvent<X>, T> {
     void getComponents(set<Cell*> &c);
     /// Route events within the Cellspace
     void route(CellEvent<X> const &event, Cell* model,
-               Bag<Event<CellEvent<X>, T>> &r);
+               list<Event<CellEvent<X>, T>> &r);
     /// Destructor; this destroys the components as well.
     ~CellSpace();
 
@@ -172,7 +172,7 @@ void CellSpace<X, T>::getComponents(set<Cell*> &c) {
 // Event routing function for the net_exec
 template <class X, class T>
 void CellSpace<X, T>::route(CellEvent<X> const &event, Cell* model,
-                            Bag<Event<CellEvent<X>, T>> &r) {
+                            list<Event<CellEvent<X>, T>> &r) {
     Cell* target = NULL;
     // If the target cell is inside of the cellspace
     if (event.x >= 0 && event.x < w &&  // check x dimension
@@ -187,7 +187,7 @@ void CellSpace<X, T>::route(CellEvent<X> const &event, Cell* model,
     }
     // If the target exists
     if (target != NULL) {
-        // Add an appropriate event to the receiver bag
+        // Add an appropriate event to the receiver list
         Event<CellEvent<X>, T> io(target, event);
         r.push_back(io);
     }

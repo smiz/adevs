@@ -19,13 +19,13 @@ class Parrot : public Atomic<PortValue<string>> {
         q = "";
     }
 
-    void delta_ext(double e, Bag<PortValue<string>> const &xb) {
+    void delta_ext(double e, list<PortValue<string>> const &xb) {
         for (auto iter : xb) {
             q += iter.value;
         }
     }
 
-    void delta_conf(Bag<PortValue<string>> const &xb) {
+    void delta_conf(list<PortValue<string>> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
@@ -41,7 +41,7 @@ class Parrot : public Atomic<PortValue<string>> {
         return 1.0;
     }
 
-    void output_func(Bag<PortValue<string>> &yb) {
+    void output_func(list<PortValue<string>> &yb) {
         PortValue<string> event(out, q);
         yb.push_back(event);
     }
@@ -85,7 +85,7 @@ int main() {
     shared_ptr<Listener> listener = make_shared<Listener>();
     sim.addEventListener(listener);
 
-    Bag<Event<PortValue<string>>> input;
+    list<Event<PortValue<string>>> input;
     input.push_back(start);
     sim.computeNextState(input, 0.0);
 

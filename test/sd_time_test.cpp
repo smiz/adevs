@@ -17,9 +17,9 @@ class Incr : public Atomic<int, sd_time<double>> {
         return sd_time<double>(0, count);
     }
     void delta_int() { count++; }
-    void delta_ext(sd_time<double>, Bag<int> const &) {}
-    void delta_conf(Bag<int> const &) {}
-    void output_func(Bag<int> &y) { y.push_back(count); }
+    void delta_ext(sd_time<double>, list<int> const &) {}
+    void delta_conf(list<int> const &) {}
+    void output_func(list<int> &y) { y.push_back(count); }
     int get_q() const { return count; }
 
   private:
@@ -31,7 +31,7 @@ class Watch : public Atomic<int, sd_time<double>> {
     Watch() : Atomic<int, sd_time<double>>() {}
     sd_time<double> ta() { return adevs_inf<sd_time<double>>(); }
     void delta_int() { assert(false); }
-    void delta_ext(sd_time<double> e, Bag<int> const &xb) {
+    void delta_ext(sd_time<double> e, list<int> const &xb) {
         int count = *(xb.begin());
         sd_time<double> expect;
         if (count % 2 == 0) {
@@ -41,8 +41,8 @@ class Watch : public Atomic<int, sd_time<double>> {
         }
         assert(e == expect);
     }
-    void delta_conf(Bag<int> const &) { assert(false); }
-    void output_func(Bag<int> &y) { assert(false); }
+    void delta_conf(list<int> const &) { assert(false); }
+    void output_func(list<int> &y) { assert(false); }
 };
 
 class MyEventListener : public EventListener<int, sd_time<double>> {

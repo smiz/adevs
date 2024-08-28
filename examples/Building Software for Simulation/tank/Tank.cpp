@@ -20,7 +20,7 @@ void Tank::getComponents(set<Devs<SimEvent>*> &c) {
 }
 
 void Tank::route(SimEvent const &value, Devs<SimEvent>* model,
-                 Bag<Event<SimEvent>> &r) {
+                 list<Event<SimEvent>> &r) {
     // Packets go to the computer
     if (value.getType() == SIM_PACKET) {
         r.push_back(Event<SimEvent>(&computer, value));

@@ -53,18 +53,19 @@ class bouncing_ball : public ode_system<PortValue<double>> {
         sample = false;
         last_event_time = q[2];
     }
-    void external_event(double* q, double e, Bag<PortValue<double>> const &xb) {
+    void external_event(double* q, double e,
+                        list<PortValue<double>> const &xb) {
         assert(fabs(q[2] - last_event_time - e) < 1E-9);
         sample = xb.size() > 0;
         last_event_time = q[2];
     }
     void confluent_event(double* q, bool const* event_flag,
-                         Bag<PortValue<double>> const &xb) {
+                         list<PortValue<double>> const &xb) {
         internal_event(q, event_flag);
         external_event(q, 0.0, xb);
     }
     void output_func(double const* q, bool const* event_flag,
-                     Bag<PortValue<double>> &yb) {
+                     list<PortValue<double>> &yb) {
         assert(event_flag[0] || event_flag[1]);
         PortValue<double> event(0, q[0]);
         yb.push_back(event);

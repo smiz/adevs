@@ -26,7 +26,7 @@ int main() {
         if (sim_c.nextEventTime() == tN) {
             sim_c.computeNextOutput();
         }
-        adevs::Bag<adevs::Event<PortValue>> y;
+        list<adevs::Event<PortValue>> y;
         vector<adevs::Event<PortValue>>::iterator iter =
             listener.output.begin();
         for (; iter != listener.output.end(); iter++) {

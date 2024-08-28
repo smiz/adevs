@@ -15,7 +15,7 @@ class Computer : public adevs::Network<SimEvent> {
     void getComponents(set<adevs::Devs<SimEvent>*> &c);
     // Route events within the computer
     void route(SimEvent const &value, adevs::Devs<SimEvent>* model,
-               adevs::Bag<adevs::Event<SimEvent>> &r);
+               list<adevs::Event<SimEvent>> &r);
 
   private:
     PacketProcessing p;

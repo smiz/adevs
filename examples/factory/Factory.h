@@ -17,7 +17,7 @@ class Factory : public adevs::Network<int> {
     void getComponents(set<adevs::Devs<int>*> &c);
 
     void route(int const &order, adevs::Devs<int>* src,
-               adevs::Bag<adevs::Event<int>> &r);
+               list<adevs::Event<int>> &r);
 
     bool model_transition();
 

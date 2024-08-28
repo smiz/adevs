@@ -17,7 +17,7 @@ void GenrFail::delta_int() {
     time_to_drop = DBL_MAX;
 }
 
-void GenrFail::output_func(Bag<PortValue<BasicEvent*>> &yb) {
+void GenrFail::output_func(list<PortValue<BasicEvent*>> &yb) {
     GenrFailEvent* f = new GenrFailEvent(data->getGenrs()[which]);
     yb.push_back(PortValue<BasicEvent*>(genr_fail, f));
 }

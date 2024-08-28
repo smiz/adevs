@@ -17,9 +17,9 @@ class Model : public Atomic<int, sd_time<int>> {
         return sd_time<int>(0, 0);
     }
     void delta_int() { count++; }
-    void delta_ext(sd_time<int> e, Bag<int> const &) {}
-    void delta_conf(Bag<int> const &) { delta_int(); }
-    void output_func(Bag<int> &y) { y.push_back(count); }
+    void delta_ext(sd_time<int> e, list<int> const &) {}
+    void delta_conf(list<int> const &) { delta_int(); }
+    void output_func(list<int> &y) { y.push_back(count); }
 
     string get_name() const { return name; }
 
@@ -33,11 +33,11 @@ class Passive : public Atomic<int, sd_time<int>> {
     Passive(string name) : Atomic<int, sd_time<int>>(), name(name) {}
     sd_time<int> ta() { return adevs_inf<sd_time<int>>(); }
     void delta_int() {}
-    void delta_ext(sd_time<int> e, Bag<int> const &) {
+    void delta_ext(sd_time<int> e, list<int> const &) {
         cout << name << " " << e << endl;
     }
-    void delta_conf(Bag<int> const &) {}
-    void output_func(Bag<int> &) {}
+    void delta_conf(list<int> const &) {}
+    void output_func(list<int> &) {}
 
     string get_name() const { return name; }
 

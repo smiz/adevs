@@ -1,4 +1,5 @@
 #include <iostream>
+#include <list>
 #include <memory>
 #include "adevs/adevs.h"
 #include "gcd.h"
@@ -13,7 +14,7 @@ int main() {
     shared_ptr<genr> g = make_shared<genr>(10.0, 1, true);
     model->couple(g, g->signal, c, c->in);
     adevs::Simulator<PortValue> sim(model);
-    adevs::Bag<adevs::Event<PortValue>> input;
+    list<adevs::Event<PortValue>> input;
     while (sim.nextEventTime() < DBL_MAX) {
         double tnew = sim.nextEventTime();
         sim.computeNextOutput();

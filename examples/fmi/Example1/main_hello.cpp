@@ -32,7 +32,7 @@ class HelloWorldExt : public HelloWorld {
     }
     // Print state at each output event
     void output_func(double const* q, bool const* state_event,
-                     Bag<double> &yb) {
+                     list<double> &yb) {
         HelloWorld::output_func(q, state_event, yb);
         // Get the model state. This is real variable 0 according to modelDescription.xml
         double x = get_x();

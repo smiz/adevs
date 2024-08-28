@@ -1,5 +1,5 @@
-#ifndef __customer_h_
-#define __customer_h_
+#ifndef _customer_h_
+#define _customer_h_
 #include "adevs/adevs.h"
 
 /**

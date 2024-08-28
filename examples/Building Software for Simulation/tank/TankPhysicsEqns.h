@@ -21,14 +21,12 @@ class TankPhysicsEqns : public adevs::ode_system<SimEvent> {
     // Expiration of the timer and collision events are internal
     void internal_event(double* q, bool const* events);
     // Change in the motor voltage is an external event
-    void external_event(double* q, double e, adevs::Bag<SimEvent> const &xb);
+    void external_event(double* q, double e, list<SimEvent> const &xb);
     // Confluent events
     void confluent_event(double* q, bool const* events,
-                         adevs::Bag<SimEvent> const &xb);
+                         list<SimEvent> const &xb);
     // Output position events for the display when the timer expires
-    void output_func(double const* q, bool const* events,
-                     adevs::Bag<SimEvent> &yb);
-    // Garbage collection
+    void output_func(double const* q, bool const* events, list<SimEvent> &yb);
 
     // Get the resistance of the motor (left and right are the same)
     double getMotorOhms() const { return Rm; }

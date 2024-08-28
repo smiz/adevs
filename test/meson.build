@@ -1,5 +1,4 @@
 # Add tests in their own subdirectories
-
 subdir('dyn_devs')
 # subdir('fmi')
 # subdir('gcd')
@@ -18,9 +17,6 @@ test('alt_time', test_alt_time)
 
 test_atomic = executable('atomic', 'atomic_test.cpp', include_directories: adevs)
 test('atomic', test_atomic)
-
-test_bag = executable('bag_test', 'bag_test.cpp', include_directories: adevs)
-test('bag', test_bag)
 
 test_double_fcmp = executable('double_fcmp', 'double_fcmp_test.cpp', include_directories: adevs)
 test('double_fcmp', test_double_fcmp)

@@ -11,9 +11,9 @@ class Genr : public Atomic<int> {
     Genr() : Atomic<int>() {}
     double ta() { return period; }
     void delta_int() {}
-    void delta_ext(double, Bag<int> const &) {}
-    void delta_conf(Bag<int> const &) {}
-    void output_func(Bag<int> &yb) { yb.push_back(1); }
+    void delta_ext(double, list<int> const &) {}
+    void delta_conf(list<int> const &) {}
+    void output_func(list<int> &yb) { yb.push_back(1); }
 };
 
 // Also undergoes an internal transition every
@@ -30,18 +30,18 @@ class test_model : public ode_system<int> {
         assert(is_confluent);
         q[0] = period;
     }
-    void external_event(double* q, double e, Bag<int> const &xb) {
+    void external_event(double* q, double e, list<int> const &xb) {
         assert(is_confluent);
         assert(xb.size() == 1);
     }
     void confluent_event(double* q, bool const* event_flag,
-                         Bag<int> const &xb) {
+                         list<int> const &xb) {
         is_confluent = true;
         internal_event(q, event_flag);
         external_event(q, 0.0, xb);
         is_confluent = false;
     }
-    void output_func(double const*, bool const*, Bag<int> &) {}
+    void output_func(double const*, bool const*, list<int> &) {}
 
 
   private:

@@ -1,5 +1,5 @@
-#ifndef __genr_h_
-#define __genr_h_
+#ifndef _genr_h_
+#define _genr_h_
 #include <cassert>
 #include <cstdio>
 #include <vector>
@@ -46,10 +46,10 @@ class genr : public adevs::Atomic<PortValue> {
             sigma = pattern[count++ % pattern.size()];
         }
     }
-    void delta_ext(double, adevs::Bag<PortValue> const &x) {
+    void delta_ext(double, list<PortValue> const &x) {
         sigma = DBL_MAX;
         active = false;
-        adevs::Bag<PortValue>::const_iterator i;
+        list<PortValue>::const_iterator i;
         for (i = x.begin(); i != x.end(); i++) {
             if ((*i).port == start) {
                 if (active == false) {
@@ -63,8 +63,8 @@ class genr : public adevs::Atomic<PortValue> {
         }
         printf("Got genr.stop\n");
     }
-    void delta_conf(adevs::Bag<PortValue> const &x) { delta_ext(ta(), x); }
-    void output_func(adevs::Bag<PortValue> &y) {
+    void delta_conf(list<PortValue> const &x) { delta_ext(ta(), x); }
+    void output_func(list<PortValue> &y) {
         PortValue pv;
         pv.port = signal;
         pv.value = new object();

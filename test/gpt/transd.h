@@ -1,5 +1,5 @@
-#ifndef __transd_h_
-#define __transd_h_
+#ifndef _transd_h_
+#define _transd_h_
 #include <cstdlib>
 #include <iostream>
 #include <vector>
@@ -50,12 +50,12 @@ class transd : public adevs::Atomic<PortValue> {
         sigma = DBL_MAX;
     }
     /// External transition function
-    void delta_ext(double e, adevs::Bag<PortValue> const &x) {
+    void delta_ext(double e, list<PortValue> const &x) {
         // Keep track of the simulation time
         t += e;
         // Save new jobs in order to compute statistics when they are
         // completed.
-        adevs::Bag<PortValue>::iterator iter;
+        list<PortValue>::iterator iter;
         for (auto iter : x) {
             if (iter.port == ariv) {
                 job j(iter.value);
@@ -85,23 +85,21 @@ class transd : public adevs::Atomic<PortValue> {
         // Continue with next event time unchanged
         sigma -= e;
     }
-    /// Confluent transition function
-    void delta_conf(adevs::Bag<PortValue> const &x) {
+
+    void delta_conf(list<PortValue> const &x) {
         delta_int();
         delta_ext(0.0, x);
     }
-    /// Output function
-    void output_func(adevs::Bag<PortValue> &y) {
+
+    void output_func(list<PortValue> &y) {
         /// Generate an output event to stop the generator
         job j;
         PortValue pv(out, j);
         y.push_back(pv);
     }
-    /// Time advance function
-    double ta() { return sigma; }
-    /// Garbage collection. No heap allocation in output, so do nothing
 
-    /// Destructor
+    double ta() { return sigma; }
+
     ~transd() {
         jobs_arrived.clear();
         jobs_solved.clear();

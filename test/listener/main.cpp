@@ -52,7 +52,7 @@ int main() {
     sim->addEventListener(listener);
 
     // This input should cause two outputEvent() calls at time 1
-    Bag<Event<IO_Type>> b;
+    list<Event<IO_Type>> b;
     b.push_back(Event<IO_Type>(d, IO_Type(0, 1)));
 
     // Inject it at time 0

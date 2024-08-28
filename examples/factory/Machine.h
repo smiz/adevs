@@ -24,13 +24,13 @@ class Machine : public adevs::Atomic<int> {
         }
     }
 
-    void delta_ext(double e, adevs::Bag<int> const &xb) {
+    void delta_ext(double e, list<int> const &xb) {
         // Update the remaining time if the machine is working
         if (!q.empty()) {
             time_remaining -= e;
         }
         // Put new orders into the queue
-        adevs::Bag<int>::const_iterator iter = xb.begin();
+        list<int>::const_iterator iter = xb.begin();
         for (; iter != xb.end(); iter++) {
             // If the machine is idle then set the service time
             if (q.empty()) {
@@ -41,12 +41,12 @@ class Machine : public adevs::Atomic<int> {
         }
     }
 
-    void delta_conf(adevs::Bag<int> const &xb) {
+    void delta_conf(list<int> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
 
-    void output_func(adevs::Bag<int> &yb) {
+    void output_func(list<int> &yb) {
         // Expel the completed order
         yb.push_back(q.front());
     }

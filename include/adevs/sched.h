@@ -28,8 +28,8 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
-#ifndef __adevs_schedule_h_
-#define __adevs_schedule_h_
+#ifndef _adevs_schedule_h_
+#define _adevs_schedule_h_
 #include <cfloat>
 #include <cstdlib>
 #include <list>

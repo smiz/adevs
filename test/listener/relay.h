@@ -23,13 +23,13 @@ class Relay : public adevs::Atomic<IO_Type> {
 
     void delta_int() { relay = -1; }
 
-    void delta_ext(double e, adevs::Bag<IO_Type> const &r) {
+    void delta_ext(double e, list<IO_Type> const &r) {
         relay = (*(r.begin())).value;
         assert((*(r.begin())).port == 0);
         assert(relay > 0);
     }
 
-    void delta_conf(adevs::Bag<IO_Type> const &) {}
+    void delta_conf(list<IO_Type> const &) {}
 
     double ta() {
         if (relay > 0) {
@@ -38,7 +38,7 @@ class Relay : public adevs::Atomic<IO_Type> {
         return DBL_MAX;
     }
 
-    void output_func(adevs::Bag<IO_Type> &y) { y.push_back(IO_Type(1, relay)); }
+    void output_func(list<IO_Type> &y) { y.push_back(IO_Type(1, relay)); }
 
 
     int getRelayValue() const { return relay; }

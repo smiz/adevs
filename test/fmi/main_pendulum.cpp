@@ -21,7 +21,7 @@ class oracle : public ode_system<double> {
     void state_event_func(double const*, double*) {}
     double time_event_func(double const* q) { return q[2]; }
     void internal_event(double* q, bool const*) { q[2] = 0.01; }
-    void external_event(double* q, double e, Bag<double> const &xb) {
+    void external_event(double* q, double e, list<double> const &xb) {
         static double const pi = 3.1415926535897931;
         test_count++;
         double test_angle = *(xb.begin());
@@ -38,10 +38,10 @@ class oracle : public ode_system<double> {
         }
         assert(fabs(diff) < 1E-3);
     }
-    void confluent_event(double*, bool const*, Bag<double> const &) {
+    void confluent_event(double*, bool const*, list<double> const &) {
         assert(false);
     }
-    void output_func(double const*, bool const*, Bag<double> &yb) {
+    void output_func(double const*, bool const*, list<double> &yb) {
         yb.push_back(0);
     }
     int getTestCount() { return test_count; }
@@ -65,12 +65,12 @@ class pendulum2 : public pendulum {
         pendulum::internal_event(q, state_events);
         query = false;
     }
-    void external_event(double* q, double e, Bag<double> const &xb) {
+    void external_event(double* q, double e, list<double> const &xb) {
         pendulum::external_event(q, e, xb);
         query = true;
     }
     void output_func(double const* q, bool const* state_events,
-                     Bag<double> &yb) {
+                     list<double> &yb) {
         pendulum::output_func(q, state_events, yb);
         yb.push_back(get_theta());
     }

@@ -24,11 +24,11 @@ void QueueBus::delta_int() {
     }
 }
 
-void QueueBus::delta_ext(double e, Bag<PortValue<BasicEvent*>> const &xb) {
+void QueueBus::delta_ext(double e, list<PortValue<BasicEvent*>> const &xb) {
     if (!q.empty()) {
         ttg -= e;
     }
-    for (Bag<PortValue<BasicEvent*>>::const_iterator iter = xb.begin();
+    for (list<PortValue<BasicEvent*>>::const_iterator iter = xb.begin();
          iter != xb.end(); iter++) {
         if (q.empty()) {
             schedule_next_packet();
@@ -44,7 +44,7 @@ void QueueBus::delta_ext(double e, Bag<PortValue<BasicEvent*>> const &xb) {
     }
 }
 
-void QueueBus::delta_conf(Bag<PortValue<BasicEvent*>> const &xb) {
+void QueueBus::delta_conf(list<PortValue<BasicEvent*>> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
@@ -53,7 +53,7 @@ double QueueBus::ta() {
     return ttg;
 }
 
-void QueueBus::output_func(Bag<PortValue<BasicEvent*>> &yb) {
+void QueueBus::output_func(list<PortValue<BasicEvent*>> &yb) {
     assert(!q.empty());
     PortValue<BasicEvent*> y;
     y.value = q.front().e;

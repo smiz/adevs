@@ -40,9 +40,9 @@ void Cell::delta_int() {
     phase = (check_death_rule()) ? Dead : Alive;
 }
 
-void Cell::delta_ext(int e, adevs::Bag<CellEvent> const &xb) {
+void Cell::delta_ext(int e, list<CellEvent> const &xb) {
     // Update the count of living neighbors
-    adevs::Bag<CellEvent>::const_iterator iter;
+    list<CellEvent>::const_iterator iter;
     for (iter = xb.begin(); iter != xb.end(); iter++) {
         if ((*iter).value == Dead) {
             nalive--;
@@ -52,12 +52,12 @@ void Cell::delta_ext(int e, adevs::Bag<CellEvent> const &xb) {
     }
 }
 
-void Cell::delta_conf(adevs::Bag<CellEvent> const &xb) {
+void Cell::delta_conf(list<CellEvent> const &xb) {
     delta_int();
     delta_ext(0, xb);
 }
 
-void Cell::output_func(adevs::Bag<CellEvent> &yb) {
+void Cell::output_func(list<CellEvent> &yb) {
     CellEvent e;
     // Out is the state that we will assume
     e.value = (check_born_rule()) ? Alive : Dead;

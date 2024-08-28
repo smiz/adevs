@@ -28,12 +28,12 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
-#ifndef __adevs_models_h_
-#define __adevs_models_h_
+#ifndef _adevs_models_h_
+#define _adevs_models_h_
 #include <cstdlib>
+#include <list>
 #include <memory>
 #include <set>
-#include "adevs/bag.h"
 #include "adevs/exception.h"
 #include "adevs/time.h"
 
@@ -166,8 +166,8 @@ class Atomic : public Devs<X, T> {
           tL(adevs_zero<T>()),
           q_index(0),  // The Schedule requires this to be zero
           proc(-1),
-          inputs(std::make_shared<Bag<X>>()),
-          outputs(std::make_shared<Bag<X>>()) {}
+          inputs(std::make_shared<list<X>>()),
+          outputs(std::make_shared<list<X>>()) {}
     /// Internal transition function.
     virtual void delta_int() = 0;
     /*
@@ -175,17 +175,17 @@ class Atomic : public Devs<X, T> {
      * @param e Time elapsed since the last change of state
      * @param xb Input for the model.
      */
-    virtual void delta_ext(T e, Bag<X> const &xb) = 0;
+    virtual void delta_ext(T e, list<X> const &xb) = 0;
     /*
      * Confluent transition function.
      * @param xb Input for the model.
      */
-    virtual void delta_conf(Bag<X> const &xb) = 0;
+    virtual void delta_conf(list<X> const &xb) = 0;
     /*
-     * Output function.  Output values should be added to the bag yb.
-     * @param yb Empty bag to be filled with the model's output
+     * Output function.  Output values should be added to the list yb.
+     * @param yb Empty list to be filled with the model's output
      */
-    virtual void output_func(Bag<X> &yb) = 0;
+    virtual void output_func(list<X> &yb) = 0;
     /*
      * Time advance function. adevs_inf<T>() is used for infinity.
      * @return The time to the next internal event
@@ -214,9 +214,9 @@ class Atomic : public Devs<X, T> {
     unsigned int q_index;
     // Thread assigned to this model
     int proc;
-    // Input and output event bags
-    std::shared_ptr<Bag<X>> inputs;
-    std::shared_ptr<Bag<X>> outputs;
+
+    std::shared_ptr<list<X>> inputs;
+    std::shared_ptr<list<X>> outputs;
 };
 
 /*
@@ -245,12 +245,12 @@ class MealyAtomic : public Atomic<X, T> {
      * Produce output at e < ta(q) in response to xb.
      * This is output preceding an external event.
      */
-    virtual void output_func(T e, Bag<X> const &xb, Bag<X> &yb) = 0;
+    virtual void output_func(T e, list<X> const &xb, list<X> &yb) = 0;
     /*
      * Produce output at e = ta(q) in response to xb.
      * This is output preceding a confluent event.
      */
-    virtual void output_func(Bag<X> const &xb, Bag<X> &yb) = 0;
+    virtual void output_func(list<X> const &xb, list<X> &yb) = 0;
 
   private:
     friend class Simulator<X, T>;
@@ -277,17 +277,17 @@ class Network : public Devs<X, T> {
     virtual void getComponents(set<Devs<X, T>*> &c) = 0;
     /*
      * This method is called by the Simulator to route an output value
-     * produced by a model. This method should fill the bag r
+     * produced by a model. This method should fill the list r
      * with Events that point to the target model and carry the value
      * to be delivered to the target. The target may be a component
      * of the Network or the Network itself, the latter causing the
      * Network to produce an output.
      * @param model The model that produced the output value
      * @param value The output value produced by the model
-     * @param r A bag to be filled with (target,value) pairs
+     * @param r A list to be filled with (target,value) pairs
      */
     virtual void route(X const &value, Devs<X, T>* model,
-                       Bag<Event<X, T>> &r) = 0;
+                       list<Event<X, T>> &r) = 0;
 
     /// Returns a pointer to this model.
     Network<X, T>* typeIsNetwork() { return this; }

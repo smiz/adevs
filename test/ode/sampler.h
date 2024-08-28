@@ -20,25 +20,25 @@ class sampler : public adevs::Atomic<adevs::PortValue<double>> {
         sigma = dt;
     }
 
-    void delta_ext(double e, adevs::Bag<adevs::PortValue<double>> const &xb) {
+    void delta_ext(double e, list<adevs::PortValue<double>> const &xb) {
         sigma -= e;
         t += e;
         std::cout << t << " ";
-        adevs::Bag<adevs::PortValue<double>>::const_iterator iter;
+        list<adevs::PortValue<double>>::const_iterator iter;
         for (iter = xb.begin(); iter != xb.end(); iter++) {
             std::cout << (*iter).value << " ";
         }
         std::cout << std::endl;
     }
 
-    void delta_conf(adevs::Bag<adevs::PortValue<double>> const &xb) {
+    void delta_conf(list<adevs::PortValue<double>> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
 
     double ta() { return sigma; }
 
-    void output_func(adevs::Bag<adevs::PortValue<double>> &yb) {
+    void output_func(list<adevs::PortValue<double>> &yb) {
         adevs::PortValue<double> event(0, 0.0);
         yb.push_back(event);
     }

@@ -12,9 +12,9 @@ class Rx : public AtomicModel {
 
     Rx(int addr);
     void delta_int();
-    void delta_ext(double e, adevs::Bag<IO_Type> const &xb);
-    void delta_conf(adevs::Bag<IO_Type> const &xb);
-    void output_func(adevs::Bag<IO_Type> &yb);
+    void delta_ext(double e, list<IO_Type> const &xb);
+    void delta_conf(list<IO_Type> const &xb);
+    void output_func(list<IO_Type> &yb);
     double ta();
     ~Rx();
 
@@ -31,9 +31,9 @@ class Tx : public AtomicModel {
 
     Tx(int maxTries);
     void delta_int();
-    void delta_ext(double e, adevs::Bag<IO_Type> const &xb);
-    void delta_conf(adevs::Bag<IO_Type> const &xb);
-    void output_func(adevs::Bag<IO_Type> &yb);
+    void delta_ext(double e, list<IO_Type> const &xb);
+    void delta_conf(list<IO_Type> const &xb);
+    void output_func(list<IO_Type> &yb);
     double ta();
     int getCollisions() const { return collisions; }
     ~Tx();

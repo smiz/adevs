@@ -23,9 +23,9 @@ void Decision::delta_int() {
     deciding.clear();
 }
 
-void Decision::delta_ext(double e, Bag<IO_Type> const &x) {
+void Decision::delta_ext(double e, list<IO_Type> const &x) {
     // Assign new arrivals to a line and update the line length
-    Bag<IO_Type>::const_iterator iter = x.begin();
+    list<IO_Type>::const_iterator iter = x.begin();
     for (; iter != x.end(); iter++) {
         if ((*iter).port == decide) {
             int line_choice = find_shortest_line();
@@ -46,7 +46,7 @@ void Decision::delta_ext(double e, Bag<IO_Type> const &x) {
     }
 }
 
-void Decision::delta_conf(Bag<IO_Type> const &x) {
+void Decision::delta_conf(list<IO_Type> const &x) {
     delta_int();
     delta_ext(0.0, x);
 }
@@ -63,7 +63,7 @@ double Decision::ta() {
     }
 }
 
-void Decision::output_func(Bag<IO_Type> &y) {
+void Decision::output_func(list<IO_Type> &y) {
     // Send all customers to their lines
     list<pair<int, Customer*>>::iterator i = deciding.begin();
     for (; i != deciding.end(); i++) {

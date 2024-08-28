@@ -74,7 +74,7 @@ class Agent : public Atomic<int> {
             tr = gsl_ran_exponential(rnd, 1.0 / r);
         }
     }
-    void delta_ext(double e, Bag<int> const &) {
+    void delta_ext(double e, list<int> const &) {
         // If we are susceptible and get unlucky
         if (c == S && gsl_rng_uniform(rnd) < p) {
             // Switch from S to I
@@ -93,11 +93,11 @@ class Agent : public Atomic<int> {
             tr -= e;
         }
     }
-    void delta_conf(Bag<int> const &xb) {
+    void delta_conf(list<int> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
-    void output_func(Bag<int> &yb) {
+    void output_func(list<int> &yb) {
         // If this is our next contact, then
         // send an event to some other agent
         // that will be selected at random
@@ -125,9 +125,9 @@ class SIR : public Atomic<int> {
         : Atomic<int>(), ss(1.0 - init_sick), ii(init_sick), rr(0.0), h(0.01) {}
     double ta() { return h; }
     void delta_int() { update(h); }
-    void delta_ext(double e, Bag<int> const &) { update(e); }
-    void delta_conf(Bag<int> const &) { update(h); }
-    void output_func(Bag<int> &) {}
+    void delta_ext(double e, list<int> const &) { update(e); }
+    void delta_conf(list<int> const &) { update(h); }
+    void output_func(list<int> &) {}
 
     double get_s() const { return ss; }
     double get_i() const { return ii; }
@@ -173,7 +173,7 @@ class RandomNetwork : public Network<int> {
         }
         c.insert(sir);
     }
-    void route(int const &value, Devs<int>* model, Bag<Event<int>> &r) {
+    void route(int const &value, Devs<int>* model, list<Event<int>> &r) {
         // This implements our random contact network
         Event<int> xx;
         xx.value = value;

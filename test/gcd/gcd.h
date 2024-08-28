@@ -1,5 +1,5 @@
-#ifndef __gcd_h_
-#define __gcd_h_
+#ifndef _gcd_h_
+#define _gcd_h_
 #include "adevs/adevs.h"
 #include "counter.h"
 #include "delay.h"

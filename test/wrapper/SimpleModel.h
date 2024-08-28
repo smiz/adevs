@@ -11,19 +11,17 @@ class SimpleModel : public adevs::Atomic<Internal*> {
   public:
     SimpleModel() : adevs::Atomic<Internal*>() {}
     void delta_int() { s.value++; }
-    void delta_ext(double e, adevs::Bag<Internal*> const &xb) {
-        adevs::Bag<Internal*>::const_iterator iter = xb.begin();
+    void delta_ext(double e, list<Internal*> const &xb) {
+        list<Internal*>::const_iterator iter = xb.begin();
         s.value = (*iter)->value;
         s.period = (*iter)->period;
     }
-    void delta_conf(adevs::Bag<Internal*> const &xb) {
+    void delta_conf(list<Internal*> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
     double ta() { return s.period; }
-    void output_func(adevs::Bag<Internal*> &yb) {
-        yb.push_back(new Internal(s));
-    }
+    void output_func(list<Internal*> &yb) { yb.push_back(new Internal(s)); }
 
   private:
     Internal s;

@@ -13,7 +13,7 @@ Clerk::Clerk()
       t_spent(0.0)        // No time spent on a customer so far
 {}
 
-void Clerk::delta_ext(double e, Bag<IO_Type> const &xb) {
+void Clerk::delta_ext(double e, list<IO_Type> const &xb) {
     // Print a notice of the external transition
     cout << "Clerk: Computed the external transition function at t = " << t + e
          << endl;
@@ -24,7 +24,7 @@ void Clerk::delta_ext(double e, Bag<IO_Type> const &xb) {
         t_spent += e;
     }
     // Add the new customers to the back of the line.
-    Bag<IO_Type>::const_iterator i = xb.begin();
+    list<IO_Type>::const_iterator i = xb.begin();
     for (; i != xb.end(); i++) {
         // Copy the incoming Customer and place it at the back of the line.
         line.push_back(new Customer(*((*i).value)));
@@ -53,12 +53,12 @@ void Clerk::delta_int() {
          << endl;
 }
 
-void Clerk::delta_conf(Bag<IO_Type> const &xb) {
+void Clerk::delta_conf(list<IO_Type> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
 
-void Clerk::output_func(Bag<IO_Type> &yb) {
+void Clerk::output_func(list<IO_Type> &yb) {
     // Get the departing customer
     Customer* leaving = line.front();
     // Set the departure time

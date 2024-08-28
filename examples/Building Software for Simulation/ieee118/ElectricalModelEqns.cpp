@@ -231,7 +231,7 @@ void ElectricalModelEqns::der_func(double const* q, double* dq) {
 }
 
 void ElectricalModelEqns::output_func(double const* q, bool const* state_event,
-                                      Bag<PortValue<BasicEvent*>> &yb) {
+                                      list<PortValue<BasicEvent*>> &yb) {
     // Output a sample event is any of them are primed to fire
     map<unsigned, GenrSampleEvent>::iterator siter = sample_conds.begin();
     for (siter = sample_conds.begin(); siter != sample_conds.end(); siter++) {
@@ -312,13 +312,13 @@ void ElectricalModelEqns::internal_event(double* q, bool const* z) {
 }
 
 void ElectricalModelEqns::external_event(
-    double* q, double e, Bag<PortValue<BasicEvent*>> const &xb) {
+    double* q, double e, list<PortValue<BasicEvent*>> const &xb) {
     // Don't do anything if event are turned off
     if (no_events) {
         return;
     }
     // Iterate through the input event list
-    for (Bag<PortValue<BasicEvent*>>::const_iterator iter = xb.begin();
+    for (list<PortValue<BasicEvent*>>::const_iterator iter = xb.begin();
          iter != xb.end(); iter++) {
         // Apply a uniform load adjustment
         if ((*iter).port == LoadAdj) {
@@ -386,7 +386,7 @@ void ElectricalModelEqns::external_event(
 }
 
 void ElectricalModelEqns::confluent_event(
-    double* q, bool const* z, Bag<PortValue<BasicEvent*>> const &xb) {
+    double* q, bool const* z, list<PortValue<BasicEvent*>> const &xb) {
     internal_event(q, z);
     external_event(q, 0, xb);
 }

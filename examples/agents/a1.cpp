@@ -21,9 +21,9 @@ class Agent : public Atomic<int> {
   public:
     Agent() : Atomic<int>(), ttg(gsl_ran_exponential(rnd, a)) { pop++; }
     void delta_int() { ttg = adevs_inf<double>(); }
-    void delta_ext(double, Bag<int> const &) {}
-    void delta_conf(Bag<int> const &) {}
-    void output_func(Bag<int> &) { pop--; }
+    void delta_ext(double, list<int> const &) {}
+    void delta_conf(list<int> const &) {}
+    void output_func(list<int> &) { pop--; }
     double ta() { return ttg; }
     static int getPop() { return pop; }
 

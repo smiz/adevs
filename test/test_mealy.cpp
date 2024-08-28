@@ -30,9 +30,9 @@ class Periodic : public Atomic<int> {
         return p;
     }
     void delta_int() { c++; }
-    void delta_ext(double, Bag<int> const &) {}
-    void delta_conf(Bag<int> const &) {}
-    void output_func(Bag<int> &yb) { yb.push_back(1); }
+    void delta_ext(double, list<int> const &) {}
+    void delta_conf(list<int> const &) {}
+    void output_func(list<int> &yb) { yb.push_back(1); }
 
   private:
     double const p;
@@ -44,10 +44,10 @@ class Receiver : public Atomic<int> {
     Receiver() : Atomic<int>(), c(0) {}
     double ta() { return adevs_inf<double>(); }
     void delta_int() {}
-    void delta_ext(double e, Bag<int> const &xb) { c += xb.size(); }
-    void delta_conf(Bag<int> const &xb) { delta_ext(0.0, xb); }
+    void delta_ext(double e, list<int> const &xb) { c += xb.size(); }
+    void delta_conf(list<int> const &xb) { delta_ext(0.0, xb); }
     int get_c() const { return c; }
-    void output_func(Bag<int> &) {}
+    void output_func(list<int> &) {}
 
   private:
     int c;
@@ -60,21 +60,21 @@ class Trigger : public MealyAtomic<int> {
     int external_event_count() const { return external_events; }
     double ta() { return ttg; }
     void delta_int() { ttg = adevs_inf<double>(); }
-    void delta_ext(double e, Bag<int> const &xb) {
+    void delta_ext(double e, list<int> const &xb) {
         assert(ee == e);
         external_events++;
         ttg = 1.0;
     }
-    void delta_conf(Bag<int> const &xb) { ttg = 1.0; }
-    void output_func(Bag<int> &yb) {
+    void delta_conf(list<int> const &xb) { ttg = 1.0; }
+    void output_func(list<int> &yb) {
         // Turn off
         yb.push_back(0);
     }
-    void output_func(Bag<int> const &xb, Bag<int> &yb) {
+    void output_func(list<int> const &xb, list<int> &yb) {
         // Turn on
         yb.push_back(*(xb.begin()));
     }
-    void output_func(double e, Bag<int> const &xb, Bag<int> &yb) {
+    void output_func(double e, list<int> const &xb, list<int> &yb) {
         ee = e;
         output_func(xb, yb);
     }
