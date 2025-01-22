@@ -14,7 +14,7 @@ void Computer::getComponents(set<Devs<SimEvent>*> &c) {
 }
 
 void Computer::route(SimEvent const &value, Devs<SimEvent>* model,
-                     Bag<Event<SimEvent>> &r) {
+                     list<Event<SimEvent>> &r) {
     // Packets and interrupts go to the packet processing model
     if (value.getType() == SIM_PACKET || value.getType() == SIM_INTERRUPT) {
         r.push_back(Event<SimEvent>(&p, value));

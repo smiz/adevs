@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
     // Add an event listener to plot the trajectory
     sim->addEventListener(l);
     // Inject the driver command into the simulation at time 0
-    Bag<Event<SimEvent>> input;
+    list<Event<SimEvent>> input;
     SimEvent cmd(sim_command);
     Event<SimEvent> event(tank, cmd);
     input.push_back(event);

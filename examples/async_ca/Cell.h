@@ -1,5 +1,5 @@
-#ifndef __cell_h_
-#define __cell_h_
+#ifndef _cell_h_
+#define _cell_h_
 #include "adevs/adevs.h"
 
 struct value_t {
@@ -13,16 +13,12 @@ class Cell : public adevs::Atomic<adevs::CellEvent<value_t>> {
     Cell(int position, bool const* const state, double h);
     // State transition functions
     void delta_int();
-    void delta_ext(double e, adevs::Bag<adevs::CellEvent<value_t>> const &xb);
-    void delta_conf(adevs::Bag<adevs::CellEvent<value_t>> const &xb);
-    // Time advance function
+    void delta_ext(double e, list<adevs::CellEvent<value_t>> const &xb);
+    void delta_conf(list<adevs::CellEvent<value_t>> const &xb);
     double ta();
-    // Output function
-    void output_func(adevs::Bag<adevs::CellEvent<value_t>> &yb);
-    // Garbage collection method is not needed for this model
-    void gc_output(adevs::Bag<adevs::CellEvent<value_t>> &) {}
-    // Destructor
-    ~Cell() {}
+
+    void output_func(list<adevs::CellEvent<value_t>> &yb);
+
     bool getState() { return q; }
     static void setParams(bool* vis, unsigned rule, int length);
 

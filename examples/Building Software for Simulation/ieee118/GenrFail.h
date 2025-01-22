@@ -9,11 +9,11 @@ class GenrFail : public adevs::Atomic<adevs::PortValue<BasicEvent*>> {
 
     GenrFail(unsigned which, double time_to_drop, ElectricalData* data);
     void delta_int();
-    void output_func(adevs::Bag<adevs::PortValue<BasicEvent*>> &yb);
+    void output_func(list<adevs::PortValue<BasicEvent*>> &yb);
     double ta();
-    void delta_ext(double, adevs::Bag<adevs::PortValue<BasicEvent*>> const &) {}
-    void delta_conf(adevs::Bag<adevs::PortValue<BasicEvent*>> const &) {}
-    void gc_output(adevs::Bag<adevs::PortValue<BasicEvent*>> &);
+    void delta_ext(double, list<adevs::PortValue<BasicEvent*>> const &) {}
+    void delta_conf(list<adevs::PortValue<BasicEvent*>> const &) {}
+
 
   private:
     unsigned which;

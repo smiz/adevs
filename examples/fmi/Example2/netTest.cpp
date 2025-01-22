@@ -33,17 +33,17 @@ class App : public AtomicModel {
         timeToSend = 1.0 / freq;
         send++;
     }
-    void delta_ext(double e, Bag<IO_Type> const &xb) {
+    void delta_ext(double e, list<IO_Type> const &xb) {
         timeToSend -= e;
         t += e;
         assert(xb.size() == 1);
         recv++;
     }
-    void delta_conf(Bag<IO_Type> const &xb) {
+    void delta_conf(list<IO_Type> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
-    void output_func(Bag<IO_Type> &yb) {
+    void output_func(list<IO_Type> &yb) {
         IO_Type y;
         y.port = data_out;
         y.value = new NetworkData(NetworkData::APP_DATA, (addr + 1) % numApps,

@@ -1,5 +1,5 @@
-#ifndef __delay_h_
-#define __delay_h_
+#ifndef _delay_h_
+#define _delay_h_
 #include <cassert>
 #include <cstdio>
 #include <list>
@@ -31,12 +31,12 @@ class delay : public adevs::Atomic<PortValue> {
         }
         sigma = DBL_MAX;
     }
-    void delta_ext(double e, adevs::Bag<PortValue> const &x) {
+    void delta_ext(double e, list<PortValue> const &x) {
         delay_q::iterator i;
         for (i = q.begin(); i != q.end(); i++) {
             (*i).first -= e;
         }
-        adevs::Bag<PortValue>::const_iterator xi;
+        list<PortValue>::const_iterator xi;
         for (xi = x.begin(); xi != x.end(); xi++) {
             assert((*xi).port == in);
             q.push_back(
@@ -45,11 +45,11 @@ class delay : public adevs::Atomic<PortValue> {
         assert(q.front().first >= 0.0);
         sigma = q.front().first;
     }
-    void delta_conf(adevs::Bag<PortValue> const &x) {
+    void delta_conf(list<PortValue> const &x) {
         delta_int();
         delta_ext(0.0, x);
     }
-    void output_func(adevs::Bag<PortValue> &y) {
+    void output_func(list<PortValue> &y) {
         delay_q::iterator i;
         for (i = q.begin(); i != q.end(); i++) {
             if ((*i).first <= ta()) {
@@ -61,13 +61,6 @@ class delay : public adevs::Atomic<PortValue> {
         }
     }
     double ta() { return sigma; }
-    void gc_output(adevs::Bag<PortValue> &g) {
-        adevs::Bag<PortValue>::const_iterator i;
-        for (i = g.begin(); i != g.end(); i++) {
-            delete (*i).value;
-        }
-    }
-    ~delay() {}
 
   private:
     double dt, sigma;

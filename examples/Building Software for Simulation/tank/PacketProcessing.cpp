@@ -18,14 +18,14 @@ void PacketProcessing::delta_int() {
     }
 }
 
-void PacketProcessing::delta_ext(double e, Bag<SimEvent> const &xb) {
+void PacketProcessing::delta_ext(double e, list<SimEvent> const &xb) {
     // If we are not interrupted and are processing a packet, then
     // reduce the time remaining to finish with that packet
     if (!interrupt && !q.empty()) {
         sigma -= e;
     }
     // Process input events
-    for (Bag<SimEvent>::const_iterator iter = xb.begin(); iter != xb.end();
+    for (list<SimEvent>::const_iterator iter = xb.begin(); iter != xb.end();
          iter++) {
         if ((*iter).getType() == SIM_PACKET) {
             q.push_back((*iter).simPacket());
@@ -40,12 +40,12 @@ void PacketProcessing::delta_ext(double e, Bag<SimEvent> const &xb) {
     }
 }
 
-void PacketProcessing::delta_conf(Bag<SimEvent> const &xb) {
+void PacketProcessing::delta_conf(list<SimEvent> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
 
-void PacketProcessing::output_func(Bag<SimEvent> &yb) {
+void PacketProcessing::output_func(list<SimEvent> &yb) {
     // Set the motor on times from the data in the completed packet
     assert(!q.empty());
     assert(!interrupt);

@@ -48,22 +48,23 @@ class dae : public dae_se1_system<double> {
         tripped = true;
     }
     void postStep(double* q, double* a) { check_soln(q, a); }
-    void external_event(double* q, double* a, double e, Bag<double> const &xb) {
+    void external_event(double* q, double* a, double e,
+                        list<double> const &xb) {
         check_soln(q, a);
     }
     void confluent_event(double* q, double* a, bool const* event_flag,
-                         Bag<double> const &xb) {
+                         list<double> const &xb) {
         internal_event(q, a, event_flag);
     }
     void output_func(double const* q, double const* a, bool const* event_flag,
-                     Bag<double> &yb) {
+                     list<double> &yb) {
         check_soln(q, a);
         double z[1];
         state_event_func(q, a, z);
         assert(fabs(z[0]) < 1E-5);
         yb.push_back(q[0] * a[0]);
     }
-    void gc_output(Bag<double> &g) {}
+
 
   private:
     double const k;

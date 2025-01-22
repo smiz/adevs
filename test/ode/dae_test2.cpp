@@ -34,18 +34,19 @@ class dae : public dae_se1_system<double> {
         assert(false);
     }
     void postStep(double* q, double* a) { check_soln(q, a); }
-    void external_event(double* q, double* a, double e, Bag<double> const &xb) {
+    void external_event(double* q, double* a, double e,
+                        list<double> const &xb) {
         check_soln(q, a);
     }
     void confluent_event(double* q, double* a, bool const* event_flag,
-                         Bag<double> const &xb) {
+                         list<double> const &xb) {
         assert(false);
     }
     void output_func(double const* q, double const* a, bool const* event_flag,
-                     Bag<double> &yb) {
+                     list<double> &yb) {
         assert(false);
     }
-    void gc_output(Bag<double> &g) {}
+
 
   private:
     void check_soln(double const* q, double const* a) {

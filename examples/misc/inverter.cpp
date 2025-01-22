@@ -83,10 +83,10 @@ class inverter : public ode_system<IO_Type> {
     // Don't need any of this stuff for this model
     double time_event_func(double const*) { return adevs_inf<double>(); }
     void postStep(double*) {}
-    void external_event(double*, double, Bag<IO_Type> const &) {}
-    void confluent_event(double*, bool const*, Bag<IO_Type> const &) {}
-    void output_func(double const*, bool const*, Bag<IO_Type> &) {}
-    void gc_output(Bag<IO_Type> &) {}
+    void external_event(double*, double, list<IO_Type> const &) {}
+    void confluent_event(double*, bool const*, list<IO_Type> const &) {}
+    void output_func(double const*, bool const*, list<IO_Type> &) {}
+
     ~inverter() {}
     // Get the current control mode
     int getControl() const { return qc; }

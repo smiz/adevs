@@ -42,8 +42,8 @@ int main() {
     l->stateChange(assembly_line->getPress(), 0.0);
     // Run the simulation
     while (true) {
-        // Bag for injecting the input
-        Bag<Event<int>> input;
+
+        list<Event<int>> input;
         // The value to inject
         int blanks;
         // Time to inject the input

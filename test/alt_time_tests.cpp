@@ -1,19 +1,24 @@
-#include "adevs/adevs.h"
-using namespace std;
-using namespace adevs;
-
 /**
  * Test cases for alternate types of time.
  */
+#include <memory>
+
+#include "adevs/adevs.h"
+
+using namespace std;
+using namespace adevs;
+
+
+// ***** Basic model ******
+
 template <typename T>
 class PingPong : public Atomic<int, T> {
   public:
     PingPong(bool active = false);
     void delta_int();
-    void delta_ext(T e, Bag<int> const &xb);
-    void delta_conf(Bag<int> const &xb);
-    void output_func(Bag<int> &yb);
-    void gc_output(Bag<int> &) {}
+    void delta_ext(T e, list<int> const &xb);
+    void delta_conf(list<int> const &xb);
+    void output_func(list<int> &yb);
     T ta();
     int getCount() const { return count; }
 
@@ -33,12 +38,12 @@ void PingPong<T>::delta_int() {
 }
 
 template <typename T>
-void PingPong<T>::delta_ext(T e, Bag<int> const &xb) {
+void PingPong<T>::delta_ext(T e, list<int> const &xb) {
     active = xb.size() == 1;
 }
 
 template <typename T>
-void PingPong<T>::delta_conf(Bag<int> const &xb) {
+void PingPong<T>::delta_conf(list<int> const &xb) {
     delta_int();
     delta_ext(0, xb);
 }
@@ -53,113 +58,160 @@ T PingPong<T>::ta() {
 }
 
 template <typename T>
-void PingPong<T>::output_func(Bag<int> &yb) {
+void PingPong<T>::output_func(list<int> &yb) {
     yb.push_back(1);
 }
+
+
+// ***** Basic network *****
 
 template <typename T>
 class Model : public SimpleDigraph<int, T> {
   public:
     Model();
-    PingPong<T>* getA() { return a; }
-    PingPong<T>* getB() { return b; }
+    shared_ptr<PingPong<T>> getA() { return a; }
+    shared_ptr<PingPong<T>> getB() { return b; }
 
   private:
-    PingPong<T>*a, *b;
+    shared_ptr<PingPong<T>> a = nullptr;
+    shared_ptr<PingPong<T>> b = nullptr;
 };
 
 template <typename T>
 Model<T>::Model()
-    : SimpleDigraph<int, T>(), a(new PingPong<T>(true)), b(new PingPong<T>()) {
+    : SimpleDigraph<int, T>(),
+      a(make_shared<PingPong<T>>(true)),
+      b(make_shared<PingPong<T>>()) {
     this->add(a);
     this->add(b);
     this->couple(a, b);
     this->couple(b, a);
 }
+
+
+// ***** Custom Time Datatype *****
+
 // Non-standard type for time
-class TimeType {
+class CustomTimeType {
   public:
-    TimeType() : t(0) {}
-    TimeType(TimeType const &src) : t(src.t) {}
-    TimeType &operator=(TimeType const &src) {
-        t = src.t;
+    CustomTimeType() : time(0) {}
+
+    CustomTimeType(CustomTimeType const &src) : time(src.time) {}
+
+    // *** Modification Operators ***
+    CustomTimeType &operator=(CustomTimeType const &src) {
+        time = src.time;
         return *this;
     }
-    TimeType operator+(TimeType const &b) const { return TimeType(t + b.t); }
-    TimeType operator-(TimeType const &b) const { return TimeType(t - b.t); }
-    TimeType &operator+=(TimeType const &b) {
-        t += b.t;
+
+    CustomTimeType operator+(CustomTimeType const &other) const {
+        return CustomTimeType(time + other.time);
+    }
+
+    CustomTimeType operator-(CustomTimeType const &other) const {
+        return CustomTimeType(time - other.time);
+    }
+
+    CustomTimeType &operator+=(CustomTimeType const &other) {
+        time += other.time;
         return *this;
     }
-    bool operator<(TimeType const &b) const { return t < b.t; }
-    bool operator==(TimeType const &b) const { return t == b.t; }
-    bool operator<=(TimeType const &b) const { return t == b.t || t < b.t; }
-    bool operator>(TimeType const &b) const { return t > b.t; }
-    bool operator>=(TimeType const &b) const { return t >= b.t; }
+
+    // *** Comparison Operators ***
+
+    bool operator<(CustomTimeType const &other) const {
+        return time < other.time;
+    }
+
+    bool operator==(CustomTimeType const &other) const {
+        return time == other.time;
+    }
+
+    bool operator<=(CustomTimeType const &other) const {
+        return time == other.time || time < other.time;
+    }
+
+    bool operator>(CustomTimeType const &other) const {
+        return time > other.time;
+    }
+
+    bool operator>=(CustomTimeType const &other) const {
+        return time >= other.time;
+    }
 
   private:
-    int t;
-    TimeType(int init) : t(init) {}
+    int time;
+    CustomTimeType(int init) : time(init) {}
 
-    friend TimeType adevs_inf<TimeType>();
-    friend TimeType adevs_zero<TimeType>();
-    friend TimeType adevs_sentinel<TimeType>();
-    friend TimeType adevs_epsilon<TimeType>();
-    friend class PingPong<TimeType>;
+    friend CustomTimeType adevs_inf<CustomTimeType>();
+    friend CustomTimeType adevs_zero<CustomTimeType>();
+    friend CustomTimeType adevs_sentinel<CustomTimeType>();
+    friend CustomTimeType adevs_epsilon<CustomTimeType>();
+    friend class PingPong<CustomTimeType>;
     friend void test3();
 };
 
 template <>
-inline TimeType adevs_inf<TimeType>() {
-    return TimeType(numeric_limits<int>::max());
+inline CustomTimeType adevs_inf<CustomTimeType>() {
+    return CustomTimeType(numeric_limits<int>::max());
 }
 
 template <>
-inline TimeType adevs_zero<TimeType>() {
-    return TimeType(0);
+inline CustomTimeType adevs_zero<CustomTimeType>() {
+    return CustomTimeType(0);
 }
 
 template <>
-inline TimeType adevs_epsilon<TimeType>() {
-    return TimeType(0);
+inline CustomTimeType adevs_epsilon<CustomTimeType>() {
+    return CustomTimeType(0);
 }
 
 template <>
-inline TimeType adevs_sentinel<TimeType>() {
-    return TimeType(-1);
+inline CustomTimeType adevs_sentinel<CustomTimeType>() {
+    return CustomTimeType(-1);
 }
+
+
+// ***** Tests *****
 
 void test1() {
-    Model<double>* model = new Model<double>();
-    Simulator<int, double>* sim = new Simulator<int, double>(model);
+    shared_ptr<Model<double>> model = make_shared<Model<double>>();
+    shared_ptr<Simulator<int, double>> sim =
+        make_shared<Simulator<int, double>>(model);
+
     while (sim->nextEventTime() <= 10) {
         sim->execNextEvent();
     }
+
     assert(model->getA()->getCount() == 5);
     assert(model->getB()->getCount() == 5);
-    delete sim;
 }
 
 void test2() {
-    Model<int>* model = new Model<int>();
-    Simulator<int, int>* sim = new Simulator<int, int>(model);
+    shared_ptr<Model<int>> model = make_shared<Model<int>>();
+    shared_ptr<Simulator<int, int>> sim =
+        make_shared<Simulator<int, int>>(model);
+
     while (sim->nextEventTime() <= 10) {
         sim->execNextEvent();
     }
+
     assert(model->getA()->getCount() == 5);
     assert(model->getB()->getCount() == 5);
-    delete sim;
 }
 
 void test3() {
-    Model<TimeType>* model = new Model<TimeType>();
-    Simulator<int, TimeType>* sim = new Simulator<int, TimeType>(model);
-    while (sim->nextEventTime().t <= 10) {
+    shared_ptr<Model<CustomTimeType>> model =
+        make_shared<Model<CustomTimeType>>();
+    shared_ptr<Simulator<int, CustomTimeType>> sim =
+        make_shared<Simulator<int, CustomTimeType>>(model);
+
+    while (sim->nextEventTime().time <= 10) {
         sim->execNextEvent();
     }
+
     assert(model->getA()->getCount() == 5);
     assert(model->getB()->getCount() == 5);
-    delete sim;
 }
 
 int main() {

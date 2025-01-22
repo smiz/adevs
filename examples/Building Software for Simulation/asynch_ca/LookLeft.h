@@ -30,24 +30,23 @@ class LookLeft : public adevs::Atomic<adevs::CellEvent<int>> {
         c = 0.0;
         s = l;
     }
-    void delta_ext(double e, adevs::Bag<adevs::CellEvent<int>> const &xb) {
+    void delta_ext(double e, list<adevs::CellEvent<int>> const &xb) {
         c += e;
         l = (*(xb.begin())).value;
     }
-    void delta_conf(adevs::Bag<adevs::CellEvent<int>> const &xb) {
+    void delta_conf(list<adevs::CellEvent<int>> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
     double ta() { return P - c; }
     // Output function
-    void output_func(adevs::Bag<adevs::CellEvent<int>> &yb) {
+    void output_func(list<adevs::CellEvent<int>> &yb) {
         adevs::CellEvent<int> y;
         y.x = (location + 1) % width;
         y.value = l;
         yb.push_back(y);
     }
-    // The gc method is not needed
-    void gc_output(adevs::Bag<adevs::CellEvent<int>> &) {}
+
     // Get the location of the cell
     int getLocation() const { return location; }
     // Get the state of the cell

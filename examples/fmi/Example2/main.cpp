@@ -1,11 +1,13 @@
 #include <cmath>
 #include <iostream>
+#include <random>
 #include "Control.h"
 #include "Ethernet.h"
 #include "Robot.h"
 #include "adevs/adevs.h"
 #include "adevs/fmi.h"
 #include "io.h"
+
 using namespace std;
 using namespace adevs;
 
@@ -27,15 +29,23 @@ class App : public AtomicModel {
   public:
     static int const data_out;
 
-    App(double freq, int bytes) : AtomicModel(), freq(freq), bytes(bytes) {}
+    App(double frequency, int bytes)
+        : AtomicModel(),
+          bytes(bytes),
+          random(std ::exponential_distribution<>(1.0 / frequency)) {}
+
     /// Calculate the time to next packet
-    double ta() { return randVar.exponential(1.0 / freq); }
+    double ta() { return random(generator); }
+
     void delta_int() {}
-    void delta_ext(double, Bag<IO_Type> const &) {}
-    void delta_conf(Bag<IO_Type> const &) {}
-    void gc_output(Bag<IO_Type> &) {}
+
+    void delta_ext(double, list<IO_Type> const &) {}
+
+    void delta_conf(list<IO_Type> const &) {}
+
+
     /// Put a packet on the network
-    void output_func(Bag<IO_Type> &yb) {
+    void output_func(list<IO_Type> &yb) {
         IO_Type y;
         y.port = data_out;
         y.value =
@@ -44,13 +54,13 @@ class App : public AtomicModel {
     }
 
   private:
-    double const freq;
     int const bytes;
-    static adevs::rv randVar;
+    std::random_device rd = std::random_device();
+    std::mt19937 generator = std::mt19937(rd());
+    std::exponential_distribution<> random;
 };
 
 int const App::data_out = 0;
-adevs::rv App::randVar(new crand());
 
 /// Extension of the Control modelica model that implements
 /// the control strategy.
@@ -78,7 +88,7 @@ class ControlExt : public Control {
         Control::internal_event(q, state_event);
         doCmd = false;
     }
-    void external_event(double* q, double e, adevs::Bag<IO_Type> const &xb) {
+    void external_event(double* q, double e, list<IO_Type> const &xb) {
         // We generate commands in response to new data
         Control::external_event(q, e, xb);
         // Nothing to do if no time has elapsed
@@ -89,7 +99,7 @@ class ControlExt : public Control {
         Control::external_event(q, e, xb);
     }
     void confluent_event(double* q, bool const* state_event,
-                         adevs::Bag<IO_Type> const &xb) {
+                         list<IO_Type> const &xb) {
         double h = time_event_func(q);
         // We generate commands in response to new data
         Control::confluent_event(q, state_event, xb);
@@ -101,7 +111,7 @@ class ControlExt : public Control {
         Control::confluent_event(q, state_event, xb);
     }
     void output_func(double const* q, bool const* state_event,
-                     adevs::Bag<IO_Type> &yb) {
+                     list<IO_Type> &yb) {
         Control::output_func(q, state_event, yb);
         CommandSig* sig = new CommandSig(T[0], T[1]);
         IO_Type msg;
@@ -109,18 +119,12 @@ class ControlExt : public Control {
         msg.value = new NetworkData(NetworkData::APP_DATA, robotAddr, 100, sig);
         yb.push_back(msg);
     }
-    void gc_output(adevs::Bag<IO_Type> &g) {
-        adevs::Bag<IO_Type>::iterator iter = g.begin();
-        for (; iter != g.end(); iter++) {
-            delete (*iter).value;
-        }
-    }
 
   private:
     bool doCmd;
     double err[2], ierr[2], T[2];
-    void process_input_data(double h, Bag<IO_Type> const &xb) {
-        for (Bag<IO_Type>::const_iterator iter = xb.begin(); iter != xb.end();
+    void process_input_data(double h, list<IO_Type> const &xb) {
+        for (list<IO_Type>::const_iterator iter = xb.begin(); iter != xb.end();
              iter++) {
             NetworkData* pkt = dynamic_cast<NetworkData*>((*iter).value);
             SampleSig* sig = dynamic_cast<SampleSig*>(pkt->getPayload());
@@ -174,20 +178,20 @@ class RobotExt : public Robot {
         // own event.
         Robot::internal_event(q, state_event);
     }
-    void external_event(double* q, double e, adevs::Bag<IO_Type> const &xb) {
+    void external_event(double* q, double e, list<IO_Type> const &xb) {
         Robot::external_event(q, e, xb);
         process_input_data(xb);
         Robot::external_event(q, e, xb);
     }
     void confluent_event(double* q, bool const* state_event,
-                         adevs::Bag<IO_Type> const &xb) {
+                         list<IO_Type> const &xb) {
         Robot::confluent_event(q, state_event, xb);
         test_for_sample();
         process_input_data(xb);
         Robot::confluent_event(q, state_event, xb);
     }
     void output_func(double const* q, bool const* state_event,
-                     adevs::Bag<IO_Type> &yb) {
+                     list<IO_Type> &yb) {
         if (doSample) {
             SampleSig* sig = new SampleSig(get_q1(), get_q2());
             IO_Type msg;
@@ -197,19 +201,13 @@ class RobotExt : public Robot {
             yb.push_back(msg);
         }
     }
-    void gc_output(adevs::Bag<IO_Type> &g) {
-        adevs::Bag<IO_Type>::iterator iter = g.begin();
-        for (; iter != g.end(); iter++) {
-            delete (*iter).value;
-        }
-    }
 
   private:
     double q1_sample_value, q2_sample_value;
     bool doSample;
 
-    void process_input_data(Bag<IO_Type> const &xb) {
-        for (Bag<IO_Type>::const_iterator iter = xb.begin(); iter != xb.end();
+    void process_input_data(list<IO_Type> const &xb) {
+        for (list<IO_Type>::const_iterator iter = xb.begin(); iter != xb.end();
              iter++) {
             assert((*iter).port == command);
             assert((*iter).value != NULL);

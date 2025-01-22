@@ -1,5 +1,5 @@
-#ifndef __counter_h_
-#define __counter_h_
+#ifndef _counter_h_
+#define _counter_h_
 #include <cassert>
 #include <cstdio>
 #include "adevs/adevs.h"
@@ -11,17 +11,15 @@ class counter : public adevs::Atomic<PortValue> {
 
     counter() : adevs::Atomic<PortValue>(), count(0), sigma(DBL_MAX), t(0.0) {}
     void delta_int() { assert(false); }
-    void delta_ext(double e, adevs::Bag<PortValue> const &x) {
+    void delta_ext(double e, list<PortValue> const &x) {
         t += e;
         count += x.size();
         printf("Count is %d @ %d\n", count, (int)t);
         sigma = DBL_MAX;
     }
-    void delta_conf(adevs::Bag<PortValue> const &) { assert(false); }
-    void output_func(adevs::Bag<PortValue> &) { assert(false); }
+    void delta_conf(list<PortValue> const &) { assert(false); }
+    void output_func(list<PortValue> &) { assert(false); }
     double ta() { return sigma; }
-    void gc_output(adevs::Bag<PortValue> &g) { assert(g.size() == 0); }
-    ~counter() {}
 
   private:
     int count;

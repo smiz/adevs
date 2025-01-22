@@ -1,5 +1,5 @@
-#ifndef __configuration__h_
-#define __configuration__h_
+#ifndef _configuration__h_
+#define _configuration__h_
 #include <cmath>
 #include <fstream>
 #include <string>

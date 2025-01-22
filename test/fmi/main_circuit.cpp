@@ -8,7 +8,7 @@ using namespace adevs;
 class Circuit2 : public Circuit {
   public:
     Circuit2() : Circuit(), start_time(DBL_MAX) {}
-    void external_event(double* q, double e, Bag<double> const &xb) {
+    void external_event(double* q, double e, list<double> const &xb) {
         Circuit::external_event(q, e, xb);
         start_time = e;
         set_Vsrc_Vref(0.0);
@@ -49,7 +49,7 @@ int main() {
         test_model->print_state();
         test_model->test_state();
     }
-    Bag<Event<double>> xb;
+    list<Event<double>> xb;
     Event<double> event(hybrid_model, 0.0);
     xb.push_back(event);
     sim->computeNextState(xb, 1.0);

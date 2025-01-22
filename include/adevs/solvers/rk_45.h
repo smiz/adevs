@@ -31,7 +31,7 @@
 #ifndef _adevs_rk_45_h_
 #define _adevs_rk_45_h_
 #include <cmath>
-#include "adevs/hybrid.h"
+#include "adevs/solvers/hybrid.h"
 
 namespace adevs {
 

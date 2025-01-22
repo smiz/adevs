@@ -5,7 +5,7 @@
 #include "adevs/trap.h"
 
 typedef adevs::PortValue<double> IOType;
-typedef adevs::Bag<IOType> IOBag;
+typedef list<IOType> IOList;
 
 #include "TestCircuitAdevs.h"
 #include "TestCircuitModelica.h"
@@ -90,19 +90,19 @@ class Switch : public Atomic<IOType> {
         pos = next_position();
         sched_next();
     }
-    void delta_ext(double e, IOBag const &xb) {
+    void delta_ext(double e, IOList const &xb) {
         // Duty cycle is applied at start of each period
         h -= e;
         duty = xb[0].value;
     }
-    void delta_conf(IOBag const &xb) {
+    void delta_conf(IOList const &xb) {
         pos = next_position();
         // Clip duty cycle so that it is in -1 to 1
         duty = ::max(-1.0, ::min(1.0, xb[0].value));
         sched_next();
     }
-    void gc_output(IOBag &) {}
-    void output_func(IOBag &yb) {
+
+    void output_func(IOList &yb) {
         IOType y;
         y.port = phase;
         y.value = next_position();
@@ -130,17 +130,17 @@ class TestCircuitAdevsExt : public TestCircuitAdevs, public CircuitOutput {
         // Zero duty cycle to start of each phase
         duty[0] = duty[1] = duty[2] = 0.0;
     }
-    void external_event(double* q, double e, IOBag const &xb) {
+    void external_event(double* q, double e, IOList const &xb) {
         TestCircuitAdevs::external_event(q, e, xb);
         set_switches(xb);
         TestCircuitAdevs::external_event(q, 0.0, xb);
     }
-    void confluent_event(double* q, bool const* state_event, IOBag const &xb) {
+    void confluent_event(double* q, bool const* state_event, IOList const &xb) {
         TestCircuitAdevs::confluent_event(q, state_event, xb);
         set_switches(xb);
         TestCircuitAdevs::confluent_event(q, state_event, xb);
     }
-    void output_func(double const* q, bool const* state_event, IOBag &yb) {
+    void output_func(double const* q, bool const* state_event, IOList &yb) {
         IOType y;
         double duty_cycle;
         TestCircuitAdevs::output_func(q, state_event, yb);
@@ -185,7 +185,7 @@ class TestCircuitAdevsExt : public TestCircuitAdevs, public CircuitOutput {
   private:
     double duty[3];
 
-    void set_switches(IOBag const &xb) {
+    void set_switches(IOList const &xb) {
         for (auto x : xb) {
             switch (x.port) {
                 case 0:

@@ -48,18 +48,18 @@ class Circuit : public ode_system<bool> {
         assert(events[0]);  // only one event type; make sure it fired
         d = !d;
     }
-    void external_event(double*, double, Bag<bool> const &xb) {
+    void external_event(double*, double, list<bool> const &xb) {
         s = *(xb.begin());
     }
-    void confluent_event(double* q, bool const* events, Bag<bool> const &xb) {
+    void confluent_event(double* q, bool const* events, list<bool> const &xb) {
         internal_event(q, events);
         external_event(q, 0.0, xb);
     }
-    void output_func(double const* q, bool const* events, Bag<bool> &yb) {
+    void output_func(double const* q, bool const* events, list<bool> &yb) {
         assert(events[0]);
         yb.push_back(!d);
     }
-    void gc_output(Bag<bool> &) {}
+
     bool getDiode() const { return d; }
     bool getSwitch() const { return s; }
 
@@ -99,7 +99,7 @@ int main() {
         sim->execNextEvent();
     }
     // Open the switch
-    Bag<Event<bool>> xb;
+    list<Event<bool>> xb;
     xb.push_back(Event<bool>(hybrid_model, 0));
     sim->computeNextState(xb, 1.0);
     // Simulate for another second

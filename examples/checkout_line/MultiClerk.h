@@ -1,5 +1,5 @@
-#ifndef __multi_clerk_h_
-#define __multi_clerk_h_
+#ifndef _multi_clerk_h_
+#define _multi_clerk_h_
 #include "Clerk.h"
 #include "Decision.h"
 #include "adevs/adevs.h"

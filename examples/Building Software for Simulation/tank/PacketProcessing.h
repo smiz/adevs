@@ -11,13 +11,13 @@ class PacketProcessing : public adevs::Atomic<SimEvent> {
     PacketProcessing();
     // State transition functions
     void delta_int();
-    void delta_ext(double e, adevs::Bag<SimEvent> const &xb);
-    void delta_conf(adevs::Bag<SimEvent> const &xb);
+    void delta_ext(double e, list<SimEvent> const &xb);
+    void delta_conf(list<SimEvent> const &xb);
     // Output function
-    void output_func(adevs::Bag<SimEvent> &yb);
+    void output_func(list<SimEvent> &yb);
     // Time advance function
     double ta();
-    void gc_output(adevs::Bag<SimEvent> &) {}
+
 
   private:
     // Computer time needed to process one packet

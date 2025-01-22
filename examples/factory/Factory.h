@@ -1,31 +1,37 @@
 #ifndef _Factory_h_
 #define _Factory_h_
 #include <list>
+#include <memory>
 #include <set>
 #include "Machine.h"
 #include "adevs/adevs.h"
 
-/**
- * This class implements the Factory and it machine usage policy.
- */
+using namespace std;
+
+
+// This class implements the Factory and it machine usage policy.
 class Factory : public adevs::Network<int> {
   public:
     Factory();
+
     void getComponents(set<adevs::Devs<int>*> &c);
+
     void route(int const &order, adevs::Devs<int>* src,
-               adevs::Bag<adevs::Event<int>> &r);
+               list<adevs::Event<int>> &r);
+
     bool model_transition();
-    ~Factory();
-    // Get the number of machines
-    int getMachineCount();
+
+    int get_machine_count();
 
   private:
     // This is the machine set
-    std::list<Machine*> machines;
+    std::list<shared_ptr<Machine>> machines;
+
     // Method for adding a machine to the factory
     void add_machine();
+
     // Compute time needed for a machine to finish a new job
-    double compute_service_time(Machine* m);
+    double compute_service_time(shared_ptr<Machine> m);
 };
 
 #endif

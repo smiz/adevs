@@ -57,8 +57,8 @@ int main(int argc, char** argv) {
     l->stateChange(ih, 0.0);
     // Run the simulation
     while (true) {
-        // Bag for injecting the input
-        Bag<SimEvent> input;
+
+        list<SimEvent> input;
         // The value to inject
         SimMotorOnTime motor_setting;
         // Time to inject the input

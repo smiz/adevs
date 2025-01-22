@@ -28,8 +28,8 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
-#ifndef __adevs_digraph_h_
-#define __adevs_digraph_h_
+#ifndef _adevs_digraph_h_
+#define _adevs_digraph_h_
 #include <cassert>
 #include <cstdlib>
 #include <map>
@@ -81,20 +81,19 @@ class Digraph : public Network<PortValue<VALUE, PORT>, T> {
     /// Construct a network with no components.
     Digraph() : Network<IO_Type, T>() {}
     /// Add a model to the network.
-    void add(Component* model);
+    void add(shared_ptr<Component> model);
     /// Couple the source model to the destination model.
-    void couple(Component* src, PORT srcPort, Component* dst, PORT dstPort);
+    void couple(shared_ptr<Component> src, PORT srcPort,
+                shared_ptr<Component> dst, PORT dstPort);
     /// Puts the network's components into to c
     void getComponents(set<Component*> &c);
     /// Route an event based on the coupling information.
-    void route(IO_Type const &x, Component* model, Bag<Event<IO_Type, T>> &r);
-    /// Destructor.  Destroys all of the component models.
-    ~Digraph();
+    void route(IO_Type const &x, Component* model, list<Event<IO_Type, T>> &r);
 
   private:
     // A node in the coupling graph
     struct node {
-        node() : model(NULL), port() {}
+        node() : model(nullptr), port() {}
         node(Component* model, PORT port) : model(model), port(port) {}
         node const &operator=(node const &src) {
             model = src.model;
@@ -115,27 +114,30 @@ class Digraph : public Network<PortValue<VALUE, PORT>, T> {
     // Component model set
     set<Component*> models;
     // Coupling information
-    std::map<node, Bag<node>> graph;
+    std::map<node, list<node>> graph;
 };
 
 template <class VALUE, class PORT, class T>
-void Digraph<VALUE, PORT, T>::add(Component* model) {
-    assert(model != this);
-    models.insert(model);
+void Digraph<VALUE, PORT, T>::add(shared_ptr<Component> model) {
+    assert(model.get() != this);
+    models.insert(model.get());
     model->setParent(this);
+    if (this->simulator != nullptr) {
+        this->simulator->pending_schedule.insert(model);
+    }
 }
 
 template <class VALUE, class PORT, class T>
-void Digraph<VALUE, PORT, T>::couple(Component* src, PORT srcPort,
-                                     Component* dst, PORT dstPort) {
-    if (src != this) {
+void Digraph<VALUE, PORT, T>::couple(shared_ptr<Component> src, PORT srcPort,
+                                     shared_ptr<Component> dst, PORT dstPort) {
+    if (src.get() != this) {
         add(src);
     }
-    if (dst != this) {
+    if (dst.get() != this) {
         add(dst);
     }
-    node src_node(src, srcPort);
-    node dst_node(dst, dstPort);
+    node src_node(src.get(), srcPort);
+    node dst_node(dst.get(), dstPort);
     graph[src_node].push_back(dst_node);
 }
 
@@ -146,28 +148,22 @@ void Digraph<VALUE, PORT, T>::getComponents(set<Component*> &c) {
 
 template <class VALUE, class PORT, class T>
 void Digraph<VALUE, PORT, T>::route(IO_Type const &x, Component* model,
-                                    Bag<Event<IO_Type, T>> &r) {
+                                    list<Event<IO_Type, T>> &r) {
     // Find the list of target models and ports
     node src_node(model, x.port);
-    typename std::map<node, Bag<node>>::iterator graph_iter;
+    typename std::map<node, list<node>>::iterator graph_iter;
     graph_iter = graph.find(src_node);
     // If no target, just return
     if (graph_iter == graph.end()) {
         return;
     }
-    // Otherwise, add the targets to the event bag
+    // Otherwise, add the targets to the event list
     Event<IO_Type, T> event;
     for (auto node_iter : (*graph_iter).second) {
         event.model = node_iter.model;
         event.value.port = node_iter.port;
         event.value.value = x.value;
         r.push_back(event);
-    }
-}
-template <class VALUE, class PORT, class T>
-Digraph<VALUE, PORT, T>::~Digraph() {
-    for (auto iter : models) {
-        delete iter;
     }
 }
 

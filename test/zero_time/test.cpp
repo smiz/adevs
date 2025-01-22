@@ -1,6 +1,7 @@
 #include <cassert>
 #include <string>
 #include "adevs/adevs.h"
+
 using namespace std;
 using namespace adevs;
 
@@ -12,20 +13,23 @@ class Parrot : public Atomic<PortValue<string>> {
         k = 0;
         q = "";
     }
+
     void delta_int() {
         k = (k + 1) % 3;
         q = "";
     }
-    void delta_ext(double e, Bag<PortValue<string>> const &xb) {
-        Bag<PortValue<string>>::const_iterator iter;
-        for (iter = xb.begin(); iter != xb.end(); iter++) {
-            q += (*iter).value;
+
+    void delta_ext(double e, list<PortValue<string>> const &xb) {
+        for (auto iter : xb) {
+            q += iter.value;
         }
     }
-    void delta_conf(Bag<PortValue<string>> const &xb) {
+
+    void delta_conf(list<PortValue<string>> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
+
     double ta() {
         if (q == "") {
             return DBL_MAX;
@@ -36,12 +40,11 @@ class Parrot : public Atomic<PortValue<string>> {
         assert(k == 2);
         return 1.0;
     }
-    void output_func(Bag<PortValue<string>> &yb) {
+
+    void output_func(list<PortValue<string>> &yb) {
         PortValue<string> event(out, q);
         yb.push_back(event);
     }
-    void gc_output(Bag<PortValue<string>> &) {}
-    ~Parrot() {}
 
   private:
     int k;
@@ -51,36 +54,41 @@ class Parrot : public Atomic<PortValue<string>> {
 int const Parrot::in = 0;
 int const Parrot::out = 1;
 
-Digraph<string>* model;
+shared_ptr<Digraph<string>> model = nullptr;
 
 class Listener : public EventListener<PortValue<string>> {
   public:
     void outputEvent(Event<PortValue<string>> x, double t) {
-        if (x.model == model && x.value.port == Parrot::out) {
+        if (x.model == model.get() && x.value.port == Parrot::out) {
             cout << t << " " << x.value.value << endl;
         }
     }
 };
 
 int main() {
-    model = new Digraph<string>();
-    Parrot* p1 = new Parrot();
-    Parrot* p2 = new Parrot();
+    model = make_shared<Digraph<string>>();
+    shared_ptr<Parrot> p1 = make_shared<Parrot>();
+    shared_ptr<Parrot> p2 = make_shared<Parrot>();
     model->add(p1);
     model->add(p2);
     model->couple(model, Parrot::in, p1, Parrot::in);
     model->couple(p1, Parrot::out, model, Parrot::out);
     model->couple(p1, p1->out, p2, p2->in);
     model->couple(p2, p2->out, p1, p1->in);
+
     Event<PortValue<string>> start;
-    start.model = model;
+    start.model = model.get();
     start.value.value = "a";
     start.value.port = Parrot::in;
+
     Simulator<PortValue<string>> sim(model);
-    sim.addEventListener(new Listener());
-    Bag<Event<PortValue<string>>> input;
+    shared_ptr<Listener> listener = make_shared<Listener>();
+    sim.addEventListener(listener);
+
+    list<Event<PortValue<string>>> input;
     input.push_back(start);
     sim.computeNextState(input, 0.0);
+
     while (sim.nextEventTime() < 10) {
         cout << "***" << endl;
         sim.execNextEvent();

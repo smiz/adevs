@@ -28,48 +28,34 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
-#ifndef _adevs_abstract_simulator_h_
-#define _adevs_abstract_simulator_h_
+#ifndef _adevs_simulator_h_
+#define _adevs_simulator_h_
+
 #include <memory>
-#include "adevs/event_listener.h"
-#include "adevs/models.h"
-
-using namespace std;
-
+#include <set>
+#include "adevs/abstract_simulator.h"
 
 namespace adevs {
 
-/*
- * This is the base class for all simulators. It defines an interface that is
- * supported by all derived classes and provides some basic helper routines
- * for those derived classes.
- */
-template <class X, class T = double>
-class AbstractSimulator {
+// template <typename ObjectType, typename TimeType>
+// Simulator<ObjectType, TimeType>::Simulator(std::set<Devs<ObjectType, TimeType>> models) : AbstractSimulator<ObjectType, TimeType>(),
+
+template <typename ObjectType, typename TimeType = double>
+using ModelSet = std::set<std::shared_ptr<Devs<ObjectType, TimeType>>>;
+
+template <typename ObjectType, typename TimeType = double>
+class Simulator : public AbstractSimulatr<ObjectType, TimeType> {
+
   public:
-    /// Constructor
-    AbstractSimulator() {}
-    /*
-     * Add an event listener that will be notified of output events
-     * produced by all components within the model.
-     * @param l The listener to be notified
-     */
-    void addEventListener(shared_ptr<EventListener<X, T>> l) {
-        listeners.push_back(l);
-    }
-    /*
-     * Remove an event listener that was previously added.
-     * @param l The listener to be removed
-     */
-    void removeEventListener(shared_ptr<EventListener<X, T>> l) {
-        listeners.erase(l);
-    }
+    Simulator<ObjectType, TimeType>(ModelSet &models);
     /// Get the model's next event time
     virtual T nextEventTime() = 0;
     /// Execute the simulator until the next event time is greater than tend
     virtual T execUntil(T tend) = 0;
+
     /// Destructor leaves the model intact.
     virtual ~AbstractSimulator() {}
+
     /// Notify listeners of an output event.
     void notify_output_listeners(Devs<X, T>* model, X const &value, T t);
     /// Notify listeners of an input event.
@@ -78,33 +64,38 @@ class AbstractSimulator {
     void notify_state_listeners(Atomic<X, T>* model, T t);
 
   private:
-    /// Eternal event listeners
-    list<shared_ptr<EventListener<X, T>>> listeners;
+    ModelSet connected_models;
+    TimeType simulation_time;
 };
 
-template <class X, class T>
-void AbstractSimulator<X, T>::notify_output_listeners(Devs<X, T>* model,
-                                                      X const &value, T t) {
-    Event<X, T> event(model, value);
-    for (auto iter : listeners) {
-        iter->outputEvent(event, t);
-    }
+template <typename ObjectType, typename TimeType>
+Simulator<ObjectType, TimeType>::Simulator(ModelSet &active)
+    : AbstractSimulator<ObjectType, TimeType>() {
+    // // The Atomic constructor sets the atomic model's
+    // // tL correctly to zero, and so it is sufficient
+    // // to only worry about putting models with a
+    // // non infinite time advance into the schedule.
+    // for (typename std::list<Devs<X, T>*>::iterator iter = active.begin();
+    //      iter != active.end();
+    //      iter++) {
+    //   schedule(*iter, adevs_zero<T>());
+    // }
 }
 
-template <class X, class T>
-void AbstractSimulator<X, T>::notify_input_listeners(Devs<X, T>* model,
-                                                     X const &value, T t) {
-    Event<X, T> event(model, value);
-    for (auto iter : listeners) {
-        iter->inputEvent(event, t);
-    }
+template <typename ObjectType, typename TimeType = double>
+Simulator<ObjectType, TimeType>::Simulator()
+    : AbstractSimulator<ObjectType, TimeType> {}
+
+void addEventListener(EventListener<X, T>* l) {
+    listeners.push_back(l);
 }
 
-template <class X, class T>
-void AbstractSimulator<X, T>::notify_state_listeners(Atomic<X, T>* model, T t) {
-    for (auto iter : listeners) {
-        iter->stateChange(model, t);
-    }
+/*
+     * Remove an event listener that was previously added.
+     * @param l The listener to be removed
+     */
+void removeEventListener(EventListener<X, T>* l) {
+    listeners.erase(l);
 }
 
 }  // namespace adevs

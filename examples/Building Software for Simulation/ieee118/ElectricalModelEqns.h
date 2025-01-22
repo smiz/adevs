@@ -62,12 +62,12 @@ class ElectricalModelEqns
     double time_event_func(double const* q);
     void internal_event(double* q, bool const* state_event);
     void external_event(double* q, double e,
-                        adevs::Bag<adevs::PortValue<BasicEvent*>> const &xb);
+                        list<adevs::PortValue<BasicEvent*>> const &xb);
     void confluent_event(double* q, bool const* state_event,
-                         adevs::Bag<adevs::PortValue<BasicEvent*>> const &xb);
+                         list<adevs::PortValue<BasicEvent*>> const &xb);
     void output_func(double const* q, bool const* state_event,
-                     adevs::Bag<adevs::PortValue<BasicEvent*>> &yb);
-    void gc_output(adevs::Bag<adevs::PortValue<BasicEvent*>> &gb);
+                     list<adevs::PortValue<BasicEvent*>> &yb);
+
     /**
 		 * Update current and voltage calculates to reflect the state q.
 		 * Call this method before asking for the voltage or current. This

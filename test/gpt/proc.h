@@ -1,5 +1,5 @@
-#ifndef __proc_h_
-#define __proc_h_
+#ifndef _proc_h_
+#define _proc_h_
 #include <cstdlib>
 #include "adevs/adevs.h"
 #include "job.h"
@@ -30,7 +30,7 @@ class proc : public adevs::Atomic<PortValue> {
         val = NULL;
     }
     /// External transition function
-    void delta_ext(double e, adevs::Bag<PortValue> const &x) {
+    void delta_ext(double e, list<PortValue> const &x) {
         t += e;
         // If we are waiting for a job
         if (sigma == DBL_MAX) {
@@ -47,25 +47,21 @@ class proc : public adevs::Atomic<PortValue> {
         }
     }
     /// Confluent transition function.
-    void delta_conf(adevs::Bag<PortValue> const &x) {
+    void delta_conf(list<PortValue> const &x) {
         // Discard the old job
         delta_int();
         // Process the incoming job
         delta_ext(0.0, x);
     }
     /// Output function.
-    void output_func(adevs::Bag<PortValue> &y) {
+    void output_func(list<PortValue> &y) {
         // Produce a copy of the completed job on the out port
         PortValue pv(out, *val);
         y.push_back(pv);
     }
     /// Time advance function.
     double ta() { return sigma; }
-    /**
-		Garbage collection. No heap allocation in output_func, so
-		do nothing.
-		*/
-    void gc_output(adevs::Bag<PortValue> &) {}
+
     /// Destructor
     ~proc() {
         if (val != NULL) {

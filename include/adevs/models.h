@@ -28,12 +28,12 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
-#ifndef __adevs_models_h_
-#define __adevs_models_h_
+#ifndef _adevs_models_h_
+#define _adevs_models_h_
 #include <cstdlib>
+#include <list>
 #include <memory>
 #include <set>
-#include "adevs/bag.h"
 #include "adevs/exception.h"
 #include "adevs/time.h"
 
@@ -67,22 +67,22 @@ template <typename X, typename T = double>
 class Devs {
   public:
     /// Default constructor.
-    Devs() : parent(NULL) {}
+    Devs() : parent(nullptr) {}
     /// Destructor.
     virtual ~Devs() {}
     /*
-     * Returns NULL if this is not a network model; returns a pointer to
+     * Returns nullptr if this is not a network model; returns a pointer to
      * itself otherwise. This method is used to avoid a relatively expensive
      * dynamic cast.
      */
-    virtual Network<X, T>* typeIsNetwork() { return NULL; }
-    /// Returns NULL if this is not an atomic model; returns itself otherwise.
-    virtual Atomic<X, T>* typeIsAtomic() { return NULL; }
-    /// Returns NULL if this is not a mealy atomic model; returns itself otherwise.
-    virtual MealyAtomic<X, T>* typeIsMealyAtomic() { return NULL; }
+    virtual Network<X, T>* typeIsNetwork() { return nullptr; }
+    /// Returns nullptr if this is not an atomic model; returns itself otherwise.
+    virtual Atomic<X, T>* typeIsAtomic() { return nullptr; }
+    /// Returns nullptr if this is not a mealy atomic model; returns itself otherwise.
+    virtual MealyAtomic<X, T>* typeIsMealyAtomic() { return nullptr; }
     /*
      * Get the model that contains this model as a component.  Returns
-     * NULL if this model is at the top of the hierarchy.
+     * nullptr if this model is at the top of the hierarchy.
      */
     Network<X, T> const* getParent() const { return parent; }
     /// Get the model that contains this model as a component.
@@ -112,6 +112,8 @@ class Devs {
     bool activated = false;
     bool imminent = false;
 
+    Simulator<X, T>* simulator = nullptr;
+
   private:
     Network<X, T>* parent;
 };
@@ -124,8 +126,8 @@ class Devs {
 template <typename X, typename T = double>
 class Event {
   public:
-    /// Constructor.  Sets the model to NULL.
-    Event() : model(NULL), value() {}
+    /// Constructor.  Sets the model to nullptr.
+    Event() : model(nullptr), value() {}
     /*
      * Constructor sets the model and value. The input into a
      * Simulator and in a network's routing method,
@@ -134,6 +136,10 @@ class Event {
      * source of the output value.
      */
     Event(Devs<X, T>* model, X const &value) : model(model), value(value) {}
+
+    Event(shared_ptr<Devs<X, T>> model, X const &value)
+        : model(model.get()), value(value) {}
+
     /// Copy constructor.
     Event(Event<X, T> const &src) : model(src.model), value(src.value) {}
     /// Assignment operator.
@@ -146,8 +152,6 @@ class Event {
     Devs<X, T>* model;
     /// The value associated with the event.
     X value;
-    /// Destructor
-    ~Event() {}
 };
 
 /*
@@ -162,8 +166,8 @@ class Atomic : public Devs<X, T> {
           tL(adevs_zero<T>()),
           q_index(0),  // The Schedule requires this to be zero
           proc(-1),
-          inputs(std::make_shared<Bag<X>>()),
-          outputs(std::make_shared<Bag<X>>()) {}
+          inputs(std::make_shared<list<X>>()),
+          outputs(std::make_shared<list<X>>()) {}
     /// Internal transition function.
     virtual void delta_int() = 0;
     /*
@@ -171,31 +175,23 @@ class Atomic : public Devs<X, T> {
      * @param e Time elapsed since the last change of state
      * @param xb Input for the model.
      */
-    virtual void delta_ext(T e, Bag<X> const &xb) = 0;
+    virtual void delta_ext(T e, list<X> const &xb) = 0;
     /*
      * Confluent transition function.
      * @param xb Input for the model.
      */
-    virtual void delta_conf(Bag<X> const &xb) = 0;
+    virtual void delta_conf(list<X> const &xb) = 0;
     /*
-     * Output function.  Output values should be added to the bag yb.
-     * @param yb Empty bag to be filled with the model's output
+     * Output function.  Output values should be added to the list yb.
+     * @param yb Empty list to be filled with the model's output
      */
-    virtual void output_func(Bag<X> &yb) = 0;
+    virtual void output_func(list<X> &yb) = 0;
     /*
      * Time advance function. adevs_inf<T>() is used for infinity.
      * @return The time to the next internal event
      */
     virtual T ta() = 0;
-    /*
-     * Garbage collection function.  The objects in g are
-     * no longer in use by the simulation engine and should be disposed of.
-`		 * Note that the elements in g are only those objects produced as
-     * output by this model.
-     */
-    virtual void gc_output(Bag<X> &g) = 0;
-    /// Destructor.
-    virtual ~Atomic() {}
+
     /// Returns a pointer to this model.
     Atomic<X, T>* typeIsAtomic() { return this; }
 
@@ -218,9 +214,9 @@ class Atomic : public Devs<X, T> {
     unsigned int q_index;
     // Thread assigned to this model
     int proc;
-    // Input and output event bags
-    std::shared_ptr<Bag<X>> inputs;
-    std::shared_ptr<Bag<X>> outputs;
+
+    std::shared_ptr<list<X>> inputs;
+    std::shared_ptr<list<X>> outputs;
 };
 
 /*
@@ -249,13 +245,12 @@ class MealyAtomic : public Atomic<X, T> {
      * Produce output at e < ta(q) in response to xb.
      * This is output preceding an external event.
      */
-    virtual void output_func(T e, Bag<X> const &xb, Bag<X> &yb) = 0;
+    virtual void output_func(T e, list<X> const &xb, list<X> &yb) = 0;
     /*
      * Produce output at e = ta(q) in response to xb.
      * This is output preceding a confluent event.
      */
-    virtual void output_func(Bag<X> const &xb, Bag<X> &yb) = 0;
-    virtual ~MealyAtomic() {}
+    virtual void output_func(list<X> const &xb, list<X> &yb) = 0;
 
   private:
     friend class Simulator<X, T>;
@@ -282,22 +277,18 @@ class Network : public Devs<X, T> {
     virtual void getComponents(set<Devs<X, T>*> &c) = 0;
     /*
      * This method is called by the Simulator to route an output value
-     * produced by a model. This method should fill the bag r
+     * produced by a model. This method should fill the list r
      * with Events that point to the target model and carry the value
      * to be delivered to the target. The target may be a component
      * of the Network or the Network itself, the latter causing the
      * Network to produce an output.
      * @param model The model that produced the output value
      * @param value The output value produced by the model
-     * @param r A bag to be filled with (target,value) pairs
+     * @param r A list to be filled with (target,value) pairs
      */
     virtual void route(X const &value, Devs<X, T>* model,
-                       Bag<Event<X, T>> &r) = 0;
-    /*
-     * Destructor.  This destructor does not delete any component models.
-     * Any necessary cleanup should be done by the derived class.
-     */
-    virtual ~Network() {}
+                       list<Event<X, T>> &r) = 0;
+
     /// Returns a pointer to this model.
     Network<X, T>* typeIsNetwork() { return this; }
 };

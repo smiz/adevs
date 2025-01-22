@@ -39,39 +39,21 @@ double Generator::ta() {
 }
 
 void Generator::delta_int() {
-    // Remove the first customer.  Because it was used as the
-    // output object, it will be deleted during the gc_output()
-    // method call at the end of the simulation cycle.
+    // Remove the first customer.
     arrivals.pop_front();
 }
 
-void Generator::delta_ext(double e, Bag<IO_Type> const &xb) {
+void Generator::delta_ext(double e, list<IO_Type> const &xb) {
     /// The generator is input free, and so it ignores external events.
 }
 
-void Generator::delta_conf(Bag<IO_Type> const &xb) {
+void Generator::delta_conf(list<IO_Type> const &xb) {
     /// The generator is input free, and so it ignores input.
     delta_int();
 }
 
-void Generator::output_func(Bag<IO_Type> &yb) {
+void Generator::output_func(list<IO_Type> &yb) {
     // First customer in the list is produced as output
     IO_Type output(arrive, arrivals.front());
     yb.push_back(output);
-}
-
-void Generator::gc_output(Bag<IO_Type> &g) {
-    // Delete the customer that was produced as output
-    Bag<IO_Type>::iterator i;
-    for (i = g.begin(); i != g.end(); i++) {
-        delete (*i).value;
-    }
-}
-
-Generator::~Generator() {
-    /// Delete anything remaining in the arrival list
-    list<Customer*>::iterator i;
-    for (i = arrivals.begin(); i != arrivals.end(); i++) {
-        delete *i;
-    }
 }

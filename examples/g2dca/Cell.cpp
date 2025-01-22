@@ -78,13 +78,13 @@ void Cell::delta_int() {
     phase = y_space[x][y];
 }
 
-void Cell::delta_ext(int e, adevs::Bag<CellEvent> const &xb) {}
+void Cell::delta_ext(int e, list<CellEvent> const &xb) {}
 
-void Cell::delta_conf(adevs::Bag<CellEvent> const &xb) {
+void Cell::delta_conf(list<CellEvent> const &xb) {
     delta_int();
 }
 
-void Cell::output_func(adevs::Bag<CellEvent> &yb) {
+void Cell::output_func(list<CellEvent> &yb) {
     CellEvent e;
     // Assume we are dying
     e.value = (rule[rule_index()]) ? Alive : Dead;

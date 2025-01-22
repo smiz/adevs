@@ -94,18 +94,15 @@ class ode_system {
     virtual void internal_event(double* q, bool const* state_event) = 0;
 
     /// The external transition function
-    virtual void external_event(double* q, double e, Bag<X> const &xb) = 0;
+    virtual void external_event(double* q, double e, list<X> const &xb) = 0;
 
     /// The confluent transition function
     virtual void confluent_event(double* q, bool const* state_event,
-                                 Bag<X> const &xb) = 0;
+                                 list<X> const &xb) = 0;
 
     /// The output function
     virtual void output_func(double const* q, bool const* state_event,
-                             Bag<X> &yb) = 0;
-
-    /// Garbage collection function. This works just like the Atomic gc_output method.
-    virtual void gc_output(Bag<X> &gb) = 0;
+                             list<X> &yb) = 0;
 
     /// Get the N x N Jacobian matrix. The supplied array must be filled with the Jacobian
     /// in column major ordering to make it compatible with LAPACK and similar
@@ -124,7 +121,7 @@ class ode_system {
 // Clang complains about the postTrialStep declaration.
 // Because what we wrote is what we intended, the
 // warning is disable just for this class definition.
-#ifdef __clang__
+#ifdef _clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Woverloaded-virtual"
 #endif
@@ -224,15 +221,15 @@ class dae_se1_system : public ode_system<X> {
 
     /// The external transition function
     virtual void external_event(double* q, double* a, double e,
-                                Bag<X> const &xb) = 0;
+                                list<X> const &xb) = 0;
 
     /// The confluent transition function
     virtual void confluent_event(double* q, double* a, bool const* state_event,
-                                 Bag<X> const &xb) = 0;
+                                 list<X> const &xb) = 0;
 
     /// The output function
     virtual void output_func(double const* q, double const* a,
-                             bool const* state_event, Bag<X> &yb) = 0;
+                             bool const* state_event, list<X> &yb) = 0;
 
     /// Destructor
     virtual ~dae_se1_system() {
@@ -293,7 +290,7 @@ class dae_se1_system : public ode_system<X> {
     }
 
     /// Do not override
-    void external_event(double* q, double e, Bag<X> const &xb) {
+    void external_event(double* q, double e, list<X> const &xb) {
         // The variable a was solved for in the post step
         external_event(q, a, e, xb);
         // Make sure the algebraic variables are consistent with q
@@ -302,7 +299,8 @@ class dae_se1_system : public ode_system<X> {
     }
 
     /// Do not override
-    void confluent_event(double* q, bool const* state_event, Bag<X> const &xb) {
+    void confluent_event(double* q, bool const* state_event,
+                         list<X> const &xb) {
         // The variable a was solved for in the post step
         confluent_event(q, a, state_event, xb);
         // Make sure the algebraic variables are consistent with q
@@ -311,7 +309,7 @@ class dae_se1_system : public ode_system<X> {
     }
 
     /// Do not override
-    void output_func(double const* q, bool const* state_event, Bag<X> &yb) {
+    void output_func(double const* q, bool const* state_event, list<X> &yb) {
         // The variable a was solved for in the post step
         output_func(q, a, state_event, yb);
     }
@@ -573,7 +571,7 @@ class Hybrid : public Atomic<X, T> {
      * Do not override this method. It performs numerical integration and
      * invokes the ode_system for external events as needed.
      */
-    void delta_ext(T e, Bag<X> const &xb) {
+    void delta_ext(T e, list<X> const &xb) {
         bool state_event_exists = false;
         event_happened = true;
         // Check that we have not missed a state event
@@ -613,7 +611,7 @@ class Hybrid : public Atomic<X, T> {
      * Do not override. This method invokes the ode_system method
      * for confluent events as needed.
      */
-    void delta_conf(Bag<X> const &xb) {
+    void delta_conf(list<X> const &xb) {
         if (!missedOutput.empty()) {
             missedOutput.clear();
             if (sigma > 0.0) {
@@ -645,7 +643,7 @@ class Hybrid : public Atomic<X, T> {
     }
 
     /// Do not override. Invokes the ode_system output function as needed.
-    void output_func(Bag<X> &yb) {
+    void output_func(list<X> &yb) {
         if (!missedOutput.empty()) {
             for (auto iter : missedOutput) {
                 yb.push_back(iter);
@@ -662,19 +660,6 @@ class Hybrid : public Atomic<X, T> {
         }
     }
 
-    /// Do not override. Invokes the ode_system gc_output method as needed.
-    void gc_output(Bag<X> &gb) { sys->gc_output(gb); }
-
-    /// Destructor deletes everything.
-    virtual ~Hybrid() {
-        delete[] q;
-        delete[] q_trial;
-        delete[] event;
-        delete event_finder;
-        delete solver;
-        delete sys;
-    }
-
   private:
     ode_system<X>* sys;              // The ODE system
     ode_solver<X>* solver;           // Integrator for the ode set
@@ -686,7 +671,7 @@ class Hybrid : public Atomic<X, T> {
     bool
         event_happened;  // True if a discrete event in the ode_system took place
     double e_accum;      // Accumlated time between discrete events
-    Bag<X> missedOutput;  // Output missed at an external event
+    list<X> missedOutput;  // Output missed at an external event
     // Execute a tentative step and calculate the time advance function
     void tentative_step() {
         // Check for a time event

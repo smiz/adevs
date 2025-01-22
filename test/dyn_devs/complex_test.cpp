@@ -1,24 +1,34 @@
 #include <time.h>
 #include <iostream>
 #include <list>
+#include <memory>
 #include "SimpleAtomic.h"
 #include "adevs/adevs.h"
+
 using namespace adevs;
 using namespace std;
+
 
 struct flagged {
     bool flag;
 };
 
+enum class TYPE {
+    NETWORK,
+    ATOMIC,
+};
+
 class MySimpleAtomic : public SimpleAtomic {
   public:
-    MySimpleAtomic() : SimpleAtomic() {}
+    MySimpleAtomic() : SimpleAtomic() { printf("atomic():  this=%p\n", this); }
+
     bool model_transition() {
         flagged* parent = dynamic_cast<flagged*>(getParent());
+        printf("atomic::transition:  this=%p parent=%p flag=%d\n", this, parent,
+               parent->flag);
         assert(parent->flag == false);
         return true;
     }
-    ~MySimpleAtomic() {}
 };
 
 class SimpleNetwork : public Network<SimpleIO>, public flagged {
@@ -27,92 +37,108 @@ class SimpleNetwork : public Network<SimpleIO>, public flagged {
         : Network<SimpleIO>(), flagged(), depth(depth) {
         flag = false;
         int initial_count = rand() % 3 + 1;
+        printf("network(): this=%p initial_count=%d depth=%d\n", this,
+               initial_count, depth);
         for (int i = 0; i < initial_count; i++) {
-            add_model();
+            add_model(depth, i);
         }
     }
-    void getComponents(Set<Devs<SimpleIO>*> &c) {
-        list<Devs<SimpleIO>*>::iterator iter;
-        for (iter = models.begin(); iter != models.end(); iter++) {
-            c.insert(*iter);
+    void getComponents(set<Devs<SimpleIO>*> &c) {
+        for (auto iter : models) {
+            c.insert(iter.get());
         }
     }
-    void route(SimpleIO const &, Devs<SimpleIO>*, Bag<Event<SimpleIO>> &) {}
+
+    void route(SimpleIO const &, Devs<SimpleIO>*, list<Event<SimpleIO>> &) {}
+
     bool model_transition() {
         flag = true;
-        if (getParent() != NULL) {
+        if (getParent() != nullptr) {
             flagged* parent = dynamic_cast<flagged*>(getParent());
+            printf("network::transition: (check) this=%p parent=%p flag=%d\n",
+                   this, parent, parent->flag);
             assert(parent->flag == false);
         }
         int choice = rand() % 3;
         if (choice == 0) {
-            add_model();
+            printf("network::transition: (add) this=%p\n", this);
+            add_model(depth, -1);
             return true;
         } else if (choice == 2 && !models.empty()) {
-            models.back()->setParent(NULL);
+            models.back()->setParent(nullptr);
+            printf("network::transition: (remove) this=%p model=%p\n", this,
+                   models.back().get());
+            if (this->simulator != nullptr) {
+                this->simulator->pending_unschedule.insert(models.back());
+            }
             models.pop_back();
             return true;
         }
         return false;
     }
-    ~SimpleNetwork() {
-        list<Devs<SimpleIO>*>::iterator iter;
-        for (iter = models.begin(); iter != models.end(); iter++) {
-            delete *iter;
-        }
-    }
 
   private:
-    list<Devs<SimpleIO>*> models;
+    list<shared_ptr<Devs<SimpleIO>>> models;
     int depth;
 
-    void add_model() {
-        Devs<SimpleIO>* model = NULL;
+    void add_model(int depth, int ii) {
+        shared_ptr<Devs<SimpleIO>> model = nullptr;
+        TYPE t;
         if (rand() % 2 == 0 || depth == 5) {
-            model = new MySimpleAtomic();
+            model = make_shared<MySimpleAtomic>();
+            t = TYPE::ATOMIC;
         } else {
-            model = new SimpleNetwork(depth + 1);
+            model = make_shared<SimpleNetwork>(depth + 1);
+            t = TYPE::NETWORK;
         }
-        assert(model != NULL);
+        assert(model != nullptr);
+        printf("created[%d, %d]: type=%d model=%p parent=%p\n", depth, ii, t,
+               model.get(), this);
         model->setParent(this);
         models.push_front(model);
+        if (this->simulator != nullptr) {
+            this->simulator->pending_schedule.insert(model);
+        }
     }
 };
 
 void reset_flags(SimpleNetwork* model) {
     model->flag = false;
-    Set<Devs<SimpleIO>*> components;
+    set<Devs<SimpleIO>*> components;
     model->getComponents(components);
-    Set<Devs<SimpleIO>*>::iterator iter;
-    for (iter = components.begin(); iter != components.end(); iter++) {
+
+    for (auto iter : components) {
         SimpleNetwork* next_model;
-        next_model = dynamic_cast<SimpleNetwork*>(*iter);
-        if (next_model != NULL) {
+        next_model = dynamic_cast<SimpleNetwork*>(iter);
+        if (next_model != nullptr) {
             reset_flags(next_model);
         }
     }
 }
 
 void doTest() {
-    SimpleNetwork* model = new SimpleNetwork();
-    Simulator<SimpleIO>* sim = new Simulator<SimpleIO>(model);
+    shared_ptr<SimpleNetwork> model = make_shared<SimpleNetwork>();
+    shared_ptr<Simulator<SimpleIO>> sim =
+        make_shared<Simulator<SimpleIO>>(model);
+
     while (sim->nextEventTime() < 1000.0) {
-        reset_flags(model);
+        reset_flags(model.get());
         sim->execNextEvent();
     }
-    delete sim;
-    delete model;
 }
 
 int main() {
     unsigned long seed = (unsigned long)time(NULL);
+
     cout << seed << endl;
     srand(seed);
+
     for (int i = 0; i < 100; i++) {
-        cout << "\r" << i << "\t";
+        cout << "\r" << i << endl;  //"\t";
         cout.flush();
         doTest();
     }
+
     cout << "\rdone\t" << endl;
     return 0;
 }

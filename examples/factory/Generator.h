@@ -1,5 +1,5 @@
-#ifndef __Generator_h_
-#define __Generator_h_
+#ifndef _Generator_h_
+#define _Generator_h_
 
 #include <memory>
 #include <random>
@@ -31,17 +31,14 @@ class Generator : public adevs::Atomic<int> {
     }
 
     // Output function produces the next order
-    void output_func(adevs::Bag<int> &yb) { yb.push_back(next); }
+    void output_func(list<int> &yb) { yb.push_back(next); }
 
     // Time advance returns the time until the next order
     double ta() { return (double)time_to_order; }
 
     // Model is input free, so these methods are empty
-    void delta_ext(double, adevs::Bag<int> const &) {}
-    void delta_conf(adevs::Bag<int> const &) {}
-
-    // No explicit memory management is needed
-    void gc_output(adevs::Bag<int> &) {}
+    void delta_ext(double, list<int> const &) {}
+    void delta_conf(list<int> const &) {}
 
   private:
     // Next order ID

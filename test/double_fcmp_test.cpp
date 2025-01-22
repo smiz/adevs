@@ -18,13 +18,9 @@ class genr : public Atomic<char, double_fcmp> {
             sigma = DBL_MAX;
         }
     }
-    void delta_ext(double_fcmp, Bag<char> const &) { sigma = DBL_MAX; }
-    void delta_conf(Bag<char> const &) { sigma = DBL_MAX; }
-    void output_func(Bag<char> &y) { y.push_back('a'); }
-    void gc_output(Bag<char> &g) {
-        // assert(g.count('a') > 0);
-    }
-    ~genr() {}
+    void delta_ext(double_fcmp, list<char> const &) { sigma = DBL_MAX; }
+    void delta_conf(list<char> const &) { sigma = DBL_MAX; }
+    void output_func(list<char> &y) { y.push_back('a'); }
     int getTickCount() { return count; }
 
   private:
@@ -34,24 +30,22 @@ class genr : public Atomic<char, double_fcmp> {
 };
 
 void test1() {
-    genr* g = new genr(10.0, 10);
+    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
     Simulator<char, double_fcmp> sim(g);
     while (sim.nextEventTime() < DBL_MAX) {
         sim.execNextEvent();
     }
     assert(g->getTickCount() == 10);
-    delete g;
 }
 
 void test2() {
-    genr* g = new genr(10.0, 10);
+    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
     Simulator<char, double_fcmp> sim(g);
     while (sim.nextEventTime() < DBL_MAX) {
         sim.computeNextOutput();
         sim.execNextEvent();
     }
     assert(g->getTickCount() == 10);
-    delete g;
 }
 
 class MyEventListener : public EventListener<char, double_fcmp> {
@@ -69,24 +63,23 @@ class MyEventListener : public EventListener<char, double_fcmp> {
 };
 
 void test3() {
-    genr* g = new genr(10.0, 10);
+    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
     Simulator<char, double_fcmp> sim(g);
-    MyEventListener listener;
-    sim.addEventListener(&listener);
+    shared_ptr<MyEventListener> listener = make_shared<MyEventListener>();
+    sim.addEventListener(listener);
     while (sim.nextEventTime() < DBL_MAX) {
         sim.computeNextOutput();
-        assert(listener.t_last == sim.nextEventTime());
+        assert(listener->t_last == sim.nextEventTime());
         sim.execNextEvent();
     }
-    assert(listener.count == 10);
+    assert(listener->count == 10);
     assert(g->getTickCount() == 10);
-    delete g;
 }
 
 void test4() {
-    genr* g = new genr(10.0, 10);
+    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
     Simulator<char, double_fcmp> sim(g);
-    Bag<Event<char, double_fcmp>> input;
+    list<Event<char, double_fcmp>> input;
     sim.computeNextState(input, 5.0);
     assert(sim.nextEventTime() == 10.0);
     sim.computeNextState(input, 6.0);
@@ -103,19 +96,17 @@ void test4() {
     sim.execNextEvent();
     assert(g->getTickCount() == 2);
     assert(sim.nextEventTime() == 30.0);
-    delete g;
 }
 
 void test5() {
-    genr* g = new genr(10.0, 10);
+    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
     Simulator<char, double_fcmp> sim(g);
-    Bag<Event<char, double_fcmp>> input;
+    list<Event<char, double_fcmp>> input;
     Event<char, double_fcmp> event(g, 'a');
     input.push_back(event);
     sim.computeNextState(input, 5.0);
     assert(sim.nextEventTime() == DBL_MAX);
     assert(g->getTickCount() == 0);
-    delete g;
 }
 
 int main() {

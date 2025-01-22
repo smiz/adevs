@@ -11,17 +11,14 @@ class Clerk2 : public adevs::Atomic<IO_Type> {
     /// Internal transition function.
     void delta_int();
     /// External transition function.
-    void delta_ext(double e, adevs::Bag<IO_Type> const &xb);
+    void delta_ext(double e, list<IO_Type> const &xb);
     /// Confluent transition function.
-    void delta_conf(adevs::Bag<IO_Type> const &xb);
+    void delta_conf(list<IO_Type> const &xb);
     /// Time advance function.
     double ta();
     /// Output function.
-    void output_func(adevs::Bag<IO_Type> &yb);
-    /// Output value garbage collection.
-    void gc_output(adevs::Bag<IO_Type> &g);
-    /// Destructor.
-    ~Clerk2();
+    void output_func(list<IO_Type> &yb);
+
     /// Model input port.
     static int const arrive;
     /// Model output port.

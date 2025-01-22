@@ -48,18 +48,18 @@ class Circuit : public ode_system<bool> {
         assert(events[0]);  // only one event type; make sure it fired
         d = !d;
     }
-    void external_event(double*, double, Bag<bool> const &xb) {
+    void external_event(double*, double, list<bool> const &xb) {
         s = *(xb.begin());
     }
-    void confluent_event(double* q, bool const* events, Bag<bool> const &xb) {
+    void confluent_event(double* q, bool const* events, list<bool> const &xb) {
         internal_event(q, events);
         external_event(q, 0.0, xb);
     }
-    void output_func(double const* q, bool const* events, Bag<bool> &yb) {
+    void output_func(double const* q, bool const* events, list<bool> &yb) {
         assert(events[0]);
         yb.push_back(!d);
     }
-    void gc_output(Bag<bool> &) {}
+
     bool getDiode() const { return d; }
     bool getSwitch() const { return s; }
 
@@ -74,10 +74,10 @@ class OpenSwitch : public Atomic<bool> {
     OpenSwitch(double t_open) : Atomic<bool>(), t_open(t_open) {}
     double ta() { return t_open; }
     void delta_int() { t_open = adevs_inf<double>(); }
-    void delta_ext(double, Bag<bool> const &) {}
-    void delta_conf(Bag<bool> const &) {}
-    void output_func(Bag<bool> &yb) { yb.push_back(false); }
-    void gc_output(Bag<bool> &) {}
+    void delta_ext(double, list<bool> const &) {}
+    void delta_conf(list<bool> const &) {}
+    void output_func(list<bool> &yb) { yb.push_back(false); }
+
 
   private:
     double t_open;

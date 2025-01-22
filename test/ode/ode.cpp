@@ -22,11 +22,11 @@ class simple_system : public ode_system<int> {
     void state_event_func(double const* q, double* z) {}
     double time_event_func(double const* q) { return adevs_inf<double>(); }
     void internal_event(double* q, bool const* event_flag) {}
-    void external_event(double* q, double e, Bag<int> const &xb) {}
+    void external_event(double* q, double e, list<int> const &xb) {}
     void confluent_event(double* q, bool const* event_flag,
-                         Bag<int> const &xb) {}
-    void output_func(double const* q, bool const* event_flag, Bag<int> &yb) {}
-    void gc_output(Bag<int> &g) {}
+                         list<int> const &xb) {}
+    void output_func(double const* q, bool const* event_flag, list<int> &yb) {}
+
     bool get_jacobian(double const* q, double* J) {
         if (J == NULL) {
             return true;
@@ -59,11 +59,11 @@ class lk_system : public ode_system<int> {
     void state_event_func(double const* q, double* z) {}
     double time_event_func(double const* q) { return adevs_inf<double>(); }
     void internal_event(double* q, bool const* event_flag) {}
-    void external_event(double* q, double e, Bag<int> const &xb) {}
+    void external_event(double* q, double e, list<int> const &xb) {}
     void confluent_event(double* q, bool const* event_flag,
-                         Bag<int> const &xb) {}
-    void output_func(double const* q, bool const* event_flag, Bag<int> &yb) {}
-    void gc_output(Bag<int> &g) {}
+                         list<int> const &xb) {}
+    void output_func(double const* q, bool const* event_flag, list<int> &yb) {}
+
     bool get_jacobian(double const* q, double* J) {
         if (J == NULL) {
             return true;

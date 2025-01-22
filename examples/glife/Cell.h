@@ -1,5 +1,5 @@
-#ifndef __cell_h_
-#define __cell_h_
+#ifndef _cell_h_
+#define _cell_h_
 #include "adevs/adevs.h"
 
 /// Possible cell phases.
@@ -11,24 +11,21 @@ typedef adevs::CellEvent<Phase> CellEvent;
 class Cell : public adevs::Atomic<CellEvent, int> {
   public:
     /**
-		Create a cell and set the initial state.
-		The width and height fields are used to determine if a
-		cell is an edge cell.  The last phase pointer is used to
-		visualize the cell space.
-		*/
+    Create a cell and set the initial state.
+    The width and height fields are used to determine if a
+    cell is an edge cell.  The last phase pointer is used to
+    visualize the cell space.
+    */
     Cell(long int x, long int y, long int width, long int height, Phase phase,
          short int nalive, Phase* vis_phase = NULL);
-    // State transition functions
+
     void delta_int();
-    void delta_ext(int e, adevs::Bag<CellEvent> const &xb);
-    void delta_conf(adevs::Bag<CellEvent> const &xb);
-    // Time advance function
+    void delta_ext(int e, list<CellEvent> const &xb);
+    void delta_conf(list<CellEvent> const &xb);
+
     int ta();
-    // Output function
-    void output_func(adevs::Bag<CellEvent> &yb);
-    // Garbage collection method is not needed for this model
-    void gc_output(adevs::Bag<CellEvent> &g) {}
-    // Destructor
+    void output_func(list<CellEvent> &yb);
+
     ~Cell() {}
 
   private:

@@ -35,7 +35,7 @@ class Agent : public Atomic<io_type, sd_time<>> {
         output[x][y] = c0;
     }
     void delta_int() {}
-    void delta_ext(sd_time<> e, Bag<io_type> const &xb) {
+    void delta_ext(sd_time<> e, list<io_type> const &xb) {
         for (auto xx : xb) {
             if (xx.xtgt == x && xx.ytgt == y && c == Healthy &&
                 output[xx.xsrc][xx.ysrc] == Tumor) {
@@ -44,11 +44,11 @@ class Agent : public Atomic<io_type, sd_time<>> {
         }
         check_neighbors();
     }
-    void delta_conf(Bag<io_type> const &xb) {
+    void delta_conf(list<io_type> const &xb) {
         delta_int();
         delta_ext(adevs_zero<sd_time<>>(), xb);
     }
-    void output_func(Bag<io_type> &yb) {
+    void output_func(list<io_type> &yb) {
         io_type yy;
         yy.xsrc = x;
         yy.ysrc = y;
@@ -77,7 +77,7 @@ class Agent : public Atomic<io_type, sd_time<>> {
         yb.push_back(yy);
         output[x][y] = c;
     }
-    void gc_output(Bag<io_type> &) {}
+
     sd_time<> ta() {
         if (output[x][y] != c) {
             return sd_time<>(0.0, 0);
@@ -145,7 +145,7 @@ class Grid : public Network<io_type, sd_time<>> {
         }
     }
     void route(io_type const &value, Devs<io_type, sd_time<>>* model,
-               Bag<Event<io_type, sd_time<>>> &r) {
+               list<Event<io_type, sd_time<>>> &r) {
         Event<io_type, sd_time<>> xx;
         xx.value = value;
         if (value.xsrc - 1 >= 0) {

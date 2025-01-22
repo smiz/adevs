@@ -30,11 +30,12 @@
  */
 #ifndef _adevs_event_locators_h_
 #define _adevs_event_locators_h_
+#include <cassert>
 #include <cmath>
 #include <cstring>
 #include <iostream>
-#include "adevs/hybrid.h"
-#include "adevs/spline.h"
+#include "adevs/solvers/hybrid.h"
+#include "adevs/solvers/spline.h"
 
 namespace adevs {
 

@@ -25,13 +25,13 @@ class genr : public adevs::Atomic<PortValue> {
         sigma = period;
     }
     /// External transition function
-    void delta_ext(double e, adevs::Bag<PortValue> const &x) {
+    void delta_ext(double e, list<PortValue> const &x) {
         // Continue with next event time unchanged if, for some reason,
         // the input is on neither on these ports.
         sigma -= e;
         // Look for input on the start port.  If input is found,
         // hold until it is time to produce the first output.
-        adevs::Bag<PortValue>::const_iterator iter;
+        list<PortValue>::const_iterator iter;
         for (iter = x.begin(); iter != x.end(); iter++) {
             if ((*iter).port == start) {
                 sigma = period;
@@ -46,14 +46,14 @@ class genr : public adevs::Atomic<PortValue> {
         }
     }
     /// Confluent transition function
-    void delta_conf(adevs::Bag<PortValue> const &x) {
+    void delta_conf(list<PortValue> const &x) {
         // When an internal and external event coincide, compute
         // the internal state transition then process the input.
         delta_int();
         delta_ext(0.0, x);
     }
     /// Output function.
-    void output_func(adevs::Bag<PortValue> &y) {
+    void output_func(list<PortValue> &y) {
         // Place a new job on the output port
         job j(count);
         PortValue pv(out, j);
@@ -62,7 +62,7 @@ class genr : public adevs::Atomic<PortValue> {
     /// Time advance function.
     double ta() { return sigma; }
     /// Output doesn't require heap allocation, so don't do anything
-    void gc_output(adevs::Bag<PortValue> &g) {}
+
     /// Model input ports
     static int const start;
     static int const stop;

@@ -12,7 +12,7 @@ struct request_t {
 };
 
 typedef PortValue<request_t> IO_Type;
-typedef Bag<IO_Type> IO_Bag;
+typedef list<IO_Type> IO_List;
 
 class Resource : public Atomic<IO_Type> {
   public:
@@ -32,8 +32,8 @@ class Resource : public Atomic<IO_Type> {
         q.pop_front();
     }
     // External event can be a grab request or a release
-    void delta_ext(double e, IO_Bag const &xb) {
-        for (IO_Bag::const_iterator iter = xb.begin(); iter != xb.end();
+    void delta_ext(double e, IO_List const &xb) {
+        for (IO_List::const_iterator iter = xb.begin(); iter != xb.end();
              iter++) {
             // Is this message for me?
             if ((*iter).value.resID == ID) {
@@ -50,7 +50,7 @@ class Resource : public Atomic<IO_Type> {
         }
     }
     // Confluent event
-    void delta_conf(IO_Bag const &xb) {
+    void delta_conf(IO_List const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
@@ -66,7 +66,7 @@ class Resource : public Atomic<IO_Type> {
         }
     }
     // Output confirms a successful grab
-    void output_func(IO_Bag &yb) {
+    void output_func(IO_List &yb) {
         // Give the resource to the front of the queue
         IO_Type yy;
         yy.port = grant;
@@ -74,7 +74,6 @@ class Resource : public Atomic<IO_Type> {
         yy.value.userID = q.front();
         yb.push_back(yy);
     }
-    void gc_output(IO_Bag &) {}
 
   private:
     // ID for this resource
@@ -132,8 +131,8 @@ class User : public Atomic<IO_Type> {
         }
     }
     // External event can be a grab request or a release
-    void delta_ext(double e, IO_Bag const &xb) {
-        for (IO_Bag::const_iterator iter = xb.begin(); iter != xb.end();
+    void delta_ext(double e, IO_List const &xb) {
+        for (IO_List::const_iterator iter = xb.begin(); iter != xb.end();
              iter++) {
             // Is this for me?
             if ((*iter).value.userID == ID) {
@@ -151,7 +150,7 @@ class User : public Atomic<IO_Type> {
         }
     }
     // Confluent event
-    void delta_conf(IO_Bag const &xb) {
+    void delta_conf(IO_List const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
@@ -167,7 +166,7 @@ class User : public Atomic<IO_Type> {
         }
     }
     // Output confirms a successful grab
-    void output_func(IO_Bag &yb) {
+    void output_func(IO_List &yb) {
         IO_Type yy;
         yy.value.userID = ID;
         // Release the resource?
@@ -184,7 +183,7 @@ class User : public Atomic<IO_Type> {
             yb.push_back(yy);
         }
     }
-    void gc_output(IO_Bag &) {}
+
 
   private:
     int const ID, howMany;

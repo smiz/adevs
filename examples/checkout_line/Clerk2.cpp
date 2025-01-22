@@ -13,7 +13,7 @@ double const Clerk2::PREEMPT_TIME = 5.0;
 
 Clerk2::Clerk2() : Atomic<IO_Type>(), preempt(0.0), t(0.0) {}
 
-void Clerk2::delta_ext(double e, Bag<IO_Type> const &xb) {
+void Clerk2::delta_ext(double e, list<IO_Type> const &xb) {
     /// Update the clock
     t += e;
     /// Update the time spent working on the current order
@@ -23,7 +23,7 @@ void Clerk2::delta_ext(double e, Bag<IO_Type> const &xb) {
     /// Reduce the preempt time
     preempt -= e;
     /// Place new customers into the line
-    Bag<IO_Type>::const_iterator iter = xb.begin();
+    list<IO_Type>::const_iterator iter = xb.begin();
     for (; iter != xb.end(); iter++) {
         cout << "Clerk: A new customer arrived at t = " << t << endl;
         /// Create a copy of the incoming customer and set the entry time
@@ -56,8 +56,6 @@ void Clerk2::delta_int() {
     // Update the preemption timer
     preempt -= ta();
     // Remove the departing customer from the front of the line.
-    // The departing customer will be deleted later by our garbage
-    // collection method.
     line.pop_front();
     // Check to see if any customers are waiting.
     if (line.empty()) {
@@ -80,7 +78,7 @@ void Clerk2::delta_int() {
     }
 }
 
-void Clerk2::delta_conf(Bag<IO_Type> const &xb) {
+void Clerk2::delta_conf(list<IO_Type> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
@@ -96,7 +94,7 @@ double Clerk2::ta() {
     }
 }
 
-void Clerk2::output_func(Bag<IO_Type> &yb) {
+void Clerk2::output_func(list<IO_Type> &yb) {
     /// Set the exit time of the departing customer
     line.front().customer->tleave = t + ta();
     /// Place the customer at the front of the line onto the depart port.
@@ -104,18 +102,4 @@ void Clerk2::output_func(Bag<IO_Type> &yb) {
     yb.push_back(y);
     // Report the departure
     cout << "Clerk: A customer departed at t = " << t + ta() << endl;
-}
-
-void Clerk2::gc_output(Bag<IO_Type> &g) {
-    Bag<IO_Type>::iterator iter = g.begin();
-    for (; iter != g.end(); iter++) {
-        delete (*iter).value;
-    }
-}
-
-Clerk2::~Clerk2() {
-    list<customer_info_t>::iterator iter = line.begin();
-    for (; iter != line.end(); iter++) {
-        delete (*iter).customer;
-    }
 }

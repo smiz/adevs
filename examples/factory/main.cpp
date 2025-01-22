@@ -1,10 +1,13 @@
 #include <cstdlib>
 #include <iostream>
 #include <map>
+#include <memory>
 #include "Factory.h"
 #include "Genr.h"
+
 using namespace adevs;
 using namespace std;
+
 
 /**
  * The observer will keep track of individual order service times.
@@ -16,6 +19,7 @@ class Observer : public EventListener<int> {
         count = 0;
         min_time = DBL_MAX;  // this should be 3 at the end of a run
     }
+
     // Track order processing statistics as orders move through the system
     void outputEvent(Event<int> x, double t) {
         // Ignore machine outputs, just look at factory and generator events
@@ -54,35 +58,41 @@ class Observer : public EventListener<int> {
 
 int main(int argc, char** argv) {
     // Create the model
-    Factory* factory = new Factory();
+    shared_ptr<Factory> factory = make_shared<Factory>();
+
     long seed = 0;
     if (argc > 1) {
         seed = atoi(argv[1]);  // Seed from command line argument
     }
-    Genr* genr = new Genr(seed);
-    SimpleDigraph<int>* model = new SimpleDigraph<int>();
+
+    shared_ptr<Genr> genr = make_shared<Genr>(seed);
+
+    shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
     model->add(factory);
     model->add(genr);
     model->couple(genr, factory);
+
     // Create the simulator
-    Simulator<int>* sim = new Simulator<int>(model);
-    Observer* obs = new Observer();
+    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
+
+    // Add an observer
+    shared_ptr<Observer> obs = make_shared<Observer>();
     sim->addEventListener(obs);
+
     // Initial active count (should be 0)
-    cout << "0 " << factory->getMachineCount() << endl;
+    cout << "0 " << factory->get_machine_count() << endl;
+
     // Run the simulation and output active machine count at each iteration
     while (sim->nextEventTime() <= 365.0) {
         cout << sim->nextEventTime() << " ";
         sim->execNextEvent();
-        cout << factory->getMachineCount() << endl;
+        cout << factory->get_machine_count() << endl;
     }
+
     // Output service time statistics
     cerr << "Avg. service time: " << obs->avgServiceTime() << " days" << endl;
     cerr << "Max. service time: " << obs->maxServiceTime() << " days" << endl;
     cerr << "Min. service time: " << obs->minServiceTime() << " days" << endl;
-    // Clean up and exit
-    delete sim;
-    delete obs;
-    delete model;
+
     return 0;
 }

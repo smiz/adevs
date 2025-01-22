@@ -28,8 +28,8 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
-#ifndef __adevs_time_h_
-#define __adevs_time_h_
+#ifndef _adevs_time_h_
+#define _adevs_time_h_
 #include <cfloat>
 #include <cmath>
 #include <iostream>

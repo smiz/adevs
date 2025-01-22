@@ -13,13 +13,13 @@ class InterruptHandler : public adevs::Atomic<SimEvent> {
     InterruptHandler(double freq);
     // State transition functions
     void delta_int();
-    void delta_ext(double e, adevs::Bag<SimEvent> const &xb);
-    void delta_conf(adevs::Bag<SimEvent> const &xb);
+    void delta_ext(double e, list<SimEvent> const &xb);
+    void delta_conf(list<SimEvent> const &xb);
     // Output function
-    void output_func(adevs::Bag<SimEvent> &yb);
+    void output_func(list<SimEvent> &yb);
     // Time advance function
     double ta();
-    void gc_output(adevs::Bag<SimEvent> &) {}
+
     // Methods for getting the values of the state variables
     unsigned int getCounter() const { return counter; }
     unsigned int getLeftOnTime() const { return left_on_time; }

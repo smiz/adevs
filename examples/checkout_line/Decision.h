@@ -1,5 +1,5 @@
-#ifndef __decision_h_
-#define __decision_h_
+#ifndef _decision_h_
+#define _decision_h_
 #include <list>
 #include "Customer.h"
 #include "adevs/adevs.h"
@@ -14,17 +14,13 @@ class Decision : public adevs::Atomic<IO_Type> {
     /// Internal transition function.
     void delta_int();
     /// External transition function.
-    void delta_ext(double e, adevs::Bag<IO_Type> const &x);
+    void delta_ext(double e, list<IO_Type> const &x);
     /// Confluent transition function.
-    void delta_conf(adevs::Bag<IO_Type> const &x);
+    void delta_conf(list<IO_Type> const &x);
     /// Output function.
-    void output_func(adevs::Bag<IO_Type> &y);
+    void output_func(list<IO_Type> &y);
     /// Time advance function.
     double ta();
-    /// Output value garbage collection.
-    void gc_output(adevs::Bag<IO_Type> &g);
-    /// Destructor.
-    ~Decision();
     /// Input port that receives new customers
     static int const decide;
     /// Input ports that receive customers leaving the two lines

@@ -56,13 +56,13 @@ void fireCell::delta_int() {
     }
 }
 
-void fireCell::delta_ext(double e, adevs::Bag<CellEvent> const &xb) {
+void fireCell::delta_ext(double e, list<CellEvent> const &xb) {
     // If we are on fire, then update the fuel supply
     if (phase == IGNITE || phase == BURN || phase == BURN_FAST) {
         fuel -= e;
     }
     // Change heat level of this cell
-    adevs::Bag<CellEvent>::const_iterator iter;
+    list<CellEvent>::const_iterator iter;
     for (iter = xb.begin(); iter != xb.end(); iter++) {
         heat += (*iter).value;
     }
@@ -79,12 +79,12 @@ void fireCell::delta_ext(double e, adevs::Bag<CellEvent> const &xb) {
     }
 }
 
-void fireCell::delta_conf(adevs::Bag<CellEvent> const &xb) {
+void fireCell::delta_conf(list<CellEvent> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
 
-void fireCell::output_func(adevs::Bag<CellEvent> &yb) {
+void fireCell::output_func(list<CellEvent> &yb) {
     // Output only if cell is burning out or igniting
     if (phase == IGNITE || phase == BURN) {
         // Set the cell output value
