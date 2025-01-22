@@ -10,62 +10,72 @@ using namespace adevs;
 
 class Listener : public EventListener<int> {
   public:
-    Listener() : EventListener<int>(), c(0), s(0), value(-1) {}
-    void outputEvent(Event<int> x, double t) {
-        c++;
+    Listener()
+        : EventListener<int>(), output_count(0), state_changes(0), value(-1) {}
+    void outputEvent(Event<int> x, [[maybe_unused]] double t) {
+        output_count++;
         assert(value == -1 || x.value == value);
         value = x.value;
     }
-    void stateChange(Atomic<int>* model, double t) { s++; }
-    int c, s, value;
+    void stateChange([[maybe_unused]] Atomic<int>* model,
+                     [[maybe_unused]] double t) {
+        state_changes++;
+    }
+    int output_count, state_changes, value;
 };
 
 class Periodic : public Atomic<int> {
   public:
-    Periodic(double p) : Atomic<int>(), p(p), c(0) {}
+    Periodic(double period)
+        : Atomic<int>(), period(period), internal_transitions(0) {}
     double ta() {
-        if (c > 10) {
+        if (internal_transitions > 10) {
             return adevs_inf<double>();
         }
-        return p;
+        return period;
     }
-    void delta_int() { c++; }
+    void delta_int() { internal_transitions++; }
     void delta_ext(double, list<int> const &) {}
     void delta_conf(list<int> const &) {}
-    void output_func(list<int> &yb) { yb.push_back(1); }
+    void output_func(list<int> &output) { output.push_back(1); }
+    void gc_output(list<int> &) {}
 
   private:
-    double const p;
-    int c;
+    double const period;
+    int internal_transitions;
 };
 
 class Receiver : public Atomic<int> {
   public:
-    Receiver() : Atomic<int>(), c(0) {}
+    Receiver() : Atomic<int>(), event_count(0) {}
     double ta() { return adevs_inf<double>(); }
     void delta_int() {}
-    void delta_ext(double e, list<int> const &xb) { c += xb.size(); }
+    void delta_ext([[maybe_unused]] double e, list<int> const &xb) {
+        event_count += xb.size();
+    }
     void delta_conf(list<int> const &xb) { delta_ext(0.0, xb); }
-    int get_c() const { return c; }
+    int get_event_count() const { return event_count; }
     void output_func(list<int> &) {}
 
   private:
-    int c;
+    int event_count;
 };
 
 class Trigger : public MealyAtomic<int> {
   public:
     Trigger()
-        : MealyAtomic<int>(), ttg(adevs_inf<double>()), external_events(0) {}
+        : MealyAtomic<int>(),
+          time_left(adevs_inf<double>()),
+          external_events(0) {}
     int external_event_count() const { return external_events; }
-    double ta() { return ttg; }
-    void delta_int() { ttg = adevs_inf<double>(); }
-    void delta_ext(double e, list<int> const &xb) {
-        assert(ee == e);
+    double ta() { return time_left; }
+    void delta_int() { time_left = adevs_inf<double>(); }
+    void delta_ext(double e, [[maybe_unused]] list<int> const &xb) {
+        assert(time_elapsed == e);
         external_events++;
-        ttg = 1.0;
+        time_left = 1.0;
     }
-    void delta_conf(list<int> const &xb) { ttg = 1.0; }
+    void delta_conf([[maybe_unused]] list<int> const &xb) { time_left = 1.0; }
     void output_func(list<int> &yb) {
         // Turn off
         yb.push_back(0);
@@ -75,12 +85,13 @@ class Trigger : public MealyAtomic<int> {
         yb.push_back(*(xb.begin()));
     }
     void output_func(double e, list<int> const &xb, list<int> &yb) {
-        ee = e;
+        time_elapsed = e;
         output_func(xb, yb);
     }
+    void gc_output([[maybe_unused]] list<int> &gb) {}
 
   private:
-    double ttg, ee;
+    double time_left, time_elapsed;
     int external_events;
 };
 
@@ -88,18 +99,23 @@ void test1() {
     shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
     shared_ptr<Trigger> trigger = make_shared<Trigger>();
     shared_ptr<Periodic> periodic = make_shared<Periodic>(sqrt(2.0));
+
     model->add(trigger);
     model->add(periodic);
+
     model->couple(periodic, trigger);
-    shared_ptr<Listener> l = make_shared<Listener>();
+
+    shared_ptr<Listener> listener = make_shared<Listener>();
     shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
-    sim->addEventListener(l);
+    sim->addEventListener(listener);
+
     while (sim->nextEventTime() < adevs_inf<double>()) {
         sim->execNextEvent();
-        assert((l->c == 1 && l->value == 0) || (l->c == 2 && l->value == 1));
-        assert(l->c == l->s);
-        l->c = l->s = 0;
-        l->value = -1;
+        assert((listener->output_count == 1 && listener->value == 0) ||
+               (listener->output_count == 2 && listener->value == 1));
+        assert(listener->output_count == listener->state_changes);
+        listener->output_count = listener->state_changes = 0;
+        listener->value = -1;
     }
 }
 
@@ -118,9 +134,10 @@ void test2() {
     sim->addEventListener(l);
     while (sim->nextEventTime() < adevs_inf<double>()) {
         sim->execNextEvent();
-        assert((l->c == 2 && l->value == 0) || (l->c == 3 && l->value == 1));
-        assert(l->c == l->s);
-        l->c = l->s = 0;
+        assert((l->output_count == 2 && l->value == 0) ||
+               (l->output_count == 3 && l->value == 1));
+        assert(l->output_count == l->state_changes);
+        l->output_count = l->state_changes = 0;
         l->value = -1;
     }
 }
@@ -143,13 +160,14 @@ void test3() {
     shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
     sim->addEventListener(l);
     while (sim->nextEventTime() < adevs_inf<double>()) {
-        int c = rx->get_c();
+        int c = rx->get_event_count();
         sim->execNextEvent();
-        assert((l->c == 2 && l->value == 0) || (l->c == 3 && l->value == 1));
-        assert(l->c == l->s - 1);
-        l->c = l->s = 0;
+        assert((l->output_count == 2 && l->value == 0) ||
+               (l->output_count == 3 && l->value == 1));
+        assert(l->output_count == l->state_changes - 1);
+        l->output_count = l->state_changes = 0;
         l->value = -1;
-        assert(rx->get_c() == c + 2);
+        assert(rx->get_event_count() == c + 2);
     }
 }
 
@@ -196,14 +214,14 @@ void test5() {
     shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
     sim->addEventListener(l);
     while (sim->nextEventTime() < adevs_inf<double>()) {
-        int c = rx->get_c();
+        int c = rx->get_event_count();
         sim->execNextEvent();
         assert(periodic->ta() == adevs_inf<double>() ||
-               (l->c == 3 && l->value == 1));
-        assert(l->c == l->s - 1);
-        l->c = l->s = 0;
+               (l->output_count == 3 && l->value == 1));
+        assert(l->output_count == l->state_changes - 1);
+        l->output_count = l->state_changes = 0;
         l->value = -1;
-        assert(rx->get_c() == c + 2);
+        assert(rx->get_event_count() == c + 2);
     }
     cout << "TEST 5 PASSED" << endl;
 }

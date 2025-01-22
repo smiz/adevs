@@ -33,6 +33,7 @@
 #include <cfloat>
 #include <cstdlib>
 #include <list>
+#include <memory>
 #include "adevs/models.h"
 #include "adevs/time.h"
 
@@ -50,15 +51,6 @@ namespace adevs {
 template <class X, class T = double>
 class Schedule {
   public:
-    /*
-     * An interface for objects that want to visit the imminent models
-     * in the schedule.
-     */
-    class ImminentVisitor {
-      public:
-        virtual void visit(Atomic<X, T>* model) = 0;
-        virtual ~ImminentVisitor() {}
-    };
     /// Creates a scheduler with the default or specified initial capacity.
     Schedule(unsigned int capacity = 100)
         : capacity(capacity), size(0), heap(new heap_element[capacity]) {
@@ -69,8 +61,10 @@ class Schedule {
     /// Get the time of the next event.
     T minPriority() const { return heap[1].priority; }
     /// Visit the imminent models.
-    void visitImminent(ImminentVisitor* visitor) const {
-        visitImminent(visitor, 1);
+    list<Atomic<X, T>*> visitImminent(void) {
+        activated.clear();
+        visitImminent(1);
+        return activated;
     }
     /// Remove the model at the front of the queue.
     void removeMinimum();
@@ -93,6 +87,9 @@ class Schedule {
     };
     unsigned int capacity, size;
     heap_element* heap;
+
+    list<Atomic<X, T>*> activated;
+
     /// Double the schedule capacity
     void enlarge();
     /// Move the item at index down and return its new position
@@ -100,22 +97,38 @@ class Schedule {
     /// Move the item at index up and return its new position
     unsigned int percolate_up(unsigned int index, T priority);
     /// Visit the imminent set recursively
-    void visitImminent(ImminentVisitor* visitor, unsigned int root) const;
+    // void visitImminent(ImminentVisitor* visitor, unsigned int root) const;
+    void visitImminent(unsigned int root);
+    void visit(Atomic<X, T>* model);
 };
 
 template <class X, class T>
-void Schedule<X, T>::visitImminent(
-    typename Schedule<X, T>::ImminentVisitor* visitor,
-    unsigned int root) const {
+void Schedule<X, T>::visit(Atomic<X, T>* model) {
+    assert(model->outputs->empty());
+    model->imminent = true;
+
+    // Put it in the active list if it is not already there
+    if (!model->activated) {
+        activated.push_back(model);
+        if (model->typeIsMealyAtomic() == nullptr) {
+            model->activated = true;
+        }
+    }
+}
+
+template <class X, class T>
+void Schedule<X, T>::visitImminent(unsigned int root) {
     // Stop if the bottom is reached or the next priority is not equal to the minimum
     if (root > size || heap[1].priority < heap[root].priority) {
         return;
     }
-    visitor->visit(heap[root].item);
+
+    visit(heap[root].item);
+
     // Look for more imminent models in the left sub-tree
-    visitImminent(visitor, root * 2);
+    visitImminent(root * 2);
     // Look in the right sub-tree
-    visitImminent(visitor, root * 2 + 1);
+    visitImminent(root * 2 + 1);
 }
 
 template <class X, class T>
