@@ -28,8 +28,10 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_models_h_
 #define _adevs_models_h_
+
 #include <cstdlib>
 #include <list>
 #include <memory>
@@ -46,15 +48,15 @@ namespace adevs {
  * Declare network and atomic model so types can be used as the type of
  * parent in the basic Devs model and for type ID functions.
  */
-template <typename X, typename T>
+template <typename OutputType, typename TimeType>
 class Network;
-template <typename X, typename T>
+template <typename OutputType, typename TimeType>
 class Atomic;
-template <typename X, typename T>
+template <typename OutputType, typename TimeType>
 class MealyAtomic;
-template <typename X, typename T>
+template <typename OutputType, typename TimeType>
 class Schedule;
-template <typename X, typename T>
+template <typename OutputType, typename TimeType>
 class Simulator;
 
 /*
@@ -63,7 +65,7 @@ class Simulator;
  * type to be used for time is set with the template argument
  * T. The default type for time is double.
  */
-template <typename X, typename T = double>
+template <typename OutputType, typename TimeType = double>
 class Devs {
   public:
     /// Default constructor.
@@ -75,25 +77,29 @@ class Devs {
      * itself otherwise. This method is used to avoid a relatively expensive
      * dynamic cast.
      */
-    virtual Network<X, T>* typeIsNetwork() { return nullptr; }
+    virtual Network<OutputType, TimeType>* typeIsNetwork() { return nullptr; }
     /// Returns nullptr if this is not an atomic model; returns itself otherwise.
-    virtual Atomic<X, T>* typeIsAtomic() { return nullptr; }
+    virtual Atomic<OutputType, TimeType>* typeIsAtomic() { return nullptr; }
     /// Returns nullptr if this is not a mealy atomic model; returns itself otherwise.
-    virtual MealyAtomic<X, T>* typeIsMealyAtomic() { return nullptr; }
+    virtual MealyAtomic<OutputType, TimeType>* typeIsMealyAtomic() {
+        return nullptr;
+    }
     /*
      * Get the model that contains this model as a component.  Returns
      * nullptr if this model is at the top of the hierarchy.
      */
-    Network<X, T> const* getParent() const { return parent; }
+    Network<OutputType, TimeType> const* getParent() const { return parent; }
     /// Get the model that contains this model as a component.
-    Network<X, T>* getParent() { return parent; }
+    Network<OutputType, TimeType>* getParent() { return parent; }
     /*
      * Assign a new parent to this model. Network model's should always
      * call this method to make themselves the parent of their components.
      * If the parent is not set correctly, then the event routing algorithm
      * in the simulator will fail.
      */
-    void setParent(Network<X, T>* parent) { this->parent = parent; }
+    void setParent(Network<OutputType, TimeType>* parent) {
+        this->parent = parent;
+    }
     /*
      * This is the structure transition function, which is evaluated following
      * every change of the model's state. It should return true
@@ -112,10 +118,10 @@ class Devs {
     bool activated = false;
     bool imminent = false;
 
-    Simulator<X, T>* simulator = nullptr;
+    Simulator<OutputType, TimeType>* simulator = nullptr;
 
   private:
-    Network<X, T>* parent;
+    Network<OutputType, TimeType>* parent;
 };
 
 /*
@@ -123,7 +129,7 @@ class Devs {
  * for notifying event listeners of output events, and for injecting
  * input into a running simulation.
  */
-template <typename X, typename T = double>
+template <typename OutputType, typename TimeType = double>
 class Event {
   public:
     /// Constructor.  Sets the model to nullptr.
@@ -135,39 +141,42 @@ class Event {
      * In a callback to an event listener, the model is the
      * source of the output value.
      */
-    Event(Devs<X, T>* model, X const &value) : model(model), value(value) {}
+    Event(Devs<OutputType, TimeType>* model, OutputType const &value)
+        : model(model), value(value) {}
 
-    Event(shared_ptr<Devs<X, T>> model, X const &value)
+    Event(shared_ptr<Devs<OutputType, TimeType>> model, OutputType const &value)
         : model(model.get()), value(value) {}
 
     /// Copy constructor.
-    Event(Event<X, T> const &src) : model(src.model), value(src.value) {}
+    Event(Event<OutputType, TimeType> const &src)
+        : model(src.model), value(src.value) {}
     /// Assignment operator.
-    Event<X, T> const &operator=(Event<X, T> const &src) {
+    Event<OutputType, TimeType> const &operator=(
+        Event<OutputType, TimeType> const &src) {
         model = src.model;
         value = src.value;
         return *this;
     }
     /// The model associated with the event.
-    Devs<X, T>* model;
+    Devs<OutputType, TimeType>* model;
     /// The value associated with the event.
-    X value;
+    OutputType value;
 };
 
 /*
  * Base type for all atomic DEVS models.
  */
-template <typename X, typename T = double>
-class Atomic : public Devs<X, T> {
+template <typename OutputType, typename TimeType = double>
+class Atomic : public Devs<OutputType, TimeType> {
   public:
     /// The constructor should place the model into its initial state.
     Atomic()
-        : Devs<X, T>(),
-          tL(adevs_zero<T>()),
+        : Devs<OutputType, TimeType>(),
+          tL(adevs_zero<TimeType>()),
           q_index(0),  // The Schedule requires this to be zero
           proc(-1),
-          inputs(std::make_shared<list<X>>()),
-          outputs(std::make_shared<list<X>>()) {}
+          inputs(std::make_shared<list<OutputType>>()),
+          outputs(std::make_shared<list<OutputType>>()) {}
     /// Internal transition function.
     virtual void delta_int() = 0;
     /*
@@ -175,25 +184,25 @@ class Atomic : public Devs<X, T> {
      * @param e Time elapsed since the last change of state
      * @param xb Input for the model.
      */
-    virtual void delta_ext(T e, list<X> const &xb) = 0;
+    virtual void delta_ext(TimeType e, list<OutputType> const &xb) = 0;
     /*
      * Confluent transition function.
      * @param xb Input for the model.
      */
-    virtual void delta_conf(list<X> const &xb) = 0;
+    virtual void delta_conf(list<OutputType> const &xb) = 0;
     /*
      * Output function.  Output values should be added to the list yb.
      * @param yb Empty list to be filled with the model's output
      */
-    virtual void output_func(list<X> &yb) = 0;
+    virtual void output_func(list<OutputType> &yb) = 0;
     /*
-     * Time advance function. adevs_inf<T>() is used for infinity.
+     * Time advance function. adevs_inf<TimeType>() is used for infinity.
      * @return The time to the next internal event
      */
-    virtual T ta() = 0;
+    virtual TimeType ta() = 0;
 
     /// Returns a pointer to this model.
-    Atomic<X, T>* typeIsAtomic() { return this; }
+    Atomic<OutputType, TimeType>* typeIsAtomic() { return this; }
 
   protected:
     /*
@@ -202,21 +211,21 @@ class Atomic : public Devs<X, T> {
      * module and should not be relied on. It is likely to be
      * removed in later versions of the code.
      */
-    T getLastEventTime() const { return tL; }
+    TimeType getLastEventTime() const { return tL; }
 
   private:
-    friend class Simulator<X, T>;
-    friend class Schedule<X, T>;
+    friend class Simulator<OutputType, TimeType>;
+    friend class Schedule<OutputType, TimeType>;
 
     // Time of last event
-    T tL;
+    TimeType tL;
     // Index in the priority queue
     unsigned int q_index;
     // Thread assigned to this model
     int proc;
 
-    std::shared_ptr<list<X>> inputs;
-    std::shared_ptr<list<X>> outputs;
+    std::shared_ptr<list<OutputType>> inputs;
+    std::shared_ptr<list<OutputType>> outputs;
 };
 
 /*
@@ -236,24 +245,26 @@ class Atomic : public Devs<X, T> {
 #pragma clang diagnostic ignored "-Woverloaded-virtual"
 #endif
 
-template <typename X, typename T = double>
-class MealyAtomic : public Atomic<X, T> {
+template <typename OutputType, typename TimeType = double>
+class MealyAtomic : public Atomic<OutputType, TimeType> {
   public:
-    MealyAtomic<X, T>() : Atomic<X, T>() {}
-    MealyAtomic<X, T>* typeIsMealyAtomic() { return this; }
+    MealyAtomic<OutputType, TimeType>() : Atomic<OutputType, TimeType>() {}
+    MealyAtomic<OutputType, TimeType>* typeIsMealyAtomic() { return this; }
     /*
      * Produce output at e < ta(q) in response to xb.
      * This is output preceding an external event.
      */
-    virtual void output_func(T e, list<X> const &xb, list<X> &yb) = 0;
+    virtual void output_func(TimeType e, list<OutputType> const &xb,
+                             list<OutputType> &yb) = 0;
     /*
      * Produce output at e = ta(q) in response to xb.
      * This is output preceding a confluent event.
      */
-    virtual void output_func(list<X> const &xb, list<X> &yb) = 0;
+    virtual void output_func(list<OutputType> const &xb,
+                             list<OutputType> &yb) = 0;
 
   private:
-    friend class Simulator<X, T>;
+    friend class Simulator<OutputType, TimeType>;
 };
 
 #ifdef __clang__
@@ -263,18 +274,18 @@ class MealyAtomic : public Atomic<X, T> {
 /*
  * Base class for DEVS network models.
  */
-template <typename X, typename T = double>
-class Network : public Devs<X, T> {
+template <typename OutputType, typename TimeType = double>
+class Network : public Devs<OutputType, TimeType> {
   public:
     /// Constructor.
-    Network() : Devs<X, T>() {}
+    Network() : Devs<OutputType, TimeType>() {}
     /*
      * This method should fill the
      * set c with all the Network's components, excluding the
      * Network model itself.
      * @param c An empty set to the filled with the Network's components.
      */
-    virtual void getComponents(set<Devs<X, T>*> &c) = 0;
+    virtual void getComponents(set<Devs<OutputType, TimeType>*> &c) = 0;
     /*
      * This method is called by the Simulator to route an output value
      * produced by a model. This method should fill the list r
@@ -286,11 +297,12 @@ class Network : public Devs<X, T> {
      * @param value The output value produced by the model
      * @param r A list to be filled with (target,value) pairs
      */
-    virtual void route(X const &value, Devs<X, T>* model,
-                       list<Event<X, T>> &r) = 0;
+    virtual void route(OutputType const &value,
+                       Devs<OutputType, TimeType>* model,
+                       list<Event<OutputType, TimeType>> &r) = 0;
 
     /// Returns a pointer to this model.
-    Network<X, T>* typeIsNetwork() { return this; }
+    Network<OutputType, TimeType>* typeIsNetwork() { return this; }
 };
 
 }  // namespace adevs

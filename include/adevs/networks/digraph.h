@@ -28,13 +28,16 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_digraph_h_
 #define _adevs_digraph_h_
+
 #include <cassert>
 #include <cstdlib>
 #include <map>
 #include <set>
 #include "adevs/adevs.h"
+
 
 namespace adevs {
 
@@ -70,16 +73,16 @@ class PortValue {
  * The digraph model is used to build block-diagrams from network and atomic components.
  * Its components must have PortValue objects as their input/output type.
  */
-template <class VALUE, class PORT = int, class T = double>
-class Digraph : public Network<PortValue<VALUE, PORT>, T> {
+template <class VALUE, class PORT = int, class TimeType = double>
+class Digraph : public Network<PortValue<VALUE, PORT>, TimeType> {
   public:
     /// An input or output to a component model
     typedef PortValue<VALUE, PORT> IO_Type;
     /// A component of the Digraph model
-    typedef Devs<IO_Type, T> Component;
+    typedef Devs<IO_Type, TimeType> Component;
 
     /// Construct a network with no components.
-    Digraph() : Network<IO_Type, T>() {}
+    Digraph() : Network<IO_Type, TimeType>() {}
     /// Add a model to the network.
     void add(shared_ptr<Component> model);
     /// Couple the source model to the destination model.
@@ -88,7 +91,8 @@ class Digraph : public Network<PortValue<VALUE, PORT>, T> {
     /// Puts the network's components into to c
     void getComponents(set<Component*> &c);
     /// Route an event based on the coupling information.
-    void route(IO_Type const &x, Component* model, list<Event<IO_Type, T>> &r);
+    void route(IO_Type const &x, Component* model,
+               list<Event<IO_Type, TimeType>> &r);
 
   private:
     // A node in the coupling graph
@@ -117,8 +121,8 @@ class Digraph : public Network<PortValue<VALUE, PORT>, T> {
     std::map<node, list<node>> graph;
 };
 
-template <class VALUE, class PORT, class T>
-void Digraph<VALUE, PORT, T>::add(shared_ptr<Component> model) {
+template <class VALUE, class PORT, class TimeType>
+void Digraph<VALUE, PORT, TimeType>::add(shared_ptr<Component> model) {
     assert(model.get() != this);
     models.insert(model.get());
     model->setParent(this);
@@ -127,9 +131,11 @@ void Digraph<VALUE, PORT, T>::add(shared_ptr<Component> model) {
     }
 }
 
-template <class VALUE, class PORT, class T>
-void Digraph<VALUE, PORT, T>::couple(shared_ptr<Component> src, PORT srcPort,
-                                     shared_ptr<Component> dst, PORT dstPort) {
+template <class VALUE, class PORT, class TimeType>
+void Digraph<VALUE, PORT, TimeType>::couple(shared_ptr<Component> src,
+                                            PORT srcPort,
+                                            shared_ptr<Component> dst,
+                                            PORT dstPort) {
     if (src.get() != this) {
         add(src);
     }
@@ -141,14 +147,14 @@ void Digraph<VALUE, PORT, T>::couple(shared_ptr<Component> src, PORT srcPort,
     graph[src_node].push_back(dst_node);
 }
 
-template <class VALUE, class PORT, class T>
-void Digraph<VALUE, PORT, T>::getComponents(set<Component*> &c) {
+template <class VALUE, class PORT, class TimeType>
+void Digraph<VALUE, PORT, TimeType>::getComponents(set<Component*> &c) {
     c = models;
 }
 
-template <class VALUE, class PORT, class T>
-void Digraph<VALUE, PORT, T>::route(IO_Type const &x, Component* model,
-                                    list<Event<IO_Type, T>> &r) {
+template <class VALUE, class PORT, class TimeType>
+void Digraph<VALUE, PORT, TimeType>::route(IO_Type const &x, Component* model,
+                                           list<Event<IO_Type, TimeType>> &r) {
     // Find the list of target models and ports
     node src_node(model, x.port);
     typename std::map<node, list<node>>::iterator graph_iter;
@@ -158,7 +164,7 @@ void Digraph<VALUE, PORT, T>::route(IO_Type const &x, Component* model,
         return;
     }
     // Otherwise, add the targets to the event list
-    Event<IO_Type, T> event;
+    Event<IO_Type, TimeType> event;
     for (auto node_iter : (*graph_iter).second) {
         event.model = node_iter.model;
         event.value.port = node_iter.port;

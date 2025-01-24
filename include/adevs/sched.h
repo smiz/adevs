@@ -28,8 +28,10 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_schedule_h_
 #define _adevs_schedule_h_
+
 #include <cfloat>
 #include <cstdlib>
 #include <list>
@@ -38,6 +40,7 @@
 #include "adevs/time.h"
 
 using namespace std;
+
 
 namespace adevs {
 
@@ -48,20 +51,21 @@ namespace adevs {
  * Please observe that the q_index value for a model must be initialized
  * to zero before it is placed into the heap for the first time.
  */
-template <class X, class T = double>
+template <class OutputType, class TimeType = double>
 class Schedule {
   public:
     /// Creates a scheduler with the default or specified initial capacity.
     Schedule(unsigned int capacity = 100)
         : capacity(capacity), size(0), heap(new heap_element[capacity]) {
-        heap[0].priority = adevs_sentinel<T>();  // This is a sentinel value
+        heap[0].priority =
+            adevs_sentinel<TimeType>();  // This is a sentinel value
     }
     /// Get the model at the front of the queue.
-    Atomic<X, T>* getMinimum() const { return heap[1].item; }
+    Atomic<OutputType, TimeType>* getMinimum() const { return heap[1].item; }
     /// Get the time of the next event.
-    T minPriority() const { return heap[1].priority; }
+    TimeType minPriority() const { return heap[1].priority; }
     /// Visit the imminent models.
-    list<Atomic<X, T>*> visitImminent(void) {
+    list<Atomic<OutputType, TimeType>*> visitImminent(void) {
         activated.clear();
         visitImminent(1);
         return activated;
@@ -69,7 +73,7 @@ class Schedule {
     /// Remove the model at the front of the queue.
     void removeMinimum();
     /// Add, remove, or move a model as required by its priority.
-    void schedule(Atomic<X, T>* model, T priority);
+    void schedule(Atomic<OutputType, TimeType>* model, TimeType priority);
     /// Returns true if the queue is empty, and false otherwise.
     bool empty() const { return size == 0; }
     /// Get the number of elements in the heap.
@@ -80,30 +84,31 @@ class Schedule {
   private:
     // Definition of an element in the heap.
     struct heap_element {
-        Atomic<X, T>* item;
-        T priority;
+        Atomic<OutputType, TimeType>* item;
+        TimeType priority;
         // Constructor initializes the item and priority
-        heap_element() : item(nullptr), priority(adevs_inf<T>()) {}
+        heap_element() : item(nullptr), priority(adevs_inf<TimeType>()) {}
     };
     unsigned int capacity, size;
     heap_element* heap;
 
-    list<Atomic<X, T>*> activated;
+    list<Atomic<OutputType, TimeType>*> activated;
 
     /// Double the schedule capacity
     void enlarge();
     /// Move the item at index down and return its new position
-    unsigned int percolate_down(unsigned int index, T priority);
+    unsigned int percolate_down(unsigned int index, TimeType priority);
     /// Move the item at index up and return its new position
-    unsigned int percolate_up(unsigned int index, T priority);
+    unsigned int percolate_up(unsigned int index, TimeType priority);
     /// Visit the imminent set recursively
     // void visitImminent(ImminentVisitor* visitor, unsigned int root) const;
     void visitImminent(unsigned int root);
-    void visit(Atomic<X, T>* model);
+    void visit(Atomic<OutputType, TimeType>* model);
 };
 
-template <class X, class T>
-void Schedule<X, T>::visit(Atomic<X, T>* model) {
+template <class OutputType, class TimeType>
+void Schedule<OutputType, TimeType>::visit(
+    Atomic<OutputType, TimeType>* model) {
     assert(model->outputs->empty());
     model->imminent = true;
 
@@ -116,8 +121,8 @@ void Schedule<X, T>::visit(Atomic<X, T>* model) {
     }
 }
 
-template <class X, class T>
-void Schedule<X, T>::visitImminent(unsigned int root) {
+template <class OutputType, class TimeType>
+void Schedule<OutputType, TimeType>::visitImminent(unsigned int root) {
     // Stop if the bottom is reached or the next priority is not equal to the minimum
     if (root > size || heap[1].priority < heap[root].priority) {
         return;
@@ -131,8 +136,8 @@ void Schedule<X, T>::visitImminent(unsigned int root) {
     visitImminent(root * 2 + 1);
 }
 
-template <class X, class T>
-void Schedule<X, T>::removeMinimum() {
+template <class OutputType, class TimeType>
+void Schedule<OutputType, TimeType>::removeMinimum() {
     // Don't do anything if the heap is empty
     if (size == 0) {
         return;
@@ -142,11 +147,10 @@ void Schedule<X, T>::removeMinimum() {
     heap[1].item->q_index = 0;
     // If the schedule is empty, set the priority of the last element to adevs_inf
     if (size == 0) {
-        heap[1].priority = adevs_inf<T>();
+        heap[1].priority = adevs_inf<TimeType>();
         heap[1].item = nullptr;
-    }
-    // Otherwise fill the hole left by the deleted model
-    else {
+    } else {
+        // Otherwise fill the hole left by the deleted model
         unsigned int i = percolate_down(1, heap[size + 1].priority);
         heap[i] = heap[size + 1];
         heap[i].item->q_index = i;
@@ -154,14 +158,15 @@ void Schedule<X, T>::removeMinimum() {
     }
 }
 
-template <class X, class T>
-void Schedule<X, T>::schedule(Atomic<X, T>* model, T priority) {
+template <class OutputType, class TimeType>
+void Schedule<OutputType, TimeType>::schedule(
+    Atomic<OutputType, TimeType>* model, TimeType priority) {
     // If the model is in the schedule
     if (model->q_index != 0) {
         // Remove the model if the next event time is infinite
-        if (!(priority < adevs_inf<T>())) {
+        if (!(priority < adevs_inf<TimeType>())) {
             // Move the item to the top of the heap
-            T min_priority = minPriority();
+            TimeType min_priority = minPriority();
             model->q_index = percolate_up(model->q_index, min_priority);
             heap[model->q_index].priority = min_priority;
             heap[model->q_index].item = model;
@@ -186,7 +191,7 @@ void Schedule<X, T>::schedule(Atomic<X, T>* model, T priority) {
     }
     // If it is not in the schedule and the next event time is
     // not at infinity, then add it to the schedule
-    else if (priority < adevs_inf<T>()) {
+    else if (priority < adevs_inf<TimeType>()) {
         // Enlarge the heap to hold the new model
         size++;
         if (size == capacity) {
@@ -200,8 +205,9 @@ void Schedule<X, T>::schedule(Atomic<X, T>* model, T priority) {
     // Otherwise, the model is not enqueued and has no next event
 }
 
-template <class X, class T>
-unsigned int Schedule<X, T>::percolate_down(unsigned int index, T priority) {
+template <class OutputType, class TimeType>
+unsigned int Schedule<OutputType, TimeType>::percolate_down(unsigned int index,
+                                                            TimeType priority) {
     unsigned int child;
     for (; index * 2 <= size; index = child) {
         child = index * 2;
@@ -218,8 +224,9 @@ unsigned int Schedule<X, T>::percolate_down(unsigned int index, T priority) {
     return index;
 }
 
-template <class X, class T>
-unsigned int Schedule<X, T>::percolate_up(unsigned int index, T priority) {
+template <class OutputType, class TimeType>
+unsigned int Schedule<OutputType, TimeType>::percolate_up(unsigned int index,
+                                                          TimeType priority) {
     // Position 0 has priority -1 and this method is always called
     // with priority >= 0 and index > 0.
     while (priority <= heap[index / 2].priority) {
@@ -230,8 +237,8 @@ unsigned int Schedule<X, T>::percolate_up(unsigned int index, T priority) {
     return index;
 }
 
-template <class X, class T>
-void Schedule<X, T>::enlarge() {
+template <class OutputType, class TimeType>
+void Schedule<OutputType, TimeType>::enlarge() {
     heap_element* rheap = new heap_element[capacity * 2];
     for (unsigned int i = 0; i < capacity; i++) {
         rheap[i] = heap[i];

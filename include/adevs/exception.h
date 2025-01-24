@@ -28,10 +28,13 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_exception_h_
 #define _adevs_exception_h_
+
 #include <exception>
 #include <string>
+
 
 namespace adevs {
 

@@ -1,6 +1,7 @@
 /**
  * Test cases for alternate types of time.
  */
+
 #include <memory>
 
 #include "adevs/adevs.h"
@@ -11,15 +12,15 @@ using namespace adevs;
 
 // ***** Basic model ******
 
-template <typename T>
-class PingPong : public Atomic<int, T> {
+template <typename TimeType>
+class PingPong : public Atomic<int, TimeType> {
   public:
     PingPong(bool active = false);
     void delta_int();
-    void delta_ext(T e, list<int> const &xb);
+    void delta_ext(TimeType e, list<int> const &xb);
     void delta_conf(list<int> const &xb);
     void output_func(list<int> &yb);
-    T ta();
+    TimeType ta();
     int getCount() const { return count; }
 
   private:
@@ -27,61 +28,61 @@ class PingPong : public Atomic<int, T> {
     bool active;
 };
 
-template <typename T>
-PingPong<T>::PingPong(bool active)
-    : Atomic<int, T>(), count(0), active(active) {}
+template <typename TimeType>
+PingPong<TimeType>::PingPong(bool active)
+    : Atomic<int, TimeType>(), count(0), active(active) {}
 
-template <typename T>
-void PingPong<T>::delta_int() {
+template <typename TimeType>
+void PingPong<TimeType>::delta_int() {
     count++;
     active = false;
 }
 
-template <typename T>
-void PingPong<T>::delta_ext(T e, list<int> const &xb) {
+template <typename TimeType>
+void PingPong<TimeType>::delta_ext(TimeType e, list<int> const &xb) {
     active = xb.size() == 1;
 }
 
-template <typename T>
-void PingPong<T>::delta_conf(list<int> const &xb) {
+template <typename TimeType>
+void PingPong<TimeType>::delta_conf(list<int> const &xb) {
     delta_int();
     delta_ext(0, xb);
 }
 
-template <typename T>
-T PingPong<T>::ta() {
+template <typename TimeType>
+TimeType PingPong<TimeType>::ta() {
     if (active) {
         return 1;
     } else {
-        return adevs_inf<T>();
+        return adevs_inf<TimeType>();
     }
 }
 
-template <typename T>
-void PingPong<T>::output_func(list<int> &yb) {
+template <typename TimeType>
+void PingPong<TimeType>::output_func(list<int> &yb) {
     yb.push_back(1);
 }
 
 
 // ***** Basic network *****
 
-template <typename T>
-class Model : public SimpleDigraph<int, T> {
+template <typename TimeType>
+class Model : public SimpleDigraph<int, TimeType> {
   public:
     Model();
-    shared_ptr<PingPong<T>> getA() { return a; }
-    shared_ptr<PingPong<T>> getB() { return b; }
+    shared_ptr<PingPong<TimeType>> getA() { return a; }
+    shared_ptr<PingPong<TimeType>> getB() { return b; }
 
   private:
-    shared_ptr<PingPong<T>> a = nullptr;
-    shared_ptr<PingPong<T>> b = nullptr;
+    shared_ptr<PingPong<TimeType>> a = nullptr;
+    shared_ptr<PingPong<TimeType>> b = nullptr;
 };
 
-template <typename T>
-Model<T>::Model()
-    : SimpleDigraph<int, T>(),
-      a(make_shared<PingPong<T>>(true)),
-      b(make_shared<PingPong<T>>()) {
+template <typename TimeType>
+Model<TimeType>::Model()
+    : SimpleDigraph<int, TimeType>(),
+      a(make_shared<PingPong<TimeType>>(true)),
+      b(make_shared<PingPong<TimeType>>()) {
     this->add(a);
     this->add(b);
     this->couple(a, b);

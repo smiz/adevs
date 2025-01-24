@@ -28,11 +28,14 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_corrected_euler_h_
 #define _adevs_corrected_euler_h_
+
 #include <algorithm>
 #include <cmath>
 #include "adevs/solvers/hybrid.h"
+
 
 namespace adevs {
 
@@ -40,14 +43,14 @@ namespace adevs {
  * This is the second order accurate RK2 method with adaptive step sizing for
  * error control.
  */
-template <typename X>
-class corrected_euler : public ode_solver<X> {
+template <typename ValueType>
+class corrected_euler : public ode_solver<ValueType> {
   public:
     /*
      * Create an integrator that will use the specified per step error
      * tolerance and maximum step size.
      */
-    corrected_euler(ode_system<X>* sys, double err_tol, double h_max);
+    corrected_euler(ode_system<ValueType>* sys, double err_tol, double h_max);
     /// Destructor
     ~corrected_euler();
     double integrate(double* q, double h_lim);
@@ -65,10 +68,10 @@ class corrected_euler : public ode_solver<X> {
     double trial_step(double h);
 };
 
-template <typename X>
-corrected_euler<X>::corrected_euler(ode_system<X>* sys, double err_tol,
-                                    double h_max)
-    : ode_solver<X>(sys), err_tol(err_tol), h_max(h_max), h_cur(h_max) {
+template <typename ValueType>
+corrected_euler<ValueType>::corrected_euler(ode_system<ValueType>* sys,
+                                            double err_tol, double h_max)
+    : ode_solver<ValueType>(sys), err_tol(err_tol), h_max(h_max), h_cur(h_max) {
     for (int i = 0; i < 2; i++) {
         k[i] = new double[sys->numVars()];
     }
@@ -77,8 +80,8 @@ corrected_euler<X>::corrected_euler(ode_system<X>* sys, double err_tol,
     t = new double[sys->numVars()];
 }
 
-template <typename X>
-corrected_euler<X>::~corrected_euler() {
+template <typename ValueType>
+corrected_euler<ValueType>::~corrected_euler() {
     delete[] t;
     delete[] qq;
     delete[] dq;
@@ -87,16 +90,16 @@ corrected_euler<X>::~corrected_euler() {
     }
 }
 
-template <typename X>
-void corrected_euler<X>::advance(double* q, double h) {
+template <typename ValueType>
+void corrected_euler<ValueType>::advance(double* q, double h) {
     double dt;
     while ((dt = integrate(q, h)) < h) {
         h -= dt;
     }
 }
 
-template <typename X>
-double corrected_euler<X>::integrate(double* q, double h_lim) {
+template <typename ValueType>
+double corrected_euler<ValueType>::integrate(double* q, double h_lim) {
     // Initial error estimate and step size
     double err = DBL_MAX,
            h = std::min<double>(h_cur * 1.1, std::min<double>(h_max, h_lim));
@@ -131,8 +134,8 @@ double corrected_euler<X>::integrate(double* q, double h_lim) {
     return h;
 }
 
-template <typename X>
-double corrected_euler<X>::trial_step(double step) {
+template <typename ValueType>
+double corrected_euler<ValueType>::trial_step(double step) {
     int j;
     // Compute k1
     this->sys->der_func(qq, dq);

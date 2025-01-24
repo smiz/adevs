@@ -28,9 +28,12 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_poly_h_
 #define _adevs_poly_h_
+
 #include <cstdlib>
+
 
 namespace adevs {
 /*

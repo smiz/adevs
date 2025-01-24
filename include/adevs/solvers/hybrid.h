@@ -28,11 +28,14 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_hybrid_h_
 #define _adevs_hybrid_h_
+
 #include <algorithm>
 #include <cmath>
 #include "adevs/models.h"
+
 
 namespace adevs {
 
@@ -41,7 +44,7 @@ namespace adevs {
  * are used to implement the model's continuous dynamics. The other functions
  * are for discrete event dynamics.
  */
-template <typename X>
+template <typename ValueType>
 class ode_system {
   public:
     /// Make a system with N state variables and M state event functions
@@ -76,14 +79,14 @@ class ode_system {
      * continuous state variables. The main use of this callback is to
      * update algberaic variables. The default implementation does nothing.
      */
-    virtual void postStep(double* q) {};
+    virtual void postStep(double* q) {}
 
     /*
      * This is called after a trial step. It can be used to restore the values
      * of any variables that might have been changed by der_func or state_event_func
      * while calculating the trial step. By default this method does nothing.
      */
-    virtual void postTrialStep(double* q) {};
+    virtual void postTrialStep(double* q) {}
 
     /*
      * The internal transition function. The state_event array will contain
@@ -94,15 +97,16 @@ class ode_system {
     virtual void internal_event(double* q, bool const* state_event) = 0;
 
     /// The external transition function
-    virtual void external_event(double* q, double e, list<X> const &xb) = 0;
+    virtual void external_event(double* q, double e,
+                                list<ValueType> const &xb) = 0;
 
     /// The confluent transition function
     virtual void confluent_event(double* q, bool const* state_event,
-                                 list<X> const &xb) = 0;
+                                 list<ValueType> const &xb) = 0;
 
     /// The output function
     virtual void output_func(double const* q, bool const* state_event,
-                             list<X> &yb) = 0;
+                             list<ValueType> &yb) = 0;
 
     /// Get the N x N Jacobian matrix. The supplied array must be filled with the Jacobian
     /// in column major ordering to make it compatible with LAPACK and similar
@@ -139,8 +143,8 @@ class ode_system {
  * Any explicit, single step ODE solver can be used to generate trajectories for
  * this object (e.g., the Runge-Kutta methods included with adevs will work).</p>
  */
-template <typename X>
-class dae_se1_system : public ode_system<X> {
+template <typename ValueType>
+class dae_se1_system : public ode_system<ValueType> {
   public:
     /*
      * Make a system with N state variables, M state event functions
@@ -152,7 +156,7 @@ class dae_se1_system : public ode_system<X> {
     dae_se1_system(int N_vars, int M_event_funcs, int A_alg_vars,
                    double err_tol = 1E-10, int max_iters = 30,
                    double alpha = -1.0)
-        : ode_system<X>(N_vars, M_event_funcs),
+        : ode_system<ValueType>(N_vars, M_event_funcs),
           A(A_alg_vars),
           max_iters(max_iters),
           err_tol(err_tol),
@@ -212,7 +216,7 @@ class dae_se1_system : public ode_system<X> {
      * Default implementation calls postTrialStep(q)
      */
     virtual void postTrialStep(double* q, double* a) {
-        ode_system<X>::postTrialStep(q);
+        ode_system<ValueType>::postTrialStep(q);
     }
 
     /// The internal transition function
@@ -221,15 +225,15 @@ class dae_se1_system : public ode_system<X> {
 
     /// The external transition function
     virtual void external_event(double* q, double* a, double e,
-                                list<X> const &xb) = 0;
+                                list<ValueType> const &xb) = 0;
 
     /// The confluent transition function
     virtual void confluent_event(double* q, double* a, bool const* state_event,
-                                 list<X> const &xb) = 0;
+                                 list<ValueType> const &xb) = 0;
 
     /// The output function
     virtual void output_func(double const* q, double const* a,
-                             bool const* state_event, list<X> &yb) = 0;
+                             bool const* state_event, list<ValueType> &yb) = 0;
 
     /// Destructor
     virtual ~dae_se1_system() {
@@ -290,7 +294,7 @@ class dae_se1_system : public ode_system<X> {
     }
 
     /// Do not override
-    void external_event(double* q, double e, list<X> const &xb) {
+    void external_event(double* q, double e, list<ValueType> const &xb) {
         // The variable a was solved for in the post step
         external_event(q, a, e, xb);
         // Make sure the algebraic variables are consistent with q
@@ -300,7 +304,7 @@ class dae_se1_system : public ode_system<X> {
 
     /// Do not override
     void confluent_event(double* q, bool const* state_event,
-                         list<X> const &xb) {
+                         list<ValueType> const &xb) {
         // The variable a was solved for in the post step
         confluent_event(q, a, state_event, xb);
         // Make sure the algebraic variables are consistent with q
@@ -309,7 +313,8 @@ class dae_se1_system : public ode_system<X> {
     }
 
     /// Do not override
-    void output_func(double const* q, bool const* state_event, list<X> &yb) {
+    void output_func(double const* q, bool const* state_event,
+                     list<ValueType> &yb) {
         // The variable a was solved for in the post step
         output_func(q, a, state_event, yb);
     }
@@ -343,8 +348,8 @@ class dae_se1_system : public ode_system<X> {
 #pragma clang diagnostic pop
 #endif
 
-template <typename X>
-void dae_se1_system<X>::solve(double const* q) {
+template <typename ValueType>
+void dae_se1_system<ValueType>::solve(double const* q) {
     int iter_count = 0, alt, good;
     double prev_err, err = 0.0, ee, beta, g2, alpha_tmp = alpha;
 /*
@@ -435,14 +440,14 @@ _adevs_dae_se_1_system_solve_try_it_again:
  * This is the interface for numerical integrators that are to be used with the
  * Hybrid class.
  */
-template <typename X>
+template <typename ValueType>
 class ode_solver {
   public:
     /*
      * Create and ode_solver that will integrate the der_func method of the
      * supplied ode_system.
      */
-    ode_solver(ode_system<X>* sys) : sys(sys) {}
+    ode_solver(ode_system<ValueType>* sys) : sys(sys) {}
 
     /*
      * Take an integration step from state q of at most size h_lim and
@@ -461,7 +466,7 @@ class ode_solver {
 
   protected:
     /// The system of odes to be acted upon by the solver
-    ode_system<X>* sys;
+    ode_system<ValueType>* sys;
 };
 
 /*
@@ -469,14 +474,14 @@ class ode_solver {
  * of an ode_system. The ode_solver provided to this class is used to compute
  * intermediate states during the detection process.
  */
-template <typename X>
+template <typename ValueType>
 class event_locator {
   public:
     /*
      * The locator will use the der_func and state_event_func of the supplied
      * ode_system object.
      */
-    event_locator(ode_system<X>* sys) : sys(sys) {}
+    event_locator(ode_system<ValueType>* sys) : sys(sys) {}
 
     /*
      * Find the first state event in the interval [0,h] starting from
@@ -489,14 +494,14 @@ class event_locator {
      * has changed sign to trigger an event.
      */
     virtual bool find_events(bool* events, double const* qstart, double* qend,
-                             ode_solver<X>* solver, double &h) = 0;
+                             ode_solver<ValueType>* solver, double &h) = 0;
 
     /// Destructor
     virtual ~event_locator() {}
 
   protected:
     /// The system of odes to be acted upon by the event locator
-    ode_system<X>* sys;
+    ode_system<ValueType>* sys;
 };
 
 /*
@@ -507,8 +512,8 @@ class event_locator {
  * methods of the ode_system. The time advance of the Hybrid class ensures that
  * its internal events coincide with state and time events in the ode_system.
  */
-template <typename X, class T = double>
-class Hybrid : public Atomic<X, T> {
+template <typename ValueType, class TimeType = double>
+class Hybrid : public Atomic<ValueType, TimeType> {
   public:
     /*
      * Create and initialize a simulator for the system. All objects
@@ -517,8 +522,8 @@ class Hybrid : public Atomic<X, T> {
      * @param solver The numerical solver for taking steps in time
      * @param event_finder The state event detection algorithm
      */
-    Hybrid(ode_system<X>* sys, ode_solver<X>* solver,
-           event_locator<X>* event_finder)
+    Hybrid(ode_system<ValueType>* sys, ode_solver<ValueType>* solver,
+           event_locator<ValueType>* event_finder)
         : sys(sys), solver(solver), event_finder(event_finder), e_accum(0.0) {
         q = new double[sys->numVars()];
         q_trial = new double[sys->numVars()];
@@ -538,7 +543,7 @@ class Hybrid : public Atomic<X, T> {
     double const* getState() const { return q; }
 
     /// Get the system that this solver is operating on
-    ode_system<X>* getSystem() { return sys; }
+    ode_system<ValueType>* getSystem() { return sys; }
 
     /// Did a discrete event occur at the last state transition?
     bool eventHappened() const { return event_happened; }
@@ -571,7 +576,7 @@ class Hybrid : public Atomic<X, T> {
      * Do not override this method. It performs numerical integration and
      * invokes the ode_system for external events as needed.
      */
-    void delta_ext(T e, list<X> const &xb) {
+    void delta_ext(TimeType e, list<ValueType> const &xb) {
         bool state_event_exists = false;
         event_happened = true;
         // Check that we have not missed a state event
@@ -611,7 +616,7 @@ class Hybrid : public Atomic<X, T> {
      * Do not override. This method invokes the ode_system method
      * for confluent events as needed.
      */
-    void delta_conf(list<X> const &xb) {
+    void delta_conf(list<ValueType> const &xb) {
         if (!missedOutput.empty()) {
             missedOutput.clear();
             if (sigma > 0.0) {
@@ -634,7 +639,7 @@ class Hybrid : public Atomic<X, T> {
     }
 
     /// Do not override.
-    T ta() {
+    TimeType ta() {
         if (missedOutput.empty()) {
             return sigma;
         } else {
@@ -643,7 +648,7 @@ class Hybrid : public Atomic<X, T> {
     }
 
     /// Do not override. Invokes the ode_system output function as needed.
-    void output_func(list<X> &yb) {
+    void output_func(list<ValueType> &yb) {
         if (!missedOutput.empty()) {
             for (auto iter : missedOutput) {
                 yb.push_back(iter);
@@ -661,17 +666,17 @@ class Hybrid : public Atomic<X, T> {
     }
 
   private:
-    ode_system<X>* sys;              // The ODE system
-    ode_solver<X>* solver;           // Integrator for the ode set
-    event_locator<X>* event_finder;  // Event locator
-    double sigma;                    // Time to the next internal event
-    double *q, *q_trial;             // Current and tentative states
+    ode_system<ValueType>* sys;              // The ODE system
+    ode_solver<ValueType>* solver;           // Integrator for the ode set
+    event_locator<ValueType>* event_finder;  // Event locator
+    double sigma;                            // Time to the next internal event
+    double *q, *q_trial;                     // Current and tentative states
     bool* event;        // Flags indicating the encountered event surfaces
     bool event_exists;  // True if there is at least one event
     bool
         event_happened;  // True if a discrete event in the ode_system took place
     double e_accum;      // Accumlated time between discrete events
-    list<X> missedOutput;  // Output missed at an external event
+    list<ValueType> missedOutput;  // Output missed at an external event
     // Execute a tentative step and calculate the time advance function
     void tentative_step() {
         // Check for a time event

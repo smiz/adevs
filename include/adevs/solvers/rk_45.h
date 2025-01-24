@@ -28,10 +28,13 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_rk_45_h_
 #define _adevs_rk_45_h_
+
 #include <cmath>
 #include "adevs/solvers/hybrid.h"
+
 
 namespace adevs {
 
@@ -39,15 +42,15 @@ namespace adevs {
  * This ode_solver implements a 4th/5th order integrator that adjust
  * its step size to control error.
  */
-template <typename X>
-class rk_45 : public ode_solver<X> {
+template <typename ValueType>
+class rk_45 : public ode_solver<ValueType> {
   public:
     /*
      * The integrator will adjust its step size to maintain a per
      * step error less than err_tol, and will use a step size
      * strictly less than h_max.
      */
-    rk_45(ode_system<X>* sys, double err_tol, double h_max);
+    rk_45(ode_system<ValueType>* sys, double err_tol, double h_max);
     /// Destructor
     ~rk_45();
     double integrate(double* q, double h_lim);
@@ -65,9 +68,10 @@ class rk_45 : public ode_solver<X> {
     double trial_step(double h);
 };
 
-template <typename X>
-rk_45<X>::rk_45(ode_system<X>* sys, double err_tol, double h_max)
-    : ode_solver<X>(sys), err_tol(err_tol), h_max(h_max), h_cur(h_max) {
+template <typename ValueType>
+rk_45<ValueType>::rk_45(ode_system<ValueType>* sys, double err_tol,
+                        double h_max)
+    : ode_solver<ValueType>(sys), err_tol(err_tol), h_max(h_max), h_cur(h_max) {
     for (int i = 0; i < 6; i++) {
         k[i] = new double[sys->numVars()];
     }
@@ -76,8 +80,8 @@ rk_45<X>::rk_45(ode_system<X>* sys, double err_tol, double h_max)
     t = new double[sys->numVars()];
 }
 
-template <typename X>
-rk_45<X>::~rk_45() {
+template <typename ValueType>
+rk_45<ValueType>::~rk_45() {
     delete[] dq;
     delete[] t;
     for (int i = 0; i < 6; i++) {
@@ -85,16 +89,16 @@ rk_45<X>::~rk_45() {
     }
 }
 
-template <typename X>
-void rk_45<X>::advance(double* q, double h) {
+template <typename ValueType>
+void rk_45<ValueType>::advance(double* q, double h) {
     double dt;
     while ((dt = integrate(q, h)) < h) {
         h -= dt;
     }
 }
 
-template <typename X>
-double rk_45<X>::integrate(double* q, double h_lim) {
+template <typename ValueType>
+double rk_45<ValueType>::integrate(double* q, double h_lim) {
     // Initial error estimate and step size
     double err = DBL_MAX,
            h = std::min<double>(h_cur * 1.1, std::min<double>(h_max, h_lim));
@@ -129,8 +133,8 @@ double rk_45<X>::integrate(double* q, double h_lim) {
     return h;
 }
 
-template <typename X>
-double rk_45<X>::trial_step(double step) {
+template <typename ValueType>
+double rk_45<ValueType>::trial_step(double step) {
     // Compute k1
     this->sys->der_func(qq, dq);
     for (int j = 0; j < this->sys->numVars(); j++) {
