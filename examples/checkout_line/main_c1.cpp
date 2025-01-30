@@ -1,33 +1,43 @@
 #include <iostream>
+
 #include "Clerk.h"
 #include "Generator.h"
 #include "Observer.h"
+
 using namespace std;
 
+
 int main(int argc, char** argv) {
+
     if (argc != 3) {
         cout << "Need input and output files!" << endl;
         return 1;
     }
+
     // Create a digraph model whose components use PortValue<Customer*>
     // objects as input and output objects.
-    adevs::Digraph<Customer*> store;
+    shared_ptr<adevs::Digraph<shared_ptr<Customer>>> store =
+        make_shared<adevs::Digraph<shared_ptr<Customer>>>();
+
     // Create and add the component models
-    Clerk* clrk = new Clerk();
-    Generator* genr = new Generator(argv[1]);
-    Observer* obsrv = new Observer(argv[2]);
-    store.add(clrk);
-    store.add(genr);
-    store.add(obsrv);
+    shared_ptr<Clerk> clerk = make_shared<Clerk>();
+    shared_ptr<Generator> generator = make_shared<Generator>(argv[1]);
+    shared_ptr<Observer> observer = make_shared<Observer>(argv[2]);
+
+    store->add(clerk);
+    store->add(generator);
+    store->add(observer);
+
     // Couple the components
-    store.couple(genr, genr->arrive, clrk, clrk->arrive);
-    store.couple(clrk, clrk->depart, obsrv, obsrv->departed);
+    store->couple(generator, generator->arrive, clerk, clerk->arrive);
+    store->couple(clerk, clerk->depart, observer, observer->departed);
+
     // Create a simulator and run until its done
-    adevs::Simulator<IO_Type> sim(&store);
-    while (sim.nextEventTime() < DBL_MAX) {
-        sim.execNextEvent();
+    adevs::Simulator<EventType> simulator(store);
+
+    while (simulator.nextEventTime() < DBL_MAX) {
+        simulator.execNextEvent();
     }
-    // Done, component models are deleted when the Digraph is
-    // deleted.
+
     return 0;
 }

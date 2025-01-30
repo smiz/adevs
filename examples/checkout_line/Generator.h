@@ -1,5 +1,6 @@
 #ifndef _generator_h_
 #define _generator_h_
+
 #include <list>
 #include "Customer.h"
 #include "adevs/adevs.h"
@@ -7,19 +8,15 @@
 /**
  * This class produces Customers according to the provided schedule.
  */
-class Generator : public adevs::Atomic<IO_Type> {
+class Generator : public adevs::Atomic<EventType> {
+
   public:
-    /// Constructor.
-    Generator(char const* data_file);
-    /// Internal transition function.
+    Generator(std::string data_file);
+
     void delta_int();
-    /// External transition function.
-    void delta_ext(double e, list<IO_Type> const &xb);
-    /// Confluent transition function.
-    void delta_conf(list<IO_Type> const &xb);
-    /// Output function.
-    void output_func(list<IO_Type> &yb);
-    /// Time advance function.
+    void delta_ext(double e, list<EventType> const &xb);
+    void delta_conf(list<EventType> const &xb);
+    void output_func(list<EventType> &yb);
     double ta();
 
     /// Model output port.
@@ -27,7 +24,7 @@ class Generator : public adevs::Atomic<IO_Type> {
 
   private:
     /// List of arriving customers.
-    std::list<Customer*> arrivals;
+    std::list<std::shared_ptr<Customer>> arrivals;
 };
 
 #endif

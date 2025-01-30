@@ -1,23 +1,20 @@
 #ifndef _clerk2_h_
 #define _clerk2_h_
+
 #include <list>
 #include "Customer.h"
 #include "adevs/adevs.h"
 
-class Clerk2 : public adevs::Atomic<IO_Type> {
+class Clerk2 : public adevs::Atomic<EventType> {
+
   public:
-    /// Constructor.
-    Clerk2();
-    /// Internal transition function.
+    Clerk2() : Atomic<EventType>(), preempt(0.0), t(0.0) {}
+
     void delta_int();
-    /// External transition function.
-    void delta_ext(double e, list<IO_Type> const &xb);
-    /// Confluent transition function.
-    void delta_conf(list<IO_Type> const &xb);
-    /// Time advance function.
+    void delta_ext(double e, list<EventType> const &xb);
+    void delta_conf(list<EventType> const &xb);
     double ta();
-    /// Output function.
-    void output_func(list<IO_Type> &yb);
+    void output_func(list<EventType> &yb);
 
     /// Model input port.
     static int const arrive;
@@ -28,7 +25,7 @@ class Clerk2 : public adevs::Atomic<IO_Type> {
     /// Structure for storing information about customers in the line
     struct customer_info_t {
         // The customer
-        Customer* customer;
+        shared_ptr<Customer> customer;
         // Time remaining to process the customer order
         double t_left;
     };

@@ -29,7 +29,6 @@ test('sd_time', test_sd_time)
 
 test_sd_time_2 = executable('sd_time_2', 'sd_time_test_2.cpp', include_directories: adevs)
 test_sd_time_2_ok = fs.copyfile('sd_time_test_2.ok')
-
 test(
     'sd_time_2',
     compare,

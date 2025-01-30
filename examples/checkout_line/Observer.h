@@ -1,6 +1,8 @@
 #ifndef _observer_h_
 #define _observer_h_
+
 #include <fstream>
+
 #include "Customer.h"
 #include "adevs/adevs.h"
 
@@ -8,26 +10,23 @@
  * The Observer records performance statistics for a Clerk model
  * based on its observable output.
  */
-class Observer : public adevs::Atomic<IO_Type> {
+class Observer : public adevs::Atomic<EventType> {
   public:
     /// Input port for receiving customers that leave the store.
     static int const departed;
-    /// Constructor. Results are written to the specified file.
+
     Observer(char const* results_file);
-    /// Internal transition function.
+    ~Observer();
+
     void delta_int();
-    /// External transition function.
-    void delta_ext(double e, list<IO_Type> const &xb);
-    /// Confluent transition function.
-    void delta_conf(list<IO_Type> const &xb);
-    /// Time advance function.
+    void delta_ext(double e, list<EventType> const &xb);
+    void delta_conf(list<EventType> const &xb);
     double ta();
-    /// Output function.
-    void output_func(list<IO_Type> &yb);
+    void output_func(list<EventType> &yb);
 
   private:
     /// File for storing information about departing customers.
-    std::ofstream output_strm;
+    std::ofstream output;
 };
 
 #endif
