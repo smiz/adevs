@@ -3,11 +3,9 @@ checkout_common_cpp = [
     'Clerk.cpp',
     'Generator.cpp',
     'Observer.cpp',
-    #'Decision.cpp',
-    #'MultiClerk.cpp',
+    'Decision.cpp',
+    'MultiClerk.cpp',
 ]
-
-example_checkout_input = fs.copyfile('input')
 
 checkout_common = static_library(
     'checkout_common',
@@ -16,26 +14,58 @@ checkout_common = static_library(
     gnu_symbol_visibility: 'hidden',
 )
 
-executable(
+checkout_input = fs.copyfile('input')
+
+checkout_c1 = executable(
     'c1',
     'main_c1.cpp',
     include_directories: adevs,
     link_with: checkout_common,
 )
-example_checkout_c1_ok = fs.copyfile('output_c1.ok')
+checkout_c1_ok = fs.copyfile('output_c1.ok')
+test(
+    'checkout_c1',
+    run_and_compare_output,
+    args: [
+        checkout_c1.full_path(),
+        checkout_input.full_path(),
+        './output_c1',
+        checkout_c1_ok.full_path(),
+    ],
+)
 
-executable(
+checkout_c2 = executable(
     'c2',
     'main_c2.cpp',
     include_directories: adevs,
     link_with: checkout_common,
 )
-example_checkout_c2_ok = fs.copyfile('output_c2.ok')
+checkout_c2_ok = fs.copyfile('output_c2.ok')
+test(
+    'checkout_c2',
+    run_and_compare_output,
+    args: [
+        checkout_c1.full_path(),
+        checkout_input.full_path(),
+        './output_c2',
+        checkout_c1_ok.full_path(),
+    ],
+)
 
-# executable(
-#     'mc',
-#     'main_mc.cpp',
-#     include_directories: adevs,
-#     link_with: checkout_common,
+checkout_mc = executable(
+    'mc',
+    'main_mc.cpp',
+    include_directories: adevs,
+    link_with: checkout_common,
+)
+checkout_mc_ok = fs.copyfile('output_mc.ok')
+# test(
+#     'checkout_mc',
+#     run_and_compare_output,
+#     args: [
+#         checkout_mc.full_path(),
+#         checkout_input.full_path(),
+#         './output_mc',
+#         checkout_mc_ok.full_path(),
+#     ],
 # )
-# example_checkout_mc_ok = fs.copyfile('output_mc.ok')

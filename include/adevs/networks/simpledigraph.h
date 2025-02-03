@@ -64,6 +64,12 @@ class SimpleDigraph : public Network<OutputType, TimeType> {
 
     /// Couple the source model to the destination model.
     void couple(shared_ptr<Component> src, shared_ptr<Component> dst);
+    // Special functions needed for v3.4 since the model API switched to smart
+    // pointers instead of raw pointers. This is likely to disappear in v4.0 when
+    // the network models are rewritten to only convey model structure and not
+    // have any routing functionality.
+    void couple_input(shared_ptr<Component> dst);
+    void couple_output(shared_ptr<Component> src);
 
     // /// Puts the network's set of components into c
     // void getComponents(set<shared_ptr<Component>> &c);
@@ -103,6 +109,21 @@ void SimpleDigraph<OutputType, TimeType>::couple(shared_ptr<Component> src,
     }
     graph[src.get()].push_back(dst);
 }
+
+template <class OutputType, class TimeType>
+void SimpleDigraph<OutputType, TimeType>::couple_input(
+    shared_ptr<Component> dst) {
+    add(dst);
+    graph[this].push_back(dst);
+}
+
+template <class OutputType, class TimeType>
+void SimpleDigraph<OutputType, TimeType>::couple_output(
+    shared_ptr<Component> src) {
+    add(src);
+    graph[src].push_back(this);
+}
+
 
 template <class OutputType, class TimeType>
 void SimpleDigraph<OutputType, TimeType>::getComponents(set<Component*> &c) {

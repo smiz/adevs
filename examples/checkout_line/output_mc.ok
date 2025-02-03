@@ -1,0 +1,12 @@
+# Col 1: Time customer enters the line
+# Col 2: Time required for customer checkout
+# Col 3: Time customer leaves the store
+# Col 4: Time spent waiting in line
+1 1 2 0
+2 4 6 0
+3 4 7 0
+5 2 9 2
+7 10 17 0
+8 20 29 1
+10 2 31 19
+11 1 32 20
