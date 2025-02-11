@@ -1,9 +1,11 @@
 #include "Cell.h"
+
 using namespace std;
 
 // Cellspace dimensions
 long int Cell::w = 0;
 long int Cell::h = 0;
+
 
 Cell::Cell(long int x, long int y, long int w, long int h, Phase phase,
            short int nalive, Phase* vis_phase)
@@ -23,7 +25,7 @@ Cell::Cell(long int x, long int y, long int w, long int h, Phase phase,
 }
 
 int Cell::ta() {
-    // If a phase change should occur
+    // Check if a phase change should occur
     if (check_death_rule()     // cell will die
         || check_born_rule())  // cell will be birthed
     {

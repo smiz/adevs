@@ -84,23 +84,26 @@ class CellEvent {
 template <class OutputType, class TimeType = double>
 class CellSpace : public Network<CellEvent<OutputType>, TimeType> {
   public:
-    /// A component model in the CellSpace
-    typedef Devs<CellEvent<OutputType>, TimeType> Cell;
+    using Cell = Devs<CellEvent<OutputType>, TimeType>;
+
     /// Create an Width x Height x Depth CellSpace with NULL entries in the cell locations.
     CellSpace(long int width, long int height = 1, long int depth = 1);
+
     /// Insert a model at the x,y,z position.
-    void add(Cell* model, long int x, long int y = 0, long int z = 0) {
+    void add(shared_ptr<Cell> model, long int x, long int y = 0,
+             long int z = 0) {
         space[x][y][z] = model;
         model->setParent(this);
     }
     /// Get the model at location x,y,z.
     Cell const* getModel(long int x, long int y = 0, long int z = 0) const {
-        return space[x][y][z];
+        return space[x][y][z].get();
     }
     /// Get a mutable version of the model at x,y,z.
     Cell* getModel(long int x, long int y = 0, long int z = 0) {
-        return space[x][y][z];
+        return space[x][y][z].get();
     }
+
     /// Get the width of the CellSpace.
     long int getWidth() const { return w; }
     /// Get the height of the CellSpace.
@@ -109,6 +112,7 @@ class CellSpace : public Network<CellEvent<OutputType>, TimeType> {
     long int getDepth() const { return d; }
     /// Get the model's set of components
     void getComponents(set<Cell*> &c);
+
     /// Route events within the Cellspace
     void route(CellEvent<OutputType> const &event, Cell* model,
                list<Event<CellEvent<OutputType>, TimeType>> &r);
@@ -116,49 +120,38 @@ class CellSpace : public Network<CellEvent<OutputType>, TimeType> {
     ~CellSpace();
 
   private:
+    // 3-dimensional cell space where all nodes are connected
+    vector<vector<vector<shared_ptr<Cell>>>> space;
     long int w, h, d;
-    Cell**** space;
 };
 
 // Implementation of constructor
 template <class OutputType, class TimeType>
 CellSpace<OutputType, TimeType>::CellSpace(long int width, long int height,
                                            long int depth)
-    : Network<CellEvent<OutputType>, TimeType>() {
-    w = width;
-    h = height;
-    d = depth;
-    // Allocate space for the cells and set the entries to NULL
-    space = new Cell***[w];
-    for (long int x = 0; x < w; x++) {
-        space[x] = new Cell**[h];
-        for (long int y = 0; y < h; y++) {
-            space[x][y] = new Cell*[h];
-            for (long int z = 0; z < d; z++) {
-                space[x][y][z] = NULL;
-            }
+    : w(width),
+      h(height),
+      d(depth),
+      Network<CellEvent<OutputType>, TimeType>() {
+
+    // Allocate space for the cells and set the entries to nullptrs
+    // ! Using a nested vector may not really be better than raw arrays.
+    // ! One advantage is letting the standard library do all memory management.
+    for (long int x = 0; x < width; x++) {
+        vector<vector<shared_ptr<Cell>>> h_space;
+        for (long int y = 0; y < height; y++) {
+            h_space.push_back(vector<shared_ptr<Cell>>(depth, nullptr));
         }
-    }
+        space.push_back(h_space);
+    };
+    cout << "Allocated vector: " << space.size() << ", " << space[0].size()
+         << ", " << space[0][0].size() << endl;
 }
 
-// Implementation of destructor
 template <class OutputType, class TimeType>
-CellSpace<OutputType, TimeType>::~CellSpace() {
-    for (long int x = 0; x < w; x++) {
-        for (long int y = 0; y < h; y++) {
-            for (long int z = 0; z < d; z++) {
-                if (space[x][y][z] != NULL) {
-                    delete space[x][y][z];
-                }
-            }
-            delete[] space[x][y];
-        }
-        delete[] space[x];
-    }
-    delete[] space;
-}
+CellSpace<OutputType, TimeType>::~CellSpace() {}
 
-// Implementation of the getComponents() method
+
 template <class OutputType, class TimeType>
 void CellSpace<OutputType, TimeType>::getComponents(set<Cell*> &c) {
     // Add all non-null entries to the set c
@@ -166,7 +159,7 @@ void CellSpace<OutputType, TimeType>::getComponents(set<Cell*> &c) {
         for (long int y = 0; y < h; y++) {
             for (long int z = 0; z < d; z++) {
                 if (space[x][y][z] != NULL) {
-                    c.insert(space[x][y][z]);
+                    c.insert(space[x][y][z].get());
                 }
             }
         }
@@ -178,20 +171,20 @@ template <class OutputType, class TimeType>
 void CellSpace<OutputType, TimeType>::route(
     CellEvent<OutputType> const &event, Cell* model,
     list<Event<CellEvent<OutputType>, TimeType>> &r) {
-    Cell* target = NULL;
+    Cell* target = nullptr;
     // If the target cell is inside of the cellspace
     if (event.x >= 0 && event.x < w &&  // check x dimension
         event.y >= 0 && event.y < h &&  // check y dimension
         event.z >= 0 && event.z < d)    // check z dimension
     {
         // Get the interior target
-        target = space[event.x][event.y][event.z];
+        target = space[event.x][event.y][event.z].get();
     } else {
         // Otherwise, the event becomes an external output from the cellspace
         target = this;
     }
     // If the target exists
-    if (target != NULL) {
+    if (target != nullptr) {
         // Add an appropriate event to the receiver list
         Event<CellEvent<OutputType>, TimeType> io(target, event);
         r.push_back(io);
