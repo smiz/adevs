@@ -1,4 +1,5 @@
 #ifndef _transducer_h_
+#define _transducer_h_
 
 #include <cstdlib>
 #include <iostream>

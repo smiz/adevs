@@ -1,51 +1,20 @@
-#include <cstdlib>
-#include <iostream>
-
-#include "adevs/adevs.h"
-#include "generator.h"
-#include "job.h"
-#include "processor.h"
-#include "transducer.h"
-
-using namespace std;
-
+#include "gpt.h"
 
 int main() {
 
+    // In the future, use argparse or some other nicer method for handling input.
+
     // Get experiment parameters
-    double g, p, t;
+    Arguments args;
 
     cout << "Generator period: ";
-    cin >> g;
+    cin >> args.generator_period;
 
     cout << "Processor time: ";
-    cin >> p;
+    cin >> args.processor_time;
 
     cout << "Observation time: ";
-    cin >> t;
+    cin >> args.observation_time;
 
-    // Create and connect the atomic components using a digraph model.
-    shared_ptr<adevs::Digraph<Job>> model = make_shared<adevs::Digraph<Job>>();
-
-    shared_ptr<Generator> generator = make_shared<Generator>(g);
-    shared_ptr<Transducer> transducer = make_shared<Transducer>(t);
-    shared_ptr<Processor> processor = make_shared<Processor>(p);
-
-    // Add the components to the digraph
-    model->add(generator);
-    model->add(transducer);
-    model->add(processor);
-
-    // Establish component coupling
-    model->couple(generator, generator->out, transducer, transducer->ariv);
-    model->couple(generator, generator->out, processor, processor->in);
-    model->couple(processor, processor->out, transducer, transducer->solved);
-    model->couple(transducer, transducer->out, generator, generator->stop);
-
-    adevs::Simulator<PortValue> simulator(model);
-    while (simulator.nextEventTime() < DBL_MAX) {
-        simulator.execNextEvent();
-    }
-
-    return 0;
+    return gpt(args);
 }
