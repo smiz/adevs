@@ -1,30 +1,30 @@
-#ifndef _genr_h_
-#define _genr_h_
+#ifndef _generator_h_
+#define _generator_h_
+
 #include "adevs/adevs.h"
 #include "job.h"
 
 /*
-The genr class produces jobs periodically.  The genr starts
-producing jobs when it receives an input on its start port.
-It stops producing jobs when it receives an input on its
-stop port.  Jobs appear on the out port.
-*/
-class genr : public adevs::Atomic<PortValue> {
+ * The genr class produces jobs periodically.  The genr starts
+ * producing jobs when it receives an input on its start port.
+ * It stops producing jobs when it receives an input on its
+ * stop port.  Jobs appear on the out port.
+ */
+class Generator : public adevs::Atomic<PortValue> {
   public:
-    /// Constructor.  The generator period is provided here.
-    genr(double period)
+    Generator(double period)
         : adevs::Atomic<PortValue>(), period(period), sigma(period), count(0) {}
-    /// Internal transition function
+
     void delta_int() {
         /*
-			We just produced a job via the output_func, so increment the
-			job counter.
-			*/
+         * We just produced a job via the output_func, so increment the
+         * job counter.
+         * */
         count++;
         // Wait until its time to produce the next job
         sigma = period;
     }
-    /// External transition function
+
     void delta_ext(double e, list<PortValue> const &x) {
         // Continue with next event time unchanged if, for some reason,
         // the input is on neither on these ports.
@@ -45,23 +45,23 @@ class genr : public adevs::Atomic<PortValue> {
             }
         }
     }
-    /// Confluent transition function
+
     void delta_conf(list<PortValue> const &x) {
         // When an internal and external event coincide, compute
         // the internal state transition then process the input.
         delta_int();
         delta_ext(0.0, x);
     }
-    /// Output function.
+
     void output_func(list<PortValue> &y) {
         // Place a new job on the output port
-        job j(count);
+        Job j(count);
         PortValue pv(out, j);
         y.push_back(pv);
     }
-    /// Time advance function.
+
     double ta() { return sigma; }
-    /// Output doesn't require heap allocation, so don't do anything
+
 
     /// Model input ports
     static int const start;
@@ -76,8 +76,8 @@ class genr : public adevs::Atomic<PortValue> {
 };
 
 /// Create the static ports and assign them unique 'names' (numbers)
-int const genr::stop(0);
-int const genr::start(1);
-int const genr::out(2);
+int const Generator::stop(0);
+int const Generator::start(1);
+int const Generator::out(2);
 
 #endif

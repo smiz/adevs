@@ -1,41 +1,51 @@
 #include <cstdlib>
 #include <iostream>
+
 #include "adevs/adevs.h"
-#include "genr.h"
+#include "generator.h"
 #include "job.h"
-#include "proc.h"
-#include "transd.h"
+#include "processor.h"
+#include "transducer.h"
+
 using namespace std;
 
+
 int main() {
-    /// Get experiment parameters
+
+    // Get experiment parameters
     double g, p, t;
-    cout << "Genr period: ";
+
+    cout << "Generator period: ";
     cin >> g;
-    cout << "Proc time: ";
+
+    cout << "Processor time: ";
     cin >> p;
+
     cout << "Observation time: ";
     cin >> t;
-    /// Create and connect the atomic components using a digraph model.
-    adevs::Digraph<job> model;
-    genr* gnr = new genr(g);
-    transd* trnsd = new transd(t);
-    proc* prc = new proc(p);
-    /// Add the components to the digraph
-    model.add(gnr);
-    model.add(trnsd);
-    model.add(prc);
-    /// Establish component coupling
-    model.couple(gnr, gnr->out, trnsd, trnsd->ariv);
-    model.couple(gnr, gnr->out, prc, prc->in);
-    model.couple(prc, prc->out, trnsd, trnsd->solved);
-    model.couple(trnsd, trnsd->out, gnr, gnr->stop);
-    /// Create a simulator for the model and run it until
-    /// the model passivates.
-    adevs::Simulator<PortValue> sim(&model);
-    while (sim.nextEventTime() < DBL_MAX) {
-        sim.execNextEvent();
+
+    // Create and connect the atomic components using a digraph model.
+    shared_ptr<adevs::Digraph<Job>> model = make_shared<adevs::Digraph<Job>>();
+
+    shared_ptr<Generator> generator = make_shared<Generator>(g);
+    shared_ptr<Transducer> transducer = make_shared<Transducer>(t);
+    shared_ptr<Processor> processor = make_shared<Processor>(p);
+
+    // Add the components to the digraph
+    model->add(generator);
+    model->add(transducer);
+    model->add(processor);
+
+    // Establish component coupling
+    model->couple(generator, generator->out, transducer, transducer->ariv);
+    model->couple(generator, generator->out, processor, processor->in);
+    model->couple(processor, processor->out, transducer, transducer->solved);
+    model->couple(transducer, transducer->out, generator, generator->stop);
+
+    adevs::Simulator<PortValue> simulator(model);
+    while (simulator.nextEventTime() < DBL_MAX) {
+        simulator.execNextEvent();
     }
-    /// Done!
+
     return 0;
 }
