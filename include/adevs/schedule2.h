@@ -80,7 +80,7 @@ class Schedule {
         }
 
         // Add model to the back of the heap, set its index, then move it up the heap.
-        model_heap.push_back(model);
+        model_heap.push_back(Entry(model));
         model_index[model] = model_heap.size() - 1;
         percolate_up(model_heap.size() - 1);
     }
@@ -104,7 +104,8 @@ class Schedule {
             throw exception("Model is not active!");
         }
 
-        // Try to move the model up then down the heap.
+        // Update the time advance then move the model up and down the heap.
+        model_heap[search->second].time_advance = model_heap[search->second].model->ta();
         percolate_down(percolate_up(search->second));
     }
 
@@ -120,14 +121,14 @@ class Schedule {
         // Rebuild the entire heap then loop and update each model's index
         make_heap(model_heap.begin(), model_heap.end(), compare_time_advance);
         for (size_t ii = 0; ii < model_heap.size(); ii++) {
-            model_index[model_heap[ii]] = ii;
+            model_index[model_heap[ii].model] = ii;
         }
     }
 
     /// Remove the model at the front of the queue.
     void remove_next() {
         // Remove the index mapping first since we know the offset
-        model_index.erase(model_heap.front());
+        model_index.erase(model_heap.front().model);
         remove_index(0);
     }
 
@@ -151,7 +152,7 @@ class Schedule {
     /// Get the model at the front of the queue.
     shared_ptr<Model> get_next() const {
         if (!model_heap.empty()) {
-            return model_heap.front();
+            return model_heap.front().model;
         }
         return nullptr;
     }
@@ -159,7 +160,7 @@ class Schedule {
     /// Get the time for the next event
     TimeType get_minimum() const {
         if (!model_heap.empty()) {
-            return model_heap.front()->ta();
+            return model_heap.front().time_advance;
         }
         return adevs_inf<TimeType>();
     }
@@ -179,16 +180,22 @@ class Schedule {
     size_t size() const { return model_heap.size(); }
 
   private:
+    struct Entry {
+        Entry(shared_ptr<Model> m) : model(m), time_advance(m->ta()) {}
+        shared_ptr<Model> model;
+        TimeType time_advance;
+    };
+
     // Stores all models using a heap as a priority queue
-    vector<shared_ptr<Model>> model_heap;
+    vector<Entry> model_heap;
     // Stores location of all models in the heap (So they can be updated directly)
     map<shared_ptr<Model>, size_t> model_index;
 
     // The custom comparison operator is needed for make_heap() in update_all().
     // Compares model priorities by looking at their time advance.
     struct {
-        bool operator()(shared_ptr<Model> first, shared_ptr<Model> second) const {
-            if (first->ta() > second->ta()) {
+        bool operator()(Entry first, Entry second) const {
+            if (first.time_advance > second.time_advance) {
                 return true;
             }
             return false;
@@ -215,13 +222,13 @@ class Schedule {
         size_t child = index;
         size_t parent = (index - 1) / 2;
 
-        while (child != 0 && model_heap[child]->ta() < model_heap[parent]->ta()) {
+        while (child != 0 && model_heap[child].time_advance < model_heap[parent].time_advance) {
             // Swap the models since the child's time advance is less than the parent's
             swap(model_heap[child], model_heap[parent]);
 
             // Update the index locations of the new swapped models
-            model_index[model_heap[parent]] = parent;
-            model_index[model_heap[child]] = child;
+            model_index[model_heap[parent].model] = parent;
+            model_index[model_heap[child].model] = child;
 
             // Set the new parent and child indexes
             child = parent;
@@ -237,10 +244,12 @@ class Schedule {
         size_t right = (2 * index) + 2;
 
         // Check if the left or right children are valid elements and find the minimum.
-        if (left < model_heap.size() && model_heap[left] < model_heap[minimum]) {
+        if (left < model_heap.size() &&
+            model_heap[left].time_advance < model_heap[minimum].time_advance) {
             minimum = left;
         }
-        if (right < model_heap.size() && model_heap[right] < model_heap[minimum]) {
+        if (right < model_heap.size() &&
+            model_heap[right].time_advance < model_heap[minimum].time_advance) {
             minimum = right;
         }
 
@@ -251,8 +260,8 @@ class Schedule {
             swap(model_heap[index], model_heap[minimum]);
 
             // Update the index locations of the new swapped models
-            model_index[model_heap[index]] = index;
-            model_index[model_heap[minimum]] = minimum;
+            model_index[model_heap[index].model] = index;
+            model_index[model_heap[minimum].model] = minimum;
 
             // Continue to move the model and return its new index.
             minimum = percolate_down(minimum);
