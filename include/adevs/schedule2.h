@@ -50,59 +50,143 @@ using namespace std;
 namespace adevs {
 
 /*
- * This is an updated version of the scheduler which uses built in types for memory
- * management and simplifies the interface. It uses a custom comparison function
- * to manage the heap by directly calling the models time_advance function. Models
- * will only be active in the simulation when they are added to the schedule and
- * should be removed from the schedule if being destroyed. The schedule will be
- * the source of truth for all active models in the simulation.
-
- * Possible optimizations for later:
- *  - Custom add, remove, and update functions to better optimize the queue (instead of make_heap and sort to find)
- *  - Option where models without a time advance are only stored in the list and not the heap.
- *  - Use weak pointers and garbage collect? I like forcing users to remove the model
- *  - Ignore models that have an inifinite time advance unless requested? check TA then re-insert?
- *  - This uses a lot more calls to the time_advance function that could be optimized like Jim's previous version
+ * This is a refactored version of the scheduler which uses built in types for memory
+ * management and simplifies the interface. Models can only be active in a simulation
+ * when added to the schedule, and they become inactive when removed. The schedule
+ * is a source of truth for every model in the simulation.
+ *
+ * Useful examples and references:
+ * - https://www.geeksforgeeks.org/custom-comparator-in-priority_queue-in-cpp-stl/
+ * - https://www.geeksforgeeks.org/implement-heap-in-c/
+ * - https://en.cppreference.com/w/cpp/algorithm#Heap_operations
+ *
+ * Possible optimizations:
+ * - Heap entries that map the model and its time advance
+ * - Reduce number of calls to ta() to once when a model is added or updated
+ * - Only add models with valid time advances to the heap to keep it smaller.
+ * - Infinite time advance models still need to be tracked.
  */
-
 template <class OutputType, class TimeType = double>
 class Schedule {
   public:
     using Model = Atomic<OutputType, TimeType>;
 
-    // Model management functions
-    void add(shared_ptr<Model> model);
-    void remove(shared_ptr<Model> model);
-    void update(shared_ptr<Model> modle);
-    void update_all();
+    // --- Model management functions ---
+
+    void add(shared_ptr<Model> model) {
+        // Make sure this model is not already in the schedule
+        if (auto search = model_index.find(model); search != model_index.end()) {
+            throw exception("Model is already active!");
+        }
+
+        // Add model to the back of the heap, set its index, then move it up the heap.
+        model_heap.push_back(model);
+        model_index[model] = model_heap.size() - 1;
+        percolate_up(model_heap.size() - 1);
+    }
+
+    void remove(shared_ptr<Model> model) {
+        // Find the model if it is in the schedule
+        auto search = model_index.find(model);
+        if (search == model_index.end()) {
+            throw exception("Model is not active!");
+        }
+
+        // Remove the model from the heap and remove its index mapping
+        remove_index(search->second);
+        model_index.erase(search);
+    }
+
+    void update(shared_ptr<Model> model) {
+        // Find the model if it is in the schedule
+        auto search = model_index.find(model);
+        if (search == model_index.end()) {
+            throw exception("Model is not active!");
+        }
+
+        // Try to move the model up then down the heap.
+        percolate_down(percolate_up(search->second));
+    }
+
+    /// @brief Rebuilds the entire schedule.
+    void update_all() {
+        // This is an alternative way for the simulator to update the schedule
+        // by rebuild the entire heap all at once. This is likely less efficent
+        // than calling update() on active models and only moving them as needed.
+        // Only use this as a last ditch effort to restore the heap. All other
+        // functions (add, remove, remove_next, and update) should keep the heap
+        // property valid during their operations.
+
+        // Rebuild the entire heap then loop and update each model's index
+        make_heap(model_heap.begin(), model_heap.end(), compare_time_advance);
+        for (size_t ii = 0; ii < model_heap.size(); ii++) {
+            model_index[model_heap[ii]] = ii;
+        }
+    }
 
     /// Remove the model at the front of the queue.
-    void remove_next();
+    void remove_next() {
+        // Remove the index mapping first since we know the offset
+        model_index.erase(model_heap.front());
+        remove_index(0);
+    }
 
     /// Gets a list of all imminent models
-    list<shared_ptr<Model>> get_imminent();
+    list<shared_ptr<Model>> get_imminent() {
+        // Copy the active heap, sort, and then pull the imminent items
+        vector<shared_ptr<Model>> tmp = model_heap;
+        sort_heap(tmp.begin(), tmp.end(), compare_time_advance);
+
+        list<shared_ptr<Model>> activated;
+        TimeType minimum = get_minimum();
+        for (auto ii : tmp) {
+            if (ii->ta() > minimum) {
+                break;
+            }
+            activated.push_back(ii);
+        }
+        return activated;
+    }
 
     /// Get the model at the front of the queue.
-    shared_ptr<Model> get_next() const;
+    shared_ptr<Model> get_next() const {
+        if (!model_heap.empty()) {
+            return model_heap.front();
+        }
+        return nullptr;
+    }
 
     /// Get the time for the next event
-    TimeType get_minimum() const;
+    TimeType get_minimum() const {
+        if (!model_heap.empty()) {
+            return model_heap.front()->ta();
+        }
+        return adevs_inf<TimeType>();
+    }
+
+    // --- General vector management ---
+
+    /// Remove all models from the heap
+    void clear() {
+        model_heap.clear();
+        model_index.clear();
+    }
 
     /// Returns true if the queue is empty, and false otherwise.
     bool empty() const { return model_heap.empty(); }
 
     /// Get the number of elements in the heap.
-    unsigned int size() const { return model_heap.size(); }
+    size_t size() const { return model_heap.size(); }
 
   private:
-    // Define a custom comparison operator that checks each models time advance.
-    // There's a good chance this is slower than the other scheduler because it
-    // checks every model with a function call.
-    // This was a useful example to follow:
-    // https://www.geeksforgeeks.org/custom-comparator-in-priority_queue-in-cpp-stl/
+    // Stores all models using a heap as a priority queue
+    vector<shared_ptr<Model>> model_heap;
+    // Stores location of all models in the heap (So they can be updated directly)
+    map<shared_ptr<Model>, size_t> model_index;
 
+    // The custom comparison operator is needed for make_heap() in update_all().
+    // Compares model priorities by looking at their time advance.
     struct {
-        // ! FIXME: This is likely wrong, but just getting things building
         bool operator()(shared_ptr<Model> first, shared_ptr<Model> second) const {
             if (first->ta() > second->ta()) {
                 return true;
@@ -111,122 +195,71 @@ class Schedule {
         }
     } compare_time_advance;
 
-    void rebuild_index();
+    // --- Heap helper functions ---
+    // This assumes the rest of the tree is built using proper methods.
+    // If that somehow isn't true, then use update_all(). The main spot this might
+    // happen is if the simulator didn't call update() on each activated model.
 
-    // Stores all models using a heap as a priority queue
-    vector<shared_ptr<Model>> model_heap;
-    // Stores location of all models in the heap (So they can be updated directly)
-    map<shared_ptr<Model>, size_t> model_index;
-};
-
-
-template <class OutputType, class TimeType>
-void Schedule<OutputType, TimeType>::add(shared_ptr<Atomic<OutputType, TimeType>> model) {
-
-    // Make sure this model is not already in the schedule
-    if (auto search = model_index.find(model); search != model_index.end()) {
-        throw exception("Model is already active!");
+    // Remove a model from the tree and restore the heap
+    void remove_index(size_t index) {
+        // Replace the index with the last element and then rebuild the heap.
+        // Then remove the last element from the vector; don't need to keep the
+        // initial element because it is being removed.
+        model_heap[index] = model_heap.back();
+        model_heap.pop_back();
+        percolate_down(index);
     }
 
-    // Add the model to the heap then rebuild the entire index
-    // TODO: This is likely not efficient, but it's easy to implement right now.
-    model_heap.push_back(model);
-    push_heap(model_heap.begin(), model_heap.end(), compare_time_advance);
-    rebuild_index();
-}
+    // Restore the heap property by moving a model up the tree
+    size_t percolate_up(size_t index) {
+        size_t child = index;
+        size_t parent = (index - 1) / 2;
 
+        while (child != 0 && model_heap[child]->ta() < model_heap[parent]->ta()) {
+            // Swap the models since the child's time advance is less than the parent's
+            swap(model_heap[child], model_heap[parent]);
 
-template <class OutputType, class TimeType>
-void Schedule<OutputType, TimeType>::remove(shared_ptr<Atomic<OutputType, TimeType>> model) {
+            // Update the index locations of the new swapped models
+            model_index[model_heap[parent]] = parent;
+            model_index[model_heap[child]] = child;
 
-    // Make sure this model is not already in the schedule
-    auto search = model_index.find(model);
-    if (search == model_index.end()) {
-        throw exception("Model is not active!");
-    }
-
-    // The heap is stored using a vector, so there is no easy way to remove a model
-    // from the middle. Replace this index with a copy of the last model, pop the
-    // last model from the vector, rebuild the heap, rebuild the index, and finally
-    // remove the model from the index list).
-    // TODO: This is likely not efficient, but it's easy to implement right now.
-    model_heap[search->second] = model_heap.back();
-    model_heap.pop_back();
-    make_heap(model_heap.begin(), model_heap.end(), compare_time_advance);
-    rebuild_index();
-    model_index.erase(search);
-}
-
-
-template <class OutputType, class TimeType>
-void Schedule<OutputType, TimeType>::update(shared_ptr<Atomic<OutputType, TimeType>> model) {
-    // TODO: This is for future optimization, but it's easier to rebuild the whole thing right now.
-    update_all();
-}
-
-
-template <class OutputType, class TimeType>
-void Schedule<OutputType, TimeType>::update_all() {
-    // Rebuilds the heap and then searches to update each model's index.
-    make_heap(model_heap.begin(), model_heap.end(), compare_time_advance);
-    rebuild_index();
-}
-
-/// Remove the model at the front of the queue.
-template <class OutputType, class TimeType>
-void Schedule<OutputType, TimeType>::remove_next() {
-    // Same as std::priority_queue<T, Container, Compare>::pop();
-    pop_heap(model_heap.begin(), model_heap.end(), compare_time_advance);
-    model_index.erase(model_heap.back());
-    model_heap.pop_back();
-    rebuild_index();
-}
-
-template <class OutputType, class TimeType>
-void Schedule<OutputType, TimeType>::rebuild_index() {
-    // Rebuilds the index by looping through the entire heap and updating locations.
-    for (size_t ii = 0; ii < model_heap.size(); ii++) {
-        // Get the shared pointer at the index (which is the key) then save the index.
-        model_index[model_heap[ii]] = ii;
-    }
-}
-
-/// Get the model at the front of the queue.
-template <class OutputType, class TimeType>
-shared_ptr<Atomic<OutputType, TimeType>> Schedule<OutputType, TimeType>::get_next() const {
-    if (!model_heap.empty()) {
-        return model_heap.front();
-    }
-    return nullptr;
-}
-
-/// Get the time for the next event
-template <class OutputType, class TimeType>
-TimeType Schedule<OutputType, TimeType>::get_minimum() const {
-    if (!model_heap.empty()) {
-        return model_heap.front()->ta();
-    }
-    return adevs_inf<TimeType>();
-}
-
-template <class OutputType, class TimeType>
-list<shared_ptr<Atomic<OutputType, TimeType>>> Schedule<OutputType, TimeType>::get_imminent(void) {
-
-    // Copy the active heap, sort, and then pull the imminent items
-    vector<shared_ptr<Atomic<OutputType, TimeType>>> tmp = model_heap;
-    sort_heap(tmp.begin(), tmp.end(), compare_time_advance);
-
-    list<shared_ptr<Atomic<OutputType, TimeType>>> activated;
-    TimeType minimum = get_minimum();
-    for (auto ii : tmp) {
-        if (ii->ta() > minimum) {
-            break;
+            // Set the new parent and child indexes
+            child = parent;
+            parent = (child - 1) / 2;
         }
-        activated.push_back(ii);
+        return child;
     }
-    return activated;
-}
 
+    // Restore the heap property by moving a model down the tree
+    size_t percolate_down(size_t index) {
+        size_t minimum = index;
+        size_t left = (2 * index) + 1;
+        size_t right = (2 * index) + 2;
+
+        // Check if the left or right children are valid elements and find the minimum.
+        if (left < model_heap.size() && model_heap[left] < model_heap[minimum]) {
+            minimum = left;
+        }
+        if (right < model_heap.size() && model_heap[right] < model_heap[minimum]) {
+            minimum = right;
+        }
+
+        // If the minimum node is *not* the current parent, then swap with the child
+        // and recursively move the node until the heap property is restored.
+        if (minimum != index) {
+            // Swap the models since the child's time advance is less than the parent's
+            swap(model_heap[index], model_heap[minimum]);
+
+            // Update the index locations of the new swapped models
+            model_index[model_heap[index]] = index;
+            model_index[model_heap[minimum]] = minimum;
+
+            // Continue to move the model and return its new index.
+            minimum = percolate_down(minimum);
+        }
+        return minimum;
+    }
+};
 
 }  // namespace adevs
 
