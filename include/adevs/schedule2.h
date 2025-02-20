@@ -36,9 +36,9 @@
 #include <cfloat>
 #include <cstdlib>
 #include <list>
-#include <map>
 #include <memory>
 #include <queue>
+#include <unordered_map>
 #include <vector>
 
 #include "adevs/models.h"
@@ -152,7 +152,8 @@ class Schedule {
     /// Get the model at the front of the queue.
     shared_ptr<Model> get_next() const {
         if (!model_heap.empty()) {
-            return model_heap.front().model;
+            //return model_heap.front().model;
+            return model_heap[0].model;
         }
         return nullptr;
     }
@@ -189,7 +190,7 @@ class Schedule {
     // Stores all models using a heap as a priority queue
     vector<Entry> model_heap;
     // Stores location of all models in the heap (So they can be updated directly)
-    map<shared_ptr<Model>, size_t> model_index;
+    unordered_map<shared_ptr<Model>, size_t> model_index;
 
     // The custom comparison operator is needed for make_heap() in update_all().
     // Compares model priorities by looking at their time advance.
@@ -239,34 +240,38 @@ class Schedule {
 
     // Restore the heap property by moving a model down the tree
     size_t percolate_down(size_t index) {
-        size_t minimum = index;
-        size_t left = (2 * index) + 1;
-        size_t right = (2 * index) + 2;
 
-        // Check if the left or right children are valid elements and find the minimum.
-        if (left < model_heap.size() &&
-            model_heap[left].time_advance < model_heap[minimum].time_advance) {
-            minimum = left;
+        size_t current = index;
+        size_t child = (2 * current) + 1;
+        size_t size = model_heap.size();
+
+        // At most, loop until the model is at the bottom of the heap (no valid children)
+        while (child < size) {
+
+            // If the left child isn't the last model, use whichever model has a smaller time_advances
+            if ((child != size - 1) &&
+                model_heap[child + 1].time_advance < model_heap[child].time_advance) {
+                child++;
+            }
+
+            // Sawp the models if the child's time_advance is less than the current
+            if (model_heap[child].time_advance < model_heap[current].time_advance) {
+                // Swap the models since the child's time advance is less than the parent's
+                swap(model_heap[current], model_heap[child]);
+
+                // Update the index locations of the new swapped models
+                model_index[model_heap[current].model] = current;
+                model_index[model_heap[child].model] = child;
+
+                // Update which node we are checking
+                current = child;
+                child = (2 * current) + 1;
+            } else {
+                // Heap property was satisfied
+                break;
+            }
         }
-        if (right < model_heap.size() &&
-            model_heap[right].time_advance < model_heap[minimum].time_advance) {
-            minimum = right;
-        }
-
-        // If the minimum node is *not* the current parent, then swap with the child
-        // and recursively move the node until the heap property is restored.
-        if (minimum != index) {
-            // Swap the models since the child's time advance is less than the parent's
-            swap(model_heap[index], model_heap[minimum]);
-
-            // Update the index locations of the new swapped models
-            model_index[model_heap[index].model] = index;
-            model_index[model_heap[minimum].model] = minimum;
-
-            // Continue to move the model and return its new index.
-            minimum = percolate_down(minimum);
-        }
-        return minimum;
+        return current;
     }
 };
 
