@@ -36,12 +36,22 @@ void benchmark_new() {
     }
 
     // Simulate a bunch of things happening
-    cout << "Running" << endl;
-    for (unsigned long ii = 0; ii < 100000; ii++) {
+    unsigned long iterations = 100000000;
+    cout << "Running: " << iterations << " iterations" << endl;
+
+    unsigned int percentage = 0;
+    unsigned long loops_per_percent = iterations / 100;
+
+    for (unsigned long ii = 0; ii < iterations; ii++) {
+        if (ii % loops_per_percent == 0) {
+            cout << percentage << "%\r" << flush;
+            percentage++;
+        }
         auto m = q.get_next();
         m->delta_int();
         q.update(m);
     }
+    cout << "100%" << "\n" << "Done!" << endl;
 }
 
 
