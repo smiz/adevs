@@ -132,20 +132,36 @@ class Schedule {
         remove_index(0);
     }
 
+    void check_imminent(size_t index, size_t maximum, TimeType minimum,
+                        list<shared_ptr<Model>> &activated) {
+        if (index > maximum) {
+            return;
+        }
+
+        shared_ptr<Model> tmp = model_heap[index];
+        if (tmp.time_advance > minimum) {
+            return;
+        }
+
+        assert(tmp.model->outputs->empty());
+        tmp.model->imminent = true;
+
+        // Put it in the active list if it is not already there
+        if (!tmp.model->activated) {
+            activated.push_back(tmp.model);
+            if (tmp.model->typeIsMealyAtomic() == nullptr) {
+                tmp.model->activated = true;
+            }
+        }
+
+        check_imminent((index * 2) + 1, maximum, minimum, activated);
+        check_imminent((index * 2) + 2, maximum, minimum, activated);
+    }
+
     /// Gets a list of all imminent models
     list<shared_ptr<Model>> get_imminent() {
-        // Copy the active heap, sort, and then pull the imminent items
-        vector<shared_ptr<Model>> tmp = model_heap;
-        sort_heap(tmp.begin(), tmp.end(), compare_time_advance);
-
         list<shared_ptr<Model>> activated;
-        TimeType minimum = get_minimum();
-        for (auto ii : tmp) {
-            if (ii->ta() > minimum) {
-                break;
-            }
-            activated.push_back(ii);
-        }
+        check_imminent(0, model_heap.size() - 1, get_minimum(), activated);
         return activated;
     }
 
