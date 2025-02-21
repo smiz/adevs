@@ -56,7 +56,7 @@ typedef int pin_t;
 template <typename ValueType>
 class PinValue {
   public:
-    PinValue(pin_t pin, ValueType& value):pin(pin),value(value){}
+    PinValue(pin_t pin, ValueType value):pin(pin),value(value){}
     PinValue(const PinValue& src) : pin(src.pin),value(src.value) {}
     const PinValue<ValueType>& operator=(const PinValue& src) {
         pin = src.pin;
@@ -77,6 +77,7 @@ class Atomic {
     Atomic()
         : tL(adevs_zero<T>()),
           q_index(0){}  // The Schedule requires this to be zero
+    virtual ~Atomic(){}
     /// Internal transition function.
     virtual void delta_int() = 0;
     /*

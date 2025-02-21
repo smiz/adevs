@@ -18,9 +18,12 @@ class genr : public Atomic<char, double_fcmp> {
             sigma = DBL_MAX;
         }
     }
-    void delta_ext(double_fcmp, list<char> const &) { sigma = DBL_MAX; }
-    void delta_conf(list<char> const &) { sigma = DBL_MAX; }
-    void output_func(list<char> &y) { y.push_back('a'); }
+    void delta_ext(double_fcmp, list<PinValue<char>> const &) { sigma = DBL_MAX; }
+    void delta_conf(list<PinValue<char>> const &) { sigma = DBL_MAX; }
+    void output_func(list<PinValue<char>> &y) {
+        PinValue<char> output(0,'a');
+        y.push_back(output);
+    }
     int getTickCount() { return count; }
 
   private:
@@ -54,10 +57,13 @@ class MyEventListener : public EventListener<char, double_fcmp> {
         count = 0;
         t_last = 0.0;
     }
-    void outputEvent(Event<char, double_fcmp> x, double_fcmp t) {
+    void inputEvent(Atomic<char,double_fcmp>& model, PinValue<char>& x, double_fcmp t) {}
+    void outputEvent(Atomic<char,double_fcmp>& model, PinValue<char>& x, double_fcmp t) {
         count++;
         t_last = t;
     }
+    void stateChange(Atomic<char,double_fcmp>& model, double_fcmp t) {}
+
     int count;
     double_fcmp t_last;
 };
@@ -79,18 +85,21 @@ void test3() {
 void test4() {
     shared_ptr<genr> g = make_shared<genr>(10.0, 10);
     Simulator<char, double_fcmp> sim(g);
-    list<Event<char, double_fcmp>> input;
-    sim.computeNextState(input, 5.0);
+    sim.setNextTime(5.0);
+    sim.computeNextState();
     assert(sim.nextEventTime() == 10.0);
-    sim.computeNextState(input, 6.0);
+    sim.setNextTime(6.0);
+    sim.computeNextState();
     assert(sim.nextEventTime() == 10.0);
+    sim.setNextTime(sim.nextEventTime());
     sim.computeNextOutput();
-    sim.computeNextState(input, sim.nextEventTime());
+    sim.computeNextState();
     assert(sim.nextEventTime() == 20.0);
     assert(g->getTickCount() == 1);
     sim.computeNextOutput();
     assert(sim.nextEventTime() == 20.0);
-    sim.computeNextState(input, 12.0);
+    sim.setNextTime(12.0);
+    sim.computeNextState();
     assert(sim.nextEventTime() == 20.0);
     assert(g->getTickCount() == 1);
     sim.execNextEvent();
@@ -99,12 +108,15 @@ void test4() {
 }
 
 void test5() {
+    PinValue<char> input(0,'a');
     shared_ptr<genr> g = make_shared<genr>(10.0, 10);
-    Simulator<char, double_fcmp> sim(g);
-    list<Event<char, double_fcmp>> input;
-    Event<char, double_fcmp> event(g, 'a');
-    input.push_back(event);
-    sim.computeNextState(input, 5.0);
+    auto graph = make_shared<Graph<char,double_fcmp>>();
+    graph->add_atomic(g);
+    graph->connect(0,g);
+    Simulator<char, double_fcmp> sim(graph);
+    sim.injectInput(input);
+    sim.setNextTime(5.0);
+    sim.computeNextState();
     assert(sim.nextEventTime() == DBL_MAX);
     assert(g->getTickCount() == 0);
 }

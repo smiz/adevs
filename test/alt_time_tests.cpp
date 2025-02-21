@@ -14,11 +14,12 @@ using namespace adevs;
 template <typename T>
 class PingPong : public Atomic<int, T> {
   public:
+    pin_t output_pin;
     PingPong(bool active = false);
     void delta_int();
-    void delta_ext(T e, list<int> const &xb);
-    void delta_conf(list<int> const &xb);
-    void output_func(list<int> &yb);
+    void delta_ext(T e, list<PinValue<int>> const &xb);
+    void delta_conf(list<PinValue<int>> const &xb);
+    void output_func(list<PinValue<int>> &yb);
     T ta();
     int getCount() const { return count; }
 
@@ -38,12 +39,12 @@ void PingPong<T>::delta_int() {
 }
 
 template <typename T>
-void PingPong<T>::delta_ext(T e, list<int> const &xb) {
+void PingPong<T>::delta_ext(T e, list<PinValue<int>> const &xb) {
     active = xb.size() == 1;
 }
 
 template <typename T>
-void PingPong<T>::delta_conf(list<int> const &xb) {
+void PingPong<T>::delta_conf(list<PinValue<int>> const &xb) {
     delta_int();
     delta_ext(0, xb);
 }
@@ -58,34 +59,9 @@ T PingPong<T>::ta() {
 }
 
 template <typename T>
-void PingPong<T>::output_func(list<int> &yb) {
-    yb.push_back(1);
-}
-
-
-// ***** Basic network *****
-
-template <typename T>
-class Model : public SimpleDigraph<int, T> {
-  public:
-    Model();
-    shared_ptr<PingPong<T>> getA() { return a; }
-    shared_ptr<PingPong<T>> getB() { return b; }
-
-  private:
-    shared_ptr<PingPong<T>> a = nullptr;
-    shared_ptr<PingPong<T>> b = nullptr;
-};
-
-template <typename T>
-Model<T>::Model()
-    : SimpleDigraph<int, T>(),
-      a(make_shared<PingPong<T>>(true)),
-      b(make_shared<PingPong<T>>()) {
-    this->add(a);
-    this->add(b);
-    this->couple(a, b);
-    this->couple(b, a);
+void PingPong<T>::output_func(list<PinValue<int>> &yb) {
+    PinValue y(output_pin,1);
+    yb.push_back(y);
 }
 
 
@@ -138,10 +114,10 @@ class CustomTimeType {
     bool operator>=(CustomTimeType const &other) const {
         return time >= other.time;
     }
+    CustomTimeType(int init) : time(init) {}
 
   private:
     int time;
-    CustomTimeType(int init) : time(init) {}
 
     friend CustomTimeType adevs_inf<CustomTimeType>();
     friend CustomTimeType adevs_zero<CustomTimeType>();
@@ -171,45 +147,49 @@ inline CustomTimeType adevs_sentinel<CustomTimeType>() {
     return CustomTimeType(-1);
 }
 
+template <typename TimeType>
+class Model: public Graph<int,TimeType> {
+    public:
+        Model() : Graph<int,TimeType>() {
+            pin_t pA = this->add_pin();
+            pin_t pB = this->add_pin();
+            A = shared_ptr<PingPong<TimeType>>(new PingPong<TimeType>(true));
+            B = make_shared<PingPong<TimeType>>();
+            this->add_atomic(A);
+            this->add_atomic(B);
+            this->connect(pA,A);
+            this->connect(pB,B);
+            A->output_pin = pB;
+            B->output_pin = pA;
+        }
+        PingPong<TimeType>* getA() { return A.get(); }
+        PingPong<TimeType>* getB() { return B.get(); }
+
+    private:
+        shared_ptr<PingPong<TimeType>> A; 
+        shared_ptr<PingPong<TimeType>> B;
+};
 
 // ***** Tests *****
 
 void test1() {
-    shared_ptr<Model<double>> model = make_shared<Model<double>>();
-    shared_ptr<Simulator<int, double>> sim =
-        make_shared<Simulator<int, double>>(model);
-
+    auto model = make_shared<Model<int>>();
+    shared_ptr<Simulator<int, int>> sim =
+        make_shared<Simulator<int, int>>(model);
     while (sim->nextEventTime() <= 10) {
         sim->execNextEvent();
     }
-
     assert(model->getA()->getCount() == 5);
     assert(model->getB()->getCount() == 5);
 }
 
 void test2() {
-    shared_ptr<Model<int>> model = make_shared<Model<int>>();
-    shared_ptr<Simulator<int, int>> sim =
-        make_shared<Simulator<int, int>>(model);
-
-    while (sim->nextEventTime() <= 10) {
-        sim->execNextEvent();
-    }
-
-    assert(model->getA()->getCount() == 5);
-    assert(model->getB()->getCount() == 5);
-}
-
-void test3() {
-    shared_ptr<Model<CustomTimeType>> model =
-        make_shared<Model<CustomTimeType>>();
+    auto model = make_shared<Model<CustomTimeType>>();
     shared_ptr<Simulator<int, CustomTimeType>> sim =
         make_shared<Simulator<int, CustomTimeType>>(model);
-
-    while (sim->nextEventTime().time <= 10) {
+    while (sim->nextEventTime() <= CustomTimeType(10)) {
         sim->execNextEvent();
     }
-
     assert(model->getA()->getCount() == 5);
     assert(model->getB()->getCount() == 5);
 }
@@ -217,5 +197,4 @@ void test3() {
 int main() {
     test1();
     test2();
-    test3();
 }

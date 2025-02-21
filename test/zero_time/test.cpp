@@ -5,11 +5,11 @@
 using namespace std;
 using namespace adevs;
 
-class Parrot : public Atomic<PortValue<string>> {
+class Parrot : public Atomic<string> {
   public:
-    static int const in, out;
+    pin_t in, out;
 
-    Parrot() : Atomic<PortValue<string>>() {
+    Parrot() : Atomic<string>() {
         k = 0;
         q = "";
     }
@@ -19,20 +19,20 @@ class Parrot : public Atomic<PortValue<string>> {
         q = "";
     }
 
-    void delta_ext(double e, list<PortValue<string>> const &xb) {
+    void delta_ext(double e, list<PinValue<string>> const &xb) {
         for (auto iter : xb) {
             q += iter.value;
         }
     }
 
-    void delta_conf(list<PortValue<string>> const &xb) {
+    void delta_conf(list<PinValue<string>> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
 
     double ta() {
         if (q == "") {
-            return DBL_MAX;
+            return adevs_inf<double>();
         }
         if (k == 0 || k == 1) {
             return 0.0;
@@ -41,8 +41,8 @@ class Parrot : public Atomic<PortValue<string>> {
         return 1.0;
     }
 
-    void output_func(list<PortValue<string>> &yb) {
-        PortValue<string> event(out, q);
+    void output_func(list<PinValue<string>> &yb) {
+        PinValue<string> event(out, q);
         yb.push_back(event);
     }
 
@@ -51,44 +51,42 @@ class Parrot : public Atomic<PortValue<string>> {
     string q;
 };
 
-int const Parrot::in = 0;
-int const Parrot::out = 1;
+shared_ptr<Parrot> p1;
 
-shared_ptr<Digraph<string>> model = nullptr;
-
-class Listener : public EventListener<PortValue<string>> {
+class Listener : public EventListener<string> {
   public:
-    void outputEvent(Event<PortValue<string>> x, double t) {
-        if (x.model == model.get() && x.value.port == Parrot::out) {
-            cout << t << " " << x.value.value << endl;
+    void stateChange(Atomic<string>& model, double t) {}
+    void inputEvent(Atomic<string>& model, PinValue<string>& x, double t) {}
+    void outputEvent(Atomic<string>& model, PinValue<string>& x, double t) {
+        if (x.pin == p1->out) {
+            cout << t << " " << x.value << endl;
         }
     }
 };
 
 int main() {
-    model = make_shared<Digraph<string>>();
-    shared_ptr<Parrot> p1 = make_shared<Parrot>();
+    auto model = make_shared<Graph<string>>();
+    p1 = make_shared<Parrot>();
     shared_ptr<Parrot> p2 = make_shared<Parrot>();
-    model->add(p1);
-    model->add(p2);
-    model->couple(model, Parrot::in, p1, Parrot::in);
-    model->couple(p1, Parrot::out, model, Parrot::out);
-    model->couple(p1, p1->out, p2, p2->in);
-    model->couple(p2, p2->out, p1, p1->in);
-
-    Event<PortValue<string>> start;
-    start.model = model.get();
-    start.value.value = "a";
-    start.value.port = Parrot::in;
-
-    Simulator<PortValue<string>> sim(model);
+    model->add_atomic(p1);
+    model->add_atomic(p2);
+    p1->in = model->add_pin();
+    p1->out = model->add_pin();
+    p2->in = model->add_pin();
+    p2->out = model->add_pin();
+    model->connect(p1->in,p1);
+    model->connect(p2->in,p2);
+    model->connect(p1->out,p2->in);
+    model->connect(p2->out,p1->in);
+    PinValue<string> start;
+    start.pin = p1->in;
+    start.value = "a";
+    Simulator<string> sim(model);
     shared_ptr<Listener> listener = make_shared<Listener>();
     sim.addEventListener(listener);
-
-    list<Event<PortValue<string>>> input;
-    input.push_back(start);
-    sim.computeNextState(input, 0.0);
-
+    sim.setNextTime(0.0);
+    sim.injectInput(start);
+    sim.computeNextState();
     while (sim.nextEventTime() < 10) {
         cout << "***" << endl;
         sim.execNextEvent();

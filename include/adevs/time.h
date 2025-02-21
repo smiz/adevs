@@ -241,6 +241,26 @@ class double_fcmp {
     bool operator==(double_fcmp const &rhs) const {
         return (fcmp(d, rhs.d, epsilon) == 0);
     }
+
+    /// Advance this value by a step size t2
+    double_fcmp operator+(double_fcmp const &t2) const {
+        return double_fcmp(d+t2.d);
+    }
+    /// Advance this value by a step size t2
+    double_fcmp const &operator+=(double_fcmp const &t2) {
+        d += t2.d;
+        return *this;
+    }
+    /// Length of the interval from now to t2
+    double_fcmp operator-(double_fcmp const &t2) const {
+        return double_fcmp(d-t2.d);
+    }
+    /// Length of the interval from now to t2
+    /// Advance this value by a step size t2
+    double_fcmp const &operator-=(double_fcmp const &t2) {
+        d -= t2.d;
+        return *this;
+    }
 };
 
 }  // namespace adevs

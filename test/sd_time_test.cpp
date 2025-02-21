@@ -17,9 +17,12 @@ class Incr : public Atomic<int, sd_time<double>> {
         return sd_time<double>(0, count);
     }
     void delta_int() { count++; }
-    void delta_ext(sd_time<double>, list<int> const &) {}
-    void delta_conf(list<int> const &) {}
-    void output_func(list<int> &y) { y.push_back(count); }
+    void delta_ext(sd_time<double>, list<PinValue<int>> const &) {}
+    void delta_conf(list<PinValue<int>> const &) {}
+    void output_func(list<PinValue<int>> &y) {
+        PinValue<int> yy(0,count);
+        y.push_back(yy);
+    }
     int get_q() const { return count; }
 
   private:
@@ -31,8 +34,8 @@ class Watch : public Atomic<int, sd_time<double>> {
     Watch() : Atomic<int, sd_time<double>>() {}
     sd_time<double> ta() { return adevs_inf<sd_time<double>>(); }
     void delta_int() { assert(false); }
-    void delta_ext(sd_time<double> e, list<int> const &xb) {
-        int count = *(xb.begin());
+    void delta_ext(sd_time<double> e, list<PinValue<int>> const &xb) {
+        int count = (*(xb.begin())).value;
         sd_time<double> expect;
         if (count % 2 == 0) {
             expect = sd_time<double>(count, 0);
@@ -41,24 +44,25 @@ class Watch : public Atomic<int, sd_time<double>> {
         }
         assert(e == expect);
     }
-    void delta_conf(list<int> const &) { assert(false); }
-    void output_func(list<int> &y) { assert(false); }
+    void delta_conf(list<PinValue<int>> const &) { assert(false); }
+    void output_func(list<PinValue<int>> &y) { assert(false); }
 };
 
 class MyEventListener : public EventListener<int, sd_time<double>> {
   public:
     MyEventListener() : EventListener<int, sd_time<double>>() {}
-    void outputEvent(Event<int, sd_time<double>> x, sd_time<double> t) {
+    void inputEvent(Atomic<int,sd_time<double>>& model, PinValue<int>& x, sd_time<double> t) {}
+    void outputEvent(Atomic<int,sd_time<double>>& model, PinValue<int>& x, sd_time<double> t) {
         cout << "t = " << t << " , y = " << x.value << endl;
     }
-    void stateChange(Atomic<int, sd_time<double>>* model, sd_time<double> t) {
-        Incr* incr = dynamic_cast<Incr*>(model);
+    void stateChange(Atomic<int, sd_time<double>>& model, sd_time<double> t) {
+        Incr* incr = dynamic_cast<Incr*>(&model);
         if (incr != nullptr) {
             cout << "t = " << t << " , q = " << incr->get_q()
                  << " , ta = " << incr->ta() << endl;
         } else {
             cout << "t = " << t << " , external event"
-                 << " , ta = " << model->ta() << endl;
+                 << " , ta = " << model.ta() << endl;
         }
     }
 };
@@ -91,11 +95,11 @@ void test2() {
     shared_ptr<Incr> a = make_shared<Incr>();
     shared_ptr<Watch> b = make_shared<Watch>();
 
-    shared_ptr<SimpleDigraph<int, sd_time<>>> model =
-        make_shared<SimpleDigraph<int, sd_time<>>>();
-    model->add(a);
-    model->add(b);
-    model->couple(a, b);
+    shared_ptr<Graph<int, sd_time<>>> model =
+        make_shared<Graph<int, sd_time<>>>();
+    model->add_atomic(a);
+    model->add_atomic(b);
+    model->connect(0, b);
 
     shared_ptr<Simulator<int, sd_time<>>> sim =
         make_shared<Simulator<int, sd_time<>>>(model);

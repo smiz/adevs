@@ -46,6 +46,9 @@ class EventListener {
         virtual ~EventListener(){}
         virtual void outputEvent(
             Atomic<ValueType,TimeType>& model, PinValue<ValueType>& value, TimeType t) = 0;
+        virtual void inputEvent(
+            Atomic<ValueType,TimeType>& model, PinValue<ValueType>& value, TimeType t) = 0;
+        virtual void stateChange(Atomic<ValueType,TimeType>& model, TimeType t) = 0;
 };
 
 /*
@@ -65,13 +68,13 @@ class Simulator {
      * time advance of the model is less than zero.
      * @param model The model to simulate
      */
-    Simulator(shared_ptr<Atomic<X, T>>& model);
+    Simulator(shared_ptr<Atomic<X, T>> model);
 
     /*
      * Initialize the simulator with a collection of models.
      * @param model The collection of models to simulate.
      */
-    Simulator(std::shared_ptr<Graph<X, T>>& model);
+    Simulator(std::shared_ptr<Graph<X, T>> model);
 
     /*
      * Get the model's next event time
@@ -120,7 +123,7 @@ class Simulator {
      */
     T computeNextState();
 
-    void addEventListener(std::shared_ptr<EventListener<X, T>>& listener) {
+    void addEventListener(std::shared_ptr<EventListener<X, T>> listener) {
         listeners.push_back(listener);
     }
 
@@ -138,7 +141,7 @@ class Simulator {
 };
 
 template <typename X, typename T>
-Simulator<X, T>::Simulator(std::shared_ptr<Graph<X, T>> &model)
+Simulator<X, T>::Simulator(std::shared_ptr<Graph<X, T>> model)
     : graph(model),output_ready(false) {
     // The Atomic constructor sets the atomic model's
     // tL correctly to zero, and so it is sufficient
@@ -151,7 +154,7 @@ Simulator<X, T>::Simulator(std::shared_ptr<Graph<X, T>> &model)
 }
 
 template <typename X, typename T>
-Simulator<X, T>::Simulator(std::shared_ptr<Atomic<X, T>> &model)
+Simulator<X, T>::Simulator(std::shared_ptr<Atomic<X, T>> model)
     : graph(new Graph<X,T>()),output_ready(false) {
     graph->add_atomic(model);
     schedule(model, adevs_zero<T>());
@@ -181,7 +184,7 @@ void Simulator<X, T>::computeNextOutput() {
 
 template <class X, class T>
 T Simulator<X, T>::computeNextState() {
-    T t = tNext;
+    T t = tNext+adevs_epsilon<T>();
     if (!output_ready) {
         computeNextOutput();
     }
@@ -196,6 +199,9 @@ T Simulator<X, T>::computeNextState() {
             for (auto consumer : input) {
                 active.insert(consumer);
                 consumer->inputs.push_back(x);
+                for (auto listener : listeners) {
+                    listener->inputEvent(*(consumer.get()), x, tNext);
+                }
             }
             input.clear();
         }
@@ -204,8 +210,11 @@ T Simulator<X, T>::computeNextState() {
     for (auto x : external_input) {
         graph->get_atomics(x.pin,input);
         for (auto consumer : input) {
-             active.insert(consumer);
+            active.insert(consumer);
             consumer->inputs.push_back(x);
+            for (auto listener : listeners) {
+                listener->inputEvent(*(consumer.get()), x, tNext);
+            }
         }
         input.clear();
     }
@@ -224,10 +233,12 @@ T Simulator<X, T>::computeNextState() {
             model->delta_ext(tNext - model->tL, model->inputs);
             model->inputs.clear();
         }
+        for (auto listener : listeners) {
+            listener->stateChange(*(model.get()),tNext);
+        }
         // Adjust position in the schedule
-        schedule(model, tNext);
+        schedule(model, t);
     }
-    t += adevs_epsilon<T>();
     tNext = sched.minPriority();
     return t;
 }
@@ -241,7 +252,7 @@ void Simulator<X, T>::schedule(std::shared_ptr<Atomic<X, T>>& model, T t) {
         sched.schedule(model, adevs_inf<T>());
     } else {
         model->tN = model->tL + dt;
-        if (model->tN < model->tL) {
+        if (dt < adevs_zero<T>()) {
             exception err("Negative time advance", model.get());
             throw err;
         }

@@ -45,7 +45,7 @@ class Graph {
         /// @brief  Construct an empty graph.
         Graph():next_pin(0) {}
         /// @brief  Destroy the graph but leave its atomic components intact.
-        ~Graph(){}
+        virtual ~Graph(){}
         /// @brief  Add a new pin_t to the graph.
         /// @return The pin that was created.
         pin_t add_pin() { return next_pin++; };
@@ -54,10 +54,10 @@ class Graph {
         void remove_pin(pin_t p);
         /// @brief Add an atomic model to the graph.
         /// @param model The model to add.
-        void add_atomic(std::shared_ptr<Atomic<X,T>>& model) { models.insert(model); }
+        void add_atomic(std::shared_ptr<Atomic<X,T>> model) { models.insert(model); }
         /// @brief Remove an atomic model from the graph.
         /// @param model The model to remove.
-        void remove_atomic(std::shared_ptr<Atomic<X, T>>& model);
+        void remove_atomic(std::shared_ptr<Atomic<X, T>> model);
         /// Connect two pins in the graph. Events appearing on the source pin
         /// will be delivered to the destination pin.
         /// @param src The source pin.
@@ -71,16 +71,16 @@ class Graph {
         /// will be delivered to the atomic model as input.
         /// @param pin The pin to connect.
         /// @param model The model to receive the input.
-        void connect(pin_t pin, std::shared_ptr<Atomic<X, T>>& model);
+        void connect(pin_t pin, std::shared_ptr<Atomic<X, T>> model);
         /// @brief  Remove a connection between a pin and an atomic model.
         /// @param pin The pin to disconnect.
         /// @param model The model to disconnect.
-        void disconnect(pin_t pin, std::shared_ptr<Atomic<X, T>>& model);
+        void disconnect(pin_t pin, std::shared_ptr<Atomic<X, T>> model);
         /// @brief  Get the atomic models that are connected to a pin_t. These
         /// are the models that will receive input when an event appears on the pin_t.
         /// @param pin The pin to query.
         /// @param models A list to be filled with models that are connected to the pin_t.
-        void get_atomics(pin_t pin, std::list<std::shared_ptr<Atomic<X, T>>> &models) const;
+        void get_atomics(pin_t pin, std::list<std::shared_ptr<Atomic<X, T>>>& models) const;
         /// @brief  Get the set of all atomic models that are part of the graph.
         /// @return The set of all atomic models.
         const std::set<std::shared_ptr<Atomic<X,T>>>& get_atomics() const { return models; }
@@ -101,7 +101,7 @@ void Graph<X, T>::remove_pin(pin_t pin) {
 }
 
 template <typename X, typename T>
-void Graph<X, T>::remove_atomic(std::shared_ptr<Atomic<X,T>>& model) {
+void Graph<X, T>::remove_atomic(std::shared_ptr<Atomic<X,T>> model) {
     for (auto i = pin_to_atomic.begin(); i != pin_to_atomic.end(); i++) {
         i->second.remove(model);
     }
@@ -122,13 +122,13 @@ void Graph<X, T>::disconnect(pin_t src, pin_t dst) {
 }
 
 template <typename X, typename T>
-void Graph<X, T>::connect(pin_t pin, std::shared_ptr<Atomic<X,T>>& model) {
+void Graph<X, T>::connect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
     models.insert(model);
     pin_to_atomic[pin].push_back(model);
 }
 
 template <typename X, typename T>
-void Graph<X, T>::disconnect(pin_t pin, std::shared_ptr<Atomic<X,T>>& model) {
+void Graph<X, T>::disconnect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
     auto i = pin_to_atomic.find(pin);
     if (i != pin_to_atomic.end()) {
         i->second.remove(model);
@@ -136,7 +136,7 @@ void Graph<X, T>::disconnect(pin_t pin, std::shared_ptr<Atomic<X,T>>& model) {
 }
 
 template <typename X, typename T>
-void Graph<X,T>::get_atomics(pin_t pin, std::list<std::shared_ptr<Atomic<X, T>>> &models) const {
+void Graph<X,T>::get_atomics(pin_t pin, std::list<std::shared_ptr<Atomic<X, T>>>& models) const {
     auto i = pin_to_atomic.find(pin);
     if (i != pin_to_atomic.end()) {
         for (auto j = i->second.begin(); j != i->second.end(); j++) {
