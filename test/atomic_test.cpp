@@ -1,6 +1,7 @@
 #include <cassert>
 #include <iostream>
-#include "adevs/adevs.h"
+#include "adevs/models.h"
+#include "adevs/simulator.h"
 using namespace std;
 using namespace adevs;
 
@@ -13,12 +14,16 @@ class genr : public Atomic<char> {
         count++;
         assert(count <= ticks);
         if (count == ticks) {
-            sigma = DBL_MAX;
+            sigma = adevs_inf<double>();
         }
     }
-    void delta_ext(double, list<char> const &) { sigma = DBL_MAX; }
-    void delta_conf(list<char> const &) { sigma = DBL_MAX; }
-    void output_func(list<char> &y) { y.push_back('a'); }
+    void delta_ext(double, list<PinValue<char>> const &) { sigma = adevs_inf<double>(); }
+    void delta_conf(list<PinValue<char>> const &) { sigma = adevs_inf<double>(); }
+    void output_func(list<PinValue<char>> &y) {
+        char value = 'a';
+        PinValue<char> output(0,value);
+        y.push_back(output);
+    }
     int getTickCount() { return count; }
 
   private:
@@ -28,22 +33,22 @@ class genr : public Atomic<char> {
 };
 
 void test1() {
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
+    shared_ptr<Atomic<char>> g = make_shared<genr>(10.0, 10);
     Simulator<char> sim(g);
-    while (sim.nextEventTime() < DBL_MAX) {
+    while (sim.nextEventTime() < adevs_inf<double>()) {
         sim.execNextEvent();
     }
-    assert(g->getTickCount() == 10);
+    assert(dynamic_cast<genr*>(g.get())->getTickCount() == 10);
 }
 
 void test2() {
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
+    shared_ptr<Atomic<char>> g = make_shared<genr>(10.0, 10);
     Simulator<char> sim(g);
-    while (sim.nextEventTime() < DBL_MAX) {
+    while (sim.nextEventTime() < adevs_inf<double>()) {
         sim.computeNextOutput();
         sim.execNextEvent();
     }
-    assert(g->getTickCount() == 10);
+    assert(dynamic_cast<genr*>(g.get())->getTickCount() == 10);
 }
 
 class MyEventListener : public EventListener<char> {
@@ -52,7 +57,7 @@ class MyEventListener : public EventListener<char> {
         count = 0;
         t_last = 0.0;
     }
-    void outputEvent(Event<char> x, double t) {
+    void outputEvent(Atomic<char>&, PinValue<char>& x, double t) {
         count++;
         t_last = t;
     }
@@ -61,50 +66,57 @@ class MyEventListener : public EventListener<char> {
 };
 
 void test3() {
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
+    shared_ptr<Atomic<char>> g = make_shared<genr>(10.0, 10);
     Simulator<char> sim(g);
-    shared_ptr<MyEventListener> listener = make_shared<MyEventListener>();
+    shared_ptr<EventListener<char>> listener = make_shared<MyEventListener>();
     sim.addEventListener(listener);
-    while (sim.nextEventTime() < DBL_MAX) {
+    while (sim.nextEventTime() < adevs_inf<double>()) {
         sim.computeNextOutput();
-        assert(listener->t_last == sim.nextEventTime());
+        assert(dynamic_cast<MyEventListener*>(listener.get())->t_last == sim.nextEventTime());
         sim.execNextEvent();
     }
-    assert(listener->count == 10);
-    assert(g->getTickCount() == 10);
+    assert(dynamic_cast<MyEventListener*>(listener.get())->count == 10);
+    assert(dynamic_cast<genr*>(g.get())->getTickCount() == 10);
 }
 
 void test4() {
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
+    shared_ptr<Atomic<char>> g = make_shared<genr>(10.0, 10);
     Simulator<char> sim(g);
-    list<Event<char>> input;
-    sim.computeNextState(input, 5.0);
+    sim.setNextTime(5.0);
+    sim.computeNextState();
     assert(sim.nextEventTime() == 10.0);
-    sim.computeNextState(input, 6.0);
+    sim.setNextTime(6.0);
+    sim.computeNextState();
     assert(sim.nextEventTime() == 10.0);
+    sim.setNextTime(sim.nextEventTime());
     sim.computeNextOutput();
-    sim.computeNextState(input, sim.nextEventTime());
+    sim.computeNextState();
     assert(sim.nextEventTime() == 20.0);
-    assert(g->getTickCount() == 1);
+    assert(dynamic_cast<genr*>(g.get())->getTickCount() == 1);
     sim.computeNextOutput();
     assert(sim.nextEventTime() == 20.0);
-    sim.computeNextState(input, 12.0);
+    sim.setNextTime(12.0);
+    sim.computeNextState();
     assert(sim.nextEventTime() == 20.0);
-    assert(g->getTickCount() == 1);
+    assert(dynamic_cast<genr*>(g.get())->getTickCount() == 1);
     sim.execNextEvent();
-    assert(g->getTickCount() == 2);
+    assert(dynamic_cast<genr*>(g.get())->getTickCount() == 2);
     assert(sim.nextEventTime() == 30.0);
 }
 
 void test5() {
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
-    Simulator<char> sim(g);
-    list<Event<char>> input;
-    Event<char> event(g, 'a');
-    input.push_back(event);
-    sim.computeNextState(input, 5.0);
-    assert(sim.nextEventTime() == DBL_MAX);
-    assert(g->getTickCount() == 0);
+    char value = 'a';
+    PinValue<char> input(0,value);
+    shared_ptr<Atomic<char>> g = make_shared<genr>(10.0, 10);
+    shared_ptr<Graph<char>> graph = make_shared<Graph<char>>();
+    graph->add_atomic(g);
+    graph->connect(0,g);
+    Simulator<char> sim(graph);
+    sim.setNextTime(5.0);
+    sim.injectInput(input);
+    sim.computeNextState();
+    assert(sim.nextEventTime() == adevs_inf<double>());
+    assert(dynamic_cast<genr*>(g.get())->getTickCount() == 0);
 }
 
 int main() {

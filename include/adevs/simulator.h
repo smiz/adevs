@@ -34,12 +34,19 @@
 #include <cstdlib>
 #include <list>
 #include <set>
-#include "adevs/abstract_simulator.h"
-#include "adevs/event_listener.h"
 #include "adevs/models.h"
 #include "adevs/sched.h"
+#include "adevs/graph.h"
 
 namespace adevs {
+
+template <typename ValueType, typename TimeType = double>
+class EventListener {
+    public:
+        virtual ~EventListener(){}
+        virtual void outputEvent(
+            Atomic<ValueType,TimeType>& model, PinValue<ValueType>& value, TimeType t) = 0;
+};
 
 /*
  * This Simulator class implements the DEVS simulation algorithm.
@@ -49,29 +56,22 @@ namespace adevs {
  * type systems).
  */
 template <class X, class T = double>
-class Simulator : public AbstractSimulator<X, T> {
+class Simulator {
 
   public:
     /*
-     * Create a simulator for a model. The simulator
+     * Create a simulator for the atomic model. The simulator
      * constructor will fail and throw an adevs::exception if the
-     * time advance of any component atomic model is less than zero.
+     * time advance of the model is less than zero.
      * @param model The model to simulate
      */
-    Simulator(shared_ptr<Devs<X, T>> model)
-        : AbstractSimulator<X, T>(), io_up_to_date(false) {
-        schedule(model.get(), adevs_zero<T>());
-    }
+    Simulator(shared_ptr<Atomic<X, T>>& model);
 
     /*
-     * Initialize the simulator with a list of models
-     * that will be active at the start. The constructor
-     * only schedules the models in the list, which avoids
-     * the overhead of constructing the full set of
-     * models with recursive calls to Network::getComponents().
-     * @param active The list of active models.
+     * Initialize the simulator with a collection of models.
+     * @param model The collection of models to simulate.
      */
-    Simulator(std::list<shared_ptr<Devs<X, T>>> &active);
+    Simulator(std::shared_ptr<Graph<X, T>>& model);
 
     /*
      * Get the model's next event time
@@ -85,491 +85,169 @@ class Simulator : public AbstractSimulator<X, T> {
      */
     T execNextEvent() { return computeNextState(); }
 
-    /*
-     * Execute until nextEventTime() > tend.
-     * @return The updated simulation time
+    /**
+     * Inject an input that will be applied at the next calls to
+     * computeNextState and computeNextOutput. The list is automatically
+     * cleared when computeNextState is called.
      */
-    T execUntil(T tend) {
-        T t = tend + adevs_epsilon<T>();
-        while (nextEventTime() <= tend && nextEventTime() < adevs_inf<T>()) {
-            t = execNextEvent();
-        }
-        return t;
+    void injectInput(PinValue<X>& x) {
+        external_input.push_back(x);
     }
-
+    /**
+     * Clear the list of injected inputs.
+     */
+    void clearInjectedInput() {
+        external_input.clear();
+    }
+    /**
+     * Set the next event time to something less than the
+     * nextEventTime method would return. This is used to
+     * force the simulator to apply injected inputs at this
+     * time.
+     */
+    void setNextTime(T t) {
+        tNext = t;
+        output_ready = false;
+    }
     /*
-     * Compute the output values of the imminent component models
-     * if these values have not already been computed.  This will
-     * notify registered EventListeners as the outputs are produced.
+     * Compute the output values of the imminent component models.
+     * This notifies EventListeners as the outputs are produced.
      */
     void computeNextOutput();
-
     /*
-     * Compute the output value of the model in response to an input
-     * at some time in lastEventTime() <= t <= nextEventTime().
-     * This will notify registered EventListeners as the outputs
-     * are produced. If this is the first call since the prior
-     * state change with the given t, then the new output is computed.
-     * Subsequent calls for the same time t simply
-     * append to the input already supplied at time t.
-     * @param input A list of (input target,value) pairs
-     * @param t The time at which the input takes effect
-     */
-    void computeNextOutput(list<Event<X, T>> &input, T t);
-
-    /*
-     * Apply the list of inputs at time t and then compute the next model
-     * states. Requires that lastEventTime() <= t <= nextEventTime().
-     * This, in effect, implements the state transition function of
-     * the resultant model. If the output has already been computed
-     * at time t, then the new input at t is simply appended to the
-     * prior input. Otherwise, the old results are discarded and input
-     * is calculated at the given time.
-     * @param input A list of (input target,value) pairs
-     * @param t The time at which the input takes effect
-     * @return The new, current simulation time
-     */
-
-    T computeNextState(list<Event<X, T>> &input, T t);
-
-    /*
-     * Compute the next state at the time at the time t and with
-     * input supplied at the prior call to computeNextOutput
-     * assuming no computeNextState has intervened. Assumes
-     * t = nextEventTime() and input an empty list if there was
-     * no prior call to computeNextOutput.
+     * Compute the next state of the model.
      * @return The new, current simulation time
      */
     T computeNextState();
 
-    /*
-     * Assign a model to the simulator. This has the same effect as passing
-     * the model to the constructor.
-     */
-    void addModel(shared_ptr<Atomic<X, T>> model) {
-        schedule(model.get(), adevs_zero<T>());
+    void addEventListener(std::shared_ptr<EventListener<X, T>>& listener) {
+        listeners.push_back(listener);
     }
 
-    /*
-     * Recursively add the model and its elements to the schedule
-     * using t as the time of last event.
-     */
-    void schedule(Devs<X, T>* model, T t);
-
-    /*
-     * Recursively remove a model and its components from the schedule
-     * and the imminent/activated lists
-     */
-    void unschedule_model(Devs<X, T>* model);
-
-    set<shared_ptr<Devs<X, T>>> pending_schedule;
-    set<shared_ptr<Devs<X, T>>> pending_unschedule;
-
   private:
-    // Bogus input list for execNextEvent() method
-    list<Event<X, T>> bogus_input;
-    // The event schedule
+    std::shared_ptr<Graph<X,T>> graph;
+    std::list<shared_ptr<Atomic<X, T>>> imm;
+    std::list<shared_ptr<EventListener<X, T>>> listeners;
+    std::list<PinValue<X>> external_input;
     Schedule<X, T> sched;
-    // List of models that are imminent or activated by input
-    list<Atomic<X, T>*> activated;
-    // Mealy systems that we need to process
-    bool allow_mealy_input;
-    bool io_up_to_date;
+    bool output_ready;
+    T tNext;
 
-    T io_time;
+    void schedule(std::shared_ptr<Atomic<X, T>>& model, T t);
 
-    list<MealyAtomic<X, T>*> mealy;
-
-
-    /// Route an event generated by the source model contained in the parent model.
-    void route(Network<X, T>* parent, Devs<X, T>* src, X &x);
-
-    /*
-     * Add an input to the input list of an an atomic model. If the
-     * model is not already active , then this method adds the model to
-     * the activated list.
-     */
-    void inject_event(Atomic<X, T>* model, X &value);
-
-    // Recursively call the model transition of all activated models
-    void transition(Devs<X, T>* model, set<Devs<X, T>*> &called);
-
-    /*
-     * Delete any thing in the output list, and return the input
-     * and output list to the pools.
-     * Recursively clean up network model components.
-     */
-    void clean_up(Devs<X, T>* model);
-
-    /*
-     * Construct the complete descendant set of a network model and store it in s.
-     */
-    void getAllChildren(Network<X, T>* model, set<Devs<X, T>*> &s);
 };
 
 template <typename X, typename T>
-Simulator<X, T>::Simulator(std::list<shared_ptr<Devs<X, T>>> &active)
-    : AbstractSimulator<X, T>(), io_up_to_date(false) {
+Simulator<X, T>::Simulator(std::shared_ptr<Graph<X, T>> &model)
+    : graph(model),output_ready(false) {
     // The Atomic constructor sets the atomic model's
     // tL correctly to zero, and so it is sufficient
     // to only worry about putting models with a
     // non infinite time advance into the schedule.
-    for (auto iter : active) {
-        schedule(iter.get(), adevs_zero<T>());
+    for (auto atomic : model->get_atomics()) {
+        schedule(atomic, adevs_zero<T>());
     }
+    tNext = sched.minPriority();
 }
 
-template <class X, class T>
-void Simulator<X, T>::computeNextOutput(list<Event<X, T>> &input, T t) {
-
-    // Undo any prior output calculation at another time
-    if (io_up_to_date && !(io_time == t)) {
-        typename list<Atomic<X, T>*>::iterator iter;
-        for (auto iter : activated) {
-            clean_up(iter);
-        }
-        activated.clear();
-    }
-    // Input and output happen at the current time.
-    io_time = t;
-    // Get the imminent Moore models from the schedule if we have not
-    // already done so.
-    allow_mealy_input = true;
-    if (t == sched.minPriority() && !io_up_to_date) {
-        // get the list of activated models
-        auto activated_models = sched.visitImminent();
-
-        // process moore models
-        for (auto model : activated_models) {
-            Atomic<X, T>* atmoic_model = model->typeIsAtomic();
-            MealyAtomic<X, T>* mealy_model = model->typeIsMealyAtomic();
-
-            // need to do this because a MealyAtomic is technically both an
-            // Atomic and a MealyAtomic (by inheritance)
-            if (atmoic_model != nullptr && mealy_model == nullptr) {
-                assert(model->outputs->empty());
-                activated.push_back(model);
-                model->output_func(*(model->outputs));
-
-                for (auto y_iter : *(model->outputs)) {
-                    route(model->getParent(), model, y_iter);
-                }
-            } else {
-                assert(mealy_model != nullptr);
-                assert(mealy_model->outputs->empty());
-                mealy.push_back(mealy_model);
-            }
-        }
-    }
-    // Apply the injected inputs.
-    for (auto iter : input) {
-        Atomic<X, T>* amodel = iter.model->typeIsAtomic();
-        if (amodel != nullptr) {
-            inject_event(amodel, iter.value);
-        } else {
-            route(iter.model->typeIsNetwork(), iter.model, iter.value);
-        }
-    }
-    // Only Moore models can influence Mealy models.
-    allow_mealy_input = false;
-    // Iterate over activated Mealy models to calculate their output
-    for (auto m_iter : mealy) {
-        MealyAtomic<X, T>* model = m_iter;
-        assert(model->outputs->empty());
-
-        // Put it in the active set if it is not already there
-        if (!model->activated) {
-            activated.push_back(model);
-            model->activated = true;
-        }
-        // Compute output functions and route the events.
-        if (model->imminent)  // These are the imminent Mealy models
-        {
-            if (!model->activated) {
-                model->typeIsAtomic()->output_func(*(model->outputs));
-            } else {
-                model->output_func(*(model->inputs), *(model->outputs));
-            }
-        } else {
-            assert(model->activated);
-            // These are the Mealy models activated by input
-            model->output_func(sched.minPriority() - model->tL,
-                               *(model->inputs), *(model->outputs));
-        }
-    }
-    // Translate Mealy output to inputs for Moore models. The route method
-    // will throw an exception if an event is sent to a Mealy model.
-    for (auto m_iter : mealy) {
-        MealyAtomic<X, T>* model = m_iter;
-        // Route each event in y
-        for (typename list<X>::iterator y_iter = model->outputs->begin();
-             y_iter != model->outputs->end(); y_iter++) {
-            route(model->getParent(), model, *y_iter);
-        }
-    }
-    mealy.clear();
-    io_up_to_date = true;
+template <typename X, typename T>
+Simulator<X, T>::Simulator(std::shared_ptr<Atomic<X, T>> &model)
+    : graph(new Graph<X,T>()),output_ready(false) {
+    graph->add_atomic(model);
+    schedule(model, adevs_zero<T>());
+    tNext = sched.minPriority();
 }
 
 template <class X, class T>
 void Simulator<X, T>::computeNextOutput() {
-    computeNextOutput(bogus_input, sched.minPriority());
-}
-
-template <class X, class T>
-T Simulator<X, T>::computeNextState(list<Event<X, T>> &input, T t) {
-    computeNextOutput(input, t);
-    assert(io_time == t && io_up_to_date);
-    return computeNextState();
+    output_ready = true;
+    for (auto model : imm) {
+        model->outputs.clear();
+    }
+    imm.clear();
+    if (sched.minPriority() > tNext) {
+        return;
+    }
+    imm = sched.visitImminent();
+    for (auto model : imm) {
+        model->output_func(model->outputs);
+        for (auto listener : listeners) {
+            for (auto y : model->outputs) {
+                listener->outputEvent(*(model.get()), y, tNext);
+            }
+        }
+    }
 }
 
 template <class X, class T>
 T Simulator<X, T>::computeNextState() {
-    if (!io_up_to_date) {
+    T t = tNext;
+    if (!output_ready) {
         computeNextOutput();
     }
-    io_up_to_date = false;
-    T t = io_time, tQ = io_time + adevs_epsilon<T>();
-
-    // Track which models need and have been called
-    set<Devs<X, T>*> called;
-    list<Devs<X, T>*> pending_transitions;
-
-    /*
-     * Compute the states of atomic models.  Store Network models that
-     * need to have their model transition function evaluated in a
-     * special container that will be used when the structure changes are
-     * computed.
-     */
-    for (auto model : activated) {
+    output_ready = false;
+    std::set<std::shared_ptr<Atomic<X,T>>> active;
+    std::list<std::shared_ptr<Atomic<X,T>>> input;
+    /// Construct input bags for each model and get the active set
+    for (auto producer : imm) {
+        active.insert(producer);
+        for (auto x : producer->outputs) {
+            graph->get_atomics(x.pin,input);
+            for (auto consumer : input) {
+                active.insert(consumer);
+                consumer->inputs.push_back(x);
+            }
+            input.clear();
+        }
+        producer->outputs.clear();
+    }
+    for (auto x : external_input) {
+        graph->get_atomics(x.pin,input);
+        for (auto consumer : input) {
+             active.insert(consumer);
+            consumer->inputs.push_back(x);
+        }
+        input.clear();
+    }
+    external_input.clear();
+    imm.clear();
+    for (auto model : active) {
         // Internal event if no input
-        if (model->inputs->empty()) {
+        if (model->inputs.empty()) {
             model->delta_int();
-        } else if (model->imminent) {
+        } else if (model->tN == tNext) {
             // Confluent event if model is imminent and has input
-            model->delta_conf(*(model->inputs));
+            model->delta_conf(model->inputs);
+            model->inputs.clear();
         } else {
             // External event if model is not imminent and has input
-            model->delta_ext(t - model->tL, *(model->inputs));
+            model->delta_ext(tNext - model->tL, model->inputs);
+            model->inputs.clear();
         }
-        // Notify listeners
-        this->notify_state_listeners(model, tQ);
-        // Check for a model transition
-
         // Adjust position in the schedule
-        schedule(model, tQ);
-
-        bool propagate = model->model_transition();
-        auto parent = model->getParent();
-        if (propagate && parent != nullptr) {
-            pending_transitions.push_back(parent);
-        }
+        schedule(model, tNext);
     }
-
-    // The new states are in effect at t + eps so advance t
-    t = tQ;
-
-    while (!pending_transitions.empty()) {
-        auto model = *(pending_transitions.begin());
-        bool const already_called = called.find(model) != called.end();
-        //printf("found=%d, model=%p set=%d\n", already_called, model, called.size());
-        if (!already_called) {
-            bool propagate = model->model_transition();
-            called.insert(model);
-            auto parent = model->getParent();
-            if (propagate && parent != nullptr) {
-                pending_transitions.push_back(parent);
-            }
-        }
-        pending_transitions.pop_front();
-    }
-
-    // Recursive version
-    // for (auto model : activated) {
-    //     transition(model, called);
-    // }
-
-    // Schedule and unschedule any models that were changed
-    for (auto model : pending_schedule) {
-        schedule(model.get(), tQ);
-    }
-    pending_schedule.clear();
-
-    for (auto model : pending_unschedule) {
-        unschedule_model(model.get());
-    }
-    pending_unschedule.clear();
-
-    for (auto model : activated) {
-        clean_up(model);
-    }
-
-    activated.clear();
-    // Return the current simulation time
+    t += adevs_epsilon<T>();
+    tNext = sched.minPriority();
     return t;
 }
 
 template <class X, class T>
-void Simulator<X, T>::transition(Devs<X, T>* model, set<Devs<X, T>*> &called) {
-    bool const already_called = called.find(model) != called.end();
-    //printf("found=%d, model=%p set=%d\n", already_called, model, called.size());
-    if (!already_called) {
-        bool propagate = model->model_transition();
-        called.insert(model);
-        auto parent = model->getParent();
-        if (propagate && parent != nullptr) {
-            transition(parent, called);
-        }
-    }
-}
-
-template <class X, class T>
-void Simulator<X, T>::clean_up(Devs<X, T>* model) {
-    Atomic<X, T>* amodel = model->typeIsAtomic();
-    if (amodel != nullptr) {
-        if (!amodel->inputs->empty()) {
-            amodel->inputs->clear();
-        }
-        if (!amodel->outputs->empty()) {
-
-            amodel->outputs->clear();
-        }
+void Simulator<X, T>::schedule(std::shared_ptr<Atomic<X, T>>& model, T t) {
+    model->tL = t;
+    T dt = model->ta();
+    if (dt == adevs_inf<T>()) {
+        model->tN = adevs_inf<T>();
+        sched.schedule(model, adevs_inf<T>());
     } else {
-        set<Devs<X, T>*> components;
-        model->typeIsNetwork()->getComponents(components);
-        for (auto iter : components) {
-            clean_up(iter);
-        }
-    }
-    model->activated = false;
-    model->imminent = false;
-}
-
-template <class X, class T>
-void Simulator<X, T>::unschedule_model(Devs<X, T>* model) {
-    if (model->typeIsAtomic() != nullptr) {
-        sched.schedule(model->typeIsAtomic(), adevs_inf<T>());
-        activated.remove(model->typeIsAtomic());
-    } else {
-        set<Devs<X, T>*> components;
-        model->typeIsNetwork()->getComponents(components);
-        for (auto iter : components) {
-            unschedule_model(iter);
-        }
-    }
-}
-
-template <class X, class T>
-void Simulator<X, T>::schedule(Devs<X, T>* model, T t) {
-    model->simulator = this;
-    Atomic<X, T>* a = model->typeIsAtomic();
-    if (a != nullptr) {
-        a->tL = t;
-        T dt = a->ta();
-        if (dt == adevs_inf<T>()) {
-            sched.schedule(a, adevs_inf<T>());
-        } else {
-            T tNext = a->tL + dt;
-            if (tNext < a->tL) {
-                exception err("Negative time advance", a);
-                throw err;
-            }
-            sched.schedule(a, tNext);
-        }
-    } else {
-        set<Devs<X, T>*> components;
-        model->typeIsNetwork()->getComponents(components);
-        for (auto iter : components) {
-            schedule(iter, t);
-        }
-    }
-}
-
-template <class X, class T>
-void Simulator<X, T>::inject_event(Atomic<X, T>* model, X &value) {
-    if (io_time < model->tL) {
-        exception err("Attempt to apply input in the past", model);
-        throw err;
-    }
-    // If this is a Mealy model, add it to the list of models that
-    // will need their input calculated
-    if (model->typeIsMealyAtomic()) {
-        if (allow_mealy_input) {
-            // Add it to the list of its not already there
-            if (!model->activated && !model->imminent) {
-                mealy.push_back(model->typeIsMealyAtomic());
-            }
-        } else {
-            exception err("Mealy model coupled to a Mealy model", model);
+        model->tN = model->tL + dt;
+        if (model->tN < model->tL) {
+            exception err("Negative time advance", model.get());
             throw err;
         }
-    }
-    // Add the output to the model's list of output to be processed
-    if (!model->activated) {
-        if (!model->imminent) {
-            activated.push_back(model);
-            model->activated = true;
-        }
-        //model->inputs->clear();
-    }
-    this->notify_input_listeners(model, value, io_time);
-    model->inputs->push_back(value);
-}
-
-template <class X, class T>
-void Simulator<X, T>::route(Network<X, T>* parent, Devs<X, T>* src, X &x) {
-    // Notify event listeners if this is an output event
-    if (parent != src) {
-        this->notify_output_listeners(src, x, io_time);
-    }
-    // No one to do the routing, so return
-    if (parent == nullptr) {
-        return;
-    }
-    // Compute the set of receivers for this value
-    // TODO: Does it make sense to build this object every call?
-    list<Event<X, T>> receivers;
-    parent->route(x, src, receivers);
-    // Deliver the event to each of its targets
-    Atomic<X, T>* amodel = nullptr;
-
-    for (auto rr : receivers) {
-        /*
-         * If the destination is an atomic model, add the event to the IO list
-         * for that model and add model to the list of activated models
-         */
-        amodel = rr.model->typeIsAtomic();
-        if (amodel != nullptr) {
-            inject_event(amodel, rr.value);
-        } else if (rr.model == parent) {
-            // This is an external output from the parent model
-            route(parent->getParent(), parent, rr.value);
-        } else {
-            // This is an input to a coupled model
-            this->notify_input_listeners(rr.model, rr.value, io_time);
-            route(rr.model->typeIsNetwork(), rr.model, rr.value);
-        }
-    }
-    receivers.clear();
-}
-
-template <class X, class T>
-void Simulator<X, T>::getAllChildren(Network<X, T>* model,
-                                     set<Devs<X, T>*> &s) {
-    set<Devs<X, T>*> tmp;
-    // Get the component set
-    model->getComponents(tmp);
-    // Add all of the local level elements to s
-    s.insert(tmp.begin(), tmp.end());
-    // Find the components of type network and update s recursively
-
-    for (auto iter : tmp) {
-        if (iter->typeIsNetwork() != nullptr) {
-            getAllChildren(iter->typeIsNetwork(), s);
-        }
+        sched.schedule(model, model->tN);
     }
 }
-
 
 }  // namespace adevs
 

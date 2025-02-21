@@ -33,6 +33,7 @@
 #include <cfloat>
 #include <cstdlib>
 #include <list>
+#include <cassert>
 #include <memory>
 #include "adevs/models.h"
 #include "adevs/time.h"
@@ -57,11 +58,11 @@ class Schedule {
         heap[0].priority = adevs_sentinel<T>();  // This is a sentinel value
     }
     /// Get the model at the front of the queue.
-    Atomic<X, T>* getMinimum() const { return heap[1].item; }
+    std::shared_ptr<Atomic<X, T>> getMinimum() const { return heap[1].item; }
     /// Get the time of the next event.
     T minPriority() const { return heap[1].priority; }
     /// Visit the imminent models.
-    list<Atomic<X, T>*> visitImminent(void) {
+    list<std::shared_ptr<Atomic<X, T>>> visitImminent(void) {
         activated.clear();
         visitImminent(1);
         return activated;
@@ -69,7 +70,7 @@ class Schedule {
     /// Remove the model at the front of the queue.
     void removeMinimum();
     /// Add, remove, or move a model as required by its priority.
-    void schedule(Atomic<X, T>* model, T priority);
+    void schedule(std::shared_ptr<Atomic<X, T>>& model, T priority);
     /// Returns true if the queue is empty, and false otherwise.
     bool empty() const { return size == 0; }
     /// Get the number of elements in the heap.
@@ -80,7 +81,7 @@ class Schedule {
   private:
     // Definition of an element in the heap.
     struct heap_element {
-        Atomic<X, T>* item;
+        std::shared_ptr<Atomic<X, T>> item;
         T priority;
         // Constructor initializes the item and priority
         heap_element() : item(nullptr), priority(adevs_inf<T>()) {}
@@ -88,7 +89,7 @@ class Schedule {
     unsigned int capacity, size;
     heap_element* heap;
 
-    list<Atomic<X, T>*> activated;
+    list<std::shared_ptr<Atomic<X, T>>> activated;
 
     /// Double the schedule capacity
     void enlarge();
@@ -99,21 +100,13 @@ class Schedule {
     /// Visit the imminent set recursively
     // void visitImminent(ImminentVisitor* visitor, unsigned int root) const;
     void visitImminent(unsigned int root);
-    void visit(Atomic<X, T>* model);
+    void visit(std::shared_ptr<Atomic<X, T>>& model);
 };
 
 template <class X, class T>
-void Schedule<X, T>::visit(Atomic<X, T>* model) {
-    assert(model->outputs->empty());
-    model->imminent = true;
-
-    // Put it in the active list if it is not already there
-    if (!model->activated) {
-        activated.push_back(model);
-        if (model->typeIsMealyAtomic() == nullptr) {
-            model->activated = true;
-        }
-    }
+void Schedule<X, T>::visit(std::shared_ptr<Atomic<X, T>>& model) {
+    assert(model->outputs.empty());
+    activated.push_back(model);
 }
 
 template <class X, class T>
@@ -155,7 +148,7 @@ void Schedule<X, T>::removeMinimum() {
 }
 
 template <class X, class T>
-void Schedule<X, T>::schedule(Atomic<X, T>* model, T priority) {
+void Schedule<X, T>::schedule(std::shared_ptr<Atomic<X, T>>& model, T priority) {
     // If the model is in the schedule
     if (model->q_index != 0) {
         // Remove the model if the next event time is infinite

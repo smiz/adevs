@@ -28,6 +28,6 @@ compare = find_program('utilities/compare.sh')
 run_and_compare = find_program('utilities/run_and_compare.sh')
 
 # Add all the subdirectoriess
-subdir('examples')
+#subdir('examples')
 subdir('src')
 subdir('test')
