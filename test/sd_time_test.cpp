@@ -12,7 +12,7 @@ class Incr : public Atomic<int, sd_time<double>> {
     Incr() : Atomic<int, sd_time<double>>(), count(0) {}
     sd_time<double> ta() {
         if (count % 2 == 0) {
-            return sd_time<double>(count, 0);
+            return sd_time<double>(count, 1);
         }
         return sd_time<double>(0, count);
     }
@@ -38,7 +38,7 @@ class Watch : public Atomic<int, sd_time<double>> {
         int count = (*(xb.begin())).value;
         sd_time<double> expect;
         if (count % 2 == 0) {
-            expect = sd_time<double>(count, 0);
+            expect = sd_time<double>(count, 1);
         } else {
             expect = sd_time<double>(0, count);
         }

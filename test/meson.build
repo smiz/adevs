@@ -1,7 +1,7 @@
 # Add tests in their own subdirectories
 # subdir('dyn_devs')
 # subdir('fmi')
-# subdir('gcd')
+subdir('gcd')
 # subdir('gpt')
 # subdir('listener')
 # subdir('ode')
@@ -32,8 +32,8 @@ test_sd_time_2_ok = fs.copyfile('sd_time_test_2.ok')
 
 test(
     'sd_time_2',
-    compare,
-    args: [test_sd_time_2.full_path(), test_sd_time_2_ok.full_path()],
+    run_and_compare,
+    args: [test_sd_time_2, test_sd_time_2_ok],
 )
 
 #test_mealy = executable('mealy', 'test_mealy.cpp', include_directories: adevs)

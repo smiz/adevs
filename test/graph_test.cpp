@@ -1,6 +1,7 @@
 #include "adevs/graph.h"
 #include <cassert>
 #include <algorithm>
+#include <map>
 using namespace adevs;
 
 class TestAtomic:
@@ -21,7 +22,7 @@ class TestAtomic:
     };
 
 void test1() {
-    std::list<std::shared_ptr<Atomic<int,int>>> models;
+    std::list<std::pair<pin_t,std::shared_ptr<Atomic<int,int>>>> models;
     std::shared_ptr<Atomic<int,int>> a(new TestAtomic());
     std::shared_ptr<Atomic<int,int>> b(new TestAtomic());
     Graph<int,int> g;
@@ -35,31 +36,27 @@ void test1() {
     assert(pin0 != pin1);
     g.connect(pin0,pin1);
     g.connect(pin1,b);
-    g.get_atomics(pin0,models);
     g.connect(pin2,a);
+    g.route(pin0,models);
     assert(models.size() == 1);
-    assert(std::find(models.begin(),models.end(),b) != models.end());
-    assert(std::find(models.begin(),models.end(),a) == models.end());
+    assert((*(models.begin())).second == b);
     models.clear();
-    g.get_atomics(pin1,models);
+    g.route(pin1,models);
     assert(models.size() == 1);
-    assert(std::find(models.begin(),models.end(),b) != models.end());
-    assert(std::find(models.begin(),models.end(),a) == models.end());
+    assert((*(models.begin())).second == b);
     models.clear();
-    g.get_atomics(pin2,models);
+    g.route(pin2,models);
     assert(models.size() == 1);
-    assert(std::find(models.begin(),models.end(),b) == models.end());
-    assert(std::find(models.begin(),models.end(),a) != models.end());
+    assert((*(models.begin())).second == a);
     models.clear();
     g.remove_atomic(a);
     assert(g.get_atomics().find(a) == g.get_atomics().end());
     assert(g.get_atomics().find(b) != g.get_atomics().end());
-    g.get_atomics(pin1,models);
+    g.route(pin1,models);
     assert(models.size() == 1);
-    assert(std::find(models.begin(),models.end(),b) != models.end());
-    assert(std::find(models.begin(),models.end(),a) == models.end());
+    assert((*(models.begin())).second == b);
     models.clear();
-    g.get_atomics(pin2,models);
+    g.route(pin2,models);
     assert(models.size() == 0);
 }
 

@@ -5,27 +5,26 @@
 #include "adevs/adevs.h"
 #include "object.h"
 
-class counter : public adevs::Atomic<PortValue> {
+class counter : public adevs::Atomic<ObjectPtr> {
   public:
-    static int const in;
+    adevs::pin_t in;
 
-    counter() : adevs::Atomic<PortValue>(), count(0), sigma(DBL_MAX), t(0.0) {}
+    counter() : adevs::Atomic<ObjectPtr>(),
+      count(0), sigma(adevs_inf<double>()), t(0.0) {}
     void delta_int() { assert(false); }
-    void delta_ext(double e, list<PortValue> const &x) {
+    void delta_ext(double e, std::list<adevs::PinValue<ObjectPtr>> const &x) {
         t += e;
         count += x.size();
         printf("Count is %d @ %d\n", count, (int)t);
-        sigma = DBL_MAX;
+        sigma = adevs_inf<double>();
     }
-    void delta_conf(list<PortValue> const &) { assert(false); }
-    void output_func(list<PortValue> &) { assert(false); }
+    void delta_conf(std::list<adevs::PinValue<ObjectPtr>> const &) { assert(false); }
+    void output_func(std::list<adevs::PinValue<ObjectPtr>> &) { assert(false); }
     double ta() { return sigma; }
 
   private:
     int count;
     double sigma, t;
 };
-
-int const counter::in = 0;
 
 #endif

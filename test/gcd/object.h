@@ -1,5 +1,6 @@
 #ifndef _object_h_
 #define _object_h_
+#include "adevs/adevs.h"
 
 class object {
   public:
@@ -8,6 +9,6 @@ class object {
     ~object() {}
 };
 
-typedef adevs::PortValue<object*> PortValue;
+typedef std::shared_ptr<object> ObjectPtr;
 
 #endif

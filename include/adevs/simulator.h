@@ -77,14 +77,15 @@ class Simulator {
     Simulator(std::shared_ptr<Graph<X, T>> model);
 
     /*
-     * Get the model's next event time
+     * Get the model's next event time. This is the time of the
+     * next output and change of state. 
      * @return The absolute time of the next event
      */
     T nextEventTime() { return sched.minPriority(); }
 
     /*
      * Execute the simulation cycle at time nextEventTime()
-     * @return The updated simulation time
+     * @return The current simulation time
      */
     T execNextEvent() { return computeNextState(); }
 
@@ -184,36 +185,41 @@ void Simulator<X, T>::computeNextOutput() {
 
 template <class X, class T>
 T Simulator<X, T>::computeNextState() {
+    PinValue<X> x;
     T t = tNext+adevs_epsilon<T>();
     if (!output_ready) {
         computeNextOutput();
     }
     output_ready = false;
     std::set<std::shared_ptr<Atomic<X,T>>> active;
-    std::list<std::shared_ptr<Atomic<X,T>>> input;
+    std::list<std::pair<pin_t,std::shared_ptr<Atomic<X,T>>>> input;
     /// Construct input bags for each model and get the active set
     for (auto producer : imm) {
         active.insert(producer);
-        for (auto x : producer->outputs) {
-            graph->get_atomics(x.pin,input);
+        for (auto y : producer->outputs) {
+            x.value = y.value;
+            graph->route(y.pin,input);
             for (auto consumer : input) {
-                active.insert(consumer);
-                consumer->inputs.push_back(x);
+                active.insert(consumer.second);
+                x.pin = consumer.first;
+                consumer.second->inputs.push_back(x);
                 for (auto listener : listeners) {
-                    listener->inputEvent(*(consumer.get()), x, tNext);
+                    listener->inputEvent(*(consumer.second.get()), x, tNext);
                 }
             }
             input.clear();
         }
         producer->outputs.clear();
     }
-    for (auto x : external_input) {
-        graph->get_atomics(x.pin,input);
+    for (auto y : external_input) {
+        x.value = y.value;
+        graph->route(y.pin,input);
         for (auto consumer : input) {
-            active.insert(consumer);
-            consumer->inputs.push_back(x);
+            active.insert(consumer.second);
+            x.pin = consumer.first;
+            consumer.second->inputs.push_back(x);
             for (auto listener : listeners) {
-                listener->inputEvent(*(consumer.get()), x, tNext);
+                listener->inputEvent(*(consumer.second.get()), x, tNext);
             }
         }
         input.clear();

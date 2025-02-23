@@ -78,7 +78,7 @@ int main() {
     model->connect(p2->in,p2);
     model->connect(p1->out,p2->in);
     model->connect(p2->out,p1->in);
-    PinValue<string> start;
+    adevs::PinValue<string> start;
     start.pin = p1->in;
     start.value = "a";
     Simulator<string> sim(model);

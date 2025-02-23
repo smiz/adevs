@@ -5,49 +5,60 @@
 #include "delay.h"
 #include "genr.h"
 
-class gcd : public adevs::Digraph<object*> {
+class gcd {
   public:
-    static int const in;
-    static int const out;
-    static int const signal;
-    static int const start;
-    static int const stop;
+    adevs::pin_t in;
+    adevs::pin_t out;
+    adevs::pin_t signal;
+    adevs::pin_t start;
+    adevs::pin_t stop;
 
-    gcd(std::vector<double> const &pattern, double dt, int iterations,
-        bool active = false)
-        : adevs::Digraph<object*>() {
-        genr* g = new genr(pattern, iterations, active);
-        delay* d = new delay(dt);
-        counter* c = new counter;
-        build(g, c, d);
+    gcd(adevs::Graph<ObjectPtr>& graph, std::vector<double> const &pattern, double dt, int iterations,
+        bool active = false) {
+        auto g = std::shared_ptr<genr>(new genr(pattern, iterations, active));
+        auto d = std::shared_ptr<delay>(new delay(dt));
+        auto c = std::make_shared<counter>();
+        build(graph, g, c, d);
     }
-    gcd(double period, double dt, int iterations, bool active = false)
-        : adevs::Digraph<object*>() {
-        genr* g = new genr(period, iterations, active);
-        delay* d = new delay(dt);
-        counter* c = new counter;
-        build(g, c, d);
+    gcd(adevs::Graph<ObjectPtr>& graph, double period, double dt, int iterations, bool active = false) {
+        auto g = std::shared_ptr<genr>(new genr(period, iterations, active));
+        auto d = std::shared_ptr<delay>(new delay(dt));
+        auto c = std::make_shared<counter>();
+        build(graph, g, c, d);
     }
     ~gcd() {}
 
   private:
-    void build(genr* g, counter* c, delay* d) {
-        add(g);
-        add(d);
-        add(c);
-        couple(this, in, d, d->in);
-        couple(this, start, g, g->start);
-        couple(this, stop, g, g->stop);
-        couple(g, g->signal, this, signal);
-        couple(d, d->out, this, out);
-        couple(d, d->out, c, c->in);
+    void build(
+          adevs::Graph<ObjectPtr>& graph,
+          std::shared_ptr<genr> g,
+          std::shared_ptr<counter> c,
+          std::shared_ptr<delay> d) {
+        g->signal = graph.add_pin();
+        g->start = graph.add_pin();
+        g->stop = graph.add_pin();
+        c->in = graph.add_pin();
+        d->in = graph.add_pin();
+        d->out = graph.add_pin();
+        in = graph.add_pin();
+        out = graph.add_pin();
+        start = graph.add_pin();
+        stop = graph.add_pin();
+        signal = graph.add_pin();
+        graph.add_atomic(g);
+        graph.add_atomic(d);
+        graph.add_atomic(c);
+        graph.connect(in, d->in);
+        graph.connect(start, g->start);
+        graph.connect(stop, g->stop);
+        graph.connect(g->signal, signal);
+        graph.connect(d->out, out);
+        graph.connect(d->out, c->in);
+        graph.connect(c->in,c);
+        graph.connect(d->in,d);
+        graph.connect(g->stop,g);
+        graph.connect(g->start,g);
     }
 };
-
-int const gcd::in(0);
-int const gcd::out(1);
-int const gcd::start(2);
-int const gcd::stop(3);
-int const gcd::signal(4);
 
 #endif

@@ -79,8 +79,8 @@ class Graph {
         /// @brief  Get the atomic models that are connected to a pin_t. These
         /// are the models that will receive input when an event appears on the pin_t.
         /// @param pin The pin to query.
-        /// @param models A list to be filled with models that are connected to the pin_t.
-        void get_atomics(pin_t pin, std::list<std::shared_ptr<Atomic<X, T>>>& models) const;
+        /// @param models A list to be filled with models and pins that are connected to the supplied pin.
+        void route(pin_t pin, std::list<std::pair<pin_t,std::shared_ptr<Atomic<X, T>>>>& models) const;
         /// @brief  Get the set of all atomic models that are part of the graph.
         /// @return The set of all atomic models.
         const std::set<std::shared_ptr<Atomic<X,T>>>& get_atomics() const { return models; }
@@ -136,17 +136,17 @@ void Graph<X, T>::disconnect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
 }
 
 template <typename X, typename T>
-void Graph<X,T>::get_atomics(pin_t pin, std::list<std::shared_ptr<Atomic<X, T>>>& models) const {
+void Graph<X,T>::route(pin_t pin, std::list<std::pair<pin_t,std::shared_ptr<Atomic<X, T>>>>& models) const {
     auto i = pin_to_atomic.find(pin);
     if (i != pin_to_atomic.end()) {
         for (auto j = i->second.begin(); j != i->second.end(); j++) {
-            models.push_back(*j);
+            models.push_back(std::pair<pin_t,std::shared_ptr<Atomic<X, T>>>(pin,*j));
         }
     }
     auto r = pin_to_pin.find(pin);
     if (r != pin_to_pin.end()) {
         for (auto s = r->second.begin(); s != r->second.end(); s++) {
-            get_atomics(*s, models);
+            route(*s, models);
         }
     }
 }

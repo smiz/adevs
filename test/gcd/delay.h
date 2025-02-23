@@ -6,14 +6,14 @@
 #include "adevs/adevs.h"
 #include "object.h"
 
-typedef std::list<std::pair<double, object*>> delay_q;
+typedef std::list<std::pair<double, ObjectPtr>> delay_q;
 
-class delay : public adevs::Atomic<PortValue> {
+class delay : public adevs::Atomic<ObjectPtr> {
   public:
-    static int const in;
-    static int const out;
+    adevs::pin_t in;
+    adevs::pin_t out;
 
-    delay(double t) : adevs::Atomic<PortValue>(), dt(t), sigma(DBL_MAX) {}
+    delay(double t) : adevs::Atomic<ObjectPtr>(), dt(t), sigma(adevs_inf<double>()) {}
     void delta_int() {
         delay_q::iterator i;
         for (i = q.begin(); i != q.end(); i++) {
@@ -21,7 +21,6 @@ class delay : public adevs::Atomic<PortValue> {
         }
         while (!q.empty()) {
             if (q.front().first <= 1E-14) {
-                delete q.front().second;
                 q.pop_front();
             } else {
                 assert(q.front().first >= 0.0);
@@ -29,33 +28,33 @@ class delay : public adevs::Atomic<PortValue> {
                 return;
             }
         }
-        sigma = DBL_MAX;
+        sigma = adevs_inf<double>();
     }
-    void delta_ext(double e, list<PortValue> const &x) {
+    void delta_ext(double e, std::list<adevs::PinValue<ObjectPtr>> const &x) {
         delay_q::iterator i;
         for (i = q.begin(); i != q.end(); i++) {
             (*i).first -= e;
         }
-        list<PortValue>::const_iterator xi;
+        std::list<adevs::PinValue<ObjectPtr>>::const_iterator xi;
         for (xi = x.begin(); xi != x.end(); xi++) {
-            assert((*xi).port == in);
+            assert((*xi).pin == in);
             q.push_back(
-                std::pair<double, object*>(dt, new object(*((*xi).value))));
+                std::pair<double, ObjectPtr>(dt, ObjectPtr(new object(*((*xi).value)))));
         }
         assert(q.front().first >= 0.0);
         sigma = q.front().first;
     }
-    void delta_conf(list<PortValue> const &x) {
+    void delta_conf(std::list<adevs::PinValue<ObjectPtr>> const &x) {
         delta_int();
         delta_ext(0.0, x);
     }
-    void output_func(list<PortValue> &y) {
+    void output_func(std::list<adevs::PinValue<ObjectPtr>> &y) {
         delay_q::iterator i;
         for (i = q.begin(); i != q.end(); i++) {
             if ((*i).first <= ta()) {
-                PortValue pv;
-                pv.port = out;
-                pv.value = new object(*((*i).second));
+                adevs::PinValue<ObjectPtr> pv;
+                pv.pin = out;
+                pv.value = ObjectPtr(new object(*((*i).second)));
                 y.push_back(pv);
             }
         }
@@ -66,8 +65,5 @@ class delay : public adevs::Atomic<PortValue> {
     double dt, sigma;
     delay_q q;
 };
-
-int const delay::in = 0;
-int const delay::out = 1;
 
 #endif

@@ -5,15 +5,18 @@ using namespace std;
 
 int main() {
     cout << "Test 5" << endl;
-    adevs::Digraph<object*> model;
-    gcd* c = new gcd(10, 2, 1, false);
-    genr* g = new genr(50, 1000, true);
-    model.add(c);
-    model.add(g);
-    model.couple(g, g->signal, c, c->in);
-    model.couple(c, c->out, g, g->stop);
-    adevs::Simulator<PortValue> sim(&model);
-    while (sim.nextEventTime() < DBL_MAX) {
+    auto model = std::make_shared<adevs::Graph<ObjectPtr>>();
+    auto c = std::make_shared<gcd>(*model, 10, 2, 1, false);
+    auto g = std::make_shared<genr>(50, 1000, true);
+    g->signal = model->add_pin();
+    g->start = model->add_pin();
+    g->stop = model->add_pin();
+    model->add_atomic(g);
+    model->connect(g->signal, c->in);
+    model->connect(c->out, g->stop);
+    model->connect(g->stop, g);
+    adevs::Simulator<ObjectPtr> sim(model);
+    while (sim.nextEventTime() < adevs_inf<double>()) {
         sim.execNextEvent();
     }
     cout << "Test done" << endl;

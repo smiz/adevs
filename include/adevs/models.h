@@ -56,6 +56,7 @@ typedef int pin_t;
 template <typename ValueType>
 class PinValue {
   public:
+    PinValue(){}
     PinValue(pin_t pin, ValueType value):pin(pin),value(value){}
     PinValue(const PinValue& src) : pin(src.pin),value(src.value) {}
     const PinValue<ValueType>& operator=(const PinValue& src) {

@@ -6,14 +6,14 @@
 #include "adevs/adevs.h"
 #include "object.h"
 
-class genr : public adevs::Atomic<PortValue> {
+class genr : public adevs::Atomic<ObjectPtr> {
   public:
-    static int const stop;
-    static int const start;
-    static int const signal;
+    adevs::pin_t stop;
+    adevs::pin_t start;
+    adevs::pin_t signal;
 
     genr(std::vector<double> const &pattern, int iterations, bool active = true)
-        : adevs::Atomic<PortValue>(),
+        : adevs::Atomic<ObjectPtr>(),
           pattern(pattern),
           active(active),
           init_state(active),
@@ -21,7 +21,7 @@ class genr : public adevs::Atomic<PortValue> {
         init();
     }
     genr(double period, int iterations, bool active = true)
-        : adevs::Atomic<PortValue>(),
+        : adevs::Atomic<ObjectPtr>(),
           active(active),
           init_state(active),
           iterations(iterations) {
@@ -32,7 +32,7 @@ class genr : public adevs::Atomic<PortValue> {
         active = init_state;
         count = 1;
         if (!active) {
-            sigma = DBL_MAX;
+            sigma = adevs_inf<double>();
         } else {
             assert(pattern[0] >= 0.0);
             sigma = pattern[0];
@@ -40,18 +40,18 @@ class genr : public adevs::Atomic<PortValue> {
     }
     void delta_int() {
         if (count >= iterations) {
-            sigma = DBL_MAX;
+            sigma = adevs_inf<double>();
         } else {
             assert(pattern[count % pattern.size()] >= 0.0);
             sigma = pattern[count++ % pattern.size()];
         }
     }
-    void delta_ext(double, list<PortValue> const &x) {
-        sigma = DBL_MAX;
+    void delta_ext(double, std::list<adevs::PinValue<ObjectPtr>> const &x) {
+        sigma = adevs_inf<double>();
         active = false;
-        list<PortValue>::const_iterator i;
+        std::list<adevs::PinValue<ObjectPtr>>::const_iterator i;
         for (i = x.begin(); i != x.end(); i++) {
-            if ((*i).port == start) {
+            if ((*i).pin == start) {
                 if (active == false) {
                     active = true;
                     count = 1;
@@ -63,11 +63,11 @@ class genr : public adevs::Atomic<PortValue> {
         }
         printf("Got genr.stop\n");
     }
-    void delta_conf(list<PortValue> const &x) { delta_ext(ta(), x); }
-    void output_func(list<PortValue> &y) {
-        PortValue pv;
-        pv.port = signal;
-        pv.value = new object();
+    void delta_conf(std::list<adevs::PinValue<ObjectPtr>> const &x) { delta_ext(ta(), x); }
+    void output_func(std::list<adevs::PinValue<ObjectPtr>> &y) {
+        adevs::PinValue<ObjectPtr> pv;
+        pv.pin = signal;
+        pv.value = std::make_shared<object>();
         y.push_back(pv);
     }
     double ta() { return sigma; }
@@ -80,9 +80,5 @@ class genr : public adevs::Atomic<PortValue> {
     int count;
     double sigma;
 };
-
-int const genr::stop = 0;
-int const genr::start = 1;
-int const genr::signal = 2;
 
 #endif
