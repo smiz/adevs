@@ -110,8 +110,10 @@ class Simulator {
      * time.
      */
     void setNextTime(T t) {
+        if (t != tNext) {
+            output_ready = false;
+        }
         tNext = t;
-        output_ready = false;
     }
     /*
      * Compute the output values of the imminent component models.

@@ -35,22 +35,21 @@ int main() {
         if (sim_c.nextEventTime() == tN) {
             sim_c.computeNextOutput();
         }
-        list<pair<adevs::Atomic<ObjectPtr>&,adevs::PinValue<ObjectPtr>>> y;
         auto iter = listener->output.begin();
         for (; iter != listener->output.end(); iter++) {
-            assert((*iter).first == *g);
+            assert(&((*iter).first) == g.get());
             if ((*iter).second.pin == g->signal) {
-                adevs::Event<PortValue> event;
-                event.model = c;
-                event.value.port = c->in;
-                event.value.value = (*iter).value.value;
-                y.push_back(event);
+                adevs::PinValue<ObjectPtr> event;
+                event.pin = c->in;
+                event.value = (*iter).second.value;
+                sim_c.injectInput(event);
             }
         }
-        listener.output.clear();
-        assert(sim_c.computeNextState(y, tN) == tN + adevs_epsilon<double>());
-        y.clear();
-        assert(sim_g.computeNextState(y, tN) == tN + adevs_epsilon<double>());
+        listener->output.clear();
+        sim_c.setNextTime(tN);
+        assert(sim_c.computeNextState() == tN + adevs_epsilon<double>());
+        sim_g.setNextTime(tN);
+        assert(sim_g.computeNextState() == tN + adevs_epsilon<double>());
     }
     cout << "Test done" << endl;
     return 0;

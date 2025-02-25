@@ -1,10 +1,10 @@
-#test_x1 = executable('x1', 'xtest1.cpp', include_directories: adevs)
-#test_x1_ok = fs.copyfile('test1x.ok')
-#test('gcd-x1', compare, args: [test_x1, test_x1_ok])
+test_x1 = executable('x1', 'xtest1.cpp', include_directories: adevs)
+test_x1_ok = fs.copyfile('test1x.ok')
+test('gcd-x1', compare, args: [test_x1, test_x1_ok])
 
-#test_x2 = executable('x2', 'xtest2.cpp', include_directories: adevs)
-#test_x2_ok = fs.copyfile('test2x.ok')
-#test('gcd-x2', compare, args: [test_x2.full_path(), test_x2_ok.full_path()])
+test_x2 = executable('x2', 'xtest2.cpp', include_directories: adevs)
+test_x2_ok = fs.copyfile('test2x.ok')
+test('gcd-x2', compare, args: [test_x2, test_x2_ok])
 
 test_t1 = executable('t1', 'test1.cpp', include_directories: adevs)
 test_t1_ok = fs.copyfile('test1.ok')
