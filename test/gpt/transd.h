@@ -12,11 +12,11 @@ on its ariv port, finished jobs on its solved port,
 and generates and output on its out port when the observation
 interval has elapsed.
 */
-class transd : public adevs::Atomic<PortValue> {
+class transd : public adevs::Atomic<job> {
   public:
     /// Constructor
     transd(double observ_time)
-        : adevs::Atomic<PortValue>(),
+        : adevs::Atomic<job>(),
           observation_time(observ_time),
           sigma(observation_time),
           total_ta(0.0),
@@ -47,17 +47,17 @@ class transd : public adevs::Atomic<PortValue> {
         std::cout << "THROUGHPUT = " << throughput << std::endl;
         // Passivate once the data collection period has ended and the
         // results are reported.
-        sigma = DBL_MAX;
+        sigma = adevs_inf<double>();
     }
     /// External transition function
-    void delta_ext(double e, list<PortValue> const &x) {
+    void delta_ext(double e, std::list<PortValue> const &x) {
         // Keep track of the simulation time
         t += e;
         // Save new jobs in order to compute statistics when they are
         // completed.
         list<PortValue>::iterator iter;
         for (auto iter : x) {
-            if (iter.port == ariv) {
+            if (iter.pin == ariv) {
                 job j(iter.value);
                 j.t = t;
                 std::cout << "Start job " << j.id << " @ t = " << t
@@ -67,7 +67,7 @@ class transd : public adevs::Atomic<PortValue> {
         }
         // Compute time required to process completed jobs
         for (auto iter : x) {
-            if (iter.port == solved) {
+            if (iter.pin == solved) {
                 job j(iter.value);
                 std::vector<job>::iterator i = jobs_arrived.begin();
                 for (; i != jobs_arrived.end(); i++) {
@@ -86,12 +86,12 @@ class transd : public adevs::Atomic<PortValue> {
         sigma -= e;
     }
 
-    void delta_conf(list<PortValue> const &x) {
+    void delta_conf(std::list<PortValue> const &x) {
         delta_int();
         delta_ext(0.0, x);
     }
 
-    void output_func(list<PortValue> &y) {
+    void output_func(std::list<PortValue> &y) {
         /// Generate an output event to stop the generator
         job j;
         PortValue pv(out, j);
@@ -105,10 +105,10 @@ class transd : public adevs::Atomic<PortValue> {
         jobs_solved.clear();
     }
     /// Model input port
-    static int const ariv;
-    static int const solved;
+    int ariv;
+    int solved;
     /// Model output port
-    static int const out;
+    int out;
 
   private:
     /// Model state variables
@@ -116,10 +116,5 @@ class transd : public adevs::Atomic<PortValue> {
     std::vector<job> jobs_solved;
     double observation_time, sigma, total_ta, t;
 };
-
-/// Assign unique 'names' to ports
-int const transd::ariv(0);
-int const transd::solved(1);
-int const transd::out(2);
 
 #endif

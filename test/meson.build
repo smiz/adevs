@@ -2,7 +2,7 @@
 # subdir('dyn_devs')
 # subdir('fmi')
 subdir('gcd')
-# subdir('gpt')
+subdir('gpt')
 # subdir('listener')
 # subdir('ode')
 # subdir('poly')

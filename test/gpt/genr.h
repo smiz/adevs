@@ -9,11 +9,11 @@ producing jobs when it receives an input on its start port.
 It stops producing jobs when it receives an input on its
 stop port.  Jobs appear on the out port.
 */
-class genr : public adevs::Atomic<PortValue> {
+class genr : public adevs::Atomic<job> {
   public:
     /// Constructor.  The generator period is provided here.
     genr(double period)
-        : adevs::Atomic<PortValue>(), period(period), sigma(period), count(0) {}
+        : adevs::Atomic<job>(), period(period), sigma(period), count(0) {}
     /// Internal transition function
     void delta_int() {
         /*
@@ -25,28 +25,28 @@ class genr : public adevs::Atomic<PortValue> {
         sigma = period;
     }
     /// External transition function
-    void delta_ext(double e, list<PortValue> const &x) {
+    void delta_ext(double e, std::list<PortValue> const &x) {
         // Continue with next event time unchanged if, for some reason,
         // the input is on neither on these ports.
         sigma -= e;
         // Look for input on the start port.  If input is found,
         // hold until it is time to produce the first output.
-        list<PortValue>::const_iterator iter;
+        std::list<PortValue>::const_iterator iter;
         for (iter = x.begin(); iter != x.end(); iter++) {
-            if ((*iter).port == start) {
+            if ((*iter).pin == start) {
                 sigma = period;
             }
         }
         // Look for input on the stop port.  If input is found,
         // stop the generator by setting our time of next event to infinity.
         for (iter = x.begin(); iter != x.end(); iter++) {
-            if ((*iter).port == stop) {
-                sigma = DBL_MAX;
+            if ((*iter).pin == stop) {
+                sigma = adevs_inf<double>();
             }
         }
     }
     /// Confluent transition function
-    void delta_conf(list<PortValue> const &x) {
+    void delta_conf(std::list<PortValue> const &x) {
         // When an internal and external event coincide, compute
         // the internal state transition then process the input.
         delta_int();
@@ -64,20 +64,15 @@ class genr : public adevs::Atomic<PortValue> {
     /// Output doesn't require heap allocation, so don't do anything
 
     /// Model input ports
-    static int const start;
-    static int const stop;
+    int start;
+    int stop;
     /// Model output port
-    static int const out;
+    int out;
 
   private:
     /// Model state variables
     double period, sigma;
     int count;
 };
-
-/// Create the static ports and assign them unique 'names' (numbers)
-int const genr::stop(0);
-int const genr::start(1);
-int const genr::out(2);
 
 #endif
