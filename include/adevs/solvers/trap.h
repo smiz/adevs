@@ -28,8 +28,10 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_trap_h_
 #define _adevs_trap_h_
+
 #include <kinsol/kinsol.h>
 #include <nvector/nvector_serial.h>
 #include <sundials/sundials_types.h>
@@ -42,14 +44,15 @@
 #include <cstring>
 #include "adevs/solvers/hybrid.h"
 
+
 namespace adevs {
 
 /*
  * This is the second order accurate trapezoidal method. You must supply
  * a jacobian to use this integration method.
  */
-template <typename X>
-class trap : public ode_solver<X> {
+template <typename ValueType>
+class trap : public ode_solver<ValueType> {
   public:
     /*
      * Create an integrator that will use the given
@@ -62,7 +65,8 @@ class trap : public ode_solver<X> {
      * @param silent If set to true, the KINSOL error and info messages are surpressed.
      * The default value is false.
      */
-    trap(ode_system<X>* sys, double err_tol, double h_max, bool silent = false);
+    trap(ode_system<ValueType>* sys, double err_tol, double h_max,
+         bool silent = false);
     /// Destructor
     ~trap();
     double integrate(double* q, double h_lim);
@@ -90,7 +94,7 @@ class trap : public ode_solver<X> {
     SUNLinearSolver LS;
 
     struct kinsol_data_t {
-        trap<X>* self;
+        trap<ValueType>* self;
         double h;
     };
 
@@ -107,8 +111,9 @@ class trap : public ode_solver<X> {
     static void silent_info_handler(char const*, char const*, char*, void*) {}
 };
 
-template <typename X>
-int trap<X>::check_retval(void* retvalvalue, char const* funcname, int opt) {
+template <typename ValueType>
+int trap<ValueType>::check_retval(void* retvalvalue, char const* funcname,
+                                  int opt) {
     int* errretval;
     /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
     if (opt == 0 && retvalvalue == NULL) {
@@ -128,8 +133,8 @@ int trap<X>::check_retval(void* retvalvalue, char const* funcname, int opt) {
     return (0);
 }
 
-template <typename X>
-int trap<X>::func(N_Vector y, N_Vector f, void* user_data) {
+template <typename ValueType>
+int trap<ValueType>::func(N_Vector y, N_Vector f, void* user_data) {
     realtype* yd = N_VGetArrayPointer(y);
     realtype* fd = N_VGetArrayPointer(f);
     kinsol_data_t* data = static_cast<kinsol_data_t*>(user_data);
@@ -140,9 +145,9 @@ int trap<X>::func(N_Vector y, N_Vector f, void* user_data) {
     return 0;
 }
 
-template <typename X>
-int trap<X>::jac(N_Vector y, N_Vector f, SUNMatrix J, void* user_data,
-                 N_Vector tmp1, N_Vector tmp2) {
+template <typename ValueType>
+int trap<ValueType>::jac(N_Vector y, N_Vector f, SUNMatrix J, void* user_data,
+                         N_Vector tmp1, N_Vector tmp2) {
     realtype* yd = N_VGetArrayPointer(y);
     realtype* Jd = SUNDenseMatrix_Data(J);
     kinsol_data_t* data = static_cast<kinsol_data_t*>(user_data);
@@ -158,8 +163,8 @@ int trap<X>::jac(N_Vector y, N_Vector f, SUNMatrix J, void* user_data,
     return 0;
 }
 
-template <typename X>
-void trap<X>::prep_kinsol(bool silent) {
+template <typename ValueType>
+void trap<ValueType>::prep_kinsol(bool silent) {
     int retval;
     kinsol_data.self = this;
     /* Create vectors for solution, scales, and jacobian */
@@ -214,9 +219,10 @@ void trap<X>::prep_kinsol(bool silent) {
     }
 }
 
-template <typename X>
-trap<X>::trap(ode_system<X>* sys, double err_tol, double h_max, bool silent)
-    : ode_solver<X>(sys), err_tol(err_tol), h_max(h_max), h_cur(h_max) {
+template <typename ValueType>
+trap<ValueType>::trap(ode_system<ValueType>* sys, double err_tol, double h_max,
+                      bool silent)
+    : ode_solver<ValueType>(sys), err_tol(err_tol), h_max(h_max), h_cur(h_max) {
     guess = new double[sys->numVars()];
     dq = new double[sys->numVars()];
     k = new double[sys->numVars()];
@@ -224,8 +230,8 @@ trap<X>::trap(ode_system<X>* sys, double err_tol, double h_max, bool silent)
     prep_kinsol(silent);
 }
 
-template <typename X>
-trap<X>::~trap() {
+template <typename ValueType>
+trap<ValueType>::~trap() {
     delete[] guess;
     delete[] dq;
     delete[] k;
@@ -236,16 +242,16 @@ trap<X>::~trap() {
     SUNMatDestroy(J);
 }
 
-template <typename X>
-void trap<X>::advance(double* q, double h) {
+template <typename ValueType>
+void trap<ValueType>::advance(double* q, double h) {
     double dt;
     while ((dt = integrate(q, h)) < h) {
         h -= dt;
     }
 }
 
-template <typename X>
-bool trap<X>::step(double* q, double h, double const* dq0) {
+template <typename ValueType>
+bool trap<ValueType>::step(double* q, double h, double const* dq0) {
     int const N = this->sys->numVars();
     realtype* yd = N_VGetArrayPointer(y);
     // Fixed term in the trapezoidal integration rule
@@ -267,8 +273,8 @@ bool trap<X>::step(double* q, double h, double const* dq0) {
     return true;
 }
 
-template <typename X>
-double trap<X>::integrate(double* q, double h_lim) {
+template <typename ValueType>
+double trap<ValueType>::integrate(double* q, double h_lim) {
     // Pick the step size based on our guess for the best
     // and the supplied limits
     double h = std::min<double>(h_cur, std::min<double>(h_max, h_lim));

@@ -28,8 +28,10 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_fmi_h_
 #define _adevs_fmi_h_
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -54,6 +56,7 @@
 #define CLOSE_LIB(hndl)      dlclose(hndl)
 #endif
 
+
 namespace adevs {
 
 /*
@@ -67,8 +70,8 @@ namespace adevs {
  * this information regardless if you are using the FMI inside
  * of a larger discrete event simulation.
  */
-template <typename X>
-class FMI : public ode_system<X> {
+template <typename OutputType>
+class FMI : public ode_system<OutputType> {
   public:
     /*
      * This constructs a wrapper around an FMI. The constructor
@@ -116,19 +119,20 @@ class FMI : public ode_system<X> {
      * The external transition See the notes on the internal_event function for
      * derived classes.
      */
-    virtual void external_event(double* q, double e, list<X> const &xb);
+    virtual void external_event(double* q, double e,
+                                list<OutputType> const &xb);
     /*
      * The confluent transition function. See the notes on the internal_event function for
      * derived classes.
      */
     virtual void confluent_event(double* q, bool const* state_event,
-                                 list<X> const &xb);
+                                 list<OutputType> const &xb);
     /*
      * The output function. This can read variables from the FMI, but should
      * not make any modifications to those variables.
      */
     virtual void output_func(double const* q, bool const* state_event,
-                             list<X> &yb);
+                             list<OutputType> &yb);
 
     /// Get the current time
     double get_time() const { return t_now; }
@@ -236,15 +240,15 @@ class FMI : public ode_system<X> {
 };
 
 
-template <typename X>
-FMI<X>::FMI(char const* modelname, char const* guid,
-            char const* resource_location, int num_state_variables,
-            int num_event_indicators, char const* so_file_name,
-            double const tolerance, int num_extra_event_indicators,
-            double start_time, bool provides_jacobian)
+template <typename OutputType>
+FMI<OutputType>::FMI(char const* modelname, char const* guid,
+                     char const* resource_location, int num_state_variables,
+                     int num_event_indicators, char const* so_file_name,
+                     double const tolerance, int num_extra_event_indicators,
+                     double start_time, bool provides_jacobian)
     :  // One extra variable at the end for time
-      ode_system<X>(num_state_variables + 1,
-                    num_event_indicators + num_extra_event_indicators),
+      ode_system<OutputType>(num_state_variables + 1,
+                             num_event_indicators + num_extra_event_indicators),
       next_time_event(adevs_inf<double>()),
       t_now(start_time),
       so_hndl(NULL),
@@ -265,8 +269,8 @@ FMI<X>::FMI(char const* modelname, char const* guid,
         }
     }
     // Get points to the FMI functions
-    fmi2CallbackFunctions tmp = {adevs::FMI<X>::fmilogger, calloc, free, NULL,
-                                 NULL};
+    fmi2CallbackFunctions tmp = {adevs::FMI<OutputType>::fmilogger, calloc,
+                                 free, NULL, NULL};
     callbackFuncs = new fmi2CallbackFunctions(tmp);
     so_hndl = OPEN_LIB(so_file_name);
     if (so_hndl == NULL) {
@@ -372,8 +376,8 @@ FMI<X>::FMI(char const* modelname, char const* guid,
     _fmi2SetupExperiment(c, fmi2True, tolerance, -1.0, fmi2False, -1.0);
 }
 
-template <typename X>
-bool FMI<X>::get_jacobian(double const* q, double* J) {
+template <typename OutputType>
+bool FMI<OutputType>::get_jacobian(double const* q, double* J) {
     fmi2Status status;
     // Number of FMI variables. Does not include time.
     unsigned const N = this->numVars() - 1;
@@ -413,8 +417,8 @@ bool FMI<X>::get_jacobian(double const* q, double* J) {
     return true;
 }
 
-template <typename X>
-void FMI<X>::iterate_events() {
+template <typename OutputType>
+void FMI<OutputType>::iterate_events() {
     fmi2Status status;
     // Put into consistent initial state
     fmi2EventInfo eventInfo;
@@ -430,8 +434,8 @@ void FMI<X>::iterate_events() {
     assert(status == fmi2OK);
 }
 
-template <typename X>
-void FMI<X>::init(double* q) {
+template <typename OutputType>
+void FMI<OutputType>::init(double* q) {
     fmi2Status status;
     // Initialize all variables
     status = _fmi2EnterInitializationMode(c);
@@ -454,8 +458,8 @@ void FMI<X>::init(double* q) {
     cont_time_mode = true;
 }
 
-template <typename X>
-void FMI<X>::der_func(double const* q, double* dq) {
+template <typename OutputType>
+void FMI<OutputType>::der_func(double const* q, double* dq) {
     fmi2Status status;
     if (!cont_time_mode) {
         status = _fmi2EnterContinuousTimeMode(c);
@@ -471,8 +475,8 @@ void FMI<X>::der_func(double const* q, double* dq) {
     dq[this->numVars() - 1] = 1.0;
 }
 
-template <typename X>
-void FMI<X>::state_event_func(double const* q, double* z) {
+template <typename OutputType>
+void FMI<OutputType>::state_event_func(double const* q, double* z) {
     fmi2Status status;
     if (!cont_time_mode) {
         status = _fmi2EnterContinuousTimeMode(c);
@@ -488,13 +492,13 @@ void FMI<X>::state_event_func(double const* q, double* z) {
     assert(status == fmi2OK);
 }
 
-template <typename X>
-double FMI<X>::time_event_func(double const* q) {
+template <typename OutputType>
+double FMI<OutputType>::time_event_func(double const* q) {
     return next_time_event - q[this->numVars() - 1];
 }
 
-template <typename X>
-void FMI<X>::postStep(double* q) {
+template <typename OutputType>
+void FMI<OutputType>::postStep(double* q) {
     assert(cont_time_mode);
     // Don't advance the FMI state by zero units of time
     // when in continuous mode
@@ -519,8 +523,8 @@ void FMI<X>::postStep(double* q) {
     }
 }
 
-template <typename X>
-void FMI<X>::postTrialStep(double* q) {
+template <typename OutputType>
+void FMI<OutputType>::postTrialStep(double* q) {
     assert(cont_time_mode);
     // Restore values changed by der_func and state_event_func
     fmi2Status status;
@@ -530,8 +534,8 @@ void FMI<X>::postTrialStep(double* q) {
     assert(status == fmi2OK);
 }
 
-template <typename X>
-void FMI<X>::internal_event(double* q, bool const* state_event) {
+template <typename OutputType>
+void FMI<OutputType>::internal_event(double* q, bool const* state_event) {
     fmi2Status status;
     // postStep will have updated the continuous variables, so
     // we just process discrete events here.
@@ -547,8 +551,9 @@ void FMI<X>::internal_event(double* q, bool const* state_event) {
     assert(status == fmi2OK);
 }
 
-template <typename X>
-void FMI<X>::external_event(double* q, double e, list<X> const &xb) {
+template <typename OutputType>
+void FMI<OutputType>::external_event(double* q, double e,
+                                     list<OutputType> const &xb) {
     fmi2Status status;
     // Go to event mode if we have not yet done so
     if (cont_time_mode) {
@@ -562,9 +567,9 @@ void FMI<X>::external_event(double* q, double e, list<X> const &xb) {
     assert(status == fmi2OK);
 }
 
-template <typename X>
-void FMI<X>::confluent_event(double* q, bool const* state_event,
-                             list<X> const &xb) {
+template <typename OutputType>
+void FMI<OutputType>::confluent_event(double* q, bool const* state_event,
+                                      list<OutputType> const &xb) {
     fmi2Status status;
     // postStep will have updated the continuous variables, so
     // we just process discrete events here.
@@ -578,12 +583,12 @@ void FMI<X>::confluent_event(double* q, bool const* state_event,
     assert(status == fmi2OK);
 }
 
-template <typename X>
-void FMI<X>::output_func(double const* q, bool const* state_event,
-                         list<X> &yb) {}
+template <typename OutputType>
+void FMI<OutputType>::output_func(double const* q, bool const* state_event,
+                                  list<OutputType> &yb) {}
 
-template <typename X>
-FMI<X>::~FMI() {
+template <typename OutputType>
+FMI<OutputType>::~FMI() {
     _fmi2FreeInstance(c);
     delete callbackFuncs;
     if (jac_col != NULL) {
@@ -593,8 +598,8 @@ FMI<X>::~FMI() {
     CLOSE_LIB(so_hndl);
 }
 
-template <typename X>
-double FMI<X>::get_real(int k) {
+template <typename OutputType>
+double FMI<OutputType>::get_real(int k) {
     fmi2ValueReference const ref = k;
     fmi2Real val;
     fmi2Status status = _fmi2GetReal(c, &ref, 1, &val);
@@ -602,16 +607,16 @@ double FMI<X>::get_real(int k) {
     return val;
 }
 
-template <typename X>
-void FMI<X>::set_real(int k, double val) {
+template <typename OutputType>
+void FMI<OutputType>::set_real(int k, double val) {
     fmi2ValueReference const ref = k;
     fmi2Real fmi_val = val;
     fmi2Status status = _fmi2SetReal(c, &ref, 1, &fmi_val);
     assert(status == fmi2OK);
 }
 
-template <typename X>
-int FMI<X>::get_int(int k) {
+template <typename OutputType>
+int FMI<OutputType>::get_int(int k) {
     fmi2ValueReference const ref = k;
     fmi2Integer val;
     fmi2Status status = _fmi2GetInteger(c, &ref, 1, &val);
@@ -619,16 +624,16 @@ int FMI<X>::get_int(int k) {
     return val;
 }
 
-template <typename X>
-void FMI<X>::set_int(int k, int val) {
+template <typename OutputType>
+void FMI<OutputType>::set_int(int k, int val) {
     fmi2ValueReference const ref = k;
     fmi2Integer fmi_val = val;
     fmi2Status status = _fmi2SetInteger(c, &ref, 1, &fmi_val);
     assert(status == fmi2OK);
 }
 
-template <typename X>
-bool FMI<X>::get_bool(int k) {
+template <typename OutputType>
+bool FMI<OutputType>::get_bool(int k) {
     fmi2ValueReference const ref = k;
     fmi2Boolean val;
     fmi2Status status = _fmi2GetBoolean(c, &ref, 1, &val);
@@ -636,8 +641,8 @@ bool FMI<X>::get_bool(int k) {
     return (val == fmi2True);
 }
 
-template <typename X>
-void FMI<X>::set_bool(int k, bool val) {
+template <typename OutputType>
+void FMI<OutputType>::set_bool(int k, bool val) {
     fmi2ValueReference const ref = k;
     fmi2Boolean fmi_val = fmi2False;
     if (val) {
@@ -647,8 +652,8 @@ void FMI<X>::set_bool(int k, bool val) {
     assert(status == fmi2OK);
 }
 
-template <typename X>
-std::string FMI<X>::get_string(int k) {
+template <typename OutputType>
+std::string FMI<OutputType>::get_string(int k) {
     fmi2ValueReference const ref = k;
     fmi2String val;
     fmi2Status status = _fmi2GetString(c, &ref, 1, &val);
@@ -656,8 +661,8 @@ std::string FMI<X>::get_string(int k) {
     return val;
 }
 
-template <typename X>
-void FMI<X>::set_string(int k, std::string &val) {
+template <typename OutputType>
+void FMI<OutputType>::set_string(int k, std::string &val) {
     fmi2ValueReference const ref = k;
     fmi2String fmi_val = fmi2False;
     fmi2Status status = _fmi2SetString(c, &ref, 1, &fmi_val);

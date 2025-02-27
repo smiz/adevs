@@ -28,9 +28,12 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_wrapper_h_
 #define _adevs_wrapper_h_
+
 #include "adevs/models.h"
+
 
 namespace adevs {
 
@@ -47,16 +50,16 @@ namespace adevs {
  * is, of course, only one possible destination for incoming events and only
  * one source of outgoing events.
  */
-template <typename ExternalType, typename InternalType, class T = double>
-class ModelWrapper : public Atomic<ExternalType, T>,
-                     public EventListener<InternalType, T> {
+template <typename ExternalType, typename InternalType, class TimeType = double>
+class ModelWrapper : public Atomic<ExternalType, TimeType>,
+                     public EventListener<InternalType, TimeType> {
   public:
     /*
      * Create a wrapper for the specified model. The ModelWrapper takes
      * ownership of the supplied model and will delete it when the
      * ModelWrapper is deleted.
      */
-    ModelWrapper(Devs<InternalType, T>* model);
+    ModelWrapper(Devs<InternalType, TimeType>* model);
 
     /*
      * This method is used to translate incoming input objects into
@@ -68,7 +71,7 @@ class ModelWrapper : public Atomic<ExternalType, T>,
      */
     virtual void translateInput(
         list<ExternalType> const &external_input,
-        list<Event<InternalType, T>> &internal_input) = 0;
+        list<Event<InternalType, TimeType>> &internal_input) = 0;
 
     /*
      * This method is used to translate outgoing output objects
@@ -79,17 +82,17 @@ class ModelWrapper : public Atomic<ExternalType, T>,
      * will be produced as output by the ModelWrapper.
      */
     virtual void translateOutput(
-        list<Event<InternalType, T>> const &internal_output,
+        list<Event<InternalType, TimeType>> const &internal_output,
         list<ExternalType> &external_output) = 0;
 
     /// Get the model that is wrapped by this object
-    Devs<InternalType, T>* getWrappedModel() { return model; }
+    Devs<InternalType, TimeType>* getWrappedModel() { return model; }
 
     /// Atomic internal transition function
     void delta_int();
 
     /// Atomic external transition function
-    void delta_ext(T e, list<ExternalType> const &xb);
+    void delta_ext(TimeType e, list<ExternalType> const &xb);
 
     /// Atomic confluent transition function
     void delta_conf(list<ExternalType> const &xb);
@@ -98,10 +101,10 @@ class ModelWrapper : public Atomic<ExternalType, T>,
     void output_func(list<ExternalType> &yb);
 
     /// Atomic time advance function
-    T ta();
+    TimeType ta();
 
     /// EventListener outputEvent method
-    void outputEvent(Event<InternalType, T> y, T t);
+    void outputEvent(Event<InternalType, TimeType> y, TimeType t);
 
     /// Destructor. This destroys the wrapped model too.
     ~ModelWrapper();
@@ -111,39 +114,39 @@ class ModelWrapper : public Atomic<ExternalType, T>,
     ModelWrapper(ModelWrapper const &) {}
     void operator=(ModelWrapper const &) {}
 
-    list<Event<InternalType, T>> input;
+    list<Event<InternalType, TimeType>> input;
     // Output from the wrapped model
-    list<Event<InternalType, T>> output;
+    list<Event<InternalType, TimeType>> output;
     // The wrapped model
-    Devs<InternalType, T>* model;
+    Devs<InternalType, TimeType>* model;
     // Simulator for driving the wrapped model
-    Simulator<InternalType, T>* sim;
+    Simulator<InternalType, TimeType>* sim;
     // Last event time
-    T tL;
+    TimeType tL;
 };
 
-template <typename ExternalType, typename InternalType, class T>
-ModelWrapper<ExternalType, InternalType, T>::ModelWrapper(
-    Devs<InternalType, T>* model)
-    : Atomic<ExternalType, T>(),
-      EventListener<InternalType, T>(),
+template <typename ExternalType, typename InternalType, class TimeType>
+ModelWrapper<ExternalType, InternalType, TimeType>::ModelWrapper(
+    Devs<InternalType, TimeType>* model)
+    : Atomic<ExternalType, TimeType>(),
+      EventListener<InternalType, TimeType>(),
       model(model),
-      tL(adevs_zero<T>()) {
-    sim = new Simulator<InternalType, T>(model);
+      tL(adevs_zero<TimeType>()) {
+    sim = new Simulator<InternalType, TimeType>(model);
     sim->addEventListener(this);
 }
 
-template <typename ExternalType, typename InternalType, class T>
-void ModelWrapper<ExternalType, InternalType, T>::delta_int() {
+template <typename ExternalType, typename InternalType, class TimeType>
+void ModelWrapper<ExternalType, InternalType, TimeType>::delta_int() {
     // Update the internal clock
     tL = sim->nextEventTime();
     // Execute the next autonomous event for the wrapped model
     sim->execNextEvent();
 }
 
-template <typename ExternalType, typename InternalType, class T>
-void ModelWrapper<ExternalType, InternalType, T>::delta_ext(
-    T e, list<ExternalType> const &xb) {
+template <typename ExternalType, typename InternalType, class TimeType>
+void ModelWrapper<ExternalType, InternalType, TimeType>::delta_ext(
+    TimeType e, list<ExternalType> const &xb) {
     // Update the internal clock
     tL += e;
     // Convert the external inputs to internal inputs
@@ -154,8 +157,8 @@ void ModelWrapper<ExternalType, InternalType, T>::delta_ext(
     input.clear();
 }
 
-template <typename ExternalType, typename InternalType, class T>
-void ModelWrapper<ExternalType, InternalType, T>::delta_conf(
+template <typename ExternalType, typename InternalType, class TimeType>
+void ModelWrapper<ExternalType, InternalType, TimeType>::delta_conf(
     list<ExternalType> const &xb) {
     // Update the internal clock
     tL = sim->nextEventTime();
@@ -167,17 +170,17 @@ void ModelWrapper<ExternalType, InternalType, T>::delta_conf(
     input.clear();
 }
 
-template <typename ExternalType, typename InternalType, class T>
-T ModelWrapper<ExternalType, InternalType, T>::ta() {
-    if (sim->nextEventTime() < adevs_inf<T>()) {
+template <typename ExternalType, typename InternalType, class TimeType>
+TimeType ModelWrapper<ExternalType, InternalType, TimeType>::ta() {
+    if (sim->nextEventTime() < adevs_inf<TimeType>()) {
         return sim->nextEventTime() - tL;
     } else {
-        return adevs_inf<T>();
+        return adevs_inf<TimeType>();
     }
 }
 
-template <typename ExternalType, typename InternalType, class T>
-void ModelWrapper<ExternalType, InternalType, T>::output_func(
+template <typename ExternalType, typename InternalType, class TimeType>
+void ModelWrapper<ExternalType, InternalType, TimeType>::output_func(
     list<ExternalType> &yb) {
     // Compute the model's output events; this causes the outputEvent method to be called
     sim->computeNextOutput();
@@ -187,15 +190,15 @@ void ModelWrapper<ExternalType, InternalType, T>::output_func(
     output.clear();
 }
 
-template <typename ExternalType, typename InternalType, class T>
-void ModelWrapper<ExternalType, InternalType, T>::outputEvent(
-    Event<InternalType, T> y, T t) {
+template <typename ExternalType, typename InternalType, class TimeType>
+void ModelWrapper<ExternalType, InternalType, TimeType>::outputEvent(
+    Event<InternalType, TimeType> y, TimeType t) {
     // Just save the events for processing by the output_func
     output.push_back(y);
 }
 
-template <typename ExternalType, typename InternalType, class T>
-ModelWrapper<ExternalType, InternalType, T>::~ModelWrapper() {
+template <typename ExternalType, typename InternalType, class TimeType>
+ModelWrapper<ExternalType, InternalType, TimeType>::~ModelWrapper() {
     delete sim;
     delete model;
 }

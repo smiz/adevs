@@ -28,42 +28,46 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_time_h_
 #define _adevs_time_h_
+
 #include <cfloat>
 #include <cmath>
 #include <iostream>
 #include <limits>
 
+
 /// Returns the maximum value for a time type
-template <class T>
-inline T adevs_inf();
+template <class TimeType>
+inline TimeType adevs_inf();
 /// Returns the zero value for a time type
-template <class T>
-inline T adevs_zero();
+template <class TimeType>
+inline TimeType adevs_zero();
 /// Returns a value less than adevs_zero()
-template <class T>
-inline T adevs_sentinel();
+template <class TimeType>
+inline TimeType adevs_sentinel();
 /// Returns the interval to the next instant of time
-template <class T>
-inline T adevs_epsilon();
+template <class TimeType>
+inline TimeType adevs_epsilon();
+
 
 namespace adevs {
 
 /*
  * This time type allows models to evolve on R x Z.
  */
-template <typename T = double>
+template <typename TimeType = double>
 class sd_time {
   public:
     /// Creates the identify (0,0)
     sd_time() : t(0), k(0) {}
     /// Create a time (t,k)
-    sd_time(T t, int k) : t(t), k(k) {}
+    sd_time(TimeType t, int k) : t(t), k(k) {}
     /// Copy constructor
     sd_time(sd_time const &other) : t(other.t), k(other.k) {}
     /// Get the real part of time
-    T real() const { return t; }
+    TimeType real() const { return t; }
     /// Get the logical part of time
     double integer() const { return k; }
     /// Assignment operator
@@ -135,7 +139,7 @@ class sd_time {
     }
 
   private:
-    T t;
+    TimeType t;
     int k;
 };
 
@@ -196,7 +200,7 @@ inline int fcmp(double x1, double x2, double epsilon) {
 
 /*
  * This is an alternative double that may be used for the simulation clock
- * (i.e., as the template parameter T for models and simulators). It
+ * (i.e., as the template parameter TimeType for models and simulators). It
  * uses the fcmp function to check for equality instead of the
  * default equality operator. Information on the fcmp function
  * may be found at http://fcmp.sourceforge.net/

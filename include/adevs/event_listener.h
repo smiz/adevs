@@ -28,9 +28,12 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_event_listener_h_
 #define _adevs_event_listener_h_
+
 #include "adevs/models.h"
+
 
 namespace adevs {
 
@@ -38,7 +41,7 @@ namespace adevs {
  * The EventListener interface is used to receive output events produced
  * by model and to be notified of state changes at Atomic models.
  */
-template <class X, class T = double>
+template <class OutputType, class TimeType = double>
 class EventListener {
   public:
     /*
@@ -47,7 +50,7 @@ class EventListener {
      * @param x The model that produced the output and the output's value
      * @param t The absolute time at which the output occurred
      */
-    virtual void outputEvent(Event<X, T> x, T t) {}
+    virtual void outputEvent(Event<OutputType, TimeType> x, TimeType t) {}
 
     /*
      * This callback is invoked when a model, network or atomic,
@@ -55,7 +58,7 @@ class EventListener {
      * @param x The model and input value
      * @param t The absolute time at which the output occurred
      */
-    virtual void inputEvent(Event<X, T> x, T t) {}
+    virtual void inputEvent(Event<OutputType, TimeType> x, TimeType t) {}
 
     /*
      * This callback is invoked by the simulator after an Atomic
@@ -64,7 +67,7 @@ class EventListener {
      * @param model The model that changed state
      * @param t The absolute time at which the state change occurred
      */
-    virtual void stateChange(Atomic<X, T>* model, T t) {}
+    virtual void stateChange(Atomic<OutputType, TimeType>* model, TimeType t) {}
 
     /// Destructor
     virtual ~EventListener() {}

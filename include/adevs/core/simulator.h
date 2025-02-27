@@ -28,12 +28,14 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_simulator_h_
 #define _adevs_simulator_h_
 
 #include <memory>
 #include <set>
 #include "adevs/abstract_simulator.h"
+
 
 namespace adevs {
 
@@ -49,19 +51,22 @@ class Simulator : public AbstractSimulatr<ObjectType, TimeType> {
   public:
     Simulator<ObjectType, TimeType>(ModelSet &models);
     /// Get the model's next event time
-    virtual T nextEventTime() = 0;
+    virtual TimeType nextEventTime() = 0;
     /// Execute the simulator until the next event time is greater than tend
-    virtual T execUntil(T tend) = 0;
+    virtual TimeType execUntil(TimeType tend) = 0;
 
     /// Destructor leaves the model intact.
     virtual ~AbstractSimulator() {}
 
     /// Notify listeners of an output event.
-    void notify_output_listeners(Devs<X, T>* model, X const &value, T t);
+    void notify_output_listeners(Devs<OutputType, TimeType>* model,
+                                 OutputType const &value, TimeType t);
     /// Notify listeners of an input event.
-    void notify_input_listeners(Devs<X, T>* model, X const &value, T t);
+    void notify_input_listeners(Devs<OutputType, TimeType>* model,
+                                OutputType const &value, TimeType t);
     /// Notify listeners of a state change.
-    void notify_state_listeners(Atomic<X, T>* model, T t);
+    void notify_state_listeners(Atomic<OutputType, TimeType>* model,
+                                TimeType t);
 
   private:
     ModelSet connected_models;
@@ -75,7 +80,7 @@ Simulator<ObjectType, TimeType>::Simulator(ModelSet &active)
     // // tL correctly to zero, and so it is sufficient
     // // to only worry about putting models with a
     // // non infinite time advance into the schedule.
-    // for (typename std::list<Devs<X, T>*>::iterator iter = active.begin();
+    // for (typename std::list<Devs<OutputType, TimeType>*>::iterator iter = active.begin();
     //      iter != active.end();
     //      iter++) {
     //   schedule(*iter, adevs_zero<T>());
@@ -86,7 +91,7 @@ template <typename ObjectType, typename TimeType = double>
 Simulator<ObjectType, TimeType>::Simulator()
     : AbstractSimulator<ObjectType, TimeType> {}
 
-void addEventListener(EventListener<X, T>* l) {
+void addEventListener(EventListener<OutputType, TimeType>* l) {
     listeners.push_back(l);
 }
 
@@ -94,7 +99,7 @@ void addEventListener(EventListener<X, T>* l) {
      * Remove an event listener that was previously added.
      * @param l The listener to be removed
      */
-void removeEventListener(EventListener<X, T>* l) {
+void removeEventListener(EventListener<OutputType, TimeType>* l) {
     listeners.erase(l);
 }
 

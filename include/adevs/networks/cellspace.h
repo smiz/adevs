@@ -28,11 +28,14 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_cellspace_h_
 #define _adevs_cellspace_h_
+
 #include <cstdlib>
 #include <set>
 #include "adevs/adevs.h"
+
 
 namespace adevs {
 
@@ -41,16 +44,16 @@ namespace adevs {
  * be of the type CellEvent.  A CellEvent has an event value (i.e., the actual
  * input/output value) and a target cell for the event.
  */
-template <class X>
+template <class OutputType>
 class CellEvent {
   public:
     /// Default constructor. Sets x = y = z = 0.
     CellEvent() : value() { x = y = z = 0; }
     /// Copy constructor
-    CellEvent(CellEvent<X> const &src)
+    CellEvent(CellEvent<OutputType> const &src)
         : x(src.x), y(src.y), z(src.z), value(src.value) {}
     /// Assignment operator
-    CellEvent const &operator=(CellEvent<X> const &src) {
+    CellEvent const &operator=(CellEvent<OutputType> const &src) {
         x = src.x;
         y = src.y;
         z = src.z;
@@ -64,7 +67,7 @@ class CellEvent {
     /// The z coordinate of the event target
     long int z;
     /// The event value
-    X value;
+    OutputType value;
 };
 
 /*
@@ -78,11 +81,11 @@ class CellEvent {
  * events for the CellSpace model.  Similarly, CellEvent objects that are injected into the
  * CellSpace (i.e., external input events) will be delivered to the targeted cell.
  */
-template <class X, class T = double>
-class CellSpace : public Network<CellEvent<X>, T> {
+template <class OutputType, class TimeType = double>
+class CellSpace : public Network<CellEvent<OutputType>, TimeType> {
   public:
     /// A component model in the CellSpace
-    typedef Devs<CellEvent<X>, T> Cell;
+    typedef Devs<CellEvent<OutputType>, TimeType> Cell;
     /// Create an Width x Height x Depth CellSpace with NULL entries in the cell locations.
     CellSpace(long int width, long int height = 1, long int depth = 1);
     /// Insert a model at the x,y,z position.
@@ -107,8 +110,8 @@ class CellSpace : public Network<CellEvent<X>, T> {
     /// Get the model's set of components
     void getComponents(set<Cell*> &c);
     /// Route events within the Cellspace
-    void route(CellEvent<X> const &event, Cell* model,
-               list<Event<CellEvent<X>, T>> &r);
+    void route(CellEvent<OutputType> const &event, Cell* model,
+               list<Event<CellEvent<OutputType>, TimeType>> &r);
     /// Destructor; this destroys the components as well.
     ~CellSpace();
 
@@ -118,9 +121,10 @@ class CellSpace : public Network<CellEvent<X>, T> {
 };
 
 // Implementation of constructor
-template <class X, class T>
-CellSpace<X, T>::CellSpace(long int width, long int height, long int depth)
-    : Network<CellEvent<X>, T>() {
+template <class OutputType, class TimeType>
+CellSpace<OutputType, TimeType>::CellSpace(long int width, long int height,
+                                           long int depth)
+    : Network<CellEvent<OutputType>, TimeType>() {
     w = width;
     h = height;
     d = depth;
@@ -138,8 +142,8 @@ CellSpace<X, T>::CellSpace(long int width, long int height, long int depth)
 }
 
 // Implementation of destructor
-template <class X, class T>
-CellSpace<X, T>::~CellSpace() {
+template <class OutputType, class TimeType>
+CellSpace<OutputType, TimeType>::~CellSpace() {
     for (long int x = 0; x < w; x++) {
         for (long int y = 0; y < h; y++) {
             for (long int z = 0; z < d; z++) {
@@ -155,8 +159,8 @@ CellSpace<X, T>::~CellSpace() {
 }
 
 // Implementation of the getComponents() method
-template <class X, class T>
-void CellSpace<X, T>::getComponents(set<Cell*> &c) {
+template <class OutputType, class TimeType>
+void CellSpace<OutputType, TimeType>::getComponents(set<Cell*> &c) {
     // Add all non-null entries to the set c
     for (long int x = 0; x < w; x++) {
         for (long int y = 0; y < h; y++) {
@@ -170,9 +174,10 @@ void CellSpace<X, T>::getComponents(set<Cell*> &c) {
 }
 
 // Event routing function for the net_exec
-template <class X, class T>
-void CellSpace<X, T>::route(CellEvent<X> const &event, Cell* model,
-                            list<Event<CellEvent<X>, T>> &r) {
+template <class OutputType, class TimeType>
+void CellSpace<OutputType, TimeType>::route(
+    CellEvent<OutputType> const &event, Cell* model,
+    list<Event<CellEvent<OutputType>, TimeType>> &r) {
     Cell* target = NULL;
     // If the target cell is inside of the cellspace
     if (event.x >= 0 && event.x < w &&  // check x dimension
@@ -188,7 +193,7 @@ void CellSpace<X, T>::route(CellEvent<X> const &event, Cell* model,
     // If the target exists
     if (target != NULL) {
         // Add an appropriate event to the receiver list
-        Event<CellEvent<X>, T> io(target, event);
+        Event<CellEvent<OutputType>, TimeType> io(target, event);
         r.push_back(io);
     }
 }

@@ -28,8 +28,10 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_models_h_
 #define _adevs_models_h_
+
 #include <cstdlib>
 #include <list>
 #include <memory>
@@ -46,20 +48,21 @@ namespace adevs {
  * Declare network and atomic model so types can be used as the type of
  * parent in the basic Devs model and for type ID functions.
  */
-template <typename X, typename T>
+template <typename OutputType, typename TimeType>
 class Simulator;
-template <typename X, typename T>
+template <typename OutputType, typename TimeType>
 class Schedule;
+
 
 typedef int pin_t;
 
 template <typename ValueType>
 class PinValue {
   public:
-    PinValue(){}
-    PinValue(pin_t pin, ValueType value):pin(pin),value(value){}
-    PinValue(const PinValue& src) : pin(src.pin),value(src.value) {}
-    const PinValue<ValueType>& operator=(const PinValue& src) {
+    PinValue() {}
+    PinValue(pin_t pin, ValueType value) : pin(pin), value(value) {}
+    PinValue(PinValue const &src) : pin(src.pin), value(src.value) {}
+    PinValue<ValueType> const &operator=(PinValue const &src) {
         pin = src.pin;
         value = src.value;
         return *this;
@@ -68,17 +71,58 @@ class PinValue {
     ValueType value;
 };
 
+
+// /*
+//  * Event objects are used for routing within a network model,
+//  * for notifying event listeners of output events, and for injecting
+//  * input into a running simulation.
+//  */
+// template <typename OutputType, typename TimeType = double>
+// class Event {
+//   public:
+//     /// Constructor.  Sets the model to nullptr.
+//     Event() : model(nullptr), value() {}
+//     /*
+//      * Constructor sets the model and value. The input into a
+//      * Simulator and in a network's routing method,
+//      * the model is the target of the input value.
+//      * In a callback to an event listener, the model is the
+//      * source of the output value.
+//      */
+//     Event(Devs<OutputType, TimeType>* model, OutputType const &value)
+//         : model(model), value(value) {}
+
+//     Event(shared_ptr<Devs<OutputType, TimeType>> model, OutputType const &value)
+//         : model(model.get()), value(value) {}
+
+//     /// Copy constructor.
+//     Event(Event<OutputType, TimeType> const &src)
+//         : model(src.model), value(src.value) {}
+//     /// Assignment operator.
+//     Event<OutputType, TimeType> const &operator=(
+//         Event<OutputType, TimeType> const &src) {
+//         model = src.model;
+//         value = src.value;
+//         return *this;
+//     }
+//     /// The model associated with the event.
+//     Devs<OutputType, TimeType>* model;
+//     /// The value associated with the event.
+//     OutputType value;
+// };
+
+
 /*
  * Base type for all atomic DEVS models.
  */
-template <typename X, typename T = double>
+template <typename OutputType, typename TimeType = double>
 class Atomic {
   public:
     /// The constructor should place the model into its initial state.
     Atomic()
-        : tL(adevs_zero<T>()),
-          q_index(0){}  // The Schedule requires this to be zero
-    virtual ~Atomic(){}
+        : tL(adevs_zero<TimeType>()),
+          q_index(0) {}  // The Schedule requires this to be zero
+    virtual ~Atomic() {}
     /// Internal transition function.
     virtual void delta_int() = 0;
     /*
@@ -86,34 +130,47 @@ class Atomic {
      * @param e Time elapsed since the last change of state
      * @param xb Input for the model.
      */
-    virtual void delta_ext(T e, std::list<PinValue<X>> const &xb) = 0;
+    virtual void delta_ext(TimeType e,
+                           std::list<PinValue<OutputType>> const &xb) = 0;
     /*
      * Confluent transition function.
      * @param xb Input for the model.
      */
-    virtual void delta_conf(std::list<PinValue<X>> const &xb) = 0;
+    virtual void delta_conf(std::list<PinValue<OutputType>> const &xb) = 0;
     /*
      * Output function.  Output values should be added to the list yb.
      * @param yb Empty list to be filled with the model's output
      */
-    virtual void output_func(std::list<PinValue<X>> &yb) = 0;
+    virtual void output_func(std::list<PinValue<OutputType>> &yb) = 0;
     /*
-     * Time advance function. adevs_inf<T>() is used for infinity.
+     * Time advance function. adevs_inf<TimeType>() is used for infinity.
      * @return The time to the next internal event
      */
-    virtual T ta() = 0;
+    virtual TimeType ta() = 0;
+
+    //   protected:
+    //     /*
+    //      * Get the last event time for this model. This is
+    //      * provided primarily for use with the backwards compatibility
+    //      * module and should not be relied on. It is likely to be
+    //      * removed in later versions of the code.
+    //      */
+    //     TimeType getLastEventTime() const { return tL; }
 
   private:
-    friend class Simulator<X, T>;
-    friend class Schedule<X, T>;
+    friend class Simulator<OutputType, TimeType>;
+    friend class Schedule<OutputType, TimeType>;
 
     // Time of last event
-    T tL, tN;
+    TimeType tL, tN;
     // Index in the priority queue
     unsigned int q_index;
 
-    std::list<PinValue<X>> inputs;
-    std::list<PinValue<X>> outputs;
+    std::list<PinValue<OutputType>> inputs;
+    std::list<PinValue<OutputType>> outputs;
+
+    // bool activated = false;
+    // bool imminent = false;
 };
 
 /*
@@ -133,24 +190,26 @@ class Atomic {
 #pragma clang diagnostic ignored "-Woverloaded-virtual"
 #endif
 
-template <typename X, typename T = double>
-class MealyAtomic : public Atomic<X, T> {
+template <typename OutputType, typename TimeType = double>
+class MealyAtomic : public Atomic<OutputType, TimeType> {
   public:
-    MealyAtomic<X, T>() : Atomic<X, T>() {}
-    MealyAtomic<X, T>* typeIsMealyAtomic() { return this; }
+    MealyAtomic<OutputType, TimeType>() : Atomic<OutputType, TimeType>() {}
+    MealyAtomic<OutputType, TimeType>* typeIsMealyAtomic() { return this; }
     /*
      * Produce output at e < ta(q) in response to xb.
      * This is output preceding an external event.
      */
-    virtual void output_func(T e, list<PinValue<X>> const &xb, list<PinValue<X>> &yb) = 0;
+    virtual void output_func(TimeType e, list<PinValue<OutputType>> const &xb,
+                             list<PinValue<OutputType>> &yb) = 0;
     /*
      * Produce output at e = ta(q) in response to xb.
      * This is output preceding a confluent event.
      */
-    virtual void output_func(list<PinValue<X>> const &xb, list<PinValue<X>> &yb) = 0;
+    virtual void output_func(list<OutputType> const &xb,
+                             list<OutputType> &yb) = 0;
 
   private:
-    friend class Simulator<X, T>;
+    friend class Simulator<OutputType, TimeType>;
 };
 
 #ifdef __clang__

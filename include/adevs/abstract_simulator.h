@@ -28,8 +28,10 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
+
 #ifndef _adevs_abstract_simulator_h_
 #define _adevs_abstract_simulator_h_
+
 #include <memory>
 #include "adevs/event_listener.h"
 #include "adevs/models.h"
@@ -44,7 +46,7 @@ namespace adevs {
  * supported by all derived classes and provides some basic helper routines
  * for those derived classes.
  */
-template <class X, class T = double>
+template <class OutputType, class TimeType = double>
 class AbstractSimulator {
   public:
     /// Constructor
@@ -54,54 +56,59 @@ class AbstractSimulator {
      * produced by all components within the model.
      * @param l The listener to be notified
      */
-    void addEventListener(shared_ptr<EventListener<X, T>> l) {
+    void addEventListener(shared_ptr<EventListener<OutputType, TimeType>> l) {
         listeners.push_back(l);
     }
     /*
      * Remove an event listener that was previously added.
      * @param l The listener to be removed
      */
-    void removeEventListener(shared_ptr<EventListener<X, T>> l) {
+    void removeEventListener(
+        shared_ptr<EventListener<OutputType, TimeType>> l) {
         listeners.erase(l);
     }
     /// Get the model's next event time
-    virtual T nextEventTime() = 0;
+    virtual TimeType nextEventTime() = 0;
     /// Execute the simulator until the next event time is greater than tend
-    virtual T execUntil(T tend) = 0;
+    virtual TimeType execUntil(TimeType tend) = 0;
     /// Destructor leaves the model intact.
     virtual ~AbstractSimulator() {}
     /// Notify listeners of an output event.
-    void notify_output_listeners(Devs<X, T>* model, X const &value, T t);
+    void notify_output_listeners(Devs<OutputType, TimeType>* model,
+                                 OutputType const &value, TimeType t);
     /// Notify listeners of an input event.
-    void notify_input_listeners(Devs<X, T>* model, X const &value, T t);
+    void notify_input_listeners(Devs<OutputType, TimeType>* model,
+                                OutputType const &value, TimeType t);
     /// Notify listeners of a state change.
-    void notify_state_listeners(Atomic<X, T>* model, T t);
+    void notify_state_listeners(Atomic<OutputType, TimeType>* model,
+                                TimeType t);
 
   private:
     /// Eternal event listeners
-    list<shared_ptr<EventListener<X, T>>> listeners;
+    list<shared_ptr<EventListener<OutputType, TimeType>>> listeners;
 };
 
-template <class X, class T>
-void AbstractSimulator<X, T>::notify_output_listeners(Devs<X, T>* model,
-                                                      X const &value, T t) {
-    Event<X, T> event(model, value);
+template <class OutputType, class TimeType>
+void AbstractSimulator<OutputType, TimeType>::notify_output_listeners(
+    Devs<OutputType, TimeType>* model, OutputType const &value, TimeType t) {
+    Event<OutputType, TimeType> event(model, value);
     for (auto iter : listeners) {
         iter->outputEvent(event, t);
     }
 }
 
-template <class X, class T>
-void AbstractSimulator<X, T>::notify_input_listeners(Devs<X, T>* model,
-                                                     X const &value, T t) {
-    Event<X, T> event(model, value);
+template <class OutputType, class TimeType>
+void AbstractSimulator<OutputType, TimeType>::notify_input_listeners(
+    Devs<OutputType, TimeType>* model, OutputType const &value, TimeType t) {
+    Event<OutputType, TimeType> event(model, value);
     for (auto iter : listeners) {
         iter->inputEvent(event, t);
     }
 }
 
-template <class X, class T>
-void AbstractSimulator<X, T>::notify_state_listeners(Atomic<X, T>* model, T t) {
+template <class OutputType, class TimeType>
+void AbstractSimulator<OutputType, TimeType>::notify_state_listeners(
+    Atomic<OutputType, TimeType>* model, TimeType t) {
     for (auto iter : listeners) {
         iter->stateChange(model, t);
     }
