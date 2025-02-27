@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <fstream>
 #include "adevs/adevs.h"
 #include "genr.h"
 #include "job.h"
@@ -9,36 +10,54 @@
 
 using namespace std;
 
-int main() {
-    /// Get experiment parameters
+int main(int argc, char** argv) {
     double g, p, t;
-    cout << "Genr period: ";
-    cin >> g;
-    cout << "Proc time: ";
-    cin >> p;
-    cout << "Observation time: ";
-    cin >> t;
+    /// Get experiment parameters
+    if (argc == 1) {
+        cout << "Genr period: ";
+        cin >> g;
+        cout << "Proc time: ";
+        cin >> p;
+        cout << "Observation time: ";
+        cin >> t;
+    } else {
+        std::ifstream fin(argv[1]);
+        fin >> g >> p >> t;
+        fin.close();
+    }
 
     /// Create and connect the atomic components using a digraph model.
-    shared_ptr<adevs::Digraph<job>> model = make_shared<adevs::Digraph<job>>();
+    shared_ptr<adevs::Graph<job>> model = make_shared<adevs::Graph<job>>();
     shared_ptr<genr> gnr = make_shared<genr>(g);
     shared_ptr<transd> trnsd = make_shared<transd>(t);
     shared_ptr<proc> prc = make_shared<proc>(p);
-
+    /// Add ports to the models
+    gnr->out = model->add_pin();
+    gnr->start = model->add_pin();
+    gnr->stop = model->add_pin();
+    trnsd->ariv = model->add_pin();
+    trnsd->solved = model->add_pin();
+    trnsd->out = model->add_pin();
+    prc->in = model->add_pin();
+    prc->out = model->add_pin();
     /// Add the components to the digraph
-    model->add(gnr);
-    model->add(trnsd);
-    model->add(prc);
+    model->add_atomic(gnr);
+    model->add_atomic(trnsd);
+    model->add_atomic(prc);
 
     /// Establish component coupling
-    model->couple(gnr, gnr->out, trnsd, trnsd->ariv);
-    model->couple(gnr, gnr->out, prc, prc->in);
-    model->couple(prc, prc->out, trnsd, trnsd->solved);
-    model->couple(trnsd, trnsd->out, gnr, gnr->stop);
+    model->connect(trnsd->ariv, trnsd);
+    model->connect(prc->in, prc);
+    model->connect(gnr->stop,gnr);
+    model->connect(trnsd->solved,trnsd);
+    model->connect(gnr->out, trnsd->ariv);
+    model->connect(gnr->out, prc->in);
+    model->connect(prc->out, trnsd->solved);
+    model->connect(trnsd->out, gnr->stop);
 
     /// Create a simulator for the model and run it until the model is passive.
-    adevs::Simulator<PortValue> sim(model);
-    while (sim.nextEventTime() < DBL_MAX) {
+    adevs::Simulator<job> sim(model);
+    while (sim.nextEventTime() < adevs_inf<double>()) {
         sim.execNextEvent();
     }
 

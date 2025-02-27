@@ -8,32 +8,32 @@ A processor requires a fixed period of time to service a job.
 The processor can serve only one job at a time.  It the processor
 is busy, it simply discards incoming jobs.
 */
-class proc : public adevs::Atomic<PortValue> {
+class proc : public adevs::Atomic<job> {
   public:
     /// Constructor.  The processing time is provided as an argument.
     proc(double proc_time)
-        : adevs::Atomic<PortValue>(),
+        : adevs::Atomic<job>(),
           processing_time(proc_time),
-          sigma(DBL_MAX),
-          val(NULL) {
+          sigma(adevs_inf<double>()),
+          val(nullptr) {
         t = 0.0;
     }
     /// Internal transition function
     void delta_int() {
         t += sigma;
         // Done with the job, so set time of next event to infinity
-        sigma = DBL_MAX;
+        sigma = adevs_inf<double>();
         // Discard the completed job
-        if (val != NULL) {
+        if (val != nullptr) {
             delete val;
         }
-        val = NULL;
+        val = nullptr;
     }
     /// External transition function
-    void delta_ext(double e, list<PortValue> const &x) {
+    void delta_ext(double e, std::list<PortValue> const &x) {
         t += e;
         // If we are waiting for a job
-        if (sigma == DBL_MAX) {
+        if (sigma == adevs_inf<double>()) {
             // Make a copy of the job (original will be destroyed by the
             // generator at the end of this simulation cycle).
             val = new job((*(x.begin())).value);
@@ -47,7 +47,7 @@ class proc : public adevs::Atomic<PortValue> {
         }
     }
     /// Confluent transition function.
-    void delta_conf(list<PortValue> const &x) {
+    void delta_conf(std::list<PortValue> const &x) {
         // Discard the old job
         delta_int();
         // Process the incoming job
@@ -64,15 +64,15 @@ class proc : public adevs::Atomic<PortValue> {
 
     /// Destructor
     ~proc() {
-        if (val != NULL) {
+        if (val != nullptr) {
             delete val;
         }
     }
 
     /// Model input port
-    static int const in;
+    int in;
     /// Model output port
-    static int const out;
+    int out;
 
   private:
     /// Model state variables
@@ -80,9 +80,5 @@ class proc : public adevs::Atomic<PortValue> {
     job* val;
     double t;
 };
-
-/// Create unique 'names' for the model ports.
-int const proc::in(0);
-int const proc::out(1);
 
 #endif

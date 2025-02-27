@@ -22,6 +22,6 @@ struct job {
     }
 };
 
-typedef adevs::PortValue<job> PortValue;
+typedef adevs::PinValue<job> PortValue;
 
 #endif
