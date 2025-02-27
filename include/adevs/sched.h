@@ -58,13 +58,10 @@ class Schedule {
     /// Creates a scheduler with the default or specified initial capacity.
     Schedule(unsigned int capacity = 100)
         : capacity(capacity), size(0), heap(new heap_element[capacity]) {
-        heap[0].priority =
-            adevs_sentinel<TimeType>();  // This is a sentinel value
+        heap[0].priority = adevs_sentinel<TimeType>();  // This is a sentinel value
     }
     /// Get the model at the front of the queue.
-    std::shared_ptr<Atomic<OutputType, TimeType>> getMinimum() const {
-        return heap[1].item;
-    }
+    std::shared_ptr<Atomic<OutputType, TimeType>> getMinimum() const { return heap[1].item; }
     /// Get the time of the next event.
     TimeType minPriority() const { return heap[1].priority; }
     /// Visit the imminent models.
@@ -76,8 +73,7 @@ class Schedule {
     /// Remove the model at the front of the queue.
     void removeMinimum();
     /// Add, remove, or move a model as required by its priority.
-    void schedule(std::shared_ptr<Atomic<OutputType, TimeType>> &model,
-                  TimeType priority);
+    void schedule(std::shared_ptr<Atomic<OutputType, TimeType>> model, TimeType priority);
     /// Returns true if the queue is empty, and false otherwise.
     bool empty() const { return size == 0; }
     /// Get the number of elements in the heap.
@@ -112,8 +108,7 @@ class Schedule {
 };
 
 template <class OutputType, class TimeType>
-void Schedule<OutputType, TimeType>::visit(
-    std::shared_ptr<Atomic<OutputType, TimeType>> &model) {
+void Schedule<OutputType, TimeType>::visit(std::shared_ptr<Atomic<OutputType, TimeType>> &model) {
     assert(model->outputs.empty());
     activated.push_back(model);
 
@@ -166,8 +161,8 @@ void Schedule<OutputType, TimeType>::removeMinimum() {
 }
 
 template <class OutputType, class TimeType>
-void Schedule<OutputType, TimeType>::schedule(
-    std::shared_ptr<Atomic<OutputType, TimeType>> &model, TimeType priority) {
+void Schedule<OutputType, TimeType>::schedule(std::shared_ptr<Atomic<OutputType, TimeType>> model,
+                                              TimeType priority) {
     // If the model is in the schedule
     if (model->q_index != 0) {
         // Remove the model if the next event time is infinite
@@ -213,8 +208,7 @@ void Schedule<OutputType, TimeType>::schedule(
 }
 
 template <class OutputType, class TimeType>
-unsigned int Schedule<OutputType, TimeType>::percolate_down(unsigned int index,
-                                                            TimeType priority) {
+unsigned int Schedule<OutputType, TimeType>::percolate_down(unsigned int index, TimeType priority) {
     unsigned int child;
     for (; index * 2 <= size; index = child) {
         child = index * 2;
@@ -232,8 +226,7 @@ unsigned int Schedule<OutputType, TimeType>::percolate_down(unsigned int index,
 }
 
 template <class OutputType, class TimeType>
-unsigned int Schedule<OutputType, TimeType>::percolate_up(unsigned int index,
-                                                          TimeType priority) {
+unsigned int Schedule<OutputType, TimeType>::percolate_up(unsigned int index, TimeType priority) {
     // Position 0 has priority -1 and this method is always called
     // with priority >= 0 and index > 0.
     while (priority <= heap[index / 2].priority) {

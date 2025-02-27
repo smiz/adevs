@@ -1,7 +1,7 @@
 #include "adevs/sched.h"
+#include <algorithm>
 #include <cassert>
 #include <iostream>
-#include <algorithm>
 using namespace adevs;
 
 class bogus_atomic : public Atomic<char> {
@@ -11,7 +11,6 @@ class bogus_atomic : public Atomic<char> {
     void delta_ext(double, list<PinValue<char>> const &) {}
     void delta_conf(list<PinValue<char>> const &) {}
     void output_func(list<PinValue<char>> &) {}
-
     double ta() { return 0.0; }
 };
 
