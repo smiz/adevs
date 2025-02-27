@@ -1,5 +1,8 @@
 #ifndef _multi_clerk_h_
 #define _multi_clerk_h_
+
+#include <memory>
+
 #include "Clerk.h"
 #include "Decision.h"
 #include "adevs/adevs.h"
@@ -8,15 +11,14 @@
 A model of a store with multiple clerks and a "shortest line"
 decision process for customers.
 */
-class MultiClerk : public adevs::Digraph<Customer*> {
+class MultiClerk : public adevs::Digraph<std::shared_ptr<Customer>> {
+
   public:
-    // Model input port
+    // Model input/output ports
     static int const arrive;
-    // Model output port
     static int const depart;
-    // Constructor.
+
     MultiClerk();
-    // Destructor.
     ~MultiClerk();
 };
 

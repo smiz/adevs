@@ -26,6 +26,7 @@ fs = import('fs')
 # Scripts/helpers for tests
 compare = find_program('utilities/compare.sh')
 run_and_compare = find_program('utilities/run_and_compare.sh')
+run_and_compare_output = find_program('utilities/run_and_compare_output.sh')
 
 # Add all the subdirectoriess
 #subdir('examples')

@@ -88,6 +88,11 @@ class Digraph : public Network<PortValue<VALUE, PORT>, TimeType> {
     /// Couple the source model to the destination model.
     void couple(shared_ptr<Component> src, PORT srcPort,
                 shared_ptr<Component> dst, PORT dstPort);
+    // Required due to switching to smart pointers for components instead of raw pointers.
+    // This hopefully won't be needed once the networks are refactored in v4.0.
+    void couple_input(PORT srcPort, shared_ptr<Component> dst, PORT dstPort);
+    void couple_output(shared_ptr<Component> src, PORT srcPort, PORT dstPort);
+
     /// Puts the network's components into to c
     void getComponents(set<Component*> &c);
     /// Route an event based on the coupling information.
@@ -116,7 +121,7 @@ class Digraph : public Network<PortValue<VALUE, PORT>, TimeType> {
         }
     };
     // Component model set
-    set<Component*> models;
+    set<shared_ptr<Component>> models;
     // Coupling information
     std::map<node, list<node>> graph;
 };
@@ -124,7 +129,7 @@ class Digraph : public Network<PortValue<VALUE, PORT>, TimeType> {
 template <class VALUE, class PORT, class TimeType>
 void Digraph<VALUE, PORT, TimeType>::add(shared_ptr<Component> model) {
     assert(model.get() != this);
-    models.insert(model.get());
+    models.insert(model);
     model->setParent(this);
     if (this->simulator != nullptr) {
         this->simulator->pending_schedule.insert(model);
@@ -148,8 +153,29 @@ void Digraph<VALUE, PORT, TimeType>::couple(shared_ptr<Component> src,
 }
 
 template <class VALUE, class PORT, class TimeType>
+void Digraph<VALUE, PORT, TimeType>::couple_input(PORT srcPort,
+                                                  shared_ptr<Component> dst,
+                                                  PORT dstPort) {
+    add(dst);
+    node src_node(this, srcPort);
+    node dst_node(dst.get(), dstPort);
+    graph[src_node].push_back(dst_node);
+}
+
+template <class VALUE, class PORT, class TimeType>
+void Digraph<VALUE, PORT, TimeType>::couple_output(shared_ptr<Component> src,
+                                                   PORT srcPort, PORT dstPort) {
+    add(src);
+    node src_node(src.get(), srcPort);
+    node dst_node(this, dstPort);
+    graph[src_node].push_back(dst_node);
+}
+
+template <class VALUE, class PORT, class TimeType>
 void Digraph<VALUE, PORT, TimeType>::getComponents(set<Component*> &c) {
-    c = models;
+    for (auto ii : models) {
+        c.insert(ii.get());
+    }
 }
 
 template <class VALUE, class PORT, class TimeType>

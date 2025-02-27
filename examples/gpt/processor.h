@@ -1,17 +1,19 @@
-#ifndef _proc_h_
-#define _proc_h_
+#ifndef _processor_h_
+#define _processor_h_
+
 #include <cstdlib>
+
 #include "adevs/adevs.h"
 #include "job.h"
 
 /*
-A processor requires a fixed period of time to service a job.
-The processor can serve only one job at a time.  It the processor
-is busy, it simply discards incoming jobs.
-*/
-class proc : public adevs::Atomic<PortValue> {
+ * A processor requires a fixed period of time to service a job.
+ * The processor can serve only one job at a time.  It the processor
+ * is busy, it simply discards incoming jobs.
+ */
+class Processor : public adevs::Atomic<PortValue> {
   public:
-    proc(double proc_time)
+    Processor(double proc_time)
         : adevs::Atomic<PortValue>(),
           processing_time(proc_time),
           sigma(DBL_MAX),
@@ -36,7 +38,7 @@ class proc : public adevs::Atomic<PortValue> {
         if (sigma == DBL_MAX) {
             // Make a copy of the job (original will be destroyed by the
             // generator at the end of this simulation cycle).
-            val = new job((*(x.begin())).value);
+            val = new Job((*(x.begin())).value);
             // Wait for the required processing time before outputting the
             // completed job
             sigma = processing_time;
@@ -62,7 +64,7 @@ class proc : public adevs::Atomic<PortValue> {
 
     double ta() { return sigma; }
 
-    ~proc() {
+    ~Processor() {
         if (val != NULL) {
             delete val;
         }
@@ -76,12 +78,12 @@ class proc : public adevs::Atomic<PortValue> {
   private:
     /// Model state variables
     double processing_time, sigma;
-    job* val;
+    Job* val;
     double t;
 };
 
 /// Create unique 'names' for the model ports.
-int const proc::in(0);
-int const proc::out(1);
+int const Processor::in(0);
+int const Processor::out(1);
 
 #endif

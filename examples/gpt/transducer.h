@@ -1,10 +1,13 @@
-#ifndef _transd_h_
-#define _transd_h_
+#ifndef _transducer_h_
+#define _transducer_h_
+
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+
 #include "adevs/adevs.h"
 #include "job.h"
+
 /*
 The transducer computes various statistics about the
 performance of the queuing system.  It receives new jobs
@@ -12,9 +15,9 @@ on its ariv port, finished jobs on its solved port,
 and generates and output on its out port when the observation
 interval has elapsed.
 */
-class transd : public adevs::Atomic<PortValue> {
+class Transducer : public adevs::Atomic<PortValue> {
   public:
-    transd(double observ_time)
+    Transducer(double observ_time)
         : adevs::Atomic<PortValue>(),
           observation_time(observ_time),
           sigma(observation_time),
@@ -57,7 +60,7 @@ class transd : public adevs::Atomic<PortValue> {
         list<PortValue>::iterator iter;
         for (auto iter : x) {
             if (iter.port == ariv) {
-                job j(iter.value);
+                Job j(iter.value);
                 j.t = t;
                 std::cout << "Start job " << j.id << " @ t = " << t
                           << std::endl;
@@ -67,8 +70,8 @@ class transd : public adevs::Atomic<PortValue> {
         // Compute time required to process completed jobs
         for (auto iter : x) {
             if (iter.port == solved) {
-                job j(iter.value);
-                std::vector<job>::iterator i = jobs_arrived.begin();
+                Job j(iter.value);
+                std::vector<Job>::iterator i = jobs_arrived.begin();
                 for (; i != jobs_arrived.end(); i++) {
                     if ((*i).id == j.id) {
                         total_ta += t - (*i).t;
@@ -92,14 +95,14 @@ class transd : public adevs::Atomic<PortValue> {
 
     void output_func(list<PortValue> &y) {
         /// Generate an output event to stop the generator
-        job j;
+        Job j;
         PortValue pv(out, j);
         y.push_back(pv);
     }
 
     double ta() { return sigma; }
 
-    ~transd() {
+    ~Transducer() {
         jobs_arrived.clear();
         jobs_solved.clear();
     }
@@ -112,14 +115,14 @@ class transd : public adevs::Atomic<PortValue> {
 
   private:
     /// Model state variables
-    std::vector<job> jobs_arrived;
-    std::vector<job> jobs_solved;
+    std::vector<Job> jobs_arrived;
+    std::vector<Job> jobs_solved;
     double observation_time, sigma, total_ta, t;
 };
 
 /// Assign unique 'names' to ports
-int const transd::ariv(0);
-int const transd::solved(1);
-int const transd::out(2);
+int const Transducer::ariv(0);
+int const Transducer::solved(1);
+int const Transducer::out(2);
 
 #endif

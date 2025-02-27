@@ -28,6 +28,13 @@ class PhaseListener : public adevs::EventListener<CellEvent> {
     void outputEvent(adevs::Event<CellEvent>, double) {}
 };
 
+static int iterations = 0;
+static shared_ptr<adevs::CellSpace<int>> cell_space = nullptr;
+static shared_ptr<adevs::AbstractSimulator<CellEvent>> simulator = nullptr;
+static shared_ptr<PhaseListener> listener = nullptr;
+static bool initialized = false;
+
+
 // Create a random configuration
 void random_config(int dim) {
     // Create a temporary configuration file
@@ -70,15 +77,14 @@ void random_config(int dim) {
 
 void drawSpace() {
     // Initialize the OpenGL view
-    static bool init = true;
-    if (init) {
-        init = false;
+    if (!initialized) {
         glutUseLayer(GLUT_NORMAL);
         glClearColor(0.0, 0.0, 1.0, 1.0);
         glColor3f(0.0, 1.0, 0.0);
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         glOrtho(0.0, (float)win_width, 0.0, (float)win_height, 1.0, -1.0);
+        initialized = true;
     }
     // Clear the background
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -107,11 +113,7 @@ void drawSpace() {
 }
 
 void simulateSpace() {
-    static int iters = 0;
-    // Dynamic cellspace model and simulator
-    static adevs::CellSpace<int>* cell_space = NULL;
-    static adevs::AbstractSimulator<CellEvent>* sim = NULL;
-    static PhaseListener* listener = NULL;
+
     static double tN = DBL_MAX;
     // If the visualization array is needed
     if (phase == NULL) {
@@ -122,47 +124,39 @@ void simulateSpace() {
     }
     // Create a simulator if needed
     if (cell_space == NULL) {
-        iters++;
-        if (iters > 10) {
+        iterations++;
+        if (iterations > 10) {
             exit(0);
         }
-        cell_space = new adevs::CellSpace<int>(config->get_width(),
-                                               config->get_height());
+        cell_space = make_shared<adevs::CellSpace<int>>(config->get_width(),
+                                                        config->get_height());
         // Create a model to go into each point of the cellspace
         for (int x = 0; x < config->get_width(); x++) {
             for (int y = 0; y < config->get_height(); y++) {
-                fireCell* cell = new fireCell(config->get_fuel(x, y),
-                                              config->get_fire(x, y), x, y);
+                shared_ptr<fireCell> cell = make_shared<fireCell>(
+                    config->get_fuel(x, y), config->get_fire(x, y), x, y);
                 max_init_fuel = max(max_init_fuel, config->get_fuel(x, y));
                 cell_space->add(cell, x, y);
                 phase[x][y] = cell->getPhase();
             }
         }
         // Create a simulator for the model
-        sim = new adevs::Simulator<CellEvent>(cell_space);
+        simulator = make_shared<adevs::Simulator<CellEvent>>(cell_space);
         // Create a listener for the model
-        listener = new PhaseListener();
-        sim->addEventListener(listener);
+        listener = make_shared<PhaseListener>();
+        simulator->addEventListener(listener);
         // Ready to go
         phase_data_ready = true;
     }
+
     // If everything has died, then restart on the next call
-    tN = sim->nextEventTime();
+    tN = simulator->nextEventTime();
     if (tN == DBL_MAX) {
         phase_data_ready = false;
-        if (sim != NULL) {
-            delete sim;
-        }
-        delete cell_space;
-        delete listener;
-        sim = NULL;
-        cell_space = NULL;
-        listener = NULL;
-    }
-    // Run the next simulation step
-    else {
+    } else {
+        // Run the next simulation step
         try {
-            sim->execUntil(tN + 10.0);
+            simulator->execUntil(tN + 10.0);
         } catch (adevs::exception &err) {
             cout << err.what() << endl;
             exit(-1);
@@ -192,9 +186,11 @@ int main(int argc, char** argv) {
     if (config == NULL) {
         random_config(300);
     }
+
     // Setup the display
     win_height = config->get_height() * cell_size;
     win_width = config->get_width() * cell_size;
+
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
     glutInitWindowSize(win_width, win_height);
@@ -203,6 +199,6 @@ int main(int argc, char** argv) {
     glutDisplayFunc(drawSpace);
     glutIdleFunc(simulateSpace);
     glutMainLoop();
-    // Done
+
     return 0;
 }

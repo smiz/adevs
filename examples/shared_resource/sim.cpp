@@ -2,9 +2,12 @@
 #include <iostream>
 #include <list>
 #include <set>
+
 #include "adevs/adevs.h"
+
 using namespace std;
 using namespace adevs;
+
 
 struct request_t {
     int userID;
@@ -198,30 +201,35 @@ int const User::grant = 2;
 int main() {
     int numRes = 3;
     int numUsers = 5;
-    User** usr = new User*[numUsers];
-    Resource** res = new Resource*[numRes];
-    Digraph<request_t> model;
 
-    for (int i = 0; i < numRes; i++) {
-        res[i] = new Resource(i);
-        model.add(res[i]);
+    list<shared_ptr<User>> users;
+    list<shared_ptr<Resource>> resources;
+
+    shared_ptr<Digraph<request_t>> model = make_shared<Digraph<request_t>>();
+
+    for (int ii = 0; ii < numRes; ii++) {
+        shared_ptr<Resource> resource = make_shared<Resource>(ii);
+        resources.push_back(resource);
+        model->add(resource);
     }
-    for (int i = 0; i < numUsers; i++) {
-        usr[i] = new User(i, rand() % numRes);
-        model.add(usr[i]);
-        for (int j = 0; j < numRes; j++) {
-            model.couple(usr[i], User::release, res[j], Resource::release);
-            model.couple(usr[i], User::request, res[j], Resource::request);
-            model.couple(res[j], Resource::grant, usr[i], User::grant);
+
+    for (int ii = 0; ii < numUsers; ii++) {
+        shared_ptr<User> user = make_shared<User>(ii, rand() % numRes);
+        users.push_back(user);
+        model->add(user);
+
+        for (auto ri : resources) {
+            model->couple(user, User::release, ri, Resource::release);
+            model->couple(user, User::request, ri, Resource::request);
+            model->couple(ri, Resource::grant, user, User::grant);
         }
     }
-    Simulator<IO_Type>* sim = new Simulator<IO_Type>(&model);
-    while (sim->nextEventTime() < 100.0) {
-        cout << "t = " << sim->nextEventTime() << endl;
-        sim->execNextEvent();
+
+    adevs::Simulator<IO_Type> simulator(model);
+    while (simulator.nextEventTime() < 100.0) {
+        cout << "t = " << simulator.nextEventTime() << endl;
+        simulator.execNextEvent();
     }
-    delete sim;
-    delete[] usr;
-    delete[] res;
+
     return 0;
 }
