@@ -4,7 +4,7 @@
 subdir('gcd')
 subdir('gpt')
 # subdir('listener')
-# subdir('ode')
+subdir('ode')
 # subdir('poly')
 # subdir('tokenring')
 # subdir('wrapper')

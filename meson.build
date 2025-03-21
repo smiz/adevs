@@ -19,7 +19,6 @@ project_description = '''
 '''
 
 adevs = include_directories('include')
-
 # Imports used other places
 fs = import('fs')
 
