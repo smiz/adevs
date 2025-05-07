@@ -4,9 +4,11 @@
 
 using namespace std;
 
+using Simulator = adevs::Simulator<shared_ptr<token_t>>;
+using Graph = adevs::Graph<shared_ptr<token_t>>;
 
 int main() {
-    shared_ptr<Network> model = make_shared<Network>();
+    shared_ptr<Graph> model = make_shared<Graph>();
 
     shared_ptr<token_t> token1 = make_shared<token_t>();
     shared_ptr<token_t> token2 = make_shared<token_t>(1);
@@ -14,14 +16,21 @@ int main() {
     shared_ptr<Node> n1 = make_shared<Node>(0, 0, token1);
     shared_ptr<Node> n2 = make_shared<Node>(1, 0, token2);
 
-    model->add(n1);
-    model->add(n2);
-    model->couple(n1, n1->out, n2, n2->in);
-    model->couple(n2, n2->out, n1, n1->in);
+    n1->out = model->add_pin();
+    n1->in = model->add_pin();
+    n2->out = model->add_pin();
+    n2->in = model->add_pin();
+
+    model->add_atomic(n1);
+    model->add_atomic(n2);
+    model->connect(n1->in, n1);
+    model->connect(n2->in, n2);
+    model->connect(n2->out, n1->in);
+    model->connect(n1->out, n2->in);
 
     shared_ptr<Simulator> sim = make_shared<Simulator>(model);
 
-    for (int i = 0; i < 10 && sim->nextEventTime() < DBL_MAX; i++) {
+    for (int i = 0; i < 10 && sim->nextEventTime() < adevs_inf<double>(); i++) {
         cout << endl;
         sim->execNextEvent();
     }

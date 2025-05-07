@@ -43,14 +43,35 @@
 
 namespace adevs {
 
+/**
+ * The EventListener interface is used to be notified of events as
+ * they occur in a simulation. It must be registered with a Simulator.
+ */
 template <typename ValueType, typename TimeType = double>
 class EventListener {
   public:
     virtual ~EventListener() {}
+    /**
+     * Called when a atomic model produces an output.
+     * @param model The atomic model that produced the output
+     * @param value The output value produced by the model
+     * @param t The time of the output event
+     */
     virtual void outputEvent(Atomic<ValueType, TimeType> &model,
                              PinValue<ValueType> &value, TimeType t) = 0;
+    /**
+     * Called when an atomic receives an input.
+     * @param model The atomic model that receives the input
+     * @param value The input value
+     * @param t The time of the input event
+     */
     virtual void inputEvent(Atomic<ValueType, TimeType> &model,
                             PinValue<ValueType> &value, TimeType t) = 0;
+    /**
+     * Called after an atomic changes its state.
+     * @param model The atomic model that changed state
+     * @param t The time of when the change occurred
+     */
     virtual void stateChange(Atomic<ValueType, TimeType> &model,
                              TimeType t) = 0;
 };
@@ -64,7 +85,6 @@ class EventListener {
  */
 template <class OutputType, class TimeType = double>
 class Simulator {
-    // : public AbstractSimulator<OutputType, TimeType> {
 
   public:
     /*
@@ -74,11 +94,10 @@ class Simulator {
      * @param model The model to simulate
      */
     Simulator(shared_ptr<Atomic<OutputType, TimeType>> model);
-    // : AbstractSimulator<OutputType, TimeType>(), io_up_to_date(false) {
 
     /*
      * Initialize the simulator with a collection of models.
-     * @param model The collection of models to simulate.
+     * @param model The graph to simulate.
      */
     Simulator(std::shared_ptr<Graph<OutputType, TimeType>> model);
 
@@ -96,7 +115,7 @@ class Simulator {
     TimeType execNextEvent() { return computeNextState(); }
 
     /**
-     * Inject an input that will be applied at the next calls to
+     * Inject an input that will be applied at the next call to
      * computeNextState and computeNextOutput. The list is automatically
      * cleared when computeNextState is called.
      */
@@ -120,63 +139,23 @@ class Simulator {
         tNext = t;
     }
 
-    // TimeType execUntil(TimeType tend) {
-    //     TimeType t = tend + adevs_epsilon<TimeType>();
-    //     while (nextEventTime() <= tend &&
-    //            nextEventTime() < adevs_inf<TimeType>()) {
-    //         t = execNextEvent();
-    //     }
-    //     return t;
-    // }
-
     /*
      * Compute the output values of the imminent component models.
      * This notifies EventListeners as the outputs are produced.
      */
     void computeNextOutput();
 
-    // /*
-    //  * Compute the output value of the model in response to an input
-    //  * at some time in lastEventTime() <= t <= nextEventTime().
-    //  * This will notify registered EventListeners as the outputs
-    //  * are produced. If this is the first call since the prior
-    //  * state change with the given t, then the new output is computed.
-    //  * Subsequent calls for the same time t simply
-    //  * append to the input already supplied at time t.
-    //  * @param input A list of (input target,value) pairs
-    //  * @param t The time at which the input takes effect
-    //  */
-    // void computeNextOutput(list<Event<OutputType, TimeType>> &input,
-    //                        TimeType t);
-
-    // /*
-    //  * Apply the list of inputs at time t and then compute the next model
-    //  * states. Requires that lastEventTime() <= t <= nextEventTime().
-    //  * This, in effect, implements the state transition function of
-    //  * the resultant model. If the output has already been computed
-    //  * at time t, then the new input at t is simply appended to the
-    //  * prior input. Otherwise, the old results are discarded and input
-    //  * is calculated at the given time.
-    //  * @param input A list of (input target,value) pairs
-    //  * @param t The time at which the input takes effect
-    //  * @return The new, current simulation time
-    //  */
-    // TimeType computeNextState(list<Event<OutputType, TimeType>> &input,
-    //                           TimeType t);
-
-    // /*
-    //  * Compute the next state at the time at the time t and with
-    //  * input supplied at the prior call to computeNextOutput
-    //  * assuming no computeNextState has intervened. Assumes
-    //  * t = nextEventTime() and input an empty list if there was
-    //  * no prior call to computeNextOutput.
-    //  */
     /*
      * Compute the next state of the model.
-     * @return The new, current simulation time
+     * @return The new simulation time
      */
     TimeType computeNextState();
 
+    /**
+     * Add an event listener to the simulator that will be notified of
+     * input, output, and changes of state as they occur.
+     * @param listener The event listener to add
+     */
     void addEventListener(
         std::shared_ptr<EventListener<OutputType, TimeType>> listener) {
         listeners.push_back(listener);
@@ -189,12 +168,7 @@ class Simulator {
     std::list<PinValue<OutputType>> external_input;
     Schedule<OutputType, TimeType> sched;
     bool output_ready;
-    //bool allow_mealy_input;
-    //bool io_up_to_date;
     TimeType tNext;
-    //TimeType io_time;
-    //list<Atomic<OutputType, TimeType>*> activated;
-    //list<MealyAtomic<OutputType, TimeType>*> mealy;
 
     void schedule(std::shared_ptr<Atomic<OutputType, TimeType>> &model,
                   TimeType t);
@@ -204,11 +178,6 @@ template <typename OutputType, typename TimeType>
 Simulator<OutputType, TimeType>::Simulator(
     std::shared_ptr<Graph<OutputType, TimeType>> model)
     : graph(model), output_ready(false) {
-    //: AbstractSimulator<OutputType, TimeType>(), io_up_to_date(false) {
-    // The Atomic constructor sets the atomic model's
-    // tL correctly to zero, and so it is sufficient
-    // to only worry about putting models with a
-    // non infinite time advance into the schedule.
     for (auto atomic : model->get_atomics()) {
         schedule(atomic, adevs_zero<TimeType>());
     }
@@ -329,234 +298,6 @@ void Simulator<OutputType, TimeType>::schedule(
         sched.schedule(model, model->tN);
     }
 }
-
-//     template <class OutputType, class TimeType>
-//     void Simulator<OutputType, TimeType>::computeNextOutput(
-//         list<Event<OutputType, TimeType>> & input, TimeType t) {
-
-//     // Undo any prior output calculation at another time
-//     if (io_up_to_date && !(io_time == t)) {
-//         typename list<Atomic<OutputType, TimeType>*>::iterator
-//             iter;
-//         for (auto iter : activated) {
-//             clean_up(iter);
-//         }
-//         activated.clear();
-//     }
-//     // Input and output happen at the current time.
-//     io_time = t;
-//     // Get the imminent Moore models from the schedule if we have not
-//     // already done so.
-//     allow_mealy_input = true;
-//     if (t == sched.minPriority() && !io_up_to_date) {
-//         // get the list of activated models
-//         auto activated_models = sched.visitImminent();
-
-//         // process moore models
-//         for (auto model : activated_models) {
-//             Atomic<OutputType, TimeType>* atmoic_model =
-//                 model->typeIsAtomic();
-//             MealyAtomic<OutputType, TimeType>* mealy_model =
-//                 model->typeIsMealyAtomic();
-
-//             // need to do this because a MealyAtomic is technically both an
-//             // Atomic and a MealyAtomic (by inheritance)
-//             if (atmoic_model != nullptr &&
-//                 mealy_model == nullptr) {
-//                 assert(model->outputs->empty());
-//                 activated.push_back(model);
-//                 model->output_func(*(model->outputs));
-
-//                 for (auto y_iter : *(model->outputs)) {
-//                     route(model->getParent(), model, y_iter);
-//                 }
-//             } else {
-//                 assert(mealy_model != nullptr);
-//                 assert(mealy_model->outputs->empty());
-//                 mealy.push_back(mealy_model);
-//             }
-//         }
-//     }
-//     // Apply the injected inputs.
-//     for (auto iter : input) {
-//         Atomic<OutputType, TimeType>* amodel =
-//             iter.model->typeIsAtomic();
-//         if (amodel != nullptr) {
-//             inject_event(amodel, iter.value);
-//         } else {
-//             route(iter.model->typeIsNetwork(), iter.model,
-//                   iter.value);
-//         }
-//     }
-//     // Only Moore models can influence Mealy models.
-//     allow_mealy_input = false;
-//     // Iterate over activated Mealy models to calculate their output
-//     for (auto m_iter : mealy) {
-//         MealyAtomic<OutputType, TimeType>* model = m_iter;
-//         assert(model->outputs->empty());
-
-//         // Put it in the active set if it is not already there
-//         if (!model->activated) {
-//             activated.push_back(model);
-//             model->activated = true;
-//         }
-//         // Compute output functions and route the events.
-//         if (model
-//                 ->imminent)  // These are the imminent Mealy models
-//         {
-//             if (!model->activated) {
-//                 model->typeIsAtomic()->output_func(
-//                     *(model->outputs));
-//             } else {
-//                 model->output_func(*(model->inputs),
-//                                    *(model->outputs));
-//             }
-//         } else {
-//             assert(model->activated);
-//             // These are the Mealy models activated by input
-//             model->output_func(sched.minPriority() - model->tL,
-//                                *(model->inputs),
-//                                *(model->outputs));
-//         }
-//     }
-//     // Translate Mealy output to inputs for Moore models. The route method
-//     // will throw an exception if an event is sent to a Mealy model.
-//     for (auto m_iter : mealy) {
-//         MealyAtomic<OutputType, TimeType>* model = m_iter;
-//         // Route each event in y
-//         for (typename list<OutputType>::iterator y_iter =
-//                  model->outputs->begin();
-//              y_iter != model->outputs->end(); y_iter++) {
-//             route(model->getParent(), model, *y_iter);
-//         }
-//     }
-//     mealy.clear();
-//     io_up_to_date = true;
-// }
-
-// template <class OutputType, class TimeType>
-// void Simulator<OutputType, TimeType>::computeNextOutput() {
-//     computeNextOutput(bogus_input, sched.minPriority());
-// }
-
-// template <class OutputType, class TimeType>
-// TimeType Simulator<OutputType, TimeType>::computeNextState(
-//     list<Event<OutputType, TimeType>> & input, TimeType t) {
-//     computeNextOutput(input, t);
-//     assert(io_time == t && io_up_to_date);
-//     return computeNextState();
-// }
-
-// template <class OutputType, class TimeType>
-// TimeType Simulator<OutputType, TimeType>::computeNextState() {
-//     if (!io_up_to_date) {
-//         computeNextOutput();
-//     }
-//     io_up_to_date = false;
-//     TimeType t = io_time,
-//              tQ = io_time + adevs_epsilon<TimeType>();
-
-//     // Track which models need and have been called
-//     set<Devs<OutputType, TimeType>*> called;
-//     list<Devs<OutputType, TimeType>*> pending_transitions;
-
-//     /*
-//      * Compute the states of atomic models.  Store Network models that
-//      * need to have their model transition function evaluated in a
-//      * special container that will be used when the structure changes are
-//      * computed.
-//      */
-//     for (auto model : activated) {
-//         // Internal event if no input
-//         if (model->inputs->empty()) {
-//             model->delta_int();
-//         } else if (model->imminent) {
-//             // Confluent event if model is imminent and has input
-//             model->delta_conf(*(model->inputs));
-//         } else {
-//             // External event if model is not imminent and has input
-//             model->delta_ext(t - model->tL, *(model->inputs));
-//         }
-//         // Notify listeners
-//         this->notify_state_listeners(model, tQ);
-//         // Check for a model transition
-
-//         // Adjust position in the schedule
-//         schedule(model, tQ);
-
-//         bool propagate = model->model_transition();
-//         auto parent = model->getParent();
-//         if (propagate && parent != nullptr) {
-//             pending_transitions.push_back(parent);
-
-
-// template <class OutputType, class TimeType>
-// void Simulator<OutputType, TimeType>::schedule(
-//     Devs<OutputType, TimeType> * model, TimeType t) {
-//     model->simulator = this;
-//     Atomic<OutputType, TimeType>* a =
-//         model->typeIsAtomic();
-//     if (a != nullptr) {
-//         a->tL = t;
-//         TimeType dt = a->ta();
-//         if (dt == adevs_inf<TimeType>()) {
-//             sched.schedule(a, adevs_inf<TimeType>());
-//         } else {
-//             TimeType tNext = a->tL + dt;
-//             if (tNext < a->tL) {
-//                 exception err("Negative time advance",
-//                               a);
-//                 throw err;
-//             }
-//             sched.schedule(a, tNext);
-//         }
-//     } else {
-//         set<Devs<OutputType, TimeType>*> components;
-//         model->typeIsNetwork()->getComponents(
-//             components);
-//         for (auto iter : components) {
-//             schedule(iter, t);
-//         }
-//     }
-// }
-
-// template <class OutputType, class TimeType>
-// void Simulator<OutputType, TimeType>::inject_event(
-//     Atomic<OutputType, TimeType> * model,
-//     OutputType & value) {
-//     if (io_time < model->tL) {
-//         exception err(
-//             "Attempt to apply input in the past",
-//             model);
-//         throw err;
-//     }
-//     // If this is a Mealy model, add it to the list of models that
-//     // will need their input calculated
-//     if (model->typeIsMealyAtomic()) {
-//         if (allow_mealy_input) {
-//             // Add it to the list of its not already there
-//             if (!model->activated && !model->imminent) {
-//                 mealy.push_back(
-//                     model->typeIsMealyAtomic());
-//             }
-//         } else {
-//             exception err(
-//                 "Mealy model coupled to a Mealy model",
-//                 model);
-//             throw err;
-//         }
-//     }
-//     // Add the output to the model's list of output to be processed
-//     if (!model->activated) {
-//         if (!model->imminent) {
-//             activated.push_back(model);
-//             model->activated = true;
-//         }
-//         //model->inputs->clear();
-//     }
-//     this->notify_input_listeners(model, value, io_time);
-//     model->inputs->push_back(value);
-// }
 
 }  // namespace adevs
 

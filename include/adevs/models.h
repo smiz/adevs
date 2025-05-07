@@ -56,60 +56,32 @@ class Schedule;
 
 typedef int pin_t;
 
+/**
+ * The PinValue class is used for input and output in a simulation.
+ * A pin can be attached to a model or to another pin. Events are
+ * transmitted from pin to pin, from model to pin, and from pin to
+ * model.
+ */
 template <typename ValueType>
 class PinValue {
   public:
+    /// @brief Default constructor.
     PinValue() {}
+    /// @brief Constructor that assigns a pin and value.
     PinValue(pin_t pin, ValueType value) : pin(pin), value(value) {}
+    /// @brief Copy constructor.
     PinValue(PinValue const &src) : pin(src.pin), value(src.value) {}
+    /// @brief Assignment operator.
     PinValue<ValueType> const &operator=(PinValue const &src) {
         pin = src.pin;
         value = src.value;
         return *this;
     }
+    /// @brief The pin on which the value appears.
     pin_t pin;
+    /// @brief The value that appears on the pin.
     ValueType value;
 };
-
-
-// /*
-//  * Event objects are used for routing within a network model,
-//  * for notifying event listeners of output events, and for injecting
-//  * input into a running simulation.
-//  */
-// template <typename OutputType, typename TimeType = double>
-// class Event {
-//   public:
-//     /// Constructor.  Sets the model to nullptr.
-//     Event() : model(nullptr), value() {}
-//     /*
-//      * Constructor sets the model and value. The input into a
-//      * Simulator and in a network's routing method,
-//      * the model is the target of the input value.
-//      * In a callback to an event listener, the model is the
-//      * source of the output value.
-//      */
-//     Event(Devs<OutputType, TimeType>* model, OutputType const &value)
-//         : model(model), value(value) {}
-
-//     Event(shared_ptr<Devs<OutputType, TimeType>> model, OutputType const &value)
-//         : model(model.get()), value(value) {}
-
-//     /// Copy constructor.
-//     Event(Event<OutputType, TimeType> const &src)
-//         : model(src.model), value(src.value) {}
-//     /// Assignment operator.
-//     Event<OutputType, TimeType> const &operator=(
-//         Event<OutputType, TimeType> const &src) {
-//         model = src.model;
-//         value = src.value;
-//         return *this;
-//     }
-//     /// The model associated with the event.
-//     Devs<OutputType, TimeType>* model;
-//     /// The value associated with the event.
-//     OutputType value;
-// };
 
 
 /*
@@ -125,37 +97,28 @@ class Atomic {
     virtual ~Atomic() {}
     /// Internal transition function.
     virtual void delta_int() = 0;
-    /*
+    /***
      * External transition function.
-     * @param e Time elapsed since the last change of state
+     * @param e Time elapsed since the previous change of state.
      * @param xb Input for the model.
      */
     virtual void delta_ext(TimeType e,
                            std::list<PinValue<OutputType>> const &xb) = 0;
-    /*
+    /***
      * Confluent transition function.
      * @param xb Input for the model.
      */
     virtual void delta_conf(std::list<PinValue<OutputType>> const &xb) = 0;
-    /*
+    /***
      * Output function.  Output values should be added to the list yb.
-     * @param yb Empty list to be filled with the model's output
+     * @param yb Empty list to be filled with the model's output.
      */
     virtual void output_func(std::list<PinValue<OutputType>> &yb) = 0;
-    /*
-     * Time advance function. adevs_inf<TimeType>() is used for infinity.
-     * @return The time to the next internal event
+    /***
+     * Time advance function. Use adevs_inf<TimeType>() for infinity.
+     * @return The time to the next internal event.
      */
     virtual TimeType ta() = 0;
-
-    //   protected:
-    //     /*
-    //      * Get the last event time for this model. This is
-    //      * provided primarily for use with the backwards compatibility
-    //      * module and should not be relied on. It is likely to be
-    //      * removed in later versions of the code.
-    //      */
-    //     TimeType getLastEventTime() const { return tL; }
 
   private:
     friend class Simulator<OutputType, TimeType>;
@@ -168,9 +131,6 @@ class Atomic {
 
     std::list<PinValue<OutputType>> inputs;
     std::list<PinValue<OutputType>> outputs;
-
-    // bool activated = false;
-    // bool imminent = false;
 };
 
 /*

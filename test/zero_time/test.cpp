@@ -19,7 +19,7 @@ class Parrot : public Atomic<string> {
         q = "";
     }
 
-    void delta_ext(double e, list<PinValue<string>> const &xb) {
+    void delta_ext(double, list<PinValue<string>> const &xb) {
         for (auto iter : xb) {
             q += iter.value;
         }
@@ -55,9 +55,9 @@ shared_ptr<Parrot> p1;
 
 class Listener : public EventListener<string> {
   public:
-    void stateChange(Atomic<string>& model, double t) {}
-    void inputEvent(Atomic<string>& model, PinValue<string>& x, double t) {}
-    void outputEvent(Atomic<string>& model, PinValue<string>& x, double t) {
+    void stateChange(Atomic<string>&, double) {}
+    void inputEvent(Atomic<string>&, PinValue<string>&, double) {}
+    void outputEvent(Atomic<string>&, PinValue<string>& x, double t) {
         if (x.pin == p1->out) {
             cout << t << " " << x.value << endl;
         }

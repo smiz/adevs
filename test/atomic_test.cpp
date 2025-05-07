@@ -56,12 +56,12 @@ class MyEventListener : public EventListener<char> {
         count = 0;
         t_last = 0.0;
     }
-    void outputEvent(Atomic<char>&, PinValue<char>& x, double t) {
+    void outputEvent(Atomic<char>&, PinValue<char>&, double t) {
         count++;
         t_last = t;
     }
-    void inputEvent(Atomic<char>&, PinValue<char>& x, double t) {}
-    void stateChange(Atomic<char>&, double t) {}
+    void inputEvent(Atomic<char>&, PinValue<char>&, double) {}
+    void stateChange(Atomic<char>&, double) {}
     int count;
     double t_last;
 };

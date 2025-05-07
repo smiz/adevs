@@ -4,10 +4,8 @@
 subdir('gcd')
 subdir('gpt')
 # subdir('listener')
-subdir('ode')
-# subdir('poly')
-# subdir('tokenring')
-# subdir('wrapper')
+# subdir('ode')
+subdir('tokenring')
 subdir('zero_time')
 
 # Tests in this directory

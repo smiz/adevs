@@ -218,7 +218,7 @@ class double_fcmp {
     static double epsilon;
 
     double_fcmp(double rhs = 0) : d(rhs) {}
-
+    double_fcmp(double_fcmp const &other) : d(other.d) {}
     double_fcmp const &operator=(double_fcmp const &rhs) {
         d = rhs.d;
         return *this;

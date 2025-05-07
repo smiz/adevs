@@ -45,14 +45,14 @@ class Watch : public Atomic<int, sd_time<double>> {
         assert(e == expect);
     }
     void delta_conf(list<PinValue<int>> const &) { assert(false); }
-    void output_func(list<PinValue<int>> &y) { assert(false); }
+    void output_func(list<PinValue<int>> &) { assert(false); }
 };
 
 class MyEventListener : public EventListener<int, sd_time<double>> {
   public:
     MyEventListener() : EventListener<int, sd_time<double>>() {}
-    void inputEvent(Atomic<int,sd_time<double>>& model, PinValue<int>& x, sd_time<double> t) {}
-    void outputEvent(Atomic<int,sd_time<double>>& model, PinValue<int>& x, sd_time<double> t) {
+    void inputEvent(Atomic<int,sd_time<double>>&, PinValue<int>&, sd_time<double>) {}
+    void outputEvent(Atomic<int,sd_time<double>>&, PinValue<int>& x, sd_time<double> t) {
         cout << "t = " << t << " , y = " << x.value << endl;
     }
     void stateChange(Atomic<int, sd_time<double>>& model, sd_time<double> t) {

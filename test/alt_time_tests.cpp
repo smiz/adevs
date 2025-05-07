@@ -40,7 +40,7 @@ void PingPong<TimeType>::delta_int() {
 }
 
 template <typename TimeType>
-void PingPong<TimeType>::delta_ext(TimeType e, list<PinValue<int>> const &xb) {
+void PingPong<TimeType>::delta_ext(TimeType, list<PinValue<int>> const &xb) {
     active = xb.size() == 1;
 }
 

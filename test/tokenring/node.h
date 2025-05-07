@@ -7,34 +7,27 @@
 #include <memory>
 #include "adevs/adevs.h"
 
-
 struct token_t {
     int value;
     token_t(int value = 0) : value(value) {}
 };
 
-using PortValue = adevs::PortValue<shared_ptr<token_t>>;
-using Network = adevs::Digraph<shared_ptr<token_t>>;
-using Model = adevs::Devs<PortValue>;
-using Simulator = adevs::Simulator<PortValue>;
-using Devs = adevs::Devs<PortValue>;
+using Bag = std::list<adevs::PinValue<shared_ptr<token_t>>>;
 
-
-class Node : public adevs::Atomic<PortValue> {
+class Node : public adevs::Atomic<shared_ptr<token_t>> {
   public:
-    static int const in;
-    static int const out;
-    //enum class Port { IN = 0, OUT = 1 };
+    int in;
+    int out;
 
     Node(int ID, int holdtime, shared_ptr<token_t> token)
-        : adevs::Atomic<PortValue>(),
+        : adevs::Atomic<shared_ptr<token_t>>(),
           ID(ID),
           token(token),
           out_token(token),
           holdtime(holdtime),
-          sigma(DBL_MAX),
+          sigma(adevs_inf<double>()),
           t(0.0) {
-        if (token != NULL) {
+        if (token != nullptr) {
             sigma = holdtime;
         }
     }
@@ -42,36 +35,35 @@ class Node : public adevs::Atomic<PortValue> {
     double ta() { return sigma; }
 
     void delta_int() {
-        assert(token != NULL);
+        assert(token != nullptr);
         t += ta();
         printf("%d sent %d @ t = %.0f\n", ID, out_token->value, t);
         out_token = token;
-        sigma = DBL_MAX;
+        sigma = adevs_inf<double>();
     }
 
-    void delta_ext(double e, list<PortValue> const &x) {
+    void delta_ext(double e, Bag const &x) {
         t += e;
         assert(x.size() == 1);
-        token = static_cast<shared_ptr<token_t>>((*(x.begin())).value);
-        if (out_token == NULL) {
+        token = (*(x.begin())).value;
+        if (out_token == nullptr) {
             out_token = token;
         }
         sigma = holdtime;
         printf("%d got %d @ t = %.0f\n", ID, token->value, t);
     }
 
-    void delta_conf(list<PortValue> const &x) {
+    void delta_conf(Bag const &x) {
         t += ta();
         assert(x.size() == 1);
         printf("%d sent %d @ t = %.0f\n", ID, token->value, t);
-        out_token = token =
-            static_cast<shared_ptr<token_t>>((*(x.begin())).value);
+        out_token = token = (*(x.begin())).value;
         sigma = holdtime;
         printf("%d got %d @ t = %.0f\n", ID, token->value, t);
     }
 
-    void output_func(list<PortValue> &y) {
-        PortValue pv(out, out_token);
+    void output_func(Bag &y) {
+        adevs::PinValue<shared_ptr<token_t>> pv(out, out_token);
         y.push_back(pv);
     }
 
@@ -83,8 +75,5 @@ class Node : public adevs::Atomic<PortValue> {
 
     double holdtime, sigma, t;
 };
-
-int const Node::in(0);
-int const Node::out(1);
 
 #endif

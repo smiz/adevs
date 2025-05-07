@@ -57,12 +57,12 @@ class MyEventListener : public EventListener<char, double_fcmp> {
         count = 0;
         t_last = 0.0;
     }
-    void inputEvent(Atomic<char,double_fcmp>& model, PinValue<char>& x, double_fcmp t) {}
-    void outputEvent(Atomic<char,double_fcmp>& model, PinValue<char>& x, double_fcmp t) {
+    void inputEvent(Atomic<char,double_fcmp>&, PinValue<char>&, double_fcmp) {}
+    void outputEvent(Atomic<char,double_fcmp>&, PinValue<char>&, double_fcmp t) {
         count++;
         t_last = t;
     }
-    void stateChange(Atomic<char,double_fcmp>& model, double_fcmp t) {}
+    void stateChange(Atomic<char,double_fcmp>&, double_fcmp) {}
 
     int count;
     double_fcmp t_last;

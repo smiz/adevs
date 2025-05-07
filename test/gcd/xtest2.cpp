@@ -6,8 +6,8 @@ using namespace std;
 
 class generatorEventListener : public adevs::EventListener<ObjectPtr> {
   public:
-    void stateChange(adevs::Atomic<ObjectPtr>& model, double) {}
-    void inputEvent(adevs::Atomic<ObjectPtr>& model, adevs::PinValue<ObjectPtr>& x, double) {}
+    void stateChange(adevs::Atomic<ObjectPtr>&, double) {}
+    void inputEvent(adevs::Atomic<ObjectPtr>&, adevs::PinValue<ObjectPtr>&, double) {}
     void outputEvent(adevs::Atomic<ObjectPtr>& model, adevs::PinValue<ObjectPtr>& x, double) {
         auto event = pair<adevs::Atomic<ObjectPtr>&,adevs::PinValue<ObjectPtr>>(model, x);
         output.push_back(event);

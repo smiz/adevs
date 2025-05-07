@@ -17,7 +17,7 @@ class Model : public Atomic<int, sd_time<int>> {
         return sd_time<int>(0, 0);
     }
     void delta_int() { count++; }
-    void delta_ext(sd_time<int> e, list<PinValue<int>> const &) {}
+    void delta_ext(sd_time<int>, list<PinValue<int>> const &) {}
     void delta_conf(list<PinValue<int>> const &) { delta_int(); }
     void output_func(list<PinValue<int>> &y) {
         PinValue<int> yy(0,count);
