@@ -3,18 +3,14 @@
 #include <cassert>
 #include "adevs/adevs.h"
 
-typedef adevs::PortValue<char> SimpleIO;
-
-class SimpleAtomic : public adevs::Atomic<SimpleIO> {
+class SimpleAtomic : public adevs::Atomic<char> {
   public:
     SimpleAtomic();
     void delta_int();
-    void delta_ext(double, list<SimpleIO> const &) { assert(false); }
-    void delta_conf(list<SimpleIO> const &) { assert(false); }
+    void delta_ext(double, std::list<adevs::PinValue<char>> const &) { assert(false); }
+    void delta_conf(std::list<adevs::PinValue<char>> const &) { assert(false); }
     double ta() { return 1.0; }
-    void output_func(list<SimpleIO> &) {}
-
-    bool model_transition() { return true; }
+    void output_func(std::list<adevs::PinValue<char>> &) {}
     ~SimpleAtomic();
 
     static int atomic_number;

@@ -111,16 +111,6 @@ template <class OutputType, class TimeType>
 void Schedule<OutputType, TimeType>::visit(std::shared_ptr<Atomic<OutputType, TimeType>> &model) {
     assert(model->outputs.empty());
     activated.push_back(model);
-
-    // model->imminent = true;
-
-    // // Put it in the active list if it is not already there
-    // if (!model->activated) {
-    //     activated.push_back(model);
-    //     if (model->typeIsMealyAtomic() == nullptr) {
-    //         model->activated = true;
-    //     }
-    // }
 }
 
 template <class OutputType, class TimeType>

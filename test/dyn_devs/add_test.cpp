@@ -1,49 +1,38 @@
-#include <iostream>
 #include <list>
 #include <memory>
-#include "SimpleAtomic.h"
 #include "adevs/adevs.h"
+#include "SimpleAtomic.h"
 
 using namespace adevs;
 using namespace std;
 
 
-class SimpleNetwork : public Network<SimpleIO> {
+class Structure : public Atomic<char> {
   public:
-    SimpleNetwork() : Network<SimpleIO>() {
+    Structure(shared_ptr<Graph<char>>& graph) : Atomic<char>(),graph(graph) {
         shared_ptr<SimpleAtomic> model = make_shared<SimpleAtomic>();
-        model->setParent(this);
-        models.push_back(model);
+        graph->add_atomic(model);
     }
-
-    void getComponents(set<Devs<SimpleIO>*> &c) {
-        for (auto iter : models) {
-            c.insert(iter.get());
-        }
-    }
-
-    void route(SimpleIO const &, Devs<SimpleIO>*, list<Event<SimpleIO>> &) {}
-
-    bool model_transition() {
+    void delta_int() {
         shared_ptr<SimpleAtomic> model = make_shared<SimpleAtomic>();
-        model->setParent(this);
-        models.push_back(model);
-        if (this->simulator != nullptr) {
-            this->simulator->pending_schedule.insert(model);
-        }
-        return false;
+        graph->add_atomic(model);
     }
+    void delta_ext(double, std::list<PinValue<char>> const &) { assert(false); }
+    void delta_conf(std::list<PinValue<char>> const &) { assert(false); }  
+    void output_func(std::list<PinValue<char>> &) {}
+    double ta() { return 1.0; }
 
-  private:
-    list<shared_ptr<Devs<SimpleIO>>> models;
+    private:
+        shared_ptr<Graph<char>> graph;
 };
 
 int main() {
-    shared_ptr<SimpleNetwork> model = make_shared<SimpleNetwork>();
-    shared_ptr<Simulator<SimpleIO>> sim =
-        make_shared<Simulator<SimpleIO>>(model);
+    shared_ptr<Graph<char>> graph = make_shared<Graph<char>>();
+    shared_ptr<Structure> model = make_shared<Structure>(graph);
+    graph->add_atomic(model);
+    shared_ptr<Simulator<char>> sim = make_shared<Simulator<char>>(graph);
 
-    while (sim->nextEventTime() < DBL_MAX && SimpleAtomic::atomic_number < 10) {
+    while (sim->nextEventTime() < adevs_inf<double>() && SimpleAtomic::atomic_number < 10) {
         sim->execNextEvent();
         assert(SimpleAtomic::internal_execs + 1 == SimpleAtomic::atomic_number);
         SimpleAtomic::internal_execs = 0;

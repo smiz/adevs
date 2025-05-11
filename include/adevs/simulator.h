@@ -97,7 +97,9 @@ class Simulator {
 
     /*
      * Initialize the simulator with a collection of models.
-     * @param model The graph to simulate.
+     * @param model The graph to simulate. The graph is set to
+     * provisional and must remain so until the simulation is
+     * complete.
      */
     Simulator(std::shared_ptr<Graph<OutputType, TimeType>> model);
 
@@ -146,7 +148,9 @@ class Simulator {
     void computeNextOutput();
 
     /*
-     * Compute the next state of the model.
+     * Compute the next state of the model. Provisional changes to
+     * the model structure are applied after new states are computed
+     * for the atomic components.
      * @return The new simulation time
      */
     TimeType computeNextState();
@@ -178,6 +182,7 @@ template <typename OutputType, typename TimeType>
 Simulator<OutputType, TimeType>::Simulator(
     std::shared_ptr<Graph<OutputType, TimeType>> model)
     : graph(model), output_ready(false) {
+    graph->set_provisional(true);
     for (auto atomic : model->get_atomics()) {
         schedule(atomic, adevs_zero<TimeType>());
     }
@@ -189,6 +194,7 @@ Simulator<OutputType, TimeType>::Simulator(
     std::shared_ptr<Atomic<OutputType, TimeType>> model)
     : graph(new Graph<OutputType, TimeType>()), output_ready(false) {
     graph->add_atomic(model);
+    graph->set_provisional(true);
     schedule(model, adevs_zero<TimeType>());
     tNext = sched.minPriority();
 }
@@ -277,6 +283,41 @@ TimeType Simulator<OutputType, TimeType>::computeNextState() {
         // Adjust position in the schedule
         schedule(model, t);
     }
+    // Effect any changes in the model structure
+    graph->set_provisional(false);
+    std::list<typename Graph<OutputType,TimeType>::graph_op>& pending = graph->get_pending();
+    while (!pending.empty()) {
+        auto op = pending.front();
+        pending.pop_front();
+        switch(op.op)
+        {
+            case Graph<OutputType, TimeType>::ADD_ATOMIC:
+                graph->add_atomic(op.model);
+                schedule(op.model, t);
+                break;
+            case Graph<OutputType, TimeType>::REMOVE_ATOMIC:
+                sched.schedule(op.model, adevs_inf<TimeType>());
+                graph->remove_atomic(op.model);
+                break;
+            case Graph<OutputType, TimeType>::REMOVE_PIN:
+                graph->remove_pin(op.pin[0]);
+                break;
+            case Graph<OutputType, TimeType>::CONNECT_PIN_TO_PIN:
+                graph->connect(op.pin[0], op.pin[1]);
+                break;
+            case Graph<OutputType, TimeType>::DISCONNECT_PIN_FROM_PIN:
+                graph->disconnect(op.pin[0], op.pin[1]);
+                break;
+            case Graph<OutputType, TimeType>::CONNECT_PIN_TO_ATOMIC:
+                graph->connect(op.pin[0], op.model);
+                break;
+            case Graph<OutputType, TimeType>::DISCONNECT_PIN_FROM_ATOMIC:
+                graph->disconnect(op.pin[0], op.model);
+                break;
+        }
+    }
+    graph->set_provisional(true);
+    // Get the time of next event and return
     tNext = sched.minPriority();
     return t;
 }

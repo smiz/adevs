@@ -60,7 +60,50 @@ void test1() {
     assert(models.size() == 0);
 }
 
+void test2() {
+    std::list<std::pair<pin_t,std::shared_ptr<Atomic<int,int>>>> models;
+    std::shared_ptr<Atomic<int,int>> a(new TestAtomic());
+    Graph<int,int> g;
+    pin_t pin0 = g.add_pin();
+    pin_t pin1 = g.add_pin();
+    g.set_provisional(true);
+    g.add_atomic(a);
+    assert(g.get_atomics().find(a) == g.get_atomics().end());
+    assert(g.get_pending().back().model == a);
+    assert(g.get_pending().back().op == g.ADD_ATOMIC);
+    g.remove_atomic(a);
+    assert(g.get_atomics().find(a) == g.get_atomics().end());
+    assert(g.get_pending().back().model == a);
+    assert(g.get_pending().back().op == g.REMOVE_ATOMIC);
+    g.connect(pin0,pin1);
+    assert(g.get_pending().back().pin[0] == pin0);
+    assert(g.get_pending().back().pin[1] == pin1);
+    assert(g.get_pending().back().op == g.CONNECT_PIN_TO_PIN);
+    g.route(pin0,models);
+    assert(models.empty());
+    g.route(pin1,models);
+    assert(models.empty());
+    g.disconnect(pin0,pin1);
+    assert(g.get_pending().back().pin[0] == pin0);
+    assert(g.get_pending().back().pin[1] == pin1);
+    assert(g.get_pending().back().op == g.DISCONNECT_PIN_FROM_PIN);
+    g.connect(pin0,a);
+    assert(g.get_pending().back().pin[0] == pin0);
+    assert(g.get_pending().back().model == a);
+    assert(g.get_pending().back().op == g.CONNECT_PIN_TO_ATOMIC);
+    g.route(pin0,models);
+    assert(models.empty());
+    g.disconnect(pin0,a);
+    assert(g.get_pending().back().pin[0] == pin0);
+    assert(g.get_pending().back().model == a);
+    assert(g.get_pending().back().op == g.DISCONNECT_PIN_FROM_ATOMIC);
+    g.remove_pin(pin0);
+    assert(g.get_pending().back().pin[0] == pin0);
+    assert(g.get_pending().back().op == g.REMOVE_PIN);
+}
+
 int main() {
     test1();
+    test2();
     return 0;
 }

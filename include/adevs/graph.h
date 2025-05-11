@@ -43,7 +43,7 @@ template <typename X, typename T = double>
 class Graph {
     public:
         /// @brief  Construct an empty graph.
-        Graph():next_pin(0) {}
+        Graph():next_pin(0),provisional(false){}
         /// @brief  Destroy the graph but leave its atomic components intact.
         virtual ~Graph(){}
         /// @brief  Add a new pin_t to the graph.
@@ -54,7 +54,7 @@ class Graph {
         void remove_pin(pin_t p);
         /// @brief Add an atomic model to the graph.
         /// @param model The model to add.
-        void add_atomic(std::shared_ptr<Atomic<X,T>> model) { models.insert(model); }
+        void add_atomic(std::shared_ptr<Atomic<X,T>> model);
         /// @brief Remove an atomic model from the graph.
         /// @param model The model to remove.
         void remove_atomic(std::shared_ptr<Atomic<X, T>> model);
@@ -84,15 +84,61 @@ class Graph {
         /// @brief  Get the set of all atomic models that are part of the graph.
         /// @return The set of all atomic models.
         const std::set<std::shared_ptr<Atomic<X,T>>>& get_atomics() const { return models; }
+        /// This is used by the simulator to indicate that the graph is in a provisional state.
+        /// The graph must always be in a provisional state when a simulation is running.
+        void set_provisional(bool p) { provisional = p; }
+
+        /// Types of queued operations
+        enum pending_op {
+            ADD_ATOMIC,
+            REMOVE_ATOMIC,
+            REMOVE_PIN,
+            CONNECT_PIN_TO_PIN,
+            DISCONNECT_PIN_FROM_PIN,
+            CONNECT_PIN_TO_ATOMIC,
+            DISCONNECT_PIN_FROM_ATOMIC,
+        };
+        struct graph_op
+        {
+            pending_op op;
+            pin_t pin[2];
+            std::shared_ptr<Atomic<X,T>> model;
+        };
+        /**
+         * @brief Get the set of operations that have been queued while in the provisional state.
+         * To commit the items in this list, set_provisional(false) must be called before
+         * calling the method that processes the pending operations.
+         * @return The list of pending operations.
+         */
+        std::list<graph_op>& get_pending() { return pending; }
+
     private:
         std::map<pin_t,std::list<std::shared_ptr<Atomic<X,T>>>> pin_to_atomic;
         std::map<pin_t,std::list<pin_t> > pin_to_pin;
         std::set<std::shared_ptr<Atomic<X,T>>> models;
         pin_t next_pin;
+
+        void queue_remove_pin(pin_t p);
+        void queue_add_atomic(std::shared_ptr<Atomic<X,T>> model);
+        void queue_remove_atomic(std::shared_ptr<Atomic<X, T>> model);
+        void queue_connect(pin_t src, pin_t dst);
+        void queue_disconnect(pin_t src, pin_t dst);
+        void queue_connect(pin_t pin, std::shared_ptr<Atomic<X, T>> model);
+        void queue_disconnect(pin_t pin, std::shared_ptr<Atomic<X, T>> model);
+
+        // Pending changes are provisional? This is used by the simulator
+        // to indicate that the graph is in a provisional state during execution.
+        // When true, changes are queued but not applied to the graph.
+        bool provisional;
+        std::list<graph_op> pending;
     };
 
 template <typename X, typename T>
 void Graph<X, T>::remove_pin(pin_t pin) {
+    if (provisional) {
+        queue_remove_pin(pin);
+        return;
+    }
     pin_to_atomic.erase(pin);
     pin_to_pin.erase(pin);
     for (auto i = pin_to_pin.begin(); i != pin_to_pin.end(); i++) {
@@ -101,20 +147,41 @@ void Graph<X, T>::remove_pin(pin_t pin) {
 }
 
 template <typename X, typename T>
+void Graph<X, T>::add_atomic(std::shared_ptr<Atomic<X,T>> model) {
+    if (provisional) {
+        queue_add_atomic(model);
+        return;
+    }
+    models.insert(model);
+}
+
+template <typename X, typename T>
 void Graph<X, T>::remove_atomic(std::shared_ptr<Atomic<X,T>> model) {
     for (auto i = pin_to_atomic.begin(); i != pin_to_atomic.end(); i++) {
         i->second.remove(model);
+    }
+    if (provisional) {
+        queue_remove_atomic(model);
+        return;
     }
     models.erase(model);
 }
 
 template <typename X, typename T>
 void Graph<X, T>::connect(pin_t src, pin_t dst) {
+    if (provisional) {
+        queue_connect(src, dst);
+        return;
+    }
     pin_to_pin[src].push_back(dst);
 }
 
 template <typename X, typename T>
 void Graph<X, T>::disconnect(pin_t src, pin_t dst) {
+    if (provisional) {
+        queue_disconnect(src, dst);
+        return;
+    }
     auto i = pin_to_pin.find(src);
     if (i != pin_to_pin.end()) {
         i->second.remove(dst);
@@ -123,12 +190,20 @@ void Graph<X, T>::disconnect(pin_t src, pin_t dst) {
 
 template <typename X, typename T>
 void Graph<X, T>::connect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
+    if (provisional) {
+        queue_connect(pin, model);
+        return;
+    }
     models.insert(model);
     pin_to_atomic[pin].push_back(model);
 }
 
 template <typename X, typename T>
 void Graph<X, T>::disconnect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
+    if (provisional) {
+        queue_disconnect(pin, model);
+        return;
+    }
     auto i = pin_to_atomic.find(pin);
     if (i != pin_to_atomic.end()) {
         i->second.remove(model);
@@ -149,6 +224,66 @@ void Graph<X,T>::route(pin_t pin, std::list<std::pair<pin_t,std::shared_ptr<Atom
             route(*s, models);
         }
     }
+}
+
+template <typename X, typename T>
+void Graph<X, T>::queue_add_atomic(std::shared_ptr<Atomic<X,T>> model) {
+    graph_op op;
+    op.op = ADD_ATOMIC;
+    op.model = model;
+    pending.push_back(op);
+}
+
+template <typename X, typename T>
+void Graph<X, T>::queue_remove_pin(pin_t pin) {
+    graph_op op;
+    op.op = REMOVE_PIN;
+    op.pin[0] = pin;
+    pending.push_back(op);
+}
+
+template <typename X, typename T>
+void Graph<X, T>::queue_remove_atomic(std::shared_ptr<Atomic<X,T>> model) {
+    graph_op op;
+    op.op = REMOVE_ATOMIC;
+    op.model = model;
+    pending.push_back(op);
+}
+
+template <typename X, typename T>
+void Graph<X, T>::queue_connect(pin_t src, pin_t dst) {
+    graph_op op;
+    op.op = CONNECT_PIN_TO_PIN;
+    op.pin[0] = src;
+    op.pin[1] = dst;
+    pending.push_back(op);
+}
+
+template <typename X, typename T>
+void Graph<X, T>::queue_disconnect(pin_t src, pin_t dst) {
+    graph_op op;
+    op.op = DISCONNECT_PIN_FROM_PIN;
+    op.pin[0] = src;
+    op.pin[1] = dst;
+    pending.push_back(op);
+}
+
+template <typename X, typename T>
+void Graph<X, T>::queue_connect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
+    graph_op op;
+    op.op = CONNECT_PIN_TO_ATOMIC;
+    op.pin[0] = pin;
+    op.model = model;
+    pending.push_back(op);
+}
+
+template <typename X, typename T>
+void Graph<X, T>::queue_disconnect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
+    graph_op op;
+    op.op = DISCONNECT_PIN_FROM_ATOMIC;
+    op.pin[0] = pin;
+    op.model = model;
+    pending.push_back(op);
 }
 
 }
