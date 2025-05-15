@@ -61,11 +61,11 @@ class Schedule {
         heap[0].priority = adevs_sentinel<TimeType>();  // This is a sentinel value
     }
     /// Get the model at the front of the queue.
-    std::shared_ptr<Atomic<OutputType, TimeType>> getMinimum() const { return heap[1].item; }
+    Atomic<OutputType, TimeType>* getMinimum() const { return heap[1].item; }
     /// Get the time of the next event.
     TimeType minPriority() const { return heap[1].priority; }
     /// Visit the imminent models.
-    list<std::shared_ptr<Atomic<OutputType, TimeType>>> visitImminent(void) {
+    list<Atomic<OutputType, TimeType>*> visitImminent(void) {
         activated.clear();
         visitImminent(1);
         return activated;
@@ -73,7 +73,7 @@ class Schedule {
     /// Remove the model at the front of the queue.
     void removeMinimum();
     /// Add, remove, or move a model as required by its priority.
-    void schedule(std::shared_ptr<Atomic<OutputType, TimeType>> model, TimeType priority);
+    void schedule(Atomic<OutputType, TimeType>* model, TimeType priority);
     /// Returns true if the queue is empty, and false otherwise.
     bool empty() const { return size == 0; }
     /// Get the number of elements in the heap.
@@ -84,7 +84,7 @@ class Schedule {
   private:
     // Definition of an element in the heap.
     struct heap_element {
-        std::shared_ptr<Atomic<OutputType, TimeType>> item;
+        Atomic<OutputType, TimeType>* item;
         TimeType priority;
         // Constructor initializes the item and priority
         heap_element() : item(nullptr), priority(adevs_inf<TimeType>()) {}
@@ -92,7 +92,7 @@ class Schedule {
     unsigned int capacity, size;
     heap_element* heap;
 
-    list<std::shared_ptr<Atomic<OutputType, TimeType>>> activated;
+    list<Atomic<OutputType, TimeType>*> activated;
 
     /// Double the schedule capacity
     void enlarge();
@@ -104,11 +104,11 @@ class Schedule {
     // void visitImminent(ImminentVisitor* visitor, unsigned int root) const;
     void visitImminent(unsigned int root);
 
-    void visit(std::shared_ptr<Atomic<OutputType, TimeType>> &model);
+    void visit(Atomic<OutputType, TimeType>* model);
 };
 
 template <class OutputType, class TimeType>
-void Schedule<OutputType, TimeType>::visit(std::shared_ptr<Atomic<OutputType, TimeType>> &model) {
+void Schedule<OutputType, TimeType>::visit(Atomic<OutputType, TimeType> *model) {
     assert(model->outputs.empty());
     activated.push_back(model);
 }
@@ -137,21 +137,21 @@ void Schedule<OutputType, TimeType>::removeMinimum() {
     size--;
     // Set index to 0 to show that this model is not in the schedule
     heap[1].item->q_index = 0;
+    heap[1].item = nullptr;
     // If the schedule is empty, set the priority of the last element to adevs_inf
     if (size == 0) {
         heap[1].priority = adevs_inf<TimeType>();
-        heap[1].item = nullptr;
     } else {
         // Otherwise fill the hole left by the deleted model
         unsigned int i = percolate_down(1, heap[size + 1].priority);
         heap[i] = heap[size + 1];
         heap[i].item->q_index = i;
-        heap[size + 1].item = nullptr;
+        heap[size+1].item = nullptr;
     }
 }
 
 template <class OutputType, class TimeType>
-void Schedule<OutputType, TimeType>::schedule(std::shared_ptr<Atomic<OutputType, TimeType>> model,
+void Schedule<OutputType, TimeType>::schedule(Atomic<OutputType, TimeType>* model,
                                               TimeType priority) {
     // If the model is in the schedule
     if (model->q_index != 0) {

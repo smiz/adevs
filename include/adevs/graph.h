@@ -157,12 +157,12 @@ void Graph<X, T>::add_atomic(std::shared_ptr<Atomic<X,T>> model) {
 
 template <typename X, typename T>
 void Graph<X, T>::remove_atomic(std::shared_ptr<Atomic<X,T>> model) {
-    for (auto i = pin_to_atomic.begin(); i != pin_to_atomic.end(); i++) {
-        i->second.remove(model);
-    }
     if (provisional) {
         queue_remove_atomic(model);
         return;
+    }
+    for (auto i = pin_to_atomic.begin(); i != pin_to_atomic.end(); i++) {
+        i->second.remove(model);
     }
     models.erase(model);
 }

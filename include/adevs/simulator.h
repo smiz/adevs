@@ -167,15 +167,14 @@ class Simulator {
 
   private:
     std::shared_ptr<Graph<OutputType, TimeType>> graph;
-    std::list<shared_ptr<Atomic<OutputType, TimeType>>> imm;
+    std::list<Atomic<OutputType, TimeType>*> imm;
     std::list<shared_ptr<EventListener<OutputType, TimeType>>> listeners;
     std::list<PinValue<OutputType>> external_input;
     Schedule<OutputType, TimeType> sched;
     bool output_ready;
     TimeType tNext;
 
-    void schedule(std::shared_ptr<Atomic<OutputType, TimeType>> &model,
-                  TimeType t);
+    void schedule(Atomic<OutputType, TimeType>* model, TimeType t);
 };
 
 template <typename OutputType, typename TimeType>
@@ -184,7 +183,7 @@ Simulator<OutputType, TimeType>::Simulator(
     : graph(model), output_ready(false) {
     graph->set_provisional(true);
     for (auto atomic : model->get_atomics()) {
-        schedule(atomic, adevs_zero<TimeType>());
+        schedule(atomic.get(), adevs_zero<TimeType>());
     }
     tNext = sched.minPriority();
 }
@@ -195,7 +194,7 @@ Simulator<OutputType, TimeType>::Simulator(
     : graph(new Graph<OutputType, TimeType>()), output_ready(false) {
     graph->add_atomic(model);
     graph->set_provisional(true);
-    schedule(model, adevs_zero<TimeType>());
+    schedule(model.get(), adevs_zero<TimeType>());
     tNext = sched.minPriority();
 }
 
@@ -214,7 +213,7 @@ void Simulator<OutputType, TimeType>::computeNextOutput() {
         model->output_func(model->outputs);
         for (auto listener : listeners) {
             for (auto y : model->outputs) {
-                listener->outputEvent(*(model.get()), y, tNext);
+                listener->outputEvent(*model, y, tNext);
             }
         }
     }
@@ -228,9 +227,8 @@ TimeType Simulator<OutputType, TimeType>::computeNextState() {
         computeNextOutput();
     }
     output_ready = false;
-    std::set<std::shared_ptr<Atomic<OutputType, TimeType>>> active;
-    std::list<std::pair<pin_t, std::shared_ptr<Atomic<OutputType, TimeType>>>>
-        input;
+    std::set<Atomic<OutputType, TimeType>*> active;
+    std::list<std::pair<pin_t, std::shared_ptr<Atomic<OutputType, TimeType>>>> input;
     /// Construct input bags for each model and get the active set
     for (auto producer : imm) {
         active.insert(producer);
@@ -238,7 +236,7 @@ TimeType Simulator<OutputType, TimeType>::computeNextState() {
             x.value = y.value;
             graph->route(y.pin, input);
             for (auto consumer : input) {
-                active.insert(consumer.second);
+                active.insert(consumer.second.get());
                 x.pin = consumer.first;
                 consumer.second->inputs.push_back(x);
                 for (auto listener : listeners) {
@@ -253,7 +251,7 @@ TimeType Simulator<OutputType, TimeType>::computeNextState() {
         x.value = y.value;
         graph->route(y.pin, input);
         for (auto consumer : input) {
-            active.insert(consumer.second);
+            active.insert(consumer.second.get());
             x.pin = consumer.first;
             consumer.second->inputs.push_back(x);
             for (auto listener : listeners) {
@@ -278,7 +276,7 @@ TimeType Simulator<OutputType, TimeType>::computeNextState() {
             model->inputs.clear();
         }
         for (auto listener : listeners) {
-            listener->stateChange(*(model.get()), tNext);
+            listener->stateChange(*model, tNext);
         }
         // Adjust position in the schedule
         schedule(model, t);
@@ -293,10 +291,10 @@ TimeType Simulator<OutputType, TimeType>::computeNextState() {
         {
             case Graph<OutputType, TimeType>::ADD_ATOMIC:
                 graph->add_atomic(op.model);
-                schedule(op.model, t);
+                schedule(op.model.get(), t);
                 break;
             case Graph<OutputType, TimeType>::REMOVE_ATOMIC:
-                sched.schedule(op.model, adevs_inf<TimeType>());
+                sched.schedule(op.model.get(), adevs_inf<TimeType>());
                 graph->remove_atomic(op.model);
                 break;
             case Graph<OutputType, TimeType>::REMOVE_PIN:
@@ -324,7 +322,7 @@ TimeType Simulator<OutputType, TimeType>::computeNextState() {
 
 template <class OutputType, class TimeType>
 void Simulator<OutputType, TimeType>::schedule(
-    std::shared_ptr<Atomic<OutputType, TimeType>> &model, TimeType t) {
+    Atomic<OutputType, TimeType>* model, TimeType t) {
     model->tL = t;
     TimeType dt = model->ta();
     if (dt == adevs_inf<TimeType>()) {
@@ -333,7 +331,7 @@ void Simulator<OutputType, TimeType>::schedule(
     } else {
         model->tN = model->tL + dt;
         if (dt < adevs_zero<TimeType>()) {
-            exception err("Negative time advance", model.get());
+            exception err("Negative time advance", model);
             throw err;
         }
         sched.schedule(model, model->tN);
