@@ -31,15 +31,6 @@ int main(int argc, char** argv) {
     shared_ptr<genr> gnr = make_shared<genr>(g);
     shared_ptr<transd> trnsd = make_shared<transd>(t);
     shared_ptr<proc> prc = make_shared<proc>(p);
-    /// Add ports to the models
-    gnr->out = model->add_pin();
-    gnr->start = model->add_pin();
-    gnr->stop = model->add_pin();
-    trnsd->ariv = model->add_pin();
-    trnsd->solved = model->add_pin();
-    trnsd->out = model->add_pin();
-    prc->in = model->add_pin();
-    prc->out = model->add_pin();
     /// Add the components to the digraph
     model->add_atomic(gnr);
     model->add_atomic(trnsd);

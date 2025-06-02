@@ -70,10 +70,6 @@ int main() {
     shared_ptr<Parrot> p2 = make_shared<Parrot>();
     model->add_atomic(p1);
     model->add_atomic(p2);
-    p1->in = model->add_pin();
-    p1->out = model->add_pin();
-    p2->in = model->add_pin();
-    p2->out = model->add_pin();
     model->connect(p1->in,p1);
     model->connect(p2->in,p2);
     model->connect(p1->out,p2->in);

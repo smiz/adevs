@@ -36,6 +36,7 @@
 #include <list>
 #include <memory>
 #include <set>
+#include <atomic>
 #include "adevs/exception.h"
 #include "adevs/time.h"
 
@@ -53,8 +54,24 @@ class Simulator;
 template <typename OutputType, typename TimeType>
 class Schedule;
 
-
-typedef int pin_t;
+class pin_t {
+  public:
+    pin_t() : id(atom++) {}
+    pin_t(pin_t const &src) : id(src.id) {}
+    pin_t const &operator=(pin_t const &src) {
+        id = src.id;
+        return *this;
+    }
+    bool operator==(pin_t const &src) const { return (id == src.id); }
+    bool operator!=(pin_t const &src) const { return (id != src.id); }
+    bool operator<=(pin_t const &src) const { return (id <= src.id); }
+    bool operator<(pin_t const &src) const { return (id < src.id); }
+    bool operator>=(pin_t const &src) const { return (id >= src.id); }
+    bool operator>(pin_t const &src) const { return (id > src.id); }
+  private:
+    static std::atomic<int> atom;
+    int id;
+};
 
 /**
  * The PinValue class is used for input and output in a simulation.

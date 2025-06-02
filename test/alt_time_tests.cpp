@@ -152,8 +152,7 @@ template <typename TimeType>
 class Model : public Graph<int, TimeType> {
   public:
     Model() : Graph<int, TimeType>() {
-        pin_t pA = this->add_pin();
-        pin_t pB = this->add_pin();
+        pin_t pA, pB;
         A = shared_ptr<PingPong<TimeType>>(new PingPong<TimeType>(true));
         B = make_shared<PingPong<TimeType>>();
         this->add_atomic(A);

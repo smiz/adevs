@@ -20,8 +20,6 @@ class Model : public Atomic<ModelPtr> {
         assert(!active);
         shared_ptr<Model> m = make_shared<Model>(false,g);
         m->self_ptr(m);
-        m->in = g->add_pin();
-        m->out = g->add_pin();
         g->add_atomic(m);
         g->connect(m->in, m);
         g->connect(out,m->in);
@@ -39,7 +37,7 @@ class Model : public Atomic<ModelPtr> {
 
     ~Model() { num_models--; }
 
-    int in, out;
+    pin_t in, out;
     static int num_models, num_externals;
   private:
     shared_ptr<Graph<ModelPtr>> g;
@@ -54,8 +52,6 @@ int main() {
     int count = 0;
     shared_ptr<Graph<ModelPtr>> g = make_shared<Graph<ModelPtr>>();
     shared_ptr<Model> m = make_shared<Model>(true,g);
-    m->in = g->add_pin();
-    m->out = g->add_pin();
     m->self_ptr(m);
     g->add_atomic(m);
 

@@ -70,9 +70,9 @@ class proc : public adevs::Atomic<job> {
     }
 
     /// Model input port
-    int in;
+    const adevs::pin_t in;
     /// Model output port
-    int out;
+    const adevs::pin_t out;
 
   private:
     /// Model state variables

@@ -15,17 +15,19 @@ class genr : public Atomic<char, double_fcmp> {
         count++;
         assert(count <= ticks);
         if (count == ticks) {
-            sigma = DBL_MAX;
+            sigma = adevs_inf<double_fcmp>();
         }
     }
     void delta_ext(double_fcmp, list<PinValue<char>> const &) { sigma = DBL_MAX; }
     void delta_conf(list<PinValue<char>> const &) { sigma = DBL_MAX; }
     void output_func(list<PinValue<char>> &y) {
-        PinValue<char> output(0,'a');
+        PinValue<char> output(output_pin,'a');
         y.push_back(output);
     }
     int getTickCount() { return count; }
 
+    const pin_t output_pin;
+    const pin_t input_pin;
   private:
     int ticks;
     int count;
@@ -108,11 +110,11 @@ void test4() {
 }
 
 void test5() {
-    PinValue<char> input(0,'a');
     shared_ptr<genr> g = make_shared<genr>(10.0, 10);
     auto graph = make_shared<Graph<char,double_fcmp>>();
+    PinValue<char> input(g->input_pin,'a');
     graph->add_atomic(g);
-    graph->connect(0,g);
+    graph->connect(g->input_pin,g);
     Simulator<char, double_fcmp> sim(graph);
     sim.injectInput(input);
     sim.setNextTime(5.0);

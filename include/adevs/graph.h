@@ -43,13 +43,10 @@ template <typename X, typename T = double>
 class Graph {
     public:
         /// @brief  Construct an empty graph.
-        Graph():next_pin(0),provisional(false){}
+        Graph():provisional(false){}
         /// @brief  Destroy the graph but leave its atomic components intact.
         virtual ~Graph(){}
-        /// @brief  Add a new pin_t to the graph.
-        /// @return The pin that was created.
-        pin_t add_pin() { return next_pin++; };
-        /// @brief  Remove a pin_t from the graph.
+        /// @brief  Remove a pin and all of its connections from the graph.
         /// @param p The pin_t to remove.
         void remove_pin(pin_t p);
         /// @brief Add an atomic model to the graph.
@@ -116,7 +113,6 @@ class Graph {
         std::map<pin_t,std::list<std::shared_ptr<Atomic<X,T>>>> pin_to_atomic;
         std::map<pin_t,std::list<pin_t> > pin_to_pin;
         std::set<std::shared_ptr<Atomic<X,T>>> models;
-        pin_t next_pin;
 
         void queue_remove_pin(pin_t p);
         void queue_add_atomic(std::shared_ptr<Atomic<X,T>> model);

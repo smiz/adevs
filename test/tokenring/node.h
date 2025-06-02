@@ -16,8 +16,8 @@ using Bag = std::list<adevs::PinValue<shared_ptr<token_t>>>;
 
 class Node : public adevs::Atomic<shared_ptr<token_t>> {
   public:
-    int in;
-    int out;
+    const adevs::pin_t in;
+    const adevs::pin_t out;
 
     Node(int ID, int holdtime, shared_ptr<token_t> token)
         : adevs::Atomic<shared_ptr<token_t>>(),

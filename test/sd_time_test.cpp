@@ -20,11 +20,12 @@ class Incr : public Atomic<int, sd_time<double>> {
     void delta_ext(sd_time<double>, list<PinValue<int>> const &) {}
     void delta_conf(list<PinValue<int>> const &) {}
     void output_func(list<PinValue<int>> &y) {
-        PinValue<int> yy(0,count);
+        PinValue<int> yy(output_pin,count);
         y.push_back(yy);
     }
     int get_q() const { return count; }
 
+    const pin_t output_pin;
   private:
     int count;
 };
@@ -46,6 +47,7 @@ class Watch : public Atomic<int, sd_time<double>> {
     }
     void delta_conf(list<PinValue<int>> const &) { assert(false); }
     void output_func(list<PinValue<int>> &) { assert(false); }
+    const pin_t input_pin;
 };
 
 class MyEventListener : public EventListener<int, sd_time<double>> {
@@ -99,7 +101,7 @@ void test2() {
         make_shared<Graph<int, sd_time<>>>();
     model->add_atomic(a);
     model->add_atomic(b);
-    model->connect(0, b);
+    model->connect(a->output_pin, b);
 
     shared_ptr<Simulator<int, sd_time<>>> sim =
         make_shared<Simulator<int, sd_time<>>>(model);

@@ -20,11 +20,12 @@ class genr : public Atomic<char> {
     void delta_ext(double, list<PinValue<char>> const &) { sigma = adevs_inf<double>(); }
     void delta_conf(list<PinValue<char>> const &) { sigma = adevs_inf<double>(); }
     void output_func(list<PinValue<char>> &y) {
-        PinValue<char> output(0,'a');
+        PinValue<char> output(output_pin,'a');
         y.push_back(output);
     }
     int getTickCount() { return count; }
 
+    const pin_t output_pin;
   private:
     int ticks;
     int count;
@@ -106,11 +107,12 @@ void test4() {
 }
 
 void test5() {
-    PinValue<char> input(0,'a');
+    pin_t input_pin;
+    PinValue<char> input(input_pin,'a');
     shared_ptr<genr> g = make_shared<genr>(10.0, 10);
     shared_ptr<Graph<char>> graph = make_shared<Graph<char>>();
     graph->add_atomic(g);
-    graph->connect(0,g);
+    graph->connect(input_pin,g);
     Simulator<char> sim(graph);
     sim.setNextTime(5.0);
     sim.injectInput(input);

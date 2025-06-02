@@ -18,13 +18,6 @@ int main() {
     shared_ptr<Node> n2 = make_shared<Node>(1, 1, token1);
     shared_ptr<Node> n3 = make_shared<Node>(2, 3, nullptr);
 
-    n1->in = model->add_pin();
-    n1->out = model->add_pin();
-    n2->in = model->add_pin();
-    n2->out = model->add_pin();
-    n3->in = model->add_pin();
-    n3->out = model->add_pin();
-
     model->add_atomic(n1);
     model->add_atomic(n2);
     model->add_atomic(n3);

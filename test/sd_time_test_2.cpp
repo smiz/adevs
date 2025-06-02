@@ -20,12 +20,13 @@ class Model : public Atomic<int, sd_time<int>> {
     void delta_ext(sd_time<int>, list<PinValue<int>> const &) {}
     void delta_conf(list<PinValue<int>> const &) { delta_int(); }
     void output_func(list<PinValue<int>> &y) {
-        PinValue<int> yy(0,count);
+        PinValue<int> yy(output_pin,count);
         y.push_back(yy);
     }
 
     string get_name() const { return name; }
 
+    const pin_t output_pin;
   private:
     string const name;
     int count;
@@ -105,7 +106,7 @@ void test2() {
         make_shared<Graph<int, sd_time<int>>>();
     model->add_atomic(A);
     model->add_atomic(B);
-    model->connect(0, B);
+    model->connect(A->output_pin, B);
 
     shared_ptr<Simulator<int, sd_time<int>>> sim =
         make_shared<Simulator<int, sd_time<int>>>(model);

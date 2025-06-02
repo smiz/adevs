@@ -1,21 +1,22 @@
 #include "relay.h"
+using namespace std;
+using namespace adevs;
 
-
-class Start : public adevs::Atomic<IO_Type> {
+class Start : public adevs::Atomic<int> {
   public:
-    Start() : adevs::Atomic<IO_Type>() { go = true; }
+    Start() : adevs::Atomic<int>() { go = true; }
 
     void delta_int() { go = false; }
 
-    void delta_ext(double, list<IO_Type> const &) {}
+    void delta_ext(double, list<PinValue<int>> const &) {}
 
-    void delta_conf(list<IO_Type> const &) {}
+    void delta_conf(list<PinValue<int>> const &) {}
 
     double ta() { return (go) ? 0.0 : adevs_inf<double>(); }
 
-    void output_func(list<IO_Type> &y) { y.push_back(IO_Type(0, 1)); }
+    void output_func(list<PinValue<int>> &y) { y.push_back(PinValue<int>(out, 1)); }
 
-
+    const pin_t out;
   private:
     bool go;
 };
@@ -25,43 +26,46 @@ shared_ptr<Relay> r1 = make_shared<Relay>();
 shared_ptr<Relay> r2 = make_shared<Relay>();
 shared_ptr<Start> s = make_shared<Start>();
 
-class Listener : public EventListener<IO_Type> {
+class Listener : public EventListener<int> {
   public:
-    Listener() : EventListener<IO_Type>() {}
-    void inputEvent(Event<IO_Type> x, double t) {
+    Listener() : EventListener<int>() {}
+    void inputEvent(Atomic<int>& model, PinValue<int>&, double t) {
         inputs++;
         assert(inputs == t + 1);
         if ((int)(t) % 2 == 0) {
-            assert(x.model == r1.get());
+            assert(&model == r1.get());
         } else {
-            assert(x.model == r2.get());
+            assert(&model == r2.get());
         }
     }
-    void outputEvent(Event<IO_Type> x, double t) {
+    void outputEvent(Atomic<int>& model, PinValue<int>&, double t) {
         outputs++;
         assert(outputs == t + 1);
         if (t == 0.0) {
-            assert(x.model == s.get());
+            assert(&model == s.get());
         } else if ((int)(t) % 2 == 0) {
-            assert(x.model == r2.get());
+            assert(&model == r2.get());
         } else {
-            assert(x.model == r1.get());
+            assert(&model == r1.get());
         }
     }
+    void stateChange(Atomic<int>&, double) {}
 };
 
 int main() {
-    shared_ptr<Digraph<int>> d = make_shared<Digraph<int>>();
-    d->add(r1);
-    d->add(r2);
-    d->add(s);
-    d->couple(s, 0, r1, 0);
-    d->couple(r1, 1, r2, 0);
-    d->couple(r2, 1, r1, 0);
+    shared_ptr<Graph<int>> d = make_shared<Graph<int>>();
+    d->add_atomic(r1);
+    d->add_atomic(r2);
+    d->add_atomic(s);
+    d->connect(s->out,r1->in);
+    d->connect(r1->in,r1);
+    d->connect(r1->out,r2->in);
+    d->connect(r2->out,r1->in);
+    d->connect(r2->in,r2);
 
     shared_ptr<Listener> listener = make_shared<Listener>();
     // Create the simulator and add the listener
-    shared_ptr<Simulator<IO_Type>> sim = make_shared<Simulator<IO_Type>>(d);
+    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(d);
     sim->addEventListener(listener);
 
     for (int i = 0; i < 10; i++) {

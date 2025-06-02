@@ -64,10 +64,9 @@ class genr : public adevs::Atomic<job> {
     /// Output doesn't require heap allocation, so don't do anything
 
     /// Model input ports
-    int start;
-    int stop;
+    const adevs::pin_t start, stop;
     /// Model output port
-    int out;
+    const adevs::pin_t out;
 
   private:
     /// Model state variables

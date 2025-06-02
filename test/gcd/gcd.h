@@ -34,17 +34,6 @@ class gcd {
           std::shared_ptr<genr> g,
           std::shared_ptr<counter> c,
           std::shared_ptr<delay> d) {
-        g->signal = graph.add_pin();
-        g->start = graph.add_pin();
-        g->stop = graph.add_pin();
-        c->in = graph.add_pin();
-        d->in = graph.add_pin();
-        d->out = graph.add_pin();
-        in = graph.add_pin();
-        out = graph.add_pin();
-        start = graph.add_pin();
-        stop = graph.add_pin();
-        signal = graph.add_pin();
         graph.add_atomic(g);
         graph.add_atomic(d);
         graph.add_atomic(c);

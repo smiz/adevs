@@ -11,9 +11,6 @@ int main() {
     pat.push_back(0);
     auto c = std::make_shared<gcd>(*model, 10, 2, 1, false);
     auto g = std::make_shared<genr>(pat, 2, true);
-    g->signal = model->add_pin();
-    g->start = model->add_pin();
-    g->stop = model->add_pin();
     model->add_atomic(g);
     model->connect(g->signal, c->in);
     adevs::Simulator<ObjectPtr> sim(model);

@@ -30,9 +30,7 @@ void test1() {
     g.add_atomic(b);
     assert(g.get_atomics().find(a) != g.get_atomics().end());
     assert(g.get_atomics().find(b) != g.get_atomics().end());
-    pin_t pin0 = g.add_pin();
-    pin_t pin1 = g.add_pin();
-    pin_t pin2 = g.add_pin();
+    pin_t pin0, pin1, pin2;
     assert(pin0 != pin1);
     g.connect(pin0,pin1);
     g.connect(pin1,b);
@@ -64,8 +62,7 @@ void test2() {
     std::list<std::pair<pin_t,std::shared_ptr<Atomic<int,int>>>> models;
     std::shared_ptr<Atomic<int,int>> a(new TestAtomic());
     Graph<int,int> g;
-    pin_t pin0 = g.add_pin();
-    pin_t pin1 = g.add_pin();
+    pin_t pin0, pin1;
     g.set_provisional(true);
     g.add_atomic(a);
     assert(g.get_atomics().find(a) == g.get_atomics().end());

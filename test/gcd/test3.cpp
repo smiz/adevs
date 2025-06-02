@@ -9,7 +9,6 @@ int main() {
     auto c1 = std::make_shared<gcd>(*model, 10, 2, 1, false);
     auto c2 = std::make_shared<gcd>(*model, 10, 2, 1, false);
     auto g = std::make_shared<genr>(1, 1, true);
-    g->signal = model->add_pin();
     model->add_atomic(g);
     model->connect(g->signal, c1->in);
     model->connect(c1->out, c2->in);

@@ -22,7 +22,6 @@ int main() {
     auto c = std::make_shared<gcd>(*model_c, 10.0, 2.0, 1, false);
     auto g = std::make_shared<genr>(10.0, 1, true);
     model_g->add_atomic(g);
-    g->signal = model_g->add_pin();
     auto listener = std::make_shared<generatorEventListener>();
     adevs::Simulator<ObjectPtr> sim_c(model_c);
     adevs::Simulator<ObjectPtr> sim_g(model_g);

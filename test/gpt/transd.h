@@ -105,10 +105,9 @@ class transd : public adevs::Atomic<job> {
         jobs_solved.clear();
     }
     /// Model input port
-    int ariv;
-    int solved;
+    const adevs::pin_t ariv, solved;
     /// Model output port
-    int out;
+    const adevs::pin_t out;
 
   private:
     /// Model state variables
