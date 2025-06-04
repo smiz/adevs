@@ -37,15 +37,13 @@
  * Include everything needed to compile user models.
  */
 
-//#include "adevs/event_locators.h"
 #include "adevs/exception.h"
 #include "adevs/models.h"
 //#include "adevs/networks/cellspace.h"
 //#include "adevs/networks/digraph.h"
 //#include "adevs/networks/simpledigraph.h"
 #include "adevs/simulator.h"
-//#include "adevs/solvers/corrected_euler.h"
-//#include "adevs/solvers/hybrid.h"
-//#include "adevs/solvers/poly.h"
-//#include "adevs/solvers/rk_45.h"
-//#include "adevs/wrapper.h"
+#include "adevs/solvers/event_locators.h"
+#include "adevs/solvers/corrected_euler.h"
+#include "adevs/solvers/hybrid.h"
+#include "adevs/solvers/rk_45.h"

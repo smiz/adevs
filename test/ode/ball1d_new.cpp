@@ -6,14 +6,16 @@
 using namespace std;
 using namespace adevs;
 
+const pin_t ball_output;
+
 /**
  * Simple test which simulates a bouncing ball. The output value is the height of
  * the ball. Input values cause the system to produce an output sample immediately.
  */
-class bouncing_ball : public ode_system<PortValue<double>> {
+class bouncing_ball : public ode_system<double> {
   public:
     bouncing_ball()
-        : ode_system<PortValue<double>>(3, 1), sample(false), phase(FALL) {}
+        : ode_system<double>(3, 1), sample(false), phase(FALL) {}
     void init(double* q) {
         last_event_time = 0.0;
         q[0] = 1.0;  // Initial height
@@ -32,7 +34,7 @@ class bouncing_ball : public ode_system<PortValue<double>> {
             z[0] = q[1];  // Start falling at apogee
         }
     }
-    double time_event_func(double const* q) {
+    double time_event_func(double const*) {
         if (sample) {
             return 0.0;
         } else {
@@ -54,23 +56,22 @@ class bouncing_ball : public ode_system<PortValue<double>> {
         last_event_time = q[2];
     }
     void external_event(double* q, double e,
-                        list<PortValue<double>> const &xb) {
+                        list<PinValue<double>> const &xb) {
         assert(fabs(q[2] - last_event_time - e) < 1E-9);
         sample = xb.size() > 0;
         last_event_time = q[2];
     }
     void confluent_event(double* q, bool const* event_flag,
-                         list<PortValue<double>> const &xb) {
+                         list<PinValue<double>> const &xb) {
         internal_event(q, event_flag);
         external_event(q, 0.0, xb);
     }
     void output_func(double const* q, bool const* event_flag,
-                     list<PortValue<double>> &yb) {
+                     list<PinValue<double>> &yb) {
         assert(event_flag[0] || event_flag[1]);
-        PortValue<double> event(0, q[0]);
+        PinValue<double> event(ball_output, q[0]);
         yb.push_back(event);
     }
-
 
   private:
     bool sample;
@@ -78,65 +79,63 @@ class bouncing_ball : public ode_system<PortValue<double>> {
     enum { CLIMB = 0, FALL = 1 } phase;
 };
 
-class SolutionChecker : public EventListener<PortValue<double>> {
+class SolutionChecker : public EventListener<double> {
   public:
-    SolutionChecker(Hybrid<PortValue<double>>* ball) : ball(ball) {}
-    void stateChange(Atomic<PortValue<double>>* model, double t) {
-        if (model == ball) {
+    SolutionChecker(shared_ptr<Hybrid<double>> ball) : ball(ball) {}
+    void stateChange(Atomic<double>& model, double t) {
+        if (&model == ball.get()) {
             assert(ball1d_soln_ok(t, ball->getState(0)));
         }
     }
-
+    void outputEvent(Atomic<double>&, PinValue<double>&, double){}
+    void inputEvent(Atomic<double>&, PinValue<double>&, double){}
   private:
-    Hybrid<PortValue<double>>* ball;
+    shared_ptr<Hybrid<double>> ball;
 };
 
-void run_test(ode_system<PortValue<double>>* b,
-              ode_solver<PortValue<double>>* s,
-              event_locator<PortValue<double>>* l) {
+void run_test(ode_system<double>* b,
+              ode_solver<double>* s,
+              event_locator<double>* l) {
     cerr << "Testing " << typeid(*s).name() << " , " << typeid(*l).name()
          << endl;
-    Hybrid<PortValue<double>>* ball = new Hybrid<PortValue<double>>(b, s, l);
-    sampler* sample = new sampler(0.01);
-    Digraph<double>* model = new Digraph<double>();
-    model->add(ball);
-    model->add(sample);
-    model->couple(sample, 0, ball, 0);
-    model->couple(ball, 0, sample, 0);
-    SolutionChecker* checker = new SolutionChecker(ball);
-    Simulator<PortValue<double>>* sim = new Simulator<PortValue<double>>(model);
-    sim->addEventListener(checker);
-    while (sim->nextEventTime() < 10.0) {
-        sim->execNextEvent();
+    shared_ptr<Hybrid<double>> ball = make_shared<Hybrid<double>>(b, s, l);
+    shared_ptr<sampler> sample = make_shared<sampler>(0.01);
+    shared_ptr<Graph<double>> model = make_shared<Graph<double>>();
+    model->add_atomic(ball);
+    model->add_atomic(sample);
+    model->connect(sample->sample_pin, ball);
+    model->connect(ball_output, sample);
+    shared_ptr<SolutionChecker> checker = make_shared<SolutionChecker>(ball);
+    Simulator<double> sim(model);
+    sim.addEventListener(checker);
+    while (sim.nextEventTime() < 10.0) {
+        sim.execNextEvent();
     }
-    delete sim;
-    delete model;
-    delete checker;
 }
 
 int main() {
     // Test fast algorithm without interpolation
     bouncing_ball* ball = new bouncing_ball();
-    run_test(ball, new corrected_euler<PortValue<double>>(ball, 1E-6, 0.01),
-             new fast_event_locator<PortValue<double>>(ball, 1E-7));
+    run_test(ball, new corrected_euler<double>(ball, 1E-6, 0.01),
+             new fast_event_locator<double>(ball, 1E-7));
     // Test fast algorithm with interpolation
     ball = new bouncing_ball();
-    run_test(ball, new corrected_euler<PortValue<double>>(ball, 1E-6, 0.01),
-             new fast_event_locator<PortValue<double>>(ball, 1E-7, true));
+    run_test(ball, new corrected_euler<double>(ball, 1E-6, 0.01),
+             new fast_event_locator<double>(ball, 1E-7, true));
     // Test linear algorithm
     ball = new bouncing_ball();
-    run_test(ball, new corrected_euler<PortValue<double>>(ball, 1E-6, 0.01),
-             new linear_event_locator<PortValue<double>>(ball, 1E-7));
+    run_test(ball, new corrected_euler<double>(ball, 1E-6, 0.01),
+             new linear_event_locator<double>(ball, 1E-7));
     // Test RK 45
     ball = new bouncing_ball();
-    run_test(ball, new rk_45<PortValue<double>>(ball, 1E-6, 0.01),
-             new linear_event_locator<PortValue<double>>(ball, 1E-7));
+    run_test(ball, new rk_45<double>(ball, 1E-6, 0.01),
+             new linear_event_locator<double>(ball, 1E-7));
     // Test bisection algorithm
     ball = new bouncing_ball();
-    run_test(ball, new corrected_euler<PortValue<double>>(ball, 1E-6, 0.01),
-             new bisection_event_locator<PortValue<double>>(ball, 1E-7));
+    run_test(ball, new corrected_euler<double>(ball, 1E-6, 0.01),
+             new bisection_event_locator<double>(ball, 1E-7));
     ball = new bouncing_ball();
-    run_test(ball, new rk_45<PortValue<double>>(ball, 1E-6, 0.01),
-             new bisection_event_locator<PortValue<double>>(ball, 1E-7));
+    run_test(ball, new rk_45<double>(ball, 1E-6, 0.01),
+             new bisection_event_locator<double>(ball, 1E-7));
     return 0;
 }

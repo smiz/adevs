@@ -1,14 +1,14 @@
 #include <iostream>
 #include "adevs/adevs.h"
-#include "adevs/fmi.h"
+#include "adevs/solvers/fmi.h"
 #include "circuit/modelDescription.h"
 using namespace std;
 using namespace adevs;
 
 class Circuit2 : public Circuit {
   public:
-    Circuit2() : Circuit(), start_time(DBL_MAX) {}
-    void external_event(double* q, double e, list<double> const &xb) {
+    Circuit2() : Circuit(), start_time(adevs_inf<double>()) {}
+    void external_event(double* q, double e, list<PinValue<double>> const &xb) {
         Circuit::external_event(q, e, xb);
         start_time = e;
         set_Vsrc_Vref(0.0);
@@ -30,17 +30,22 @@ class Circuit2 : public Circuit {
         assert(fabs(get_Rbridge_T1_i()) < 1E-6);
     }
 
+    const pin_t input;
+
   private:
     double start_time;
 };
 
 int main() {
     Circuit2* test_model = new Circuit2();
-    Hybrid<double>* hybrid_model = new Hybrid<double>(
+    shared_ptr<Hybrid<double>> hybrid_model = make_shared<Hybrid<double>>(
         test_model, new corrected_euler<double>(test_model, 1E-7, 0.001),
         new discontinuous_event_locator<double>(test_model, 1E-7));
+    shared_ptr<Graph<double>> graph = make_shared<Graph<double>>();
+    graph->add_atomic(hybrid_model);
+    graph->connect(test_model->input,hybrid_model);
     // Create the simulator
-    Simulator<double>* sim = new Simulator<double>(hybrid_model);
+    Simulator<double>* sim = new Simulator<double>(graph);
     // Check initial values
     test_model->print_state();
     // Run the simulation, testing the solution as we go
@@ -49,16 +54,14 @@ int main() {
         test_model->print_state();
         test_model->test_state();
     }
-    list<Event<double>> xb;
-    Event<double> event(hybrid_model, 0.0);
-    xb.push_back(event);
-    sim->computeNextState(xb, 1.0);
+    PinValue<double> inject(test_model->input,0.0);
+    sim->setNextTime(1.0);
+    sim->injectInput(inject);
     while (sim->nextEventTime() <= 5.0) {
         sim->execNextEvent();
         test_model->print_state();
         test_model->test_state();
     }
     delete sim;
-    delete hybrid_model;
     return 0;
 }

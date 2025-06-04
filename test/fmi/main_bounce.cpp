@@ -1,6 +1,6 @@
 #include <iostream>
 #include "adevs/adevs.h"
-#include "adevs/fmi.h"
+#include "adevs/solvers/fmi.h"
 #include "bounce/modelDescription.h"
 using namespace std;
 using namespace adevs;
@@ -48,7 +48,7 @@ class bounce2 : public bounce {
 
 int main() {
     bounce2* test_model = new bounce2();
-    Hybrid<double>* hybrid_model = new Hybrid<double>(
+    shared_ptr<Hybrid<double>> hybrid_model = make_shared<Hybrid<double>>(
         test_model, new corrected_euler<double>(test_model, epsilon, 0.001),
         new discontinuous_event_locator<double>(test_model, epsilon));
     // Create the simulator
@@ -68,6 +68,5 @@ int main() {
         test_model->test_state();
     }
     delete sim;
-    delete hybrid_model;
     return 0;
 }

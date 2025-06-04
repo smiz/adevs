@@ -1,18 +1,11 @@
+test_con = executable('con', 'confluent_test.cpp', include_directories: adevs, link_with: adevs_lib)
+test('ode-con', test_con)
 
-#test_con = executable('con', 'confluent_test.cpp', include_directories: adevs)
-#test('ode-con', test_con)
+test_bnew = executable('bnew', 'ball1d_new.cpp', 'check_ball1d_solution.cpp', include_directories: adevs, link_with: adevs_lib)
+test('ode-bnew', test_bnew)
 
-#test_dae2  = executable('dae2', 'dae_test2.cpp', include_directories: adevs)
-#test('ode-dae2', test_dae2)
-
-#test_dae = executable('dae', 'dae_test1.cpp', include_directories: adevs)
-#test('ode-dae', test_dae)
-
-#test_bnew = executable('bnew', 'ball1d_new.cpp', 'check_ball1d_solution.cpp', include_directories: adevs)
-#test('ode-bnew', test_bnew)
-test_cvode = executable('cvode', 'cvode.cpp', 'check_ball1d_solution.cpp', include_directories: adevs, link_args: '-lsundials_cvode')
+test_cvode = executable('cvode', 'cvode.cpp', 'check_ball1d_solution.cpp', include_directories: adevs, link_with: adevs_lib, link_args: '-lsundials_cvode')
 test('cvode', test_cvode)
 
-# TODO: Linker/compiler issue
-# test_compare = executable('compare', 'ode.cpp', include_directories: adevs)
-# test('ode-compare', test_compare)
+test_compare = executable('compare', 'ode.cpp', include_directories: adevs, link_with: adevs_lib, link_args: '-lsundials_kinsol')
+test('ode-compare', test_compare)

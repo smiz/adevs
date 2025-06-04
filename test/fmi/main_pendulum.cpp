@@ -1,6 +1,6 @@
 #include <iostream>
 #include "adevs/adevs.h"
-#include "adevs/fmi.h"
+#include "adevs/solvers/fmi.h"
 #include "pendulum/modelDescription.h"
 using namespace std;
 using namespace adevs;
@@ -21,10 +21,10 @@ class oracle : public ode_system<double> {
     void state_event_func(double const*, double*) {}
     double time_event_func(double const* q) { return q[2]; }
     void internal_event(double* q, bool const*) { q[2] = 0.01; }
-    void external_event(double* q, double e, list<double> const &xb) {
+    void external_event(double* q, double, list<PinValue<double>> const &xb) {
         static double const pi = 3.1415926535897931;
         test_count++;
-        double test_angle = *(xb.begin());
+        double test_angle = xb.front().value;
         double diff = fabs(q[0] - test_angle);
         if (diff < -1E-3) {
             diff += 2.0 * pi;
@@ -38,13 +38,15 @@ class oracle : public ode_system<double> {
         }
         assert(fabs(diff) < 1E-3);
     }
-    void confluent_event(double*, bool const*, list<double> const &) {
+    void confluent_event(double*, bool const*, list<PinValue<double>> const &) {
         assert(false);
     }
-    void output_func(double const*, bool const*, list<double> &yb) {
-        yb.push_back(0);
+    void output_func(double const*, bool const*, list<PinValue<double>> &yb) {
+        yb.push_back(PinValue<double>(output,0));
     }
     int getTestCount() { return test_count; }
+
+    const adevs::pin_t output;
 
   private:
     int test_count;
@@ -58,22 +60,24 @@ class pendulum2 : public pendulum {
         if (query) {
             return 0;
         } else {
-            return DBL_MAX;
+            return adevs_inf<double>();
         }
     }
     void internal_event(double* q, bool const* state_events) {
         pendulum::internal_event(q, state_events);
         query = false;
     }
-    void external_event(double* q, double e, list<double> const &xb) {
+    void external_event(double* q, double e, list<PinValue<double>> const &xb) {
         pendulum::external_event(q, e, xb);
         query = true;
     }
     void output_func(double const* q, bool const* state_events,
-                     list<double> &yb) {
+                     list<PinValue<double>> &yb) {
         pendulum::output_func(q, state_events, yb);
-        yb.push_back(get_theta());
+        yb.push_back(PinValue<double>(output,get_theta()));
     }
+
+    const pin_t output;
 
   private:
     bool query;
@@ -82,20 +86,20 @@ class pendulum2 : public pendulum {
 int main() {
     // Create the open modelica model
     pendulum2* model = new pendulum2();
-    Hybrid<double>* hybrid_model = new Hybrid<double>(
+    shared_ptr<Hybrid<double>> hybrid_model = make_shared<Hybrid<double>>(
         model, new corrected_euler<double>(model, 1E-8, 0.01),
         new discontinuous_event_locator<double>(model, 1E-6));
     // Create the test oracle
     oracle* test_oracle = new oracle();
-    Hybrid<double>* hybrid_model_oracle = new Hybrid<double>(
+    shared_ptr<Hybrid<double>> hybrid_model_oracle = make_shared<Hybrid<double>>(
         test_oracle, new corrected_euler<double>(test_oracle, 1E-8, 0.01),
         new linear_event_locator<double>(test_oracle, 1E-6));
     // Combine them
-    SimpleDigraph<double>* dig_model = new SimpleDigraph<double>();
-    dig_model->add(hybrid_model);
-    dig_model->add(hybrid_model_oracle);
-    dig_model->couple(hybrid_model, hybrid_model_oracle);
-    dig_model->couple(hybrid_model_oracle, hybrid_model);
+    shared_ptr<Graph<double>> dig_model = make_shared<Graph<double>>();
+    dig_model->add_atomic(hybrid_model);
+    dig_model->add_atomic(hybrid_model_oracle);
+    dig_model->connect(model->output, hybrid_model_oracle);
+    dig_model->connect(test_oracle->output, hybrid_model);
     // Create the simulator
     Simulator<double>* sim = new Simulator<double>(dig_model);
     assert(fabs(model->get_theta()) < 1E-6);
@@ -109,6 +113,5 @@ int main() {
     }
     assert(test_oracle->getTestCount() > 0);
     delete sim;
-    delete dig_model;
     return 0;
 }

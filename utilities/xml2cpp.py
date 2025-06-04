@@ -137,11 +137,11 @@ def compile_str(legend, variables, using_str, provides_jacobian):
     legend["modelName"] = name
     rs = ""  # Return string variable.
     if using_str:
-        rs += '#ifndef {0}_h_\n#define {0}_h_\n#include "adevs/adevs.h"\n#include "adevs/fmi.h"\n#include <string>\n\n'.format(
+        rs += '#ifndef {0}_h_\n#define {0}_h_\n#include "adevs/adevs.h"\n#include "adevs/solvers/fmi.h"\n#include <string>\n\n'.format(
             legend["modelName"]
         )  # Format header default information
     else:
-        rs += '#ifndef {0}_h_\n#define {0}_h_\n#include "adevs/adevs.h"\n#include "adevs/fmi.h"\n\n'.format(
+        rs += '#ifndef {0}_h_\n#define {0}_h_\n#include "adevs/adevs.h"\n#include "adevs/solvers/fmi.h"\n\n'.format(
             legend["modelName"]
         )  # Format header default information
     rs += "class {0}:\n\tpublic adevs::FMI<{1}>\n{{\n\tpublic:\n\t\t{0}():\n".format(

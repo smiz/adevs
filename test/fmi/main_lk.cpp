@@ -2,8 +2,8 @@
 #include <map>
 #include <vector>
 #include "adevs/adevs.h"
-#include "adevs/fmi.h"
-#include "adevs/trap.h"
+#include "adevs/solvers/fmi.h"
+#include "adevs/solvers/trap.h"
 #include "lk/modelDescription.h"
 using namespace std;
 using namespace adevs;

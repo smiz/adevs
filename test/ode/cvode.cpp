@@ -34,12 +34,17 @@ class bouncing_ball : public CVODE<double> {
         NV_Ith_S(abstol,1) = 1E-8;  // Velocity error tolerance
         cvode_mem = CVodeCreate(CV_ADAMS);
         retval = CVodeInit(cvode_mem,bouncing_ball::f,0.0,y);
+        assert(retval == CV_SUCCESS);
         retval = CVodeSVtolerances(cvode_mem,1E-8,abstol);
+        assert(retval == CV_SUCCESS);
         retval = CVodeRootInit(cvode_mem,1,bouncing_ball::g);
+        assert(retval == CV_SUCCESS);
         A = SUNDenseMatrix(2,2);
         LS = SUNLinSol_Dense(y,A);
         retval = CVodeSetLinearSolver(cvode_mem,LS,A);
+        assert(retval == CV_SUCCESS);
         retval = CVodeSetUserData(cvode_mem,(void*)(&phase));
+        assert(retval == CV_SUCCESS);
     }
     ~bouncing_ball() {
         N_VDestroy(y);
@@ -56,18 +61,19 @@ class bouncing_ball : public CVODE<double> {
                 phase = CLIMB;
                 NV_Ith_S(y,1) = -NV_Ith_S(y,1);
                 int retval = CVodeReInit(cvode_mem,t,y);
+                assert(retval == CV_SUCCESS);
             } else  { // reach apogee
                 phase = FALL;
             }
         }
         sample = false;
     }
-    void cvode_delta_ext(double t, std::list<PinValue<double>> const &xb) {
+    void cvode_delta_ext(double t, std::list<PinValue<double>> const &) {
         this->t = t;
         sample = true;
     }
 
-    void cvode_delta_conf(std::list<PinValue<double>> const &xb) {
+    void cvode_delta_conf(std::list<PinValue<double>> const &) {
         sample = true;
     }
 
@@ -84,20 +90,25 @@ class bouncing_ball : public CVODE<double> {
             return;
         }
         int retval = CVode(cvode_mem,t+h_max,y,&t,CV_NORMAL);
+        assert(retval == CV_SUCCESS || retval == CV_ROOT_RETURN);
         retval = CVodeGetRootInfo(cvode_mem,&event_flag);
+        assert(retval == CV_SUCCESS);
         tf = t;
         event = (event_flag != 0);
     }
 
     void cvode_integrate_until(double tf, bool& event) {
         int retval = CVode(cvode_mem,tf,y,&t,CV_NORMAL);
+        assert(retval == CV_SUCCESS);
         retval = CVodeGetRootInfo(cvode_mem,&event_flag);
+        assert(retval == CV_SUCCESS);
         assert(t == tf);
         event = (event_flag != 0);
     }
 
     void cvode_reinit(N_Vector y, double t) {
         int retval = CVodeReInit(cvode_mem,t,y);
+        assert(retval == CV_SUCCESS);
         this->t = t;
         N_VAddConst(y,0.0,this->y);
     }
@@ -106,7 +117,7 @@ class bouncing_ball : public CVODE<double> {
     static int f(double t, N_Vector y, N_Vector ydot, void*);
     static int g(double t, N_Vector y, double* gout, void* phase);
 
-    int sample_pin;
+    const pin_t sample_pin;
 
     private:
     int phase, event_flag;
@@ -120,13 +131,13 @@ class bouncing_ball : public CVODE<double> {
     void* cvode_mem;
 };
 
-int bouncing_ball::f(double t, N_Vector y, N_Vector ydot, void*) {
+int bouncing_ball::f(double, N_Vector y, N_Vector ydot, void*) {
     NV_Ith_S(ydot,0) = NV_Ith_S(y,1);
     NV_Ith_S(ydot,1) = -2.0;  // For test case
     return 0;
 }
 
-int bouncing_ball::g(double t, N_Vector y, double* gout, void* user_data) {
+int bouncing_ball::g(double, N_Vector y, double* gout, void* user_data) {
     int phase = *((int*)user_data);
     if (phase == FALL) {
         gout[0] = NV_Ith_S(y,0);  // Bounce if it is going down
@@ -158,8 +169,6 @@ void run_solution(double h_max, bool to_cout) {
     auto graph = make_shared<adevs::Graph<double>>();
     auto ball = make_shared<bouncing_ball>(h_max);
     auto sample = make_shared<sampler>(0.01);
-    ball->sample_pin = graph->add_pin();
-    sample->sample_pin = graph->add_pin();
     graph->add_atomic(ball);
     graph->add_atomic(sample);
     graph->connect(sample->sample_pin,ball);

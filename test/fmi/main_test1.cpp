@@ -1,6 +1,6 @@
 #include <iostream>
 #include "adevs/adevs.h"
-#include "adevs/fmi.h"
+#include "adevs/solvers/fmi.h"
 #include "test1/modelDescription.h"
 using namespace std;
 
@@ -12,7 +12,7 @@ int main() {
         new adevs::corrected_euler<int>(fmi, 1E-6, 0.001);
     adevs::bisection_event_locator<int>* solver2 =
         new adevs::bisection_event_locator<int>(fmi, 1E-7);
-    adevs::Hybrid<int>* model = new adevs::Hybrid<int>(fmi, solver1, solver2);
+    shared_ptr<adevs::Hybrid<int>> model = make_shared<adevs::Hybrid<int>>(fmi, solver1, solver2);
     adevs::Simulator<int>* sim = new adevs::Simulator<int>(model);
     assert(sim->nextEventTime() < 10.0);
     while (sim->nextEventTime() < 10.0) {
@@ -32,6 +32,5 @@ int main() {
     }
     assert(sim->nextEventTime() >= 10.0);
     delete sim;
-    delete model;
     return 0;
 }

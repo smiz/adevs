@@ -98,15 +98,15 @@ class ode_system {
 
     /// The external transition function
     virtual void external_event(double* q, double e,
-                                list<ValueType> const &xb) = 0;
+                                std::list<adevs::PinValue<ValueType>> const &xb) = 0;
 
     /// The confluent transition function
     virtual void confluent_event(double* q, bool const* state_event,
-                                 list<ValueType> const &xb) = 0;
+                                 std::list<adevs::PinValue<ValueType>> const &xb) = 0;
 
     /// The output function
     virtual void output_func(double const* q, bool const* state_event,
-                             list<ValueType> &yb) = 0;
+                             std::list<adevs::PinValue<ValueType>> &yb) = 0;
 
     /// Get the N x N Jacobian matrix. The supplied array must be filled with the Jacobian
     /// in column major ordering to make it compatible with LAPACK and similar
@@ -129,312 +129,6 @@ class ode_system {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Woverloaded-virtual"
 #endif
-
-/*
- * <p>This extension of the ode_system provides for modeling some semi-explicit
- * DAEs of index 1, specifically those in the form dx/dt = f(x,y), y = g(x,y).
- * The solution to y=g(x,y) is found by iteration on y.
- * See "The Numerical Solution of Differential-Algebraic Systems by Runge-Kutta
- * Methods" by Ernst Hairer, Michel Roche and Christian Lubich, published
- * by Springer as Lecture Notes in Mathematics, Volum 1409, c. 1989.
- * The section on Half-explicit methods (starting pg. 20 of my copy)
- * describes the procedure.</p>
- * <p>Only the methods that include the algebraic variables should be overriden.
- * Any explicit, single step ODE solver can be used to generate trajectories for
- * this object (e.g., the Runge-Kutta methods included with adevs will work).</p>
- */
-template <typename ValueType>
-class dae_se1_system : public ode_system<ValueType> {
-  public:
-    /*
-     * Make a system with N state variables, M state event functions
-     * and A algebraic variables. The error tolerance determines
-     * the acceptable accuracy for the algebraic solution to y=g(x,y).
-     * The max_iters argument determines how many iterations will
-     * be used to try and generate a solution.
-     */
-    dae_se1_system(int N_vars, int M_event_funcs, int A_alg_vars,
-                   double err_tol = 1E-10, int max_iters = 30,
-                   double alpha = -1.0)
-        : ode_system<ValueType>(N_vars, M_event_funcs),
-          A(A_alg_vars),
-          max_iters(max_iters),
-          err_tol(err_tol),
-          alpha(alpha) {
-        failed = 0;
-        max_err = 0.0;
-        a = new double[A];
-        atmp = new double[A];
-        d = new double[A];
-        f[1] = new double[A];
-        f[0] = new double[A];
-    }
-
-    /// Get the number of algebraic variables
-    int numAlgVars() const { return A; }
-
-    /// Get the algebraic variables
-    double getAlgVar(int i) const { return a[i]; }
-
-    /*
-     * Write an intial solution for the state variables q
-     * and algebraic variables a.
-     */
-    virtual void init(double* q, double* a) = 0;
-
-    /*
-     * Calculate the algebraic function for the state vector
-     * q and algebraic variables a and store the result to af.
-     * A solution to alg_func(a,q) = a will be found by
-     * iteration on this function.
-     */
-    virtual void alg_func(double const* q, double const* a, double* af) = 0;
-
-    /*
-     * Calculate the derivative of the state variables and store
-     * the result in dq.
-     */
-    virtual void der_func(double const* q, double const* a, double* dq) = 0;
-
-    /*
-     * Calculate the state event functions and store the result in z.
-     */
-    virtual void state_event_func(double const* q, double const* a,
-                                  double* z) = 0;
-
-    /// Compute the time event function using state q and algebraic variables a
-    virtual double time_event_func(double const* q, double const* a) = 0;
-
-    /*
-     * Update any variables that need updating at then end of a simulation step.
-     * This is called both when postStep(q) would be called and also immediately
-     * after the execution a discrete state transition.
-     */
-    virtual void postStep(double* q, double* a) = 0;
-
-    /*
-     * Default implementation calls postTrialStep(q)
-     */
-    virtual void postTrialStep(double* q, double* a) {
-        ode_system<ValueType>::postTrialStep(q);
-    }
-
-    /// The internal transition function
-    virtual void internal_event(double* q, double* a,
-                                bool const* state_event) = 0;
-
-    /// The external transition function
-    virtual void external_event(double* q, double* a, double e,
-                                list<ValueType> const &xb) = 0;
-
-    /// The confluent transition function
-    virtual void confluent_event(double* q, double* a, bool const* state_event,
-                                 list<ValueType> const &xb) = 0;
-
-    /// The output function
-    virtual void output_func(double const* q, double const* a,
-                             bool const* state_event, list<ValueType> &yb) = 0;
-
-    /// Destructor
-    virtual ~dae_se1_system() {
-        delete[] d;
-        delete[] a;
-        delete[] atmp;
-        delete[] f[1];
-        delete[] f[0];
-    }
-
-    /*
-     * Get the number of times that the error tolerance was not satisfied
-     * before the iteration limit was reached.
-     */
-    int getIterFailCount() const { return failed; }
-
-    /*
-     * Get the worst error in a case where the algebraic solver did
-     * not satisfy the error tolerance. This will be zero if
-     * there were no failures of the algebraic solver.
-     */
-    double getWorseError() const { return max_err; }
-
-    /// Do not override
-    void init(double* q) { init(q, a); }
-
-    /// Do not override
-    void der_func(double const* q, double* dq) {
-        solve(q);
-        der_func(q, a, dq);
-    }
-
-    /// Override only if you have no state event functions.
-    void state_event_func(double const* q, double* z) {
-        solve(q);
-        state_event_func(q, a, z);
-    }
-
-    /// Override only if you have no time events.
-    double time_event_func(double const* q) {
-        solve(q);
-        return time_event_func(q, a);
-    }
-
-    /// Do not override
-    void postStep(double* q) {
-        solve(q);
-        postStep(q, a);
-    }
-
-    /// Do not override
-    void internal_event(double* q, bool const* state_event) {
-        // The variable a was solved for in the post step
-        internal_event(q, a, state_event);
-        // Make sure the algebraic variables are consistent with q
-        solve(q);
-        postStep(q, a);
-    }
-
-    /// Do not override
-    void external_event(double* q, double e, list<ValueType> const &xb) {
-        // The variable a was solved for in the post step
-        external_event(q, a, e, xb);
-        // Make sure the algebraic variables are consistent with q
-        solve(q);
-        postStep(q, a);
-    }
-
-    /// Do not override
-    void confluent_event(double* q, bool const* state_event,
-                         list<ValueType> const &xb) {
-        // The variable a was solved for in the post step
-        confluent_event(q, a, state_event, xb);
-        // Make sure the algebraic variables are consistent with q
-        solve(q);
-        postStep(q, a);
-    }
-
-    /// Do not override
-    void output_func(double const* q, bool const* state_event,
-                     list<ValueType> &yb) {
-        // The variable a was solved for in the post step
-        output_func(q, a, state_event, yb);
-    }
-
-  protected:
-    /*
-     * Solve the algebraic equations. This should
-     * not usually need to be called by the derived class. An exception might
-     * be where updated values for the algebraic variables are needed from
-     * within an event function due to some discrete change in q or the
-     * structure of the systems.
-     */
-    void solve(double const* q);
-
-  private:
-    int const A, max_iters;
-    double const err_tol, alpha;
-    // Guess at the algebraic solution
-    double *a, *atmp;
-    // Guesses at g(y)-y
-    double* f[2];
-    // Direction
-    double* d;
-    // Maximum error in the wake of a failure
-    double max_err;
-    // Number of failures
-    int failed;
-};
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-
-template <typename ValueType>
-void dae_se1_system<ValueType>::solve(double const* q) {
-    int iter_count = 0, alt, good;
-    double prev_err, err = 0.0, ee, beta, g2, alpha_tmp = alpha;
-/*
- * Solve y=g(x,y) by the conjugate gradient method.
- * Method iterates on f(x,y)=g(x,y)-y to find
- * f(x,y)=0.
- */
-_adevs_dae_se_1_system_solve_try_it_again:
-    alt = 0;
-    good = 1;
-    prev_err = DBL_MAX;
-    // First step by steepest descent
-    alg_func(q, a, f[alt]);
-    for (int i = 0; i < A; i++) {
-        // Calculate f(x,y)
-        f[alt][i] -= a[i];
-        // First direction
-        d[i] = -f[alt][i];
-        // Make the move
-        atmp[i] = a[i];
-        a[i] += alpha_tmp * d[i];
-    }
-    // Otherwise, first guess by steepest descent
-    // Finish search by conjugate gradiant
-    while (iter_count < max_iters) {
-        iter_count++;
-        err = 0.0;
-        // Calculate y = g(x,y)
-        alg_func(q, a, f[good]);
-        // Check the quality of the solution
-        for (int i = 0; i < A; i++) {
-            // Calculate f(x,y)
-            f[good][i] -= a[i];
-            // Get the largest error
-            ee = fabs(f[good][i]);
-            if (ee > err) {
-                err = ee;
-            }
-        }
-        // If the solution is good enough then return
-        if (err < err_tol) {
-            return;
-        }
-        // If the solution is not converging...
-        if (err > prev_err) {
-            // Restore previous solution
-            for (int i = 0; i < A; i++) {
-                a[i] = atmp[i];
-            }
-            // Restart with a new value for alpha
-            if (alpha_tmp < 0.0) {
-                alpha_tmp = -alpha_tmp;
-            } else {
-                alpha_tmp *= -0.5;
-            }
-            goto _adevs_dae_se_1_system_solve_try_it_again;
-        }
-        prev_err = err;
-        // Calculate beta. See Strang's "Intro. to Applied Mathematics",
-        // pg. 379.
-        beta = g2 = 0.0;
-        for (int i = 0; i < A; i++) {
-            g2 += f[alt][i] * f[alt][i];
-        }
-        for (int i = 0; i < A; i++) {
-            beta += f[good][i] * (f[good][i] - f[alt][i]);
-        }
-        beta /= g2;
-        // Calculate a new guess at the solution
-        for (int i = 0; i < A; i++) {
-            d[i] = beta * d[i] - f[good][i];
-            atmp[i] = a[i];
-            a[i] += alpha_tmp * d[i];
-        }
-        // Swap buffers
-        good = alt;
-        alt = (good + 1) % 2;
-    }
-    // Increment the failed count and worse case error if an
-    // acceptible solution was not found.
-    failed++;
-    if (err > max_err) {
-        max_err = err;
-    }
-}
 
 /*
  * This is the interface for numerical integrators that are to be used with the
@@ -576,7 +270,7 @@ class Hybrid : public Atomic<ValueType, TimeType> {
      * Do not override this method. It performs numerical integration and
      * invokes the ode_system for external events as needed.
      */
-    void delta_ext(TimeType e, list<ValueType> const &xb) {
+    void delta_ext(TimeType e, std::list<adevs::PinValue<ValueType>> const &xb) {
         bool state_event_exists = false;
         event_happened = true;
         // Check that we have not missed a state event
@@ -616,7 +310,7 @@ class Hybrid : public Atomic<ValueType, TimeType> {
      * Do not override. This method invokes the ode_system method
      * for confluent events as needed.
      */
-    void delta_conf(list<ValueType> const &xb) {
+    void delta_conf(std::list<adevs::PinValue<ValueType>> const &xb) {
         if (!missedOutput.empty()) {
             missedOutput.clear();
             if (sigma > 0.0) {
@@ -648,7 +342,7 @@ class Hybrid : public Atomic<ValueType, TimeType> {
     }
 
     /// Do not override. Invokes the ode_system output function as needed.
-    void output_func(list<ValueType> &yb) {
+    void output_func(std::list<adevs::PinValue<ValueType>> &yb) {
         if (!missedOutput.empty()) {
             for (auto iter : missedOutput) {
                 yb.push_back(iter);
@@ -676,7 +370,7 @@ class Hybrid : public Atomic<ValueType, TimeType> {
     bool
         event_happened;  // True if a discrete event in the ode_system took place
     double e_accum;      // Accumlated time between discrete events
-    list<ValueType> missedOutput;  // Output missed at an external event
+    std::list<adevs::PinValue<ValueType>> missedOutput;  // Output missed at an external event
     // Execute a tentative step and calculate the time advance function
     void tentative_step() {
         // Check for a time event

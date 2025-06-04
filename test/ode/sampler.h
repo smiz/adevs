@@ -20,7 +20,7 @@ class sampler : public adevs::Atomic<double> {
         sigma = dt;
     }
 
-    void delta_ext(double e, list<adevs::PinValue<double>> const &xb) {
+    void delta_ext(double e, std::list<adevs::PinValue<double>> const &xb) {
         sigma -= e;
         t += e;
         std::cout << t << " ";
@@ -31,19 +31,19 @@ class sampler : public adevs::Atomic<double> {
         std::cout << std::endl;
     }
 
-    void delta_conf(list<adevs::PinValue<double>> const &xb) {
+    void delta_conf(std::list<adevs::PinValue<double>> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
 
     double ta() { return sigma; }
 
-    void output_func(list<adevs::PinValue<double>> &yb) {
+    void output_func(std::list<adevs::PinValue<double>> &yb) {
         adevs::PinValue<double> event(sample_pin, 0.0);
         yb.push_back(event);
     }
 
-    int sample_pin;
+    const adevs::pin_t sample_pin;
 
   private:
     double const dt;

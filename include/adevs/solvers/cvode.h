@@ -47,7 +47,7 @@ namespace adevs {
  * event simulation.
  */
 template <typename OutputType>
-class CVODE: public Atomic<OutputType,double> {
+class CVODE: public Atomic<OutputType> {
   public:
   /**
    * The constructor should be used to initialize CVode for your model

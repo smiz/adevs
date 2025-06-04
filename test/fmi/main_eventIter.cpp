@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 #include "adevs/adevs.h"
-#include "adevs/fmi.h"
+#include "adevs/solvers/fmi.h"
 #include "eventIter/modelDescription.h"
 using namespace std;
 using namespace adevs;
@@ -25,7 +25,7 @@ void print(TestModel* model) {
 
 void test(bool interpolate) {
     TestModel* test_model = new TestModel();
-    Hybrid<double>* hybrid_model = new Hybrid<double>(
+    shared_ptr<Hybrid<double>> hybrid_model = make_shared<Hybrid<double>>(
         test_model, new corrected_euler<double>(test_model, 1E-5, 0.001),
         new fast_event_locator<double>(test_model, 1E-6, interpolate));
     // Create the simulator
@@ -38,7 +38,6 @@ void test(bool interpolate) {
         print(test_model);
     }
     delete sim;
-    delete hybrid_model;
 }
 
 int main() {

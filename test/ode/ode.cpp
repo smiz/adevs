@@ -1,7 +1,6 @@
 #include <iostream>
-#include "adevs/corrected_euler.h"
-#include "adevs/rk_45.h"
-#include "adevs/trap.h"
+#include "adevs/adevs.h"
+#include "adevs/solvers/trap.h"
 using namespace adevs;
 using namespace std;
 
@@ -19,16 +18,15 @@ class simple_system : public ode_system<int> {
         dq[0] = -q[0] + q[1];
         dq[1] = -q[0] - 2.0 * q[1];
     }
-    void state_event_func(double const* q, double* z) {}
-    double time_event_func(double const* q) { return adevs_inf<double>(); }
-    void internal_event(double* q, bool const* event_flag) {}
-    void external_event(double* q, double e, list<int> const &xb) {}
-    void confluent_event(double* q, bool const* event_flag,
-                         list<int> const &xb) {}
-    void output_func(double const* q, bool const* event_flag, list<int> &yb) {}
+    void state_event_func(double const*, double*) {}
+    double time_event_func(double const*) { return adevs_inf<double>(); }
+    void internal_event(double*, bool const*) {}
+    void external_event(double*, double, list<PinValue<int>> const &) {}
+    void confluent_event(double*, bool const*, list<PinValue<int>> const&){}
+    void output_func(double const*, bool const*, list<PinValue<int>> &) {}
 
-    bool get_jacobian(double const* q, double* J) {
-        if (J == NULL) {
+    bool get_jacobian(double const*, double* J) {
+        if (J == nullptr) {
             return true;
         }
         J[0] = -1.0;
@@ -56,13 +54,12 @@ class lk_system : public ode_system<int> {
         dq[0] = a * q[0] - b * q[0] * q[1];
         dq[1] = d * q[0] * q[1] - c * q[1];
     }
-    void state_event_func(double const* q, double* z) {}
-    double time_event_func(double const* q) { return adevs_inf<double>(); }
-    void internal_event(double* q, bool const* event_flag) {}
-    void external_event(double* q, double e, list<int> const &xb) {}
-    void confluent_event(double* q, bool const* event_flag,
-                         list<int> const &xb) {}
-    void output_func(double const* q, bool const* event_flag, list<int> &yb) {}
+    void state_event_func(double const*, double*) {}
+    double time_event_func(double const*) { return adevs_inf<double>(); }
+    void internal_event(double*, bool const*) {}
+    void external_event(double*, double, list<PinValue<int>> const &) {}
+    void confluent_event(double*, bool const*,list<PinValue<int>> const &) {}
+    void output_func(double const*, bool const*, list<PinValue<int>> &) {}
 
     bool get_jacobian(double const* q, double* J) {
         if (J == NULL) {
@@ -106,5 +103,6 @@ void test(ode_system<int>* sys, double tend) {
 
 int main() {
     test(new lk_system(), 50.0);
+    test(new simple_system(), 50.0);
     return 0;
 }

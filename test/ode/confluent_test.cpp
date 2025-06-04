@@ -11,9 +11,11 @@ class Genr : public Atomic<int> {
     Genr() : Atomic<int>() {}
     double ta() { return period; }
     void delta_int() {}
-    void delta_ext(double, list<int> const &) {}
-    void delta_conf(list<int> const &) {}
-    void output_func(list<int> &yb) { yb.push_back(1); }
+    void delta_ext(double, list<PinValue<int>> const &) {}
+    void delta_conf(list<PinValue<int>> const &) {}
+    void output_func(list<PinValue<int>> &yb) { yb.push_back(PinValue<int>(output,1)); }
+
+    const pin_t output;
 };
 
 // Also undergoes an internal transition every
@@ -23,25 +25,25 @@ class test_model : public ode_system<int> {
   public:
     test_model() : ode_system<int>(1, 0), is_confluent(false) {}
     void init(double* q) { q[0] = period; }
-    void der_func(double const* q, double* dq) { dq[0] = -1.0; }
-    void state_event_func(double const* q, double* z) {}
+    void der_func(double const*, double* dq) { dq[0] = -1.0; }
+    void state_event_func(double const*, double*) {}
     double time_event_func(double const* q) { return q[0]; }
-    void internal_event(double* q, bool const* event_flag) {
+    void internal_event(double* q, bool const*) {
         assert(is_confluent);
         q[0] = period;
     }
-    void external_event(double* q, double e, list<int> const &xb) {
+    void external_event(double*, double, list<PinValue<int>> const &xb) {
         assert(is_confluent);
         assert(xb.size() == 1);
     }
     void confluent_event(double* q, bool const* event_flag,
-                         list<int> const &xb) {
+                         list<PinValue<int>> const &xb) {
         is_confluent = true;
         internal_event(q, event_flag);
         external_event(q, 0.0, xb);
         is_confluent = false;
     }
-    void output_func(double const*, bool const*, list<int> &) {}
+    void output_func(double const*, bool const*, list<PinValue<int>> &) {}
 
 
   private:
@@ -49,18 +51,17 @@ class test_model : public ode_system<int> {
 };
 
 void run_test(ode_system<int>* b, ode_solver<int>* s, event_locator<int>* l) {
-    Hybrid<int>* ball = new Hybrid<int>(b, s, l);
-    Genr* genr = new Genr();
-    SimpleDigraph<int>* model = new SimpleDigraph<int>();
-    model->add(ball);
-    model->add(genr);
-    model->couple(genr, ball);
+    shared_ptr<Hybrid<int>> ball = make_shared<Hybrid<int>>(b, s, l);
+    shared_ptr<Genr> genr = make_shared<Genr>();
+    shared_ptr<Graph<int>> model = make_shared<Graph<int>>();
+    model->add_atomic(ball);
+    model->add_atomic(genr);
+    model->connect(genr->output, ball);
     Simulator<int>* sim = new Simulator<int>(model);
     while (sim->nextEventTime() < 10.0) {
         sim->execNextEvent();
     }
     delete sim;
-    delete model;
 }
 
 int main() {

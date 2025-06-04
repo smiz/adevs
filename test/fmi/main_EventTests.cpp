@@ -1,7 +1,7 @@
 #include <iostream>
 #include "EventTests/modelDescription.h"
 #include "adevs/adevs.h"
-#include "adevs/fmi.h"
+#include "adevs/solvers/fmi.h"
 using namespace std;
 
 #define epsilon 1E-6
@@ -47,13 +47,12 @@ int main() {
         new adevs::corrected_euler<int>(fmi, epsilon / 10.0, 0.01);
     adevs::discontinuous_event_locator<int>* solver2 =
         new adevs::discontinuous_event_locator<int>(fmi, epsilon / 10.0);
-    adevs::Hybrid<int>* model = new adevs::Hybrid<int>(fmi, solver1, solver2);
+    shared_ptr<adevs::Hybrid<int>> model = make_shared<adevs::Hybrid<int>>(fmi, solver1, solver2);
     adevs::Simulator<int>* sim = new adevs::Simulator<int>(model);
     while (sim->nextEventTime() <= 5.0) {
         sim->execNextEvent();
         test_vars(fmi);
     }
     delete sim;
-    delete model;
     return 0;
 }

@@ -38,7 +38,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
-#include "adevs/hybrid.h"
+#include "adevs/solvers/hybrid.h"
 #include "fmi2FunctionTypes.h"
 #include "fmi2Functions.h"
 #include "fmi2TypesPlatform.h"
@@ -84,6 +84,8 @@ class FMI : public ode_system<OutputType> {
         char const* shared_lib_name, double const tolerance = 1E-8,
         int num_extra_event_indicators = 0, double start_time = 0.0,
         bool provides_jacobian = false);
+    /// Destructor
+    virtual ~FMI();
     /// Copy the initial state of the model to q
     virtual void init(double* q);
     /// Compute the derivative for state q and put it in dq
@@ -120,19 +122,19 @@ class FMI : public ode_system<OutputType> {
      * derived classes.
      */
     virtual void external_event(double* q, double e,
-                                list<OutputType> const &xb);
+                                std::list<PinValue<OutputType>> const &xb);
     /*
      * The confluent transition function. See the notes on the internal_event function for
      * derived classes.
      */
     virtual void confluent_event(double* q, bool const* state_event,
-                                 list<OutputType> const &xb);
+                                 std::list<PinValue<OutputType>> const &xb);
     /*
      * The output function. This can read variables from the FMI, but should
      * not make any modifications to those variables.
      */
     virtual void output_func(double const* q, bool const* state_event,
-                             list<OutputType> &yb);
+                             std::list<PinValue<OutputType>> &yb);
 
     /// Get the current time
     double get_time() const { return t_now; }
@@ -553,7 +555,7 @@ void FMI<OutputType>::internal_event(double* q, bool const* state_event) {
 
 template <typename OutputType>
 void FMI<OutputType>::external_event(double* q, double e,
-                                     list<OutputType> const &xb) {
+                                     std::list<PinValue<OutputType>> const &xb) {
     fmi2Status status;
     // Go to event mode if we have not yet done so
     if (cont_time_mode) {
@@ -569,7 +571,7 @@ void FMI<OutputType>::external_event(double* q, double e,
 
 template <typename OutputType>
 void FMI<OutputType>::confluent_event(double* q, bool const* state_event,
-                                      list<OutputType> const &xb) {
+                                      std::list<PinValue<OutputType>> const &xb) {
     fmi2Status status;
     // postStep will have updated the continuous variables, so
     // we just process discrete events here.
@@ -585,7 +587,7 @@ void FMI<OutputType>::confluent_event(double* q, bool const* state_event,
 
 template <typename OutputType>
 void FMI<OutputType>::output_func(double const* q, bool const* state_event,
-                                  list<OutputType> &yb) {}
+                                  std::list<PinValue<OutputType>> &yb) {}
 
 template <typename OutputType>
 FMI<OutputType>::~FMI() {
