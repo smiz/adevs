@@ -108,7 +108,7 @@ class Simulator {
      * next output and change of state.
      * @return The absolute time of the next event
      */
-    TimeType nextEventTime() { return sched.minPriority(); }
+    TimeType nextEventTime() { return tNext; }
 
     /*
      * Execute the simulation cycle at time nextEventTime()

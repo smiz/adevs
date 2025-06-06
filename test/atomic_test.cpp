@@ -115,6 +115,7 @@ void test5() {
     graph->connect(input_pin,g);
     Simulator<char> sim(graph);
     sim.setNextTime(5.0);
+    assert(sim.nextEventTime() == 5.0);
     sim.injectInput(input);
     sim.computeNextState();
     assert(sim.nextEventTime() == adevs_inf<double>());
