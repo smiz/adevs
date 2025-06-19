@@ -44,95 +44,193 @@
 namespace adevs {
 
 /**
+ * @brief An interface for receiving notifications of state changes,
+ * input events, and output events from a running simulation.
+ * 
  * The EventListener interface is used to be notified of events as
- * they occur in a simulation. It must be registered with a Simulator.
+ * they occur in a simulation. It must be registered with the Simulator
+ * that will provide the notifications.
  */
 template <typename ValueType, typename TimeType = double>
 class EventListener {
   public:
+    /**
+     * @brief The virtual default constructor.
+     * 
+     * The default constructor is empty and does not perform any
+     * initialization.
+     */
     virtual ~EventListener() {}
     /**
-     * Called when a atomic model produces an output.
-     * @param model The atomic model that produced the output
-     * @param value The output value produced by the model
+     * @brief Called when a Atomic model produces an output.
+     * 
+     * This method is called for each PinValue appearing in the
+     * list of outputs produced by the Atomic model's output_func()
+     * method.
+     * 
+     * @param model The Atomic model that produced the output
+     * @param value The PinValue created by the model
      * @param t The time of the output event
      */
     virtual void outputEvent(Atomic<ValueType, TimeType> &model,
                              PinValue<ValueType> &value, TimeType t) = 0;
     /**
-     * Called when an atomic receives an input.
-     * @param model The atomic model that receives the input
-     * @param value The input value
+     * @brief Called when an Atomic receives an input.
+     * 
+     * This method is called for each PinValue that is passed to the
+     * Atomic model's delta_ext() and delta_conf() methods.
+     * 
+     * @param model The Atomic model that receives the input
+     * @param value The PinValue provided as input
      * @param t The time of the input event
      */
     virtual void inputEvent(Atomic<ValueType, TimeType> &model,
                             PinValue<ValueType> &value, TimeType t) = 0;
     /**
-     * Called after an atomic changes its state.
-     * @param model The atomic model that changed state
-     * @param t The time of when the change occurred
+     * @brief Called after an Atomic model changes its state.
+     * 
+     * This method is called after the Atomic model's delta_int(),
+     * delta_ext(), and delta_conf() methods are called.
+     * 
+     * @param model The Atomic model that changed state
+     * @param t The time when the change occurred
      */
     virtual void stateChange(Atomic<ValueType, TimeType> &model,
                              TimeType t) = 0;
 };
 
-/*
+/**
+ * @brief Implements the DEVS simulation algorithm.
+ *  
  * This Simulator class implements the DEVS simulation algorithm.
  * Its methods throw adevs::exception objects if any of the DEVS model
- * constraints are violated (i.e., a negative time advance, a model
- * attempting to send an input directly to itself, or coupled Mealy
- * type systems).
+ * constraints are violated (e.g., a negative time advance). The Simulation
+ * algorithm can be described briefly as follows:
+ * 1. Each Atomic model has an associated clock called its elapsed time, denoted by e.
+ * This value is initialized to zero. The current simulation time is set to zero.
+ * 2. Call the ta() method of each Atomic model and find the smallest value of ta()-e.
+ * The set of models whose ta()-e equals this smallest value are the imminent models.
+ * If the smallest ta()-e is infinity, then the simulation end. For brevity, we use
+ * dt to indicate this smallest ta()-e.
+ * 3. Add dt to the elapsed time e of each Atomic model and to the current simulation
+ * time. Notice that imminent models now have e = ta() and non-imminent models
+ * have e < ta().
+ * 4. Call the output_func() method of each imminent model. For each PinValue
+ * object in the output list, using the Graph route() method to get the
+ * the Atomic models that will receive the value as input. Put these Atomic
+ * models into the active set.
+ * 5. Calculate new states for the Atomic models.
+ *     - If the model is imminent and is not in the active set, call its delta_int() method
+ * and set its elapsed time e to zero. 
+ *     - If the model is imminent and is in the active set, call its delta_conf() method
+ * with the input produced in step 4. Set its elapsed time e to zero.         
+ *     - If the model is not imminent and is in the active set, call its delta_ext() method
+ * with its elapsed time e and the input produced in step 4. Set its elapsed time e to zero.
+ *     - Otherwise, do nothing.
+ * 6. Apply provisional changes to the Graph structure.
+ * 7. Go to step 2.
+ * 
+ * Looking at this algorithm we can see two important features. First, the time advance ta()
+ * of each model is used to determine the time of the next event. The value returned by time advance 
+ * is how long the Atomic model will stay in its current state before changing state spontaneously.
+ * Second, the current simulation time is the sum of the dt values calculated in each iteration
+ * of the algorithm.
+ * 
+ * The Simulator is designed to be used as a component within a larger simulation.
+ * To illustrate how the Simulator can be used in this way, let us sketch its use to
+ * create a federate as described in the IEEE 1516 (High Level Architecture) standard.
+ * The general idea is as follows:
+ * 1. Register one or more EventListener objects that will gather output events that are to
+ * be published to the HLA federation.
+ * 2. Get your time of next event by calling the Simulator nextEventTime() method.
+ * 3. Call computeNextOutput(). Send Events and Object Updates (i.e., HLA messages)
+ * as your registered EventListener objects receive output events. The time stamp for
+ * these messages is the time returned by nextEventTime(). Make sure they are published
+ * as retractable messages so that they can be canceled if you receive input before
+ * your next event time.
+ * 4. Issued a next event request to the HLA federation for your nextEventTime().
+ * 5. You will receive one or more messages from the federation, each with an identical
+ * time stamp.
+ *   -# If this time stamp is less than your nextEventTime() then call setNextTime()
+ * with the time stamp of the received message and retract any messages published in
+ * step 3.
+ *   -# Inject the data from the received messages into your Simulator by using the injectInput() method.
+ * 6. When the time advance grant is received from the federation, call computeNextState()
+ * and repeat from step 2.
  */
 template <class OutputType, class TimeType = double>
 class Simulator {
 
   public:
-    /*
-     * Create a simulator for the atomic model. The simulator
-     * constructor will fail and throw an adevs::exception if the
+    /** 
+     * @brief Create a simulator for the atomic model.
+     * 
+     * The constructor will fail and throw an adevs::exception if the
      * time advance of the model is less than zero.
-     * @param model The model to simulate
+     * @param model The model to simulate.
      */
     Simulator(shared_ptr<Atomic<OutputType, TimeType>> model);
 
-    /*
-     * Initialize the simulator with a collection of models.
-     * @param model The graph to simulate. The graph is set to
-     * provisional and must remain so until the simulation is
-     * complete.
+    /**
+     * @brief Initialize the simulator with a collection of models.
+     
+     * The constructor will fail and throw an adevs::exception if the
+     * time advance of the model is less than zero.
+     * @param model The graph to simulate.
      */
     Simulator(std::shared_ptr<Graph<OutputType, TimeType>> model);
 
-    /*
-     * Get the model's next event time. This is the time of the
-     * next output and change of state.
-     * @return The absolute time of the next event
+    /**
+     * @brief Get the time of the next event.
+     
+     * This is the absolute time of the next output and change of state.
+     * It is the time that will be assigned to the current time in
+     * step 3 of the simulation algorithm.
+     * 
+     * @return The absolute time of the next event.
      */
     TimeType nextEventTime() { return tNext; }
 
-    /*
-     * Execute the simulation cycle at time nextEventTime()
+    /** 
+     * @brief Execute the simulation cycle at time nextEventTime().
+     * 
+     * Update the simulation time to match nextEventTime() and calculate
+     * the output and next states as described in steps 4, 5, and 6 of the
+     * simulation algorithm.
+     * 
      * @return The current simulation time
      */
     TimeType execNextEvent() { return computeNextState(); }
 
     /**
+     * @brief Inject an event into the simulation.
+     * 
      * Inject an input that will be applied at the next call to
-     * computeNextState and computeNextOutput. The list is automatically
-     * cleared when computeNextState is called.
+     * computeNextState() and computeNextOutput(). The event is routed to
+     * each model that is reachable from the pin of the injected PinValue
+     * object.
+     * 
+     * @param x The PinValue to inject into the simulation.
      */
     void injectInput(PinValue<OutputType> &x) { external_input.push_back(x); }
 
     /**
-     * Clear the list of injected inputs.
+     * @brief Clear the list of injected inputs.
+     * 
+     * This erases all injected inputs that have not yet been applied
+     * to the simulation via a call to computeNextState() or computeNextOutput().
+     * It is cleared automatically at each call to computeNextState(),
      */
     void clearInjectedInput() { external_input.clear(); }
 
     /**
-     * Set the next event time to something less than the
-     * nextEventTime method would return. This is used to
-     * force the simulator to apply injected inputs at this
-     * time.
+     * @brief Set the next event time to something less than the
+     * nextEventTime() method would return.
+     * 
+     * This is used to force the simulator to apply injected inputs at 
+     * supplied time
+     * 
+     * @param t The time at which the next event will occur.
      */
     void setNextTime(TimeType t) {
         if (t != tNext) {
@@ -141,24 +239,33 @@ class Simulator {
         tNext = t;
     }
 
-    /*
-     * Compute the output values of the imminent component models.
-     * This notifies EventListeners as the outputs are produced.
+    /**
+     * @brief Compute the output values of the imminent component models.
+     * 
+     * This notifies EventListener as the outputs are produced. It
+     * does not change the simulation time or states of the models.
      */
     void computeNextOutput();
 
-    /*
-     * Compute the next state of the model. Provisional changes to
+    /**
+     * @brief Compute the next state of the model.
+     * 
+     * This notifies EventListener as inputs are applied to models
+     * and as new states are calculated. Provisional changes to
      * the model structure are applied after new states are computed
-     * for the atomic components.
-     * @return The new simulation time
+     * for the Atomic components.
+     * 
+     * @return The current simulation time.
      */
     TimeType computeNextState();
 
     /**
+     * @brief Register an EventListener with the Simulator.
+     * 
      * Add an event listener to the simulator that will be notified of
      * input, output, and changes of state as they occur.
-     * @param listener The event listener to add
+     * 
+     * @param listener The EventListener to be added.
      */
     void addEventListener(
         std::shared_ptr<EventListener<OutputType, TimeType>> listener) {

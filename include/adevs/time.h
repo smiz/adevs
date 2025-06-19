@@ -38,61 +38,80 @@
 #include <limits>
 
 
-/// Returns the maximum value for a time type
+/// @brief Returns the maximum value for a time type
 template <class TimeType>
 inline TimeType adevs_inf();
-/// Returns the zero value for a time type
+/// @brief Returns the zero value for a time type
 template <class TimeType>
 inline TimeType adevs_zero();
-/// Returns a value less than adevs_zero()
+/// @brief Returns a value less than adevs_zero()
 template <class TimeType>
 inline TimeType adevs_sentinel();
-/// Returns the interval to the next instant of time
+/**
+ * @brief Returns the smallest possible interval of time.
+ * 
+ * If time is real (the default) or integers then this is zero.
+ * It takes on non-zero values for super dense time types.
+ */
 template <class TimeType>
 inline TimeType adevs_epsilon();
 
 
 namespace adevs {
 
-/*
- * This time type allows models to evolve on R x Z.
+/**
+ * @brief A super dense time type.
+ * 
+ * This time type is a pair R x Z. The first element is a real number
+ * representing in whatever are the units of your model. The second element
+ * is an integer that distinguishes between different events that occur at the
+ * same time. The order is lexicographic, so that (t1,k1) < (t2,k2) if t1 < t2
+ * or (t1 == t2 and k1 < k2). Addition when t1 != t2 sets the integer part to
+ * zero. If t1 = t2 then the the integer parts are added together. The length
+ * of an interval is equal to the difference of the real parts if they are
+ * different, or the difference of the integer parts if the real parts are the same.
+ * 
+ * You can find a description of a commonly used for of super dense time in the
+ * <a href="https://fmi-standard.org">FMI standard</a>. A more formal treatment
+ * is available in the paper <a href="https://dl.acm.org/doi/abs/10.1145/3379489">
+ * "Towards a theory of super dense time in simulation models."</a>
  */
 template <typename TimeType = double>
 class sd_time {
   public:
-    /// Creates the identify (0,0)
+    /// @brief Creates the zero value (0,0)
     sd_time() : t(0), k(0) {}
-    /// Create a time (t,k)
+    /// @brief Create a time (t,k)
     sd_time(TimeType t, int k) : t(t), k(k) {}
-    /// Copy constructor
+    /// @brief Copy constructor
     sd_time(sd_time const &other) : t(other.t), k(other.k) {}
-    /// Get the real part of time
+    /// @brief Get the real part of time
     TimeType real() const { return t; }
-    /// Get the logical part of time
+    /// @brief Get the logical (integer) part of time
     double integer() const { return k; }
-    /// Assignment operator
+    /// @brief Assignment operator
     sd_time const &operator=(sd_time const &other) {
         t = other.t;
         k = other.k;
         return *this;
     }
-    /// Equivalence
+    /// @brief Equivalence
     bool operator==(sd_time const &t2) const {
         return (t == t2.t && k == t2.k);
     }
-    /// Not equal
+    /// @brief Not equal
     bool operator!=(sd_time const &t2) const { return !(*this == t2); }
-    /// Order by t then by c
+    /// @brief Order by t then by k
     bool operator<(sd_time const &t2) const {
         return (t < t2.t || (t == t2.t && k < t2.k));
     }
-    /// Less than or equal
+    /// @brief Less than or equal
     bool operator<=(sd_time const &t2) const {
         return (*this == t2 || *this < t2);
     }
-    /// Greater than
+    /// @brief Greater than
     bool operator>(sd_time const &t2) const { return !(*this <= t2); }
-    /// Greater than or equal
+    /// @brief Greater than or equal
     bool operator>=(sd_time const &t2) const { return !(*this < t2); }
     /// Advance this value by a step size t2
     sd_time operator+(sd_time const &t2) const {
@@ -100,7 +119,7 @@ class sd_time {
         result += t2;
         return result;
     }
-    /// Advance this value by a step size t2
+    /// @brief Advance this value by a step size t2
     sd_time const &operator+=(sd_time const &t2) {
         if (t2.t == 0) {
             k += t2.k;
@@ -110,13 +129,13 @@ class sd_time {
         }
         return *this;
     }
-    /// Length of the interval from now to t2
+    /// @brief Length of the interval from now to t2
     sd_time operator-(sd_time const &t2) const {
         sd_time result(*this);
         result -= t2;
         return result;
     }
-    /// Length of the interval from now to t2
+    /// @brief Length of the interval from now to t2
     sd_time const &operator-=(sd_time const &t2) {
         if (t == t2.t) {
             t = 0;
@@ -126,12 +145,12 @@ class sd_time {
         }
         return *this;
     }
-    /// Print a time to the output stream
+    /// @brief Print a time to the output stream
     friend std::ostream &operator<<(std::ostream &out, sd_time const &t) {
         out << "(" << t.t << "," << t.k << ")";
         return out;
     }
-    /// Read a time from the input stream
+    /// @brief Read a time from the input stream
     friend std::istream &operator>>(std::istream &in, sd_time &t) {
         char junk;
         in >> junk >> t.t >> junk >> t.k >> junk;
@@ -143,18 +162,24 @@ class sd_time {
     int k;
 };
 
-/*
- * <p>The fcmp() inline function is taken from fcmp.c, which is
+/**
+ * @brief A double value where equality is defined within a given tolerance.
+ *
+ * The fcmp() inline function is taken from fcmp.c, which is
  * Copyright (c) 1998-2000 Theodore C. Belding,
  * University of Michigan Center for the Study of Complex Systems,
  * <mailto:Ted.Belding@umich.edu>,
  * <http://www-personal.umich.edu/~streak/>,
- * </p>
  *
- * <p>This code is part of the fcmp distribution. fcmp is free software;
+ * This code is part of the fcmp distribution. fcmp is free software;
  * you can redistribute and modify it under the terms of the GNU Library
  * General Public License (LGPL), version 2 or later.  This software
- * comes with absolutely no warranty.</p>
+ * comes with absolutely no warranty.
+ * 
+ * @param x1 First double value to compare
+ * @param x2 Second double value to compare
+ * @param epsilon The tolerance for the comparison
+ * @return  1 if x1 > x2, -1 if x1 < x2, and 0 if they are equal within the tolerance
  */
 inline int fcmp(double x1, double x2, double epsilon) {
     int exponent;
@@ -198,12 +223,17 @@ inline int fcmp(double x1, double x2, double epsilon) {
     }
 }
 
-/*
- * This is an alternative double that may be used for the simulation clock
- * (i.e., as the template parameter TimeType for models and simulators). It
- * uses the fcmp function to check for equality instead of the
+/** 
+ * @brief This is an alternative double that may be used for the simulation clock
+ * (i.e., as the template parameter TimeType for models and simulators).
+ * 
+ * This time type uses the fcmp function to check for equality instead of the
  * default equality operator. Information on the fcmp function
  * may be found at http://fcmp.sourceforge.net/
+ * 
+ * It may be useful for simulating with time granules as described in the article
+ * <a href = "https://dl.acm.org/doi/10.1145/268823.268901">"The threshold of
+ * event simultaneity"</a>.
  */
 class double_fcmp {
 
@@ -211,56 +241,70 @@ class double_fcmp {
     double d;
 
   public:
-    /*
+    /**
+     * @brief A static variable that is the
+     * tolerance for the fcmp function.
+     * 
      * The user must instantiate this static variable
      * and initialize as required by the fcmp function.
      */
     static double epsilon;
 
+    /// @brief Constructor initializes the value to the given argument.
+    /// @param rhs The initial value. Default is zero.
     double_fcmp(double rhs = 0) : d(rhs) {}
+    /// @brief Copy constructor
     double_fcmp(double_fcmp const &other) : d(other.d) {}
+    /// @brief Assignment operator
     double_fcmp const &operator=(double_fcmp const &rhs) {
         d = rhs.d;
         return *this;
     }
+    /// @brief Assignment operator
     double_fcmp const &operator=(double rhs) {
         d = rhs;
         return *this;
     }
+    /// @brief Get the double value within the double_fcmp
     operator double() { return d; }
+    /// @brief Less than
     bool operator<(double rhs) const { return (fcmp(d, rhs, epsilon) < 0); }
+    /// @brief Less than
     bool operator<(double_fcmp const &rhs) const {
         return (fcmp(d, rhs.d, epsilon) < 0);
     }
+    /// @brief Less than or equal to
     bool operator<=(double_fcmp const &rhs) const {
         return (fcmp(d, rhs.d, epsilon) <= 0);
     }
+    /// @brief Greater than
     bool operator>(double_fcmp const &rhs) const {
         return (fcmp(d, rhs.d, epsilon) > 0);
     }
+    /// @brief Greater than or equal to
     bool operator>=(double_fcmp const &rhs) const {
         return (fcmp(d, rhs.d, epsilon) >= 0);
     }
+    /// @brief Equality
     bool operator==(double rhs) const { return (fcmp(d, rhs, epsilon) == 0); }
+    /// @brief Equality
     bool operator==(double_fcmp const &rhs) const {
         return (fcmp(d, rhs.d, epsilon) == 0);
     }
-
-    /// Advance this value by a step size t2
+    /// @brief Advance this value by a step size t2
     double_fcmp operator+(double_fcmp const &t2) const {
         return double_fcmp(d+t2.d);
     }
-    /// Advance this value by a step size t2
+    /// @brief Advance this value by a step size t2
     double_fcmp const &operator+=(double_fcmp const &t2) {
         d += t2.d;
         return *this;
     }
-    /// Length of the interval from now to t2
+    /// @brief Length of the interval from now to t2
     double_fcmp operator-(double_fcmp const &t2) const {
         return double_fcmp(d-t2.d);
     }
-    /// Length of the interval from now to t2
-    /// Advance this value by a step size t2
+    /// @brief Assign length of the interval from now to t2
     double_fcmp const &operator-=(double_fcmp const &t2) {
         d -= t2.d;
         return *this;

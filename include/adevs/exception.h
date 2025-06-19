@@ -38,16 +38,21 @@
 
 namespace adevs {
 
-/*
+/**
+ * @brief The exception class is used to report errors during a simulation.
+ * 
  * The adevs::exception class is derived from the standard template
  * library exception class.
  */
 class exception : public std::exception {
   public:
-    /*
-     * Create an exception with an error message and, if appropriate,
-     * a pointer to the model that created the error.  To avoid
-     * templated exceptions, the model pointer is just a void*.
+    /**
+     * @brief Create an exception with an error message and, if appropriate,
+     * a pointer to the model that created the error.
+     * 
+     * To avoid templated exceptions, the model pointer is just a void*.
+     * @param msg The error message.
+     * @param model A pointer to the model that created the error (optional).
      */
     exception(char const* msg, void* model = nullptr)
         : std::exception(), msg(msg), model(model) {}
@@ -64,22 +69,6 @@ class exception : public std::exception {
   private:
     std::string msg;
     void* model;
-};
-
-/*
- * The unsupported method exception is raised if an optional virtual method
- * is not supported by a model.
- */
-class method_not_supported_exception : public exception {
-  public:
-    /*
-     * Constructor should be supplied with the model throwing
-     * the exception and the name of the method that is not supported.
-     */
-    method_not_supported_exception(char const* method, void* model)
-        : exception((std::string("Unsupported method: ") + std::string(method))
-                        .c_str(),
-                    model) {}
 };
 
 }  // namespace adevs
