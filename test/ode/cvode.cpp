@@ -26,21 +26,22 @@ class bouncing_ball : public CVODE<double> {
     t(0.0),
     h_max(h_max) {
         int retval;
-        y = N_VNew_Serial(2);
-        abstol = N_VNew_Serial(2);
+        SUNContext_Create(nullptr,&sunctx);
+        y = N_VNew_Serial(2,sunctx);
+        abstol = N_VNew_Serial(2,sunctx);
         NV_Ith_S(y,0) = 1.0;  // Initial height
         NV_Ith_S(y,1) = 0.0;  // Initial velocity
         NV_Ith_S(abstol,0) = 1E-8;  // Height error tolerance
         NV_Ith_S(abstol,1) = 1E-8;  // Velocity error tolerance
-        cvode_mem = CVodeCreate(CV_ADAMS);
+        cvode_mem = CVodeCreate(CV_ADAMS,sunctx);
         retval = CVodeInit(cvode_mem,bouncing_ball::f,0.0,y);
         assert(retval == CV_SUCCESS);
         retval = CVodeSVtolerances(cvode_mem,1E-8,abstol);
         assert(retval == CV_SUCCESS);
         retval = CVodeRootInit(cvode_mem,1,bouncing_ball::g);
         assert(retval == CV_SUCCESS);
-        A = SUNDenseMatrix(2,2);
-        LS = SUNLinSol_Dense(y,A);
+        A = SUNDenseMatrix(2,2,sunctx);
+        LS = SUNLinSol_Dense(y,A,sunctx);
         retval = CVodeSetLinearSolver(cvode_mem,LS,A);
         assert(retval == CV_SUCCESS);
         retval = CVodeSetUserData(cvode_mem,(void*)(&phase));
@@ -52,6 +53,7 @@ class bouncing_ball : public CVODE<double> {
         CVodeFree(&cvode_mem);
         SUNLinSolFree(LS);
         SUNMatDestroy(A);
+        SUNContext_Free(&sunctx);
     }
 
     void cvode_delta_int() {
@@ -124,6 +126,7 @@ class bouncing_ball : public CVODE<double> {
     bool sample;
     double t;
     const double h_max;
+    SUNContext sunctx;
     N_Vector y;
     N_Vector abstol;
     SUNMatrix A;

@@ -82,7 +82,7 @@ int main() {
     sim.addEventListener(listener);
     sim.setNextTime(0.0);
     sim.injectInput(start);
-    sim.computeNextState();
+    sim.execNextEvent();
     while (sim.nextEventTime() < 10) {
         cout << "***" << endl;
         sim.execNextEvent();

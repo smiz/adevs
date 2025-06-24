@@ -12,13 +12,13 @@ class Listener : public EventListener<int> {
   public:
     Listener()
         : EventListener<int>(), output_count(0), state_changes(0), value(-1) {}
-    void outputEvent(Event<int> x, [[maybe_unused]] double t) {
+    void outputEvent(Atomic<int>&, PinValue<int>& x, double) {
         output_count++;
         assert(value == -1 || x.value == value);
         value = x.value;
     }
-    void stateChange([[maybe_unused]] Atomic<int>* model,
-                     [[maybe_unused]] double t) {
+    void inputEvent(Atomic<int>&, PinValue<int>&, double){}
+    void stateChange(Atomic<int>&, double) {
         state_changes++;
     }
     int output_count, state_changes, value;
@@ -35,10 +35,13 @@ class Periodic : public Atomic<int> {
         return period;
     }
     void delta_int() { internal_transitions++; }
-    void delta_ext(double, list<int> const &) {}
-    void delta_conf(list<int> const &) {}
-    void output_func(list<int> &output) { output.push_back(1); }
-    void gc_output(list<int> &) {}
+    void delta_ext(double, list<PinValue<int>> const &) {}
+    void delta_conf(list<PinValue<int>> const &) {}
+    void output_func(list<PinValue<int>> &output) {
+        output.push_back(PinValue<int>(this->output,1));
+    }
+
+    const pin_t output;
 
   private:
     double const period;
@@ -50,12 +53,12 @@ class Receiver : public Atomic<int> {
     Receiver() : Atomic<int>(), event_count(0) {}
     double ta() { return adevs_inf<double>(); }
     void delta_int() {}
-    void delta_ext([[maybe_unused]] double e, list<int> const &xb) {
+    void delta_ext(double, list<PinValue<int>> const &xb) {
         event_count += xb.size();
     }
-    void delta_conf(list<int> const &xb) { delta_ext(0.0, xb); }
+    void delta_conf(list<PinValue<int>> const &xb) { delta_ext(0.0, xb); }
     int get_event_count() const { return event_count; }
-    void output_func(list<int> &) {}
+    void output_func(list<PinValue<int>> &) {}
 
   private:
     int event_count;
@@ -70,40 +73,40 @@ class Trigger : public MealyAtomic<int> {
     int external_event_count() const { return external_events; }
     double ta() { return time_left; }
     void delta_int() { time_left = adevs_inf<double>(); }
-    void delta_ext(double e, [[maybe_unused]] list<int> const &xb) {
+    void delta_ext(double e, list<PinValue<int>> const &) {
         assert(time_elapsed == e);
         external_events++;
         time_left = 1.0;
     }
-    void delta_conf([[maybe_unused]] list<int> const &xb) { time_left = 1.0; }
-    void output_func(list<int> &yb) {
+    void delta_conf(list<PinValue<int>> const &) { time_left = 1.0; }
+    void output_func(list<PinValue<int>> &yb) {
         // Turn off
-        yb.push_back(0);
+        yb.push_back(PinValue<int>(output,0));
     }
-    void output_func(list<int> const &xb, list<int> &yb) {
+    void confluent_output_func(list<PinValue<int>> const &xb, list<PinValue<int>> &yb) {
         // Turn on
-        yb.push_back(*(xb.begin()));
+        yb.push_back(PinValue<int>(output,(*(xb.begin())).value));
     }
-    void output_func(double e, list<int> const &xb, list<int> &yb) {
+    void external_output_func(double e, list<PinValue<int>> const &xb, list<PinValue<int>> &yb) {
         time_elapsed = e;
-        output_func(xb, yb);
+        confluent_output_func(xb, yb);
     }
-    void gc_output([[maybe_unused]] list<int> &gb) {}
 
+    const pin_t output;
   private:
     double time_left, time_elapsed;
     int external_events;
 };
 
 void test1() {
-    shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
+    shared_ptr<Graph<int>> model = make_shared<Graph<int>>();
     shared_ptr<Trigger> trigger = make_shared<Trigger>();
     shared_ptr<Periodic> periodic = make_shared<Periodic>(sqrt(2.0));
 
-    model->add(trigger);
-    model->add(periodic);
+    model->add_atomic(trigger);
+    model->add_atomic(periodic);
 
-    model->couple(periodic, trigger);
+    model->connect(periodic->output, trigger);
 
     shared_ptr<Listener> listener = make_shared<Listener>();
     shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
@@ -120,15 +123,15 @@ void test1() {
 }
 
 void test2() {
-    shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
+    shared_ptr<Graph<int>> model = make_shared<Graph<int>>();
     shared_ptr<Trigger> triggera = make_shared<Trigger>();
     shared_ptr<Trigger> triggerb = make_shared<Trigger>();
     shared_ptr<Periodic> periodic = make_shared<Periodic>(sqrt(2.0));
-    model->add(triggera);
-    model->add(triggerb);
-    model->add(periodic);
-    model->couple(periodic, triggera);
-    model->couple(periodic, triggerb);
+    model->add_atomic(triggera);
+    model->add_atomic(triggerb);
+    model->add_atomic(periodic);
+    model->connect(periodic->output, triggera);
+    model->connect(periodic->output, triggerb);
     shared_ptr<Listener> l = make_shared<Listener>();
     shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
     sim->addEventListener(l);
@@ -143,19 +146,19 @@ void test2() {
 }
 
 void test3() {
-    shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
+    shared_ptr<Graph<int>> model = make_shared<Graph<int>>();
     shared_ptr<Trigger> triggera = make_shared<Trigger>();
     shared_ptr<Trigger> triggerb = make_shared<Trigger>();
     shared_ptr<Periodic> periodic = make_shared<Periodic>(sqrt(2.0));
     shared_ptr<Receiver> rx = make_shared<Receiver>();
-    model->add(triggera);
-    model->add(triggerb);
-    model->add(periodic);
-    model->add(rx);
-    model->couple(periodic, triggera);
-    model->couple(periodic, triggerb);
-    model->couple(triggera, rx);
-    model->couple(triggerb, rx);
+    model->add_atomic(triggera);
+    model->add_atomic(triggerb);
+    model->add_atomic(periodic);
+    model->add_atomic(rx);
+    model->connect(periodic->output, triggera);
+    model->connect(periodic->output, triggerb);
+    model->connect(triggera->output, rx);
+    model->connect(triggerb->output, rx);
     shared_ptr<Listener> l = make_shared<Listener>();
     shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
     sim->addEventListener(l);
@@ -173,16 +176,16 @@ void test3() {
 
 void test4() {
     bool except = false;
-    shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
+    shared_ptr<Graph<int>> model = make_shared<Graph<int>>();
     shared_ptr<Trigger> triggera = make_shared<Trigger>();
     shared_ptr<Trigger> triggerb = make_shared<Trigger>();
     shared_ptr<Periodic> periodic = make_shared<Periodic>(sqrt(2.0));
-    model->add(triggera);
-    model->add(triggerb);
-    model->add(periodic);
-    model->couple(periodic, triggera);
-    model->couple(triggera, triggerb);
-    model->couple(triggerb, triggera);
+    model->add_atomic(triggera);
+    model->add_atomic(triggerb);
+    model->add_atomic(periodic);
+    model->connect(periodic->output, triggera);
+    model->connect(triggera->output, triggerb);
+    model->connect(triggerb->output, triggera);
     shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
     while (sim->nextEventTime() < adevs_inf<double>()) {
         try {
@@ -197,19 +200,19 @@ void test4() {
 
 void test5() {
     cout << "TEST 5" << endl;
-    shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
+    shared_ptr<Graph<int>> model = make_shared<Graph<int>>();
     shared_ptr<Trigger> triggera = make_shared<Trigger>();
     shared_ptr<Trigger> triggerb = make_shared<Trigger>();
     shared_ptr<Periodic> periodic = make_shared<Periodic>(1.0);
     shared_ptr<Receiver> rx = make_shared<Receiver>();
-    model->add(triggera);
-    model->add(triggerb);
-    model->add(periodic);
-    model->add(rx);
-    model->couple(periodic, triggera);
-    model->couple(periodic, triggerb);
-    model->couple(triggera, rx);
-    model->couple(triggerb, rx);
+    model->add_atomic(triggera);
+    model->add_atomic(triggerb);
+    model->add_atomic(periodic);
+    model->add_atomic(rx);
+    model->connect(periodic->output, triggera);
+    model->connect(periodic->output, triggerb);
+    model->connect(triggera->output, rx);
+    model->connect(triggerb->output, rx);
     shared_ptr<Listener> l = make_shared<Listener>();
     shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
     sim->addEventListener(l);
@@ -228,12 +231,12 @@ void test5() {
 
 void test6() {
     cout << "TEST 6" << endl;
-    shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
+    shared_ptr<Graph<int>> model = make_shared<Graph<int>>();
     shared_ptr<Periodic> periodic = make_shared<Periodic>(10.0);
     shared_ptr<Trigger> trigger = make_shared<Trigger>();
-    model->add(periodic);
-    model->add(trigger);
-    model->couple(periodic, trigger);
+    model->add_atomic(periodic);
+    model->add_atomic(trigger);
+    model->connect(periodic->output, trigger);
     shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
     while (sim->nextEventTime() < 12.0) {
         sim->execNextEvent();

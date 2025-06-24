@@ -73,6 +73,8 @@ class trap : public ode_solver<ValueType> {
     void advance(double* q, double h);
 
   private:
+
+    SUNContext sunctx;
     double* k;   // Fixed term in newton iteration
     double* dq;  // Derivatives at guess
     // The Euler initial guess which we also
@@ -167,8 +169,13 @@ template <typename ValueType>
 void trap<ValueType>::prep_kinsol(bool silent) {
     int retval;
     kinsol_data.self = this;
+    /* Create a context */
+    retval = SUNContext_Create(nullptr,&sunctx);
+    if (check_retval(&retval, "SUNContext_Create", 1)) {
+        throw adevs::exception("SUNContext_Create failed");
+    }
     /* Create vectors for solution, scales, and jacobian */
-    y = N_VNew_Serial(this->sys->numVars());
+    y = N_VNew_Serial(this->sys->numVars(),sunctx);
     if (check_retval((void*)y, "N_VNew_Serial", 0)) {
         throw adevs::exception("N_VNew_Serial failed");
     }
@@ -178,17 +185,17 @@ void trap<ValueType>::prep_kinsol(bool silent) {
     }
     // No scaling
     N_VConst(RCONST(1.0), scale);
-    J = SUNDenseMatrix(this->sys->numVars(), this->sys->numVars());
+    J = SUNDenseMatrix(this->sys->numVars(), this->sys->numVars(), sunctx);
     if (check_retval((void*)J, "SUNDenseMatrix", 0)) {
         throw adevs::exception("SUNDenseMatrix failed");
     }
     /* Create dense SUNLinearSolver object */
-    LS = SUNLinSol_Dense(y, J);
+    LS = SUNLinSol_Dense(y, J, sunctx);
     if (check_retval((void*)LS, "SUNLinSol_Dense", 0)) {
         throw adevs::exception("SUNLinSol_Dense failed");
     }
     /* Initialize and allocate memory for KINSOL */
-    kmem = KINCreate();
+    kmem = KINCreate(sunctx);
     if (check_retval((void*)kmem, "KINCreate", 0)) {
         throw adevs::exception("KINCreate failed");
     }
@@ -240,6 +247,7 @@ trap<ValueType>::~trap() {
     KINFree(&kmem);
     SUNLinSolFree(LS);
     SUNMatDestroy(J);
+    SUNContext_Free(&sunctx);
 }
 
 template <typename ValueType>

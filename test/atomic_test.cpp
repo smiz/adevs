@@ -46,7 +46,7 @@ void test2() {
     Simulator<char> sim(g);
     while (sim.nextEventTime() < adevs_inf<double>()) {
         sim.computeNextOutput();
-        sim.execNextEvent();
+        sim.computeNextState();
     }
     assert(g->getTickCount() == 10);
 }
@@ -75,7 +75,7 @@ void test3() {
     while (sim.nextEventTime() < adevs_inf<double>()) {
         sim.computeNextOutput();
         assert(listener->t_last == sim.nextEventTime());
-        sim.execNextEvent();
+        sim.computeNextState();
     }
     assert(listener->count == 10);
     assert(g->getTickCount() == 10);
@@ -85,10 +85,10 @@ void test4() {
     shared_ptr<genr> g = make_shared<genr>(10.0, 10);
     Simulator<char> sim(g);
     sim.setNextTime(5.0);
-    sim.computeNextState();
+    sim.execNextEvent();
     assert(sim.nextEventTime() == 10.0);
     sim.setNextTime(6.0);
-    sim.computeNextState();
+    sim.execNextEvent();
     assert(sim.nextEventTime() == 10.0);
     sim.setNextTime(sim.nextEventTime());
     sim.computeNextOutput();
@@ -98,6 +98,7 @@ void test4() {
     sim.computeNextOutput();
     assert(sim.nextEventTime() == 20.0);
     sim.setNextTime(12.0);
+    sim.computeNextOutput();
     sim.computeNextState();
     assert(sim.nextEventTime() == 20.0);
     assert(g->getTickCount() == 1);
@@ -117,6 +118,7 @@ void test5() {
     sim.setNextTime(5.0);
     assert(sim.nextEventTime() == 5.0);
     sim.injectInput(input);
+    sim.computeNextOutput();
     sim.computeNextState();
     assert(sim.nextEventTime() == adevs_inf<double>());
     assert(g->getTickCount() == 0);

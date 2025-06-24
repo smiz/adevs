@@ -66,7 +66,7 @@ class EventListener {
      * 
      * This method is called for each PinValue appearing in the
      * list of outputs produced by the Atomic model's output_func()
-     * method.
+     * methods, including the MealyAtomic forms of output_func().
      * 
      * @param model The Atomic model that produced the output
      * @param value The PinValue created by the model
@@ -115,10 +115,23 @@ class EventListener {
  * 3. Add dt to the elapsed time e of each Atomic model and to the current simulation
  * time. Notice that imminent models now have e = ta() and non-imminent models
  * have e < ta().
- * 4. Call the output_func() method of each imminent model. For each PinValue
- * object in the output list, using the Graph route() method to get the
- * the Atomic models that will receive the value as input. Put these Atomic
- * models into the active set.
+ * 4. Call the output_func() method of each imminent model that is not a MealyAtomic
+ * and collect these output values in a list. The imminent models that are not MealyAtomic
+ * models are put into the active set. The imminent models that are MealyAtomic are put
+ * into the pending set. The pending set contains only MealyAtomic models. Now
+ * do the following:
+ *     -# For each PinValue pair in the output list, use the Graph route() method to find
+ * the models that receive this value as input. The receiving models that are not
+ * MealyAtomic go into the active set. The MealyAtomic receivers go into the pending set.
+ * If a MealyAtomic model already in the active set is added to the pending set,
+ * then an exception is thrown and the simulation is aborted.
+ *     -# If the pending set is empty, then go to step 5.
+ *     -# Select a MealyAtomic model from the pending set and move it to the active set.
+ *     -# Call the selected model's output function to get a new output list
+ *         - If the model has received no input and is imminent, call output_func()
+ *         - If the model has received input and is imminent, call confluent_output_func()
+ *         - If the model has received input and is not imminent, call external_output_func()
+*      -# Go to step 4.a. 
  * 5. Calculate new states for the Atomic models.
  *     - If the model is imminent and is not in the active set, call its delta_int() method
  * and set its elapsed time e to zero. 
@@ -139,7 +152,8 @@ class EventListener {
  * The Simulator is designed to be used as a component within a larger simulation.
  * To illustrate how the Simulator can be used in this way, let us sketch its use to
  * create a federate as described in the IEEE 1516 (High Level Architecture) standard.
- * The general idea is as follows:
+ * This procedure assumes you have no MealyAtomic models that share data with the
+ * federation. The general idea is as follows:
  * 1. Register one or more EventListener objects that will gather output events that are to
  * be published to the HLA federation.
  * 2. Get your time of next event by calling the Simulator nextEventTime() method.
@@ -148,15 +162,18 @@ class EventListener {
  * these messages is the time returned by nextEventTime(). Make sure they are published
  * as retractable messages so that they can be canceled if you receive input before
  * your next event time.
- * 4. Issued a next event request to the HLA federation for your nextEventTime().
+ * 4. Issue a next event request to the HLA federation for your nextEventTime().
  * 5. You will receive one or more messages from the federation, each with an identical
  * time stamp.
  *   -# If this time stamp is less than your nextEventTime() then call setNextTime()
  * with the time stamp of the received message and retract any messages published in
  * step 3.
  *   -# Inject the data from the received messages into your Simulator by using the injectInput() method.
- * 6. When the time advance grant is received from the federation, call computeNextState()
- * and repeat from step 2.
+ * 6. You will receive a time advance grant from the federation.
+ *   -# If the grant is equal to the time you requested, call computeNextState().
+ *   -# If the grant is less than the time you requested, call execNextEvent(). MealyAtomic
+ * models may produce output at this time, but non MealyAtomic models will not.
+ * 7. Repeat from step 2.
  */
 template <class OutputType, class TimeType = double>
 class Simulator {
@@ -184,15 +201,13 @@ class Simulator {
      * @brief Get the time of the next event.
      
      * This is the absolute time of the next output and change of state.
-     * It is the time that will be assigned to the current time in
-     * step 3 of the simulation algorithm.
      * 
      * @return The absolute time of the next event.
      */
     TimeType nextEventTime() { return tNext; }
 
     /** 
-     * @brief Execute the simulation cycle at time nextEventTime().
+     * @brief Execute the simulation cycle at the next event time.
      * 
      * Update the simulation time to match nextEventTime() and calculate
      * the output and next states as described in steps 4, 5, and 6 of the
@@ -200,49 +215,56 @@ class Simulator {
      * 
      * @return The current simulation time
      */
-    TimeType execNextEvent() { return computeNextState(); }
+    TimeType execNextEvent() {
+        computeNextOutput();
+        return computeNextState();
+    }
 
     /**
      * @brief Inject an event into the simulation.
      * 
      * Inject an input that will be applied at the next call to
-     * computeNextState() and computeNextOutput(). The event is routed to
-     * each model that is reachable from the pin of the injected PinValue
-     * object.
+     * computeNextOutput(). The event is routed to each model that
+     * is reachable from the pin of the injected PinValue object.
      * 
      * @param x The PinValue to inject into the simulation.
      */
-    void injectInput(PinValue<OutputType> &x) { external_input.push_back(x); }
+    void injectInput(PinValue<OutputType> &x) {
+        external_input.push_back(x);
+        // We we need to recompute Mealy model outputs
+    }
 
     /**
      * @brief Clear the list of injected inputs.
      * 
      * This erases all injected inputs that have not yet been applied
-     * to the simulation via a call to computeNextState() or computeNextOutput().
-     * It is cleared automatically at each call to computeNextState(),
+     * to the simulation via a call to computeNextOutput().
+     * It is cleared automatically at each call to computeNextOutput(),
      */
-    void clearInjectedInput() { external_input.clear(); }
+    void clearInjectedInput() {
+        external_input.clear();
+    }
 
     /**
      * @brief Set the next event time to something less than the
      * nextEventTime() method would return.
      * 
      * This is used to force the simulator to apply injected inputs at 
-     * supplied time
+     * the supplied time.
      * 
      * @param t The time at which the next event will occur.
      */
     void setNextTime(TimeType t) {
-        if (t != tNext) {
-            output_ready = false;
-        }
         tNext = t;
     }
 
     /**
-     * @brief Compute the output values of the imminent component models.
+     * @brief Compute the output values of models at the next event time.
      * 
-     * This notifies EventListener as the outputs are produced. It
+     * Output is produced by models imminent at the next event time, 
+     * MealyAtomic models that receive input from other models, and
+     * MealyAtomic models that receive input injected into the simulation.
+     * This method notifies EventListener as output is produced. It
      * does not change the simulation time or states of the models.
      */
     void computeNextOutput();
@@ -274,11 +296,10 @@ class Simulator {
 
   private:
     std::shared_ptr<Graph<OutputType, TimeType>> graph;
-    std::list<Atomic<OutputType, TimeType>*> imm;
     std::list<shared_ptr<EventListener<OutputType, TimeType>>> listeners;
     std::list<PinValue<OutputType>> external_input;
+    std::set<Atomic<OutputType, TimeType>*> active;
     Schedule<OutputType, TimeType> sched;
-    bool output_ready;
     TimeType tNext;
 
     void schedule(Atomic<OutputType, TimeType>* model, TimeType t);
@@ -287,7 +308,7 @@ class Simulator {
 template <typename OutputType, typename TimeType>
 Simulator<OutputType, TimeType>::Simulator(
     std::shared_ptr<Graph<OutputType, TimeType>> model)
-    : graph(model), output_ready(false) {
+    : graph(model) {
     graph->set_provisional(true);
     for (auto atomic : model->get_atomics()) {
         schedule(atomic.get(), adevs_zero<TimeType>());
@@ -298,7 +319,7 @@ Simulator<OutputType, TimeType>::Simulator(
 template <typename OutputType, typename TimeType>
 Simulator<OutputType, TimeType>::Simulator(
     std::shared_ptr<Atomic<OutputType, TimeType>> model)
-    : graph(new Graph<OutputType, TimeType>()), output_ready(false) {
+    : graph(new Graph<OutputType, TimeType>()) {
     graph->add_atomic(model);
     graph->set_provisional(true);
     schedule(model.get(), adevs_zero<TimeType>());
@@ -307,21 +328,106 @@ Simulator<OutputType, TimeType>::Simulator(
 
 template <class OutputType, class TimeType>
 void Simulator<OutputType, TimeType>::computeNextOutput() {
-    output_ready = true;
-    for (auto model : imm) {
+    PinValue<OutputType> x;
+    std::list<std::pair<pin_t, std::shared_ptr<Atomic<OutputType, TimeType>>>> input;
+    std::set<MealyAtomic<OutputType, TimeType>*> pending_active;
+    // Undo prior output calculation
+    for (auto model : active) {
         model->outputs.clear();
+        model->inputs.clear();
     }
-    imm.clear();
-    if (sched.minPriority() > tNext) {
-        return;
+    active.clear();
+    // Route externally supplied inputs
+    for (auto y : external_input) {
+        x.value = y.value;
+        graph->route(y.pin, input);
+        for (auto consumer : input) {
+            if (consumer.second->isMealyAtomic() != nullptr) {
+                // Mealy models outputs are calculated after Moore models
+                // because the Mealy output may depend on the Moore output
+                pending_active.insert(consumer.second->isMealyAtomic());
+            } else {
+                active.insert(consumer.second.get());
+            }
+            x.pin = consumer.first;
+            consumer.second->inputs.push_back(x);
+        }
+        input.clear();
     }
-    imm = sched.visitImminent();
-    for (auto model : imm) {
-        model->output_func(model->outputs);
-        for (auto listener : listeners) {
+    external_input.clear();
+    // Route the output from the Moore type imminent models
+    if (sched.minPriority() == tNext) {
+        std::list<Atomic<OutputType, TimeType>*> imm(sched.visitImminent());
+        for (auto model : imm) {
+            if (model->isMealyAtomic() != nullptr) {
+                // Wait to calculate Mealy outputs until we have the
+                // output from all of the Moore models
+                pending_active.insert(model->isMealyAtomic());
+                continue;
+            } else {
+                active.insert(model);
+            }
+            model->output_func(model->outputs);
             for (auto y : model->outputs) {
+                for (auto listener : listeners) {
+                    listener->outputEvent(*model, y, tNext);
+                }
+                x.value = y.value;
+                graph->route(y.pin, input);
+                for (auto consumer : input) {
+                    if (consumer.second->isMealyAtomic() != nullptr) {
+                        // Wait to calculate Mealy outputs until we have the
+                        // output from all of the Moore models
+                        pending_active.insert(consumer.second->isMealyAtomic());
+                    } else {    
+                        active.insert(consumer.second.get());
+                    }
+                    x.pin = consumer.first;
+                    consumer.second->inputs.push_back(x);
+                }
+                input.clear();
+            }
+        }
+    }
+    // Calculate output from Mealy type models
+    while (!pending_active.empty()) {
+        auto model = *(pending_active.begin());
+        pending_active.erase(model);
+        // This Mealy model must not receive input once its
+        // output is calculated. The fact that we have calculated
+        // its output is signified by putting it into the active set
+        active.insert(model);
+        if (model->inputs.empty() && model->tN == tNext) {
+            // Internal event
+            model->output_func(model->outputs);
+        } else if (model->tN == tNext) {
+            // Confluent event
+            model->confluent_output_func(model->inputs,model->outputs);
+        } else {
+            // External event
+            model->external_output_func(tNext - model->tL, model->inputs, model->outputs);
+        }
+        for (auto y : model->outputs) {
+            for (auto listener : listeners) {
                 listener->outputEvent(*model, y, tNext);
             }
+            x.value = y.value;
+            graph->route(y.pin, input);
+            for (auto consumer : input) {
+                if (consumer.second->isMealyAtomic() != nullptr) {
+                    // If this Mealy model is already active then we have
+                    // a feedback loop of Mealy models which is illegal
+                    if (active.find(consumer.second.get()) != active.end()) {
+                        throw adevs::exception("Feedback loop of Mealy models is illegal", model);
+                    }
+                    pending_active.insert(consumer.second->isMealyAtomic());
+                } else {    
+                    active.insert(consumer.second.get());
+                }
+                x.pin = consumer.first;
+                consumer.second->inputs.push_back(x);
+            }
+            input.clear();
         }
     }
 }
@@ -330,46 +436,13 @@ template <class OutputType, class TimeType>
 TimeType Simulator<OutputType, TimeType>::computeNextState() {
     PinValue<OutputType> x;
     TimeType t = tNext + adevs_epsilon<TimeType>();
-    if (!output_ready) {
-        computeNextOutput();
-    }
-    output_ready = false;
-    std::set<Atomic<OutputType, TimeType>*> active;
-    std::list<std::pair<pin_t, std::shared_ptr<Atomic<OutputType, TimeType>>>> input;
-    /// Construct input bags for each model and get the active set
-    for (auto producer : imm) {
-        active.insert(producer);
-        for (auto y : producer->outputs) {
-            x.value = y.value;
-            graph->route(y.pin, input);
-            for (auto consumer : input) {
-                active.insert(consumer.second.get());
-                x.pin = consumer.first;
-                consumer.second->inputs.push_back(x);
-                for (auto listener : listeners) {
-                    listener->inputEvent(*(consumer.second.get()), x, tNext);
-                }
-            }
-            input.clear();
-        }
-        producer->outputs.clear();
-    }
-    for (auto y : external_input) {
-        x.value = y.value;
-        graph->route(y.pin, input);
-        for (auto consumer : input) {
-            active.insert(consumer.second.get());
-            x.pin = consumer.first;
-            consumer.second->inputs.push_back(x);
-            for (auto listener : listeners) {
-                listener->inputEvent(*(consumer.second.get()), x, tNext);
-            }
-        }
-        input.clear();
-    }
-    external_input.clear();
-    imm.clear();
     for (auto model : active) {
+        // Notify listeners of input events
+        for (auto x : model->inputs) {
+            for (auto listener : listeners) {
+                listener->inputEvent(*model, x, tNext);
+            }
+        }
         // Internal event if no input
         if (model->inputs.empty()) {
             model->delta_int();
@@ -385,9 +458,11 @@ TimeType Simulator<OutputType, TimeType>::computeNextState() {
         for (auto listener : listeners) {
             listener->stateChange(*model, tNext);
         }
+        model->outputs.clear();
         // Adjust position in the schedule
         schedule(model, t);
     }
+    active.clear();
     // Effect any changes in the model structure
     graph->set_provisional(false);
     std::list<typename Graph<OutputType,TimeType>::graph_op>& pending = graph->get_pending();

@@ -42,32 +42,45 @@
 
 namespace adevs {
 
-/*
- * This is a state event locator that uses either bisection or
+/**
+ * @brief This is a state event locator that uses either bisection or
  * linear interpolation to pinpoints events in time.
+ *
+ * The locator will attempt to pinpoint events within err_tol of
+ * zero for each state event function; i.e., an event occurs
+ * at the first instant t' >= t where z(t)*z(t') <= 0 and
+ * |z(t')| < err_tol.
+ * 
+ * You can create instances of this class using the bisection_event_locator,
+ * linear_event_locator, and discontinous_event_locator
+ * constructors. 
  */
 template <typename OutputType>
 class event_locator_impl : public event_locator<OutputType> {
   public:
-    /*
-     * The locator will attempt to pinpoint events within err_tol of
-     * zero for each state event function; i.e., an event occurs
-     * at the first instant t' >= t where z(t)*z(t') <= 0 and
-     * |z(t')| < err_tol.
-     */
-    enum Mode { INTERPOLATE, BISECTION, DISCONTINUOUS };
-    /*
-     * Create an event locator that will act on the supplied ode system.
+    /// @brief List of algorithms that can be used by this event locator
+    enum Mode {
+        /// Use linear interpolation to look for events
+        INTERPOLATE,
+        /// Use bisection to look for events assuming a continuous state event
+        /// function
+        BISECTION,
+        /// Use bisection assuming a discontinous state event function
+        DISCONTINUOUS };
+    /**
+     * @brief Create an event locator that will act on the supplied ode_system.
+     * 
      * @param sys The system of equations to solve
      * @param err_tol Threshold for the zero crossing function that will
      * trigger an event detect.
      * @param mode The event localization method to be used
      */
     event_locator_impl(ode_system<OutputType>* sys, double err_tol, Mode mode);
-    /// Destructor leaves the ode_system object intact
+    /// @brief Destructor leaves the ode_system object intact
     ~event_locator_impl();
-    /*
-     * Location discrete events between now and now + h.
+    /**
+     * @brief Location discrete events between now and now + h.
+     * 
      * @param events This array contains one entry for each zero crossing
      * function. An entry is true of that function is within err_tol of
      * zero and false otherwise.
@@ -97,6 +110,8 @@ class event_locator_impl : public event_locator<OutputType> {
         }
     }
 };
+
+/// \endcond
 
 template <typename OutputType>
 event_locator_impl<OutputType>::event_locator_impl(ode_system<OutputType>* sys,
@@ -173,85 +188,124 @@ bool event_locator_impl<OutputType>::find_events(bool* events,
     return false;
 }
 
-/*
- * Locate events using the bisection method. Your z functions must be
- * continuous for this to work.
+/**
+ * @brief Locate events using the bisection method applied to
+ * a continuous state event function.
+ * 
+ * Your z functions must be continuous for this to work.
  */
 template <typename OutputType>
 class bisection_event_locator : public event_locator_impl<OutputType> {
   public:
-    /// Create an event locator that implements the bisection search mode
+    /**
+     * @brief Create an event locator that implements the bisection search mode
+     * 
+     * @param sys An ode_system that has a state_event_func with continuous
+     * z values
+     * @param err_tol Sets how close to zero must a z function be before it triggers
+     * a state event
+     */ 
     bisection_event_locator(ode_system<OutputType>* sys, double err_tol)
         : event_locator_impl<OutputType>(
               sys, err_tol, event_locator_impl<OutputType>::BISECTION) {}
 };
 
-/*
- * Locate events using linear interpolation. Your z functions must be
- * continuous for this to work.
+/**
+ * @brief Locate events using linear interpolation
+ * 
+ * Your z functions must be continuous for this event locator to work
+ * correctly.
+ * 
  */
 template <typename OutputType>
 class linear_event_locator : public event_locator_impl<OutputType> {
   public:
-    /// Create an event locator that implements the linear interpolation search mode
+    /**
+     * @brief Create an event locator that implements the linear interpolation search mode
+     *
+     * @param sys An ode_system that has a state_event_func with continuous
+     * z values
+     * @param err_tol Sets how close to zero must a z function be before it triggers
+     * a state event
+     */
     linear_event_locator(ode_system<OutputType>* sys, double err_tol)
         : event_locator_impl<OutputType>(
               sys, err_tol, event_locator_impl<OutputType>::INTERPOLATE) {}
 };
 
-/*
- * Locate events using bisection assuming discontinuous z functions.
+/**
+ * @brief Locate events using bisection assuming discontinuous z functions.
+ * 
+ * A bisection search that does not require your z functions to be continous.Atomic
  */
 template <typename OutputType>
 class discontinuous_event_locator : public event_locator_impl<OutputType> {
   public:
-    /*
-         * Create an event locator that implements a bisection search while
-         * assuming the z functions are not continuous.
-         */
+    /**
+     * @brief Create an event locator that implements a bisection search while
+     * assuming the z functions are not continuous.
+     * 
+     * @param sys An ode_system that has a state_event_func without continuous
+     * z values
+     * @param err_tol Sets how close to zero must a z function be before it triggers
+     * a state event
+     */
     discontinuous_event_locator(ode_system<OutputType>* sys, double err_tol)
         : event_locator_impl<OutputType>(
               sys, err_tol, event_locator_impl<OutputType>::DISCONTINUOUS) {}
 };
 
-/*
- * This event locator is for models that have no state events. Its find_events
- * method simply returns false.
+/**
+ * @brief This event locator is for models that have no state events.
+ * 
+ * Its find_events method simply returns false. This event locator
+ * will save the cost of looking for events when there are none
+ * to be found.
+ * 
  */
 template <typename OutputType>
 class null_event_locator : public event_locator<OutputType> {
   public:
     null_event_locator() : event_locator<OutputType>(NULL) {}
     ~null_event_locator() {}
+    /// @brief Always returns false without invoking any methods of the
+    /// supplied ode_solver
     bool find_events(bool*, double const*, double*, ode_solver<OutputType>*,
                      double &) {
         return false;
     }
 };
 
-/*
+/**
+ * @brief A fast bisection search algorithm for finding state events
+ * 
  * This is a bisection search that always tries to locate the event in the
  * interval rather than terminate early with a lower bound prior to the
  * event occurence. This event locator will avoid creeping up on an event
- * with the associated increase in simulation time.
+ * with the associated increase in simulation time. This is probably
+ * the best event locator for you to use.
  */
 template <typename OutputType>
 class fast_event_locator : public event_locator<OutputType> {
   public:
-    /*
-     * Create an event locator for a system. The error
-     * tolerance is the width of the time bracket around
+    /**
+     * @brief Create an event locator for a system.
+     * 
+     * The error tolerance is the width of the time bracket around
      * the event at which the algorithm stops looking and
-     * reports success.
+     * reports success. Optionally, a spline can be used to interpolate
+     * the state variable values instead of using the ode_solver to
+     * calculate values while looking for an event. Interpolation is
+     * faster, but the localization with respect
+     * to the ode solution will be somewhat less precise and you get
+     * an interpolated solution rather than one computed with the ode
+     * solver at the event instant.
+     * 
      * @param sys The system to solve
      * @param err_tol How close to the event should we
      * be when the search reports success.
      * @param interpolate Interpolate using a spline instead of solving
      * directly using the solver while performing the event localization.
-     * Interpolation is faster, but the localization with respect
-     * to the ode solution will be somewhat less precise and you get
-     * an interpolated solution rather than one computed with the ode
-     * solver at the event instant.
      */
     fast_event_locator(ode_system<OutputType>* sys, double err_tol,
                        bool interpolate = false);

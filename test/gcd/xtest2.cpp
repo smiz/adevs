@@ -28,12 +28,9 @@ int main() {
     sim_g.addEventListener(listener);
     while (sim_c.nextEventTime() < adevs_inf<double>() || sim_g.nextEventTime() < adevs_inf<double>()) {
         double tN = min(sim_c.nextEventTime(), sim_g.nextEventTime());
-        if (sim_g.nextEventTime() == tN) {
-            sim_g.computeNextOutput();
-        }
-        if (sim_c.nextEventTime() == tN) {
-            sim_c.computeNextOutput();
-        }
+        sim_c.setNextTime(tN);
+        sim_g.setNextTime(tN);
+        sim_g.computeNextOutput();
         auto iter = listener->output.begin();
         for (; iter != listener->output.end(); iter++) {
             assert(&((*iter).first) == g.get());
@@ -45,9 +42,8 @@ int main() {
             }
         }
         listener->output.clear();
-        sim_c.setNextTime(tN);
+        sim_c.computeNextOutput();
         assert(sim_c.computeNextState() == tN + adevs_epsilon<double>());
-        sim_g.setNextTime(tN);
         assert(sim_g.computeNextState() == tN + adevs_epsilon<double>());
     }
     cout << "Test done" << endl;

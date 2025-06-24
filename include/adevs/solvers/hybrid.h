@@ -39,83 +39,191 @@
 
 namespace adevs {
 
-/*
- * This is the base class for all hybrid systems. The init and der_func methods
- * are used to implement the model's continuous dynamics. The other functions
- * are for discrete event dynamics.
+/** 
+ * @brief Simulate piece wise continuous models that produce and react to discrete events.
+ * 
+ * This is the base class for all hybrid dynamic models. You should derive from this class
+ * to define a component that is described by a piecewise continuous system of differential
+ * equations.
  */
 template <typename ValueType>
 class ode_system {
   public:
-    /// Make a system with N state variables and M state event functions
+    /**
+      *  @brief Create a system with N state variables and M state event functions
+      * 
+      * The state variables are the variables comprising x in the derivative function
+      * dx/dt = f(x). The state event functions are the number of elements in the z
+      * array returned by the state_event_func() method. This interface is used to
+      * define the system of equations that will be solved by the Hybrid class.
+      * 
+      * @param N_vars The number of state variables in the system
+      * @param M_event_funcs The number of state events in the system
+      */
     ode_system(int N_vars, int M_event_funcs) : N(N_vars), M(M_event_funcs) {}
 
-    /// Get the number of state variables
+    /// @brief Get the number of state variables
     int numVars() const { return N; }
 
-    /// Get the number of state events
+    /// @brief Get the number of state events
     int numEvents() const { return M; }
 
-    /// Copy the initial state of the model to q
+    /**
+     * @brief Set the initial state of the model to q
+     * 
+     * The array q must have at least numVars() elements. Write the
+     * initial state of the model to q.
+     *
+     * @param q The array into which you must write the initial state
+     */ 
     virtual void init(double* q) = 0;
 
-    /// Compute the derivative for state q and put it in dq
+    /**
+     * @brief Compute the derivative for state q and put it in dq
+     * 
+     * Use the provided state q to compute the derivative dq/dt
+     * and store it in the array dq. This is the function f in
+     * dx/dt = f(x).
+     * 
+     * @param q The state of the model
+     * @param dq The array into which you must write the derivative
+     */
     virtual void der_func(double const* q, double* dq) = 0;
 
-    /// Compute the state event functions for state q and put them in z
+    /**
+     * @brief Compute the state event functions for state q and put them in z.
+     * 
+     * The ode_system will undergo an internal transition at any point in time
+     * when any of the state event functions set z[i] = 0.
+     * 
+     * @param q The continuous state of the model
+     * @param z The array into which you must write the values of the
+     * state event functions
+     */
     virtual void state_event_func(double const* q, double* z) = 0;
 
-    /*
-     * Compute the time event function using state q. The time to next
-     * is measured as an interval from the present time. Therefore you
-     * will need the current time, the time of your next event, and
-     * the return value is the difference. An easy way to track the
-     * current time is a state variable tnow with dtnow/dt = 1.
+    /** 
+     * @brief Compute a time advance value for the continuous state q
+     * 
+     * This is the equivalent of a time advance for an Atomic but calculated 
+     * using the continuous state q. The return value must be the time remaining
+     * to the next internal event from the instant that the state entered
+     * the continuous state q. If you need to compute the curren time
+     * to find the time to the next event, you can use the dx/dt = 1
+     * in your set of differential equations (because the solution is
+     * x(t) = t).
+     * 
+     * @param q The continuous state of the model
+     * @return The time remaining to the next internal event
      */
     virtual double time_event_func(double const* q) = 0;
 
-    /*
+    /**
+     * @brief This method is invoked each time a new continuous state is
+     * selected by the numerical integration algorithm.
+     * 
      * This method is invoked immediately following an update of the
-     * continuous state variables. The main use of this callback is to
-     * update algberaic variables. The default implementation does nothing.
+     * continuous state variables during numerical integration. The main use of this
+     * callback is to update algberaic variables that must satisfy a constraint
+     * equation g(x,y) = 0, where x are your continous state variables and y
+     * is some set of algebraic variables. The default implementation does nothing.
+     * 
+     * @param q The continuous state of the model
      */
     virtual void postStep(double* q) {}
 
-    /*
-     * This is called after a trial step. It can be used to restore the values
-     * of any variables that might have been changed by der_func or state_event_func
-     * while calculating the trial step. By default this method does nothing.
+    /**
+     * @brief This method is called after a trial step of the numerical integration.
+     * 
+     * This method is invoked for every step attempted by the numerical
+     * integration method while estimating errors, looking for state events,
+     * and performing other numerical tasks. The default implementation does
+     * nothing.
+     * 
+     * @param q The continuous state of the model
      */
     virtual void postTrialStep(double* q) {}
 
-    /*
-     * The internal transition function. The state_event array will contain
-     * true if the corresponding level crossing function z triggered the
-     * this internal event. If this is a time event, then entry numEvents()
-     * will be true.
+    /**
+     * @brief The internal transition function.
+     * 
+     * This is called when the time returned by the time_event_func() returns
+     * zero or a value in the z array of the state_event_func() method is set to
+     * zero. An entry in state_event array will contain true if the corresponding
+     * element in the z array of the state_event_func() was zero. 
+     * If this event is dues to a time event, then entry numEvents() in the
+     * state_event array will be true. This acts like the internal transition function
+     * of an Atomic model.
+     * 
+     * @param q The continuous state of the model at the event. This can be modified
+     * by the internal state transition by writing values to the entries in q.
+     * @param state_event Entries in this array indiciate the cause of the internal
+     * event.
      */
     virtual void internal_event(double* q, bool const* state_event) = 0;
 
-    /// The external transition function
+    /**
+     * @brief The external transition function
+     * 
+     * This is called when an input arrives prior to the expiration of the time
+     * returned by the time_event_func() method and before any of the z elements
+     * supplied by the state_event_func() method are zero. In all ways, it functions
+     * like the external transition function of an Atomic model.
+     * 
+     * @param q The continuous state of the model at the event. This can be modified
+     * by the internal state transition by writing values to the entries in q.
+     * @param e The time elapsed since the last internal, external, or confluent event.
+     * @param xb The input arriving at the model.
+     */
     virtual void external_event(double* q, double e,
                                 std::list<adevs::PinValue<ValueType>> const &xb) = 0;
 
-    /// The confluent transition function
+    /**
+     * @brief The confluent transition function
+     * 
+     * This is called when an input arrives at the same time that an internal event
+     * would occur.
+     * 
+     * @param q The continuous state of the model at the event. This can be modified
+     * by writing values to the entries in q.
+     * @param state_event Entries in this array indiciate the cause of the internal
+     * event.
+     * @param xb The input arriving at the model.
+     */
     virtual void confluent_event(double* q, bool const* state_event,
                                  std::list<adevs::PinValue<ValueType>> const &xb) = 0;
 
-    /// The output function
+    /**
+     * @brief The output function
+     * 
+     * The ode_system version of the Atomic output_func() method. See the
+     * internal_state_transition() of the ode_system for a description of the
+     * state variable array q and state_event array. The model's output should
+     * be inserted into the supplied list.
+     * 
+     * @param q The continuous state of the model at the output
+     * @param state_event Entries in this array indiciate the cause of the internal event.
+     * @param yb A list to be filled with output from the component.
+     */
     virtual void output_func(double const* q, bool const* state_event,
                              std::list<adevs::PinValue<ValueType>> &yb) = 0;
 
-    /// Get the N x N Jacobian matrix. The supplied array must be filled with the Jacobian
-    /// in column major ordering to make it compatible with LAPACK and similar
-    /// linear algebra packages. The default implementation is empty. The method
-    /// must return false if it is not supported and true if it is supported. If the
-    /// argument J is NULL then the call is just to test for support.
+    /**
+     *  @brief Get the Jacobian matrix for this component
+     * 
+     * The supplied array must be filled with the Jacobian
+     * in column major ordering to make it compatible with LAPACK and similar
+     * linear algebra packages. The default implementation is empty. The method
+     * must return false if it is not supported and true if it is supported. If the
+     * argument J is nullptr then the call is just to test for support.
+     * 
+     * @param q The state of the model
+     * @param J column major Jacobian matrix to be filled with the Jacobian.
+     * @return True if the method fills the Jacobian and false otherwise.
+     */
     virtual bool get_jacobian(double const* q, double* J) { return false; }
 
-    /// Destructor
+    /// @brief Destructor
     virtual ~ode_system() {}
 
   private:
@@ -130,67 +238,114 @@ class ode_system {
 #pragma clang diagnostic ignored "-Woverloaded-virtual"
 #endif
 
-/*
- * This is the interface for numerical integrators that are to be used with the
+/** 
+ * @brief This is the interface for numerical integrators that are to be used with the
  * Hybrid class.
+ * 
+ * If you want to create a new ODE solver for simulating your model with the Hybrid
+ * class, then you will need that new solver to implement this interface.
  */
 template <typename ValueType>
 class ode_solver {
   public:
-    /*
-     * Create and ode_solver that will integrate the der_func method of the
+    /**
+     * @brief Constructor that accepts as its argument the ode_system to simulation.
+     * 
+     * Create and ode_solver that will integrate the der_func() method of the
      * supplied ode_system.
+     * 
+     * @param sys The ode_system to integrate numerically
      */
     ode_solver(ode_system<ValueType>* sys) : sys(sys) {}
 
-    /*
-     * Take an integration step from state q of at most size h_lim and
-     * return the step size that was actually used. Copy the result of
-     * the integration step to q.
+    /**
+     * @brief Advance the solution by numerical integration up to a given
+     * amount of time.
+     * 
+     * Take an integration step from state q through a step size of
+     * most size h_lim and return the step size that was actually used. 
+     * Copy the result of the integration step to q.
+     * 
+     * @param q The state to begin integration from and the array by which
+     * the new state should be returned.
+     * @param h_lim The upper limit of the step size
+     * @return The step size that was used.
      */
     virtual double integrate(double* q, double h_lim) = 0;
 
-    /*
-     * Advance the system through exactly h units of time.
+    /**
+     * @brief Advance the solution by exactly the given amount of time.
+     * 
+     * Take an integration step from state q through a step size of
+     * exactly h. Copy the result of the integration step to q. 
+     * 
+     * @param q The state to begin integration from and the array by which
+     * the new state should be returned.
+     * @param h The step size
      */
     virtual void advance(double* q, double h) = 0;
 
-    /// Destructor
+    /**
+     * @brief Destructor
+     * 
+     * This does not destroy the system passed to the ode_solver
+     * in its constructor.
+     */
     virtual ~ode_solver() {}
 
   protected:
-    /// The system of odes to be acted upon by the solver
+    /// @brief The system of odes to be acted upon by the solver
     ode_system<ValueType>* sys;
 };
 
-/*
- * This is the interface for algorithms that detect state events in the trajectory
- * of an ode_system. The ode_solver provided to this class is used to compute
- * intermediate states during the detection process.
+/**
+ * @brief This is the interface used by the Hybrid class to find state events
+ * in the trajectory of an ode_system.
+ * 
+ * The ode_solver provided to this class is used to compute intermediate states
+ * during the detection process. If you want to implement a new algorithm for
+ * detecting state events, then you will want your new algorithm to implement
+ * this interface.
  */
 template <typename ValueType>
 class event_locator {
   public:
-    /*
-     * The locator will use the der_func and state_event_func of the supplied
-     * ode_system object.
+    /**
+     * @brief Constructor that is provided with the ode_system to simulate.
+     * 
+     * The locator algorithm will use the der_func() and state_event_func() 
+     * of the supplied ode_system object.
      */
     event_locator(ode_system<ValueType>* sys) : sys(sys) {}
 
-    /*
-     * Find the first state event in the interval [0,h] starting from
-     * state qstart. The method returns true if an event is found,
-     * setting the events flags to true if the corresponding z entry in
-     * the state_event_func above triggered the event. The value of
+    /**
+     * @brief Find the first state event in the interval [0,h] starting from
+     * state qstart.
+     * 
+     * The method returns true if an event is found.
+     * It must set set the events array entries to true for the corresponding z
+     * entry from the state_event_func() that is zero. The value of
      * h is overwritten with the event time, and the state of the model
      * at that time is copied to qend. The event finding method should
      * select an instant of time when the zero crossing function is zero or
      * has changed sign to trigger an event.
+     * 
+     * @param events The entries in this array must be set to indicate which state
+     * events were activated. A true entry indicates an event and false no event.
+     * @param qstart The continuous state at the left side of the interval to search
+     * for state events.
+     * @param qend The continous state at the right side of the interval to search for
+     * state events. The state at the time of the event must be copied into this array
+     * or it can be left alone if no event is found.
+     * @param solver The ode_solver that can be used to calculate new states in the interval.
+     * @param h Write to this value the time of the event relative to the start of the interval,
+     * which is taken to be zero. Leave it alone if no event is found.
+     * @return true if an event was found and false if no event was found.
      */
     virtual bool find_events(bool* events, double const* qstart, double* qend,
                              ode_solver<ValueType>* solver, double &h) = 0;
 
-    /// Destructor
+    /// @brief Destructor
     virtual ~event_locator() {}
 
   protected:
@@ -198,9 +353,11 @@ class event_locator {
     ode_system<ValueType>* sys;
 };
 
-/*
- * This Atomic model encapsulates an ode_system and numerical solvers for it.
- * Output from the Hybrid model is produced by the output_func method of the
+/**
+ * @brief This Atomic model encapsulates an ode_system and numerical solvers
+ * simulating that system.
+ * 
+ * Output from the Hybrid model is produced by the output_func() method of the
  * ode_system whenever a state event or time event occurs. Internal, external,
  * and confluent events for the Hybrid model are computed with the corresponding
  * methods of the ode_system. The time advance of the Hybrid class ensures that
@@ -209,11 +366,13 @@ class event_locator {
 template <typename ValueType, class TimeType = double>
 class Hybrid : public Atomic<ValueType, TimeType> {
   public:
-    /*
-     * Create and initialize a simulator for the system. All objects
-     * are adopted by the Hybrid object and are deleted when it is.
-     * @param sys The system of equations to solver
-     * @param solver The numerical solver for taking steps in time
+    /**
+     * @brief Create and initialize solvers for the ode_system.
+     * 
+     * All objects are adopted by the Hybrid object and are deleted when it is.
+     * 
+     * @param sys The system of equations to solve
+     * @param solver The numerical integrator for taking steps in time
      * @param event_finder The state event detection algorithm
      */
     Hybrid(ode_system<ValueType>* sys, ode_solver<ValueType>* solver,
@@ -230,21 +389,52 @@ class Hybrid : public Atomic<ValueType, TimeType> {
         tentative_step();  // Take the first tentative step
     }
 
-    /// Get the value of the kth continuous state variable
+    /**
+     * @brief Get the value of the kth continuous state variable
+     *
+     * This returns the kth element of the array returned by
+     * the getState() method
+     *  
+     * @param k The index of the state variable
+     * @return The value of the state variable
+     */
+
     double getState(int k) const { return q[k]; }
 
-    /// Get the array of state variables
+    /**
+     * @brief Get the array of state variables
+     * 
+     * @return The array of state variable values
+     */
     double const* getState() const { return q; }
 
-    /// Get the system that this solver is operating on
+    /**
+     * @brief Get the ode_system that this Hybrid model
+     * is simulating
+     * 
+     * @return the ode_system passed to the constructor
+     */
     ode_system<ValueType>* getSystem() { return sys; }
 
-    /// Did a discrete event occur at the last state transition?
+    /**
+     * @brief Did a discrete event occur at the last state transition?
+     *
+     * This indicates if the previous internal, external, or confluent
+     * event of the Hybrid object was caused by a state or time event
+     * induced by the ode_system. The other possibility is that the
+     * Hybrid object changed to advance the numerical solution of the
+     * ode_system without a discrete event within the ode_system.
+     * 
+     * @return true if the ode_system caused a state or time event
+     */
     bool eventHappened() const { return event_happened; }
 
-    /*
-     * Do not override this method. It performs numerical integration and
-     * invokes the ode_system method for internal events as needed.
+    /**
+     * @brief Do not override this method.
+     * 
+     * The Hybrid object uses its delta_int() method for numerical integration
+     * and to invoke the ode_system method for internal events as needed to
+     * handle state and time events.
      */
     void delta_int() {
         if (!missedOutput.empty()) {
@@ -266,9 +456,11 @@ class Hybrid : public Atomic<ValueType, TimeType> {
         tentative_step();  // Take a tentative step
     }
 
-    /*
-     * Do not override this method. It performs numerical integration and
-     * invokes the ode_system for external events as needed.
+    /**
+     * @brief Do not override this method.
+     * 
+     * This method is used for numerical integration and
+     * invokes the ode_system to handle for external events as needed.
      */
     void delta_ext(TimeType e, std::list<adevs::PinValue<ValueType>> const &xb) {
         bool state_event_exists = false;
@@ -306,9 +498,11 @@ class Hybrid : public Atomic<ValueType, TimeType> {
         tentative_step();  // Take a tentative step
     }
 
-    /*
-     * Do not override. This method invokes the ode_system method
-     * for confluent events as needed.
+    /**
+     * @brief Do not override this method.
+     * 
+     * This method invokes the ode_system to handle
+     * confluent events as needed.
      */
     void delta_conf(std::list<adevs::PinValue<ValueType>> const &xb) {
         if (!missedOutput.empty()) {
@@ -332,7 +526,7 @@ class Hybrid : public Atomic<ValueType, TimeType> {
         tentative_step();  // Take a tentative step
     }
 
-    /// Do not override.
+    /// @brief Do not override.
     TimeType ta() {
         if (missedOutput.empty()) {
             return sigma;
@@ -341,7 +535,11 @@ class Hybrid : public Atomic<ValueType, TimeType> {
         }
     }
 
-    /// Do not override. Invokes the ode_system output function as needed.
+    /**
+     * @brief Do not override.
+     * 
+     * Invokes the ode_system output function as needed.
+     */
     void output_func(std::list<adevs::PinValue<ValueType>> &yb) {
         if (!missedOutput.empty()) {
             for (auto iter : missedOutput) {

@@ -59,7 +59,7 @@ int main() {
     // Inject it at time 0
     sim->injectInput(b);
     sim->setNextTime(0.0);
-    sim->computeNextState();
+    sim->execNextEvent();
 
     // Next event at time 1?
     assert(sim->nextEventTime() == 1.0);
