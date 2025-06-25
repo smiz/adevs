@@ -38,22 +38,59 @@
 
 namespace adevs {
 
-/*
- * This ode_solver implements a 4th/5th order integrator that adjust
+/**
+ * @brief This ode_solver implements a 4th/5th order integrator that adjust
  * its step size to control error.
+ *
+ * A fifth order accurate numerical integration method for simulating piecewise
+ * continuous systems.Atomic
+ * 
+ * @see ode_system
+ * @see Hybrid
  */
 template <typename ValueType>
 class rk_45 : public ode_solver<ValueType> {
   public:
-    /*
-     * The integrator will adjust its step size to maintain a per
+    /**
+     * @brief Constructor
+     * 
+     * An explicit numerical integration method. The integrator
+     * will adjust its step size to maintain a per
      * step error less than err_tol, and will use a step size
      * strictly less than h_max.
+     * 
+     * @param sys The ode_system whose der_func() method is to be integrated
+     * @param err_tol The maximum allowable per step error
+     * @param h_max The largest allowable step size
      */
     rk_45(ode_system<ValueType>* sys, double err_tol, double h_max);
-    /// Destructor
+    /**
+     * @brief Destructor
+     * 
+     * Leaves the supplied ode_system intact
+     */
     ~rk_45();
+     /**
+     * @brief Integrate up to h_lim.
+     * 
+     * Used by a Hybrid object to simulate the system.advance
+     * 
+     * @param q The state at the start of a step. This is overwritten
+     * with the state at the end of the integration step.
+     * @param h_lim The maximum step size
+     * @return The step actually taken.
+     */
     double integrate(double* q, double h_lim);
+     /**
+     * @brief Integrate to exactly the step h
+     * 
+     * As with integrate() but advance the step by exactly the
+     * specified step size.
+     *
+     * @param q The state at the start of a step. This is overwritten
+     * with the state at the end of the integration step.
+     * @param h The step in time by which to advance the solution
+     */
     void advance(double* q, double h);
 
   private:

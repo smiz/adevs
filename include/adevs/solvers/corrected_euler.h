@@ -39,21 +39,56 @@
 
 namespace adevs {
 
-/*
- * This is the second order accurate RK2 method with adaptive step sizing for
+/**
+ * @brief This is the second order accurate RK2 method with adaptive step sizing for
  * error control.
+ * 
+ * A second order accurate explicit numerical method for simulation piecewise continuous
+ * systems. 
+ * 
+ * @see Hybrid
+ * @see ode_system
  */
 template <typename ValueType>
 class corrected_euler : public ode_solver<ValueType> {
   public:
-    /*
-     * Create an integrator that will use the specified per step error
+    /**
+     * @brief Create an integrator that will use the specified per step error
      * tolerance and maximum step size.
+     * 
+     * @param sys The ode_system that provides the derivative function to be
+     * integrated numerically
+     * @param err_tol The per step error tolerance
+     * @param h_max The maximum allowable step size in time
      */
     corrected_euler(ode_system<ValueType>* sys, double err_tol, double h_max);
-    /// Destructor
+    /**
+     * @brief Destructor
+     * 
+     * The destructor leaves the ode_system intact.
+     */
     ~corrected_euler();
+    /**
+     * @brief Integrate up to h_lim.
+     * 
+     * Used by a Hybrid object to simulate the system.advance
+     * 
+     * @param q The state at the start of a step. This is overwritten
+     * with the state at the end of the integration step.
+     * @param h_lim The maximum step size
+     * @return The step actually taken.
+     */
     double integrate(double* q, double h_lim);
+    /**
+     * @brief Integrate to exactly the step h
+     * 
+     * As with integrate() but advance the step by exactly the
+     * specified step size.
+     *
+     * @param q The state at the start of a step. This is overwritten
+     * with the state at the end of the integration step.
+     * @param h The step in time by which to advance the solution
+     */
     void advance(double* q, double h);
 
   private:

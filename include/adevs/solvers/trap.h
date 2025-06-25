@@ -47,18 +47,29 @@
 
 namespace adevs {
 
-/*
+/**
+ * @brief A second order accurate implicit method for numerical integration
+ * of an ode_system der_func() 
+ * 
  * This is the second order accurate trapezoidal method. You must supply
- * a jacobian to use this integration method.
+ * a Jacobian to use this integration method, otherwise it will approximate
+ * the Jacobian numerically (and slowly!). Using this method requires that
+ * the KINSOL library from Sundials be installed and linked with your
+ * application; see <https://computing.llnl.gov/projects/sundials/kinsol>
+ * and there is probably a pre-built version packaged for your operating
+ * system.
  */
 template <typename ValueType>
 class trap : public ode_solver<ValueType> {
   public:
-    /*
-     * Create an integrator that will use the given
-     * maximum step size. The tolerance is used to
-     * terminate the newton iteration used at each
+    /**
+     * @brief Create an integrator that will use the given
+     * maximum step size.
+     * 
+     * The tolerance is also used to
+     * terminate the Newton iteration used at each
      * integration step.
+     * 
      * @param sys The system to solve
      * @param err_tol Truncation error limit.
      * @param h_max Maximum allowed step size
@@ -67,9 +78,33 @@ class trap : public ode_solver<ValueType> {
      */
     trap(ode_system<ValueType>* sys, double err_tol, double h_max,
          bool silent = false);
-    /// Destructor
+    /**
+     * @brief Destructor
+     * 
+     * Leaves the supplied ode_system intact.
+     */
     ~trap();
+     /**
+     * @brief Integrate up to h_lim.
+     * 
+     * Used by a Hybrid object to simulate the system.advance
+     * 
+     * @param q The state at the start of a step. This is overwritten
+     * with the state at the end of the integration step.
+     * @param h_lim The maximum step size
+     * @return The step actually taken.
+     */
     double integrate(double* q, double h_lim);
+     /**
+     * @brief Integrate to exactly the step h
+     * 
+     * As with integrate() but advance the step by exactly the
+     * specified step size.
+     *
+     * @param q The state at the start of a step. This is overwritten
+     * with the state at the end of the integration step.
+     * @param h The step in time by which to advance the solution
+     */
     void advance(double* q, double h);
 
   private:
@@ -114,7 +149,7 @@ class trap : public ode_solver<ValueType> {
 };
 
 template <typename ValueType>
-int trap<ValueType>::check_retval(void* retvalvalue, char const* funcname,
+int trap<ValueType>::check_retval(void* retvalvalue, char const* ,
                                   int opt) {
     int* errretval;
     /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
@@ -148,8 +183,8 @@ int trap<ValueType>::func(N_Vector y, N_Vector f, void* user_data) {
 }
 
 template <typename ValueType>
-int trap<ValueType>::jac(N_Vector y, N_Vector f, SUNMatrix J, void* user_data,
-                         N_Vector tmp1, N_Vector tmp2) {
+int trap<ValueType>::jac(N_Vector y, N_Vector , SUNMatrix J, void* user_data,
+                         N_Vector , N_Vector ) {
     realtype* yd = N_VGetArrayPointer(y);
     realtype* Jd = SUNDenseMatrix_Data(J);
     kinsol_data_t* data = static_cast<kinsol_data_t*>(user_data);
