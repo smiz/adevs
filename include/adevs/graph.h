@@ -51,6 +51,14 @@ namespace adevs {
  * that event will be delivered to the Atomic model as input via the last
  * pin on the path.
  * 
+ * The graph holds exactly one instance of each Atomic object that is added to it
+ * and exactly one instance of each edge that is created by a call to connect().
+ * Subsequent calls to add_atomic() for an Atomic model that is already in the
+ * Graph will increase the count of instances of the model. The same happends for
+ * edges created by connect(). When you remove edges or instances, the counts
+ * are decreased by one for each removal. Only when the count reaches zero is
+ * the instance of the edge or Atomic model physically removed from the Graph.
+ * 
  * The graph operates in one of two modes: provisional or non-provisional. In
  * the non-provisional mode, changes that are made to the graph take place
  * immediately. This mode is used primarily when the graph is being constructed
@@ -62,6 +70,7 @@ namespace adevs {
  * @see Atomic
  * @see PinValue
  * @see Simulator
+ * @see Coupled
 */
 template <typename X, typename T = double>
 class Graph {
@@ -72,7 +81,7 @@ class Graph {
          * The new Graph is in the non-provisional mode.
          */
         Graph():provisional(false){}
-        /// @brief Destroy the graph but leave its atomic components intact.
+        /// @brief Destroy the graph but leave its Atomic components intact.
         virtual ~Graph(){}
         /**
          * @brief  Remove a pin.
@@ -81,13 +90,28 @@ class Graph {
          * @param p The pin to remove.
          */
         void remove_pin(pin_t p);
-        /// @brief Add an atomic model to the graph.
-        /// @param model The model to add.
+        /**
+         * @brief Add an atomic model to the graph.
+         * 
+         * Each Atomic model has an instance count, which is the number
+         * of times it has been added to the Graph. If the Atomic already
+         * exists in the graph then this method simply increases its
+         * instance count.
+         * 
+         * @see Coupled
+         * 
+         * @param model The model to add.
+         */
         void add_atomic(std::shared_ptr<Atomic<X,T>> model);
         /**
-         *  @brief Remove an atomic model from the graph.
+         * @brief Remove an atomic model from the graph.
          * 
-         *  The model and all edges from a pin to the model are removed from the graph.
+         * Reduces the instance count of the model. If the instance
+         * count reaches zero then the model and all edges from a pin
+         * to the model are removed from the graph.
+         *
+         *  @see Coupled  
+         *
          *  @param model The model to remove.
          */
         void remove_atomic(std::shared_ptr<Atomic<X, T>> model);
@@ -97,6 +121,7 @@ class Graph {
          * Create a link from the source pin the destination pin.
          * Any event placed on the source pin will be transmitted
          * to the destination pin.
+         * 
          * @param src The source pin.
          * @param dst The destination pin.
          */
@@ -204,8 +229,9 @@ class Graph {
         std::list<graph_op>& get_pending() { return pending; }
 
     private:
-        std::map<pin_t,std::list<std::shared_ptr<Atomic<X,T>>>> pin_to_atomic;
-        std::map<pin_t,std::list<pin_t> > pin_to_pin;
+        std::map<pin_t,std::list<std::pair<std::shared_ptr<Atomic<X,T>>,int>>> pin_to_atomic;
+        std::map<pin_t,std::list<std::pair<pin_t,int>>> pin_to_pin;
+        std::map<Atomic<X,T>*,int> atomic_instance_count;
         std::set<std::shared_ptr<Atomic<X,T>>> models;
 
         void queue_remove_pin(pin_t p);
@@ -229,10 +255,35 @@ void Graph<X, T>::remove_pin(pin_t pin) {
         queue_remove_pin(pin);
         return;
     }
-    pin_to_atomic.erase(pin);
-    pin_to_pin.erase(pin);
-    for (auto i = pin_to_pin.begin(); i != pin_to_pin.end(); i++) {
-        i->second.remove(pin);
+    // Remove atomic models from the pin to atomic map
+    auto& atomic_list = pin_to_atomic[pin];
+    auto pin_to_atomic_iter = atomic_list.begin();
+    while (pin_to_atomic_iter != atomic_list.end()) {
+        (*pin_to_atomic_iter).second--;
+        if ((*pin_to_atomic_iter).second == 0) {
+            pin_to_atomic_iter = atomic_list.erase(pin_to_atomic_iter);
+        } else {
+            pin_to_atomic_iter++;
+        }
+    }
+    if (atomic_list.empty()) {
+        // Remove the pin from the pin_to_atomic map.
+        pin_to_atomic.erase(pin);
+    }
+    // Remove pins from the pin to pin map
+    auto& pin_list = pin_to_pin[pin];
+    auto pin_to_pin_iter = pin_list.begin();
+    while (pin_to_pin_iter != pin_list.end()) {
+        (*pin_to_pin_iter).second--;
+        if ((*pin_to_pin_iter).second == 0) {
+            pin_to_pin_iter = pin_list.erase(pin_to_pin_iter);
+        } else {
+            pin_to_pin_iter++;
+        }
+    }
+    if (pin_list.empty()) {
+        // Remove the pin from the pin_to_atomic map.
+        pin_to_pin.erase(pin);
     }
 }
 
@@ -242,6 +293,15 @@ void Graph<X, T>::add_atomic(std::shared_ptr<Atomic<X,T>> model) {
         queue_add_atomic(model);
         return;
     }
+    auto instance_iter = atomic_instance_count.find(model.get());
+    if (instance_iter != atomic_instance_count.end()) {
+        // Increase the instance count and return.
+        (*instance_iter).second++;
+        return;
+    } else {
+        atomic_instance_count[model.get()] = 1;
+    }
+    // Add the model to the set of components map.
     models.insert(model);
 }
 
@@ -251,8 +311,25 @@ void Graph<X, T>::remove_atomic(std::shared_ptr<Atomic<X,T>> model) {
         queue_remove_atomic(model);
         return;
     }
+    auto instance_iter = atomic_instance_count.find(model.get());
+    // Decrease the instance count and return.
+    (*instance_iter).second--;
+    if ((*instance_iter).second > 0) {
+        // If there are still instances of the model, just return.
+        return;
+    }
+    // Remove all pin couplings to the removed model
+    atomic_instance_count.erase(instance_iter);
     for (auto i = pin_to_atomic.begin(); i != pin_to_atomic.end(); i++) {
-        i->second.remove(model);
+        auto atomic_list_iter = i->second.begin();
+        while (atomic_list_iter != i->second.end()) {
+            if (atomic_list_iter->first == model) {
+                // Remove the model from the pin to atomic map.
+                atomic_list_iter = i->second.erase(atomic_list_iter);
+            } else {
+                atomic_list_iter++;
+            }
+        }
     }
     models.erase(model);
 }
@@ -263,7 +340,19 @@ void Graph<X, T>::connect(pin_t src, pin_t dst) {
         queue_connect(src, dst);
         return;
     }
-    pin_to_pin[src].push_back(dst);
+    // If this connection already exists, increase the instance count and return
+    std::list<std::pair<pin_t,int>>& pin_list = pin_to_pin[src];
+    auto iter = pin_list.begin();
+    while (iter != pin_list.end()) {
+        if ((*iter).first == dst) {
+            // Increase the instance count and return.
+            (*iter).second++;
+            return;
+        }
+        iter++;
+    }
+    // Didn't find it. Add the connection.
+    pin_list.push_back(std::pair<pin_t,int>(dst,1));
 }
 
 template <typename X, typename T>
@@ -272,9 +361,24 @@ void Graph<X, T>::disconnect(pin_t src, pin_t dst) {
         queue_disconnect(src, dst);
         return;
     }
-    auto i = pin_to_pin.find(src);
-    if (i != pin_to_pin.end()) {
-        i->second.remove(dst);
+    auto& pin_list = pin_to_pin[src];
+    auto iter = pin_list.begin();
+    while (iter != pin_list.end()) {
+        if ((*iter).first == dst) {
+            // Decrease the instance count
+            (*iter).second--;
+            // Remove it if it is the last instance
+            if ((*iter).second == 0) {
+                pin_list.erase(iter);
+                if (pin_list.empty()) {
+                    // If the pin_to_pin map is empty, remove the pin.
+                    pin_to_pin.erase(src);
+                }
+            } 
+            // Done so return
+            return;
+        }
+        iter++;
     }
 }
 
@@ -284,8 +388,18 @@ void Graph<X, T>::connect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
         queue_connect(pin, model);
         return;
     }
-    models.insert(model);
-    pin_to_atomic[pin].push_back(model);
+    auto& atomic_list = pin_to_atomic[pin];
+    auto iter = atomic_list.begin();
+    while (iter != atomic_list.end()) {
+        if ((*iter).first == model) {
+            // Increase the instance count and return.
+            (*iter).second++;
+            return;
+        }
+        iter++;
+    }
+    // Add the connection to the pin_to_atomic map.
+    pin_to_atomic[pin].push_back(std::pair<std::shared_ptr<Atomic<X,T>>,int>(model,1));
 }
 
 template <typename X, typename T>
@@ -294,9 +408,22 @@ void Graph<X, T>::disconnect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
         queue_disconnect(pin, model);
         return;
     }
-    auto i = pin_to_atomic.find(pin);
-    if (i != pin_to_atomic.end()) {
-        i->second.remove(model);
+    auto& atomic_list = pin_to_atomic[pin];
+    auto iter = atomic_list.begin();
+    while (iter != atomic_list.end()) {
+        if ((*iter).first == model) {
+            (*iter).second--;
+            if ((*iter).second == 0) {
+                // Remove the model from the pin to atomic map.
+                atomic_list.erase(iter);
+                if (atomic_list.empty()) {
+                    // If the pin_to_atomic map is empty, remove the pin.
+                    pin_to_atomic.erase(pin);
+                }
+            }
+            return;
+        }
+        iter++;
     }
 }
 
@@ -305,13 +432,13 @@ void Graph<X,T>::route(pin_t pin, std::list<std::pair<pin_t,std::shared_ptr<Atom
     auto i = pin_to_atomic.find(pin);
     if (i != pin_to_atomic.end()) {
         for (auto j = i->second.begin(); j != i->second.end(); j++) {
-            models.push_back(std::pair<pin_t,std::shared_ptr<Atomic<X, T>>>(pin,*j));
+            models.push_back(std::pair<pin_t,std::shared_ptr<Atomic<X, T>>>(pin,(*j).first));
         }
     }
     auto r = pin_to_pin.find(pin);
     if (r != pin_to_pin.end()) {
         for (auto s = r->second.begin(); s != r->second.end(); s++) {
-            route(*s, models);
+            route((*s).first, models);
         }
     }
 }

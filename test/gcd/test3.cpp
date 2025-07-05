@@ -5,13 +5,15 @@ using namespace std;
 
 int main() {
     cout << "Test 3" << endl;
-    auto model = std::make_shared<adevs::Graph<ObjectPtr>>();
-    auto c1 = std::make_shared<gcd>(*model, 10, 2, 1, false);
-    auto c2 = std::make_shared<gcd>(*model, 10, 2, 1, false);
+    auto model = std::make_shared<adevs::Coupled<ObjectPtr>>();
+    auto c1 = std::make_shared<gcd>(10, 2, 1, false);
+    auto c2 = std::make_shared<gcd>(10, 2, 1, false);
     auto g = std::make_shared<genr>(1, 1, true);
     model->add_atomic(g);
-    model->connect(g->signal, c1->in);
-    model->connect(c1->out, c2->in);
+    model->add_coupled_model(c1);
+    model->add_coupled_model(c2);
+    model->create_coupling(g->signal, c1->in);
+    model->create_coupling(c1->out, c2->in);
     adevs::Simulator<ObjectPtr> sim(model);
     while (sim.nextEventTime() < adevs_inf<double>()) {
         sim.execNextEvent();

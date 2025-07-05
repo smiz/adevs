@@ -17,14 +17,11 @@ class generatorEventListener : public adevs::EventListener<ObjectPtr> {
 
 int main() {
     cout << "Test 2x" << endl;
-    auto model_g = std::make_shared<adevs::Graph<ObjectPtr>>();
-    auto model_c = std::make_shared<adevs::Graph<ObjectPtr>>();
-    auto c = std::make_shared<gcd>(*model_c, 10.0, 2.0, 1, false);
+    auto c = std::make_shared<gcd>(10.0, 2.0, 1, false);
     auto g = std::make_shared<genr>(10.0, 1, true);
-    model_g->add_atomic(g);
     auto listener = std::make_shared<generatorEventListener>();
-    adevs::Simulator<ObjectPtr> sim_c(model_c);
-    adevs::Simulator<ObjectPtr> sim_g(model_g);
+    adevs::Simulator<ObjectPtr> sim_c(c);
+    adevs::Simulator<ObjectPtr> sim_g(g);
     sim_g.addEventListener(listener);
     while (sim_c.nextEventTime() < adevs_inf<double>() || sim_g.nextEventTime() < adevs_inf<double>()) {
         double tN = min(sim_c.nextEventTime(), sim_g.nextEventTime());

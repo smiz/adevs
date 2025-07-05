@@ -54,6 +54,8 @@ template <typename OutputType, typename TimeType>
 class Schedule;
 template <typename OutputType, typename TimeType>
 class MealyAtomic;
+template <typename OutputType, typename TimeType>
+class Graph;
 /// \endcond
 
 /**
@@ -348,6 +350,232 @@ class MealyAtomic : public Atomic<OutputType, TimeType> {
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
+
+/**
+ * @brief A coupled model in the DEVS formalism.
+ * 
+ * A Coupled model is composed of Atomic models and other Coupled models.
+ * It is used to construct complex components by interconneting simpler
+ * piece parts. The components and connections of the Coupled model are imposed
+ * a Graph when the Coupled model is added to that Graph. Later changes to
+ * the Coupled model, such as adding or removing components or couplings, are
+ * reflected in the Graph to which the Coupled model belongs.
+ *
+ * The Coupled model does not require strict hierarchy. An Atomic or Coupled
+ * model can be a member of more than one Coupled model. However, edges
+ * between pins, between pins and Atomic models, and Atomic models themselves
+ * will only appear once in the underlying Graph. See the Graph documentation
+ * for how multiple additions of the same Atomic model or edge is handled.
+ * 
+ * @see Graph
+ * @see Atomic
+ */
+template <typename OutputType, typename TimeType = double>
+class Coupled {
+  public:
+    /**
+     * @brief Constructor creates a model without components or couplings.
+     */
+    Coupled() : g(nullptr) {}
+    /**
+     * @brief Destructor
+     *
+     * The destuctor does not remove the coupled models components
+     * and couplings from the underlying Graph. If you want to do this
+     * it must be done explicitly before destroying the Coupled model.
+     */ 
+    virtual ~Coupled(){}
+
+    /**
+     * @ brief Add an Atomic model to the CoupledModel.
+     *
+     * The Atomic model becomes part of the Coupled model. We do not
+     * enfore strict hierarchy and an Atomic model may belong to more
+     * than one Coupled model. However, the Atomic model will must only
+     * be added to a given Coupled model once.
+     *  
+     * @param model The Atomic model to add.
+     */
+    void add_atomic(std::shared_ptr<Atomic<OutputType, TimeType>> model);
+    /**
+     * @brief Remove an Atomic model.
+     * 
+     * This removes the Atomic model and connections to it from this
+     * model. Only the connections that are part of this Coupled model
+     * are removed from the underlying Graph. The Atomic is removed
+     * from the underlying Graph only if this is the only instance of
+     * the model in the Graph.
+     *
+     * @see Graph
+     *  
+     * @param model The Atomic model to remove.
+     */
+    void remove_atomic(std::shared_ptr<Atomic<OutputType, TimeType>> model);
+    /**
+     * @brief Add a Coupled model to this model.
+     * 
+     * As with add_atomic() but for Coupled models.
+     * 
+     * @param model The Coupled model to add.
+     */
+    void add_coupled_model(std::shared_ptr<Coupled<OutputType, TimeType>> model);
+    /**
+     * @brief Remove a Coupled model from this model.
+     * 
+     * This removes from the underlying graph all of the components and couplings
+     * of the Coupled model this is being removed. This method recursively removes
+     * the Coupled model and components of all Coupled models that are in the tree
+     * of models that have this model as its root. If any component appears more
+     * than once in the underlying Graph, then it is not removed from the Graph. However,
+     * the connections associted with the removed hierarchy of are removed from the Graph.
+     * 
+     * @param model The Coupled model to remove.
+     */
+    void remove_coupled_model(std::shared_ptr<Coupled<OutputType, TimeType>> model);
+    /**
+     * @brief Create a coupling in the model.
+     * 
+     * This method connects a pin to an Atomic model that is part of this 
+     * Coupled model.
+     * 
+     * @param pin The pin.
+     * @param model The Atomic model that receives input on the destination pin.
+     */
+    void create_coupling(pin_t pin, std::shared_ptr<Atomic<OutputType, TimeType>> model);
+    /** 
+     * @brief Add a coupling between pins in the Coupled model.
+     * 
+     * @param src The source pin.
+     * @param dst The destination pin.
+     */
+    void create_coupling(pin_t src, pin_t dst);
+    /**
+     * @brief Remove a coupling in the model.
+     * 
+     * @param pin The pin.
+     * @param model The Atomic model that receives input on the destination pin.
+     */
+    void remove_coupling(pin_t pin, std::shared_ptr<Atomic<OutputType, TimeType>> model);
+    /** 
+     * @brief Remove a coupling between pins in the Coupled model.
+     * 
+     * @param src The source pin.
+     * @param dst The destination pin.
+     */
+    void remove_coupling(pin_t src, pin_t dst);
+
+  private:
+
+    friend class Simulator<OutputType, TimeType>;
+
+    Graph<OutputType, TimeType>* g;
+    std::set<std::shared_ptr<Atomic<OutputType, TimeType>>> atomic_components;
+    std::set<std::shared_ptr<Coupled<OutputType, TimeType>>> coupled_components;
+    /// Pins that provide input to the Atomic models 
+    std::set<std::pair<pin_t,std::shared_ptr<Atomic<OutputType, TimeType>>>> pin_to_atomic;
+    /// Pin to pin connections
+    std::set<std::pair<pin_t,pin_t>> pin_to_pin;
+
+    void assign_to_graph(Graph<OutputType, TimeType>* graph);
+    void remove_from_graph();
+};
+
+template <typename OutputType, typename TimeType>
+void Coupled<OutputType, TimeType>::create_coupling(pin_t pin, std::shared_ptr<Atomic<OutputType, TimeType>> model) {
+    pin_to_atomic.insert(std::make_pair(pin, model));
+    if (g != nullptr) {
+        g->connect(pin, model);
+    }
+}
+
+template <typename OutputType, typename TimeType>
+void Coupled<OutputType, TimeType>::remove_coupling(pin_t pin, std::shared_ptr<Atomic<OutputType, TimeType>> model) {
+    pin_to_atomic.erase(std::make_pair(pin, model));
+    if (g != nullptr) {
+        g->disconnect(pin, model);
+    }
+}
+
+template <typename OutputType, typename TimeType>
+void Coupled<OutputType, TimeType>::create_coupling(pin_t src, pin_t dst) {
+    pin_to_pin.insert(std::make_pair(src, dst));
+    if (g != nullptr) {
+        g->connect(src, dst);
+    }
+}
+
+template <typename OutputType, typename TimeType>
+void Coupled<OutputType, TimeType>::remove_coupling(pin_t src, pin_t dst) {
+    pin_to_pin.erase(std::make_pair(src, dst));
+    if (g != nullptr) {
+        g->disconnect(src, dst);
+    }
+}
+
+template <typename OutputType, typename TimeType>
+void Coupled<OutputType, TimeType>::assign_to_graph(Graph<OutputType, TimeType>* graph) {
+    g = graph;
+    for (auto atomic : atomic_components) {
+        g->add_atomic(atomic);
+    }
+    for (auto coupling: pin_to_atomic) {
+        g->connect(coupling.first, coupling.second);
+    }
+    for (auto coupling: pin_to_pin) {
+        g->connect(coupling.first, coupling.second);
+    }
+    for (auto coupled : coupled_components) {
+        coupled->assign_to_graph(g);
+    }
+}
+
+template <typename OutputType, typename TimeType>
+void Coupled<OutputType, TimeType>::remove_from_graph() {
+    for (auto atomic : atomic_components) {
+        g->remove_atomic(atomic);
+    }
+    for (auto coupling: pin_to_atomic) {
+        g->disconnect(coupling.first, coupling.second);
+    }
+    for (auto coupling: pin_to_pin) {
+        g->connect(coupling.first, coupling.second);
+    }
+    for (auto coupled : coupled_components) {
+        coupled->remove_from_graph();
+    }
+}
+
+template <typename OutputType, typename TimeType>
+void Coupled<OutputType, TimeType>::add_atomic(std::shared_ptr<Atomic<OutputType, TimeType>> model) {
+    atomic_components.insert(model);
+    if (g != nullptr) {
+        g->add_atomic(model);
+    }
+}
+
+template <typename OutputType, typename TimeType>
+void Coupled<OutputType, TimeType>::remove_atomic(std::shared_ptr<Atomic<OutputType, TimeType>> model) {
+    atomic_components.erase(model);
+    if (g != nullptr) {
+        g->remove_atomic(model);
+    }
+}
+
+template <typename OutputType, typename TimeType>
+void Coupled<OutputType, TimeType>::add_coupled_model(std::shared_ptr<Coupled<OutputType, TimeType>> model) {
+    coupled_components.insert(model);
+    if (g != nullptr) {
+        model->assign_to_graph(g);
+    }
+}
+
+template <typename OutputType, typename TimeType>
+void Coupled<OutputType, TimeType>::remove_coupled_model(std::shared_ptr<Coupled<OutputType, TimeType>> model) {
+    coupled_components.erase(model);
+    if (g != nullptr) {
+        model->remove_from_graph();
+    }
+}
 
 }  // namespace adevs
 

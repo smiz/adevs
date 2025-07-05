@@ -5,48 +5,48 @@
 #include "delay.h"
 #include "genr.h"
 
-class gcd {
+class gcd: public adevs::Coupled<ObjectPtr> {
   public:
-    adevs::pin_t in;
-    adevs::pin_t out;
-    adevs::pin_t signal;
-    adevs::pin_t start;
-    adevs::pin_t stop;
+    const adevs::pin_t in;
+    const adevs::pin_t out;
+    const adevs::pin_t signal;
+    const adevs::pin_t start;
+    const adevs::pin_t stop;
 
-    gcd(adevs::Graph<ObjectPtr>& graph, std::vector<double> const &pattern, double dt, int iterations,
-        bool active = false) {
+    gcd(std::vector<double> const &pattern, double dt, int iterations,
+        bool active = false):adevs::Coupled<ObjectPtr>() {
         auto g = std::shared_ptr<genr>(new genr(pattern, iterations, active));
         auto d = std::shared_ptr<delay>(new delay(dt));
         auto c = std::make_shared<counter>();
-        build(graph, g, c, d);
+        build(g, c, d);
     }
-    gcd(adevs::Graph<ObjectPtr>& graph, double period, double dt, int iterations, bool active = false) {
+    gcd(double period, double dt, int iterations, bool active = false):
+      adevs::Coupled<ObjectPtr>() {
         auto g = std::shared_ptr<genr>(new genr(period, iterations, active));
         auto d = std::shared_ptr<delay>(new delay(dt));
         auto c = std::make_shared<counter>();
-        build(graph, g, c, d);
+        build(g, c, d);
     }
     ~gcd() {}
 
   private:
     void build(
-          adevs::Graph<ObjectPtr>& graph,
           std::shared_ptr<genr> g,
           std::shared_ptr<counter> c,
           std::shared_ptr<delay> d) {
-        graph.add_atomic(g);
-        graph.add_atomic(d);
-        graph.add_atomic(c);
-        graph.connect(in, d->in);
-        graph.connect(start, g->start);
-        graph.connect(stop, g->stop);
-        graph.connect(g->signal, signal);
-        graph.connect(d->out, out);
-        graph.connect(d->out, c->in);
-        graph.connect(c->in,c);
-        graph.connect(d->in,d);
-        graph.connect(g->stop,g);
-        graph.connect(g->start,g);
+        add_atomic(g);
+        add_atomic(d);
+        add_atomic(c);
+        create_coupling(in, d->in);
+        create_coupling(start, g->start);
+        create_coupling(stop, g->stop);
+        create_coupling(g->signal, signal);
+        create_coupling(d->out, out);
+        create_coupling(d->out, c->in);
+        create_coupling(c->in,c);
+        create_coupling(d->in,d);
+        create_coupling(g->stop,g);
+        create_coupling(g->start,g);
     }
 };
 

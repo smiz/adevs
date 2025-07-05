@@ -198,6 +198,13 @@ class Simulator {
     Simulator(std::shared_ptr<Graph<OutputType, TimeType>> model);
 
     /**
+     * @brief Initialize the simulator with a Coupled model.
+     * 
+     * @param model The Coupled model to simulate.
+     */
+    Simulator(std::shared_ptr<Coupled<OutputType, TimeType>> model);
+
+    /**
      * @brief Get the time of the next event.
      
      * This is the absolute time of the next output and change of state.
@@ -323,6 +330,18 @@ Simulator<OutputType, TimeType>::Simulator(
     graph->add_atomic(model);
     graph->set_provisional(true);
     schedule(model.get(), adevs_zero<TimeType>());
+    tNext = sched.minPriority();
+}
+
+template <typename OutputType, typename TimeType>
+Simulator<OutputType, TimeType>::Simulator(
+    std::shared_ptr<Coupled<OutputType, TimeType>> model)
+    : graph(new Graph<OutputType, TimeType>()) {
+    model->assign_to_graph(graph.get());
+    graph->set_provisional(true);
+    for (auto atomic : graph->get_atomics()) {
+        schedule(atomic.get(), adevs_zero<TimeType>());
+    }
     tNext = sched.minPriority();
 }
 
