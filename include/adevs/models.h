@@ -59,8 +59,7 @@ class Graph;
 /// \endcond
 
 /**
- * @brief A point of connection between components in a model; the pin
- * is conceptually similar to a pin in an electric circuit model.
+ * @brief A point of connection between components in a model.
  * 
  * The style of model coupling used in adevs is based
  * on the concept of pins as they are usually encountered
@@ -80,7 +79,15 @@ class Graph;
  * q --> A
  * p --> B
  * \endverbatim
- * 
+ *
+ * A component places output on a pin by creating a PinValue object
+ * and adding it to the list of output values in the Atomic output_func().
+ * A component receives input on a pin where connect() or create_coupling()
+ * methods are called such that a path exists from the pin used in the
+ * output_func() to the Atomic model that receives the input.
+ *
+ * @see Atomic
+ * @see Coupled  
  * @see Graph
  * @see PinValue
  */
@@ -88,41 +95,41 @@ class pin_t {
   public:
     /// @brief Create a pin.
     ///
-    /// Each pin is unique identified and its identifier is preserved
+    /// Each pin is unique and its identity is preserved
     /// across copies and assignments of the pin. 
     pin_t() : id(atom++) {}
     /// @brief  Copy constructor.
-    /// @param src  The pin whose identifier is copied.
+    /// @param src  The pin whose identity is copied.
     pin_t(pin_t const &src) : id(src.id) {}
     /// @brief  Assignment operator.
-    /// @param src  The pin whose identifier is assigned.
+    /// @param src  The pin whose identity is assigned.
     pin_t const &operator=(pin_t const &src) {
         id = src.id;
         return *this;
     }
-    /// @brief Do these pins have the same identifier?
+    /// @brief Do these pins have the same identity?
     /// @param src  The pin to compare against.
-    /// @return True if the pins have the same identifier, false otherwise.
+    /// @return True if the pins have the same identity, false otherwise.
     bool operator==(pin_t const &src) const { return (id == src.id); }
-    /// @brief Do these pins have different identifiers?
+    /// @brief Do these pins have different identities?
     /// @param src  The pin to compare against.
-    /// @return True if the pins have different identifiers, false otherwise.
+    /// @return True if the pins have different identities, false otherwise.
     bool operator!=(pin_t const &src) const { return (id != src.id); }
-    /// @brief Compare the identifiers of two pins.
+    /// @brief Compare the identities of two pins.
     /// @param src  The pin to compare against.
-    /// @return True if this pin has a smaller or the same identifier, false otherwise.
+    /// @return True if this pin has a smaller or the same identity, false otherwise.
     bool operator<=(pin_t const &src) const { return (id <= src.id); }
-    /// @brief Compare the identifiers of two pins.
+    /// @brief Compare the identities of two pins.
     /// @param src  The pin to compare against.
-    /// @return True if this pin has a smaller identifier, false otherwise.
+    /// @return True if this pin has a smaller identity, false otherwise.
     bool operator<(pin_t const &src) const { return (id < src.id); }
-    /// @brief Compare the identifiers of two pins.
+    /// @brief Compare the identities of two pins.
     /// @param src  The pin to compare against.
-    /// @return True if this pin has a larger or the same identifier, false otherwise.
+    /// @return True if this pin has a larger or the same identity, false otherwise.
     bool operator>=(pin_t const &src) const { return (id >= src.id); }
-    /// @brief Compare the identifiers of two pins.
+    /// @brief Compare the identities of two pins.
     /// @param src  The pin to compare against.
-    /// @return True if this pin has a larger identifier, false otherwise.
+    /// @return True if this pin has a larger identity, false otherwise.
     bool operator>(pin_t const &src) const { return (id > src.id); }
   private:
     static std::atomic<int> atom;
@@ -130,17 +137,20 @@ class pin_t {
 };
 
 /**
- * @brief Create an event that appears on a pin.
+ * @brief An event that appears on a pin.
  *
- * An Atomic creates PinValue objects in its output
- * function and it consumes PinValue objects in its state
- * transition functions. The PinValue objects can also be 
+ * An Atomic creates PinValue objects in its output_func()
+ * method and it consumes PinValue objects in its state
+ * transition functions: delta_int(), delta_ext(), and
+ * delta_conf(). The PinValue objects can also be 
  * injected into and extracted from a running Simulator so
  * that the simulation can be used as part of a larger program.
  * 
  * @see pin_t
  * @see Atomic
  * @see Graph
+ * @see Coupled
+ * @see Simulator
  */
 template <typename ValueType>
 class PinValue {
@@ -152,12 +162,18 @@ class PinValue {
     /// @param value  The value that appears on the pin.
     PinValue(pin_t pin, ValueType value) : pin(pin), value(value) {}
     /// @brief Copy constructor.
-    /// @param src  The PinValue object to copy. The source objects
-    ///             pin and value are copied using their copy constructors.
+    ///
+    /// The source object's pin and value are copied using their
+    /// copy constructors.
+    ///
+    /// @param src  The PinValue object to copy.
     PinValue(PinValue const &src) : pin(src.pin), value(src.value) {}
     /// @brief Assignment operator.
-    /// @param src  The PinValue object to assign. The source object's
-    ///             pin and value are assigned using their assignment operators.
+    ///
+    /// The source object's pin and value are assigned using their
+    /// assignment operators.
+    ///
+    /// @param src  The PinValue object to assign. 
     PinValue<ValueType> const &operator=(PinValue const &src) {
         pin = src.pin;
         value = src.value;
@@ -177,12 +193,12 @@ class PinValue {
  * block of any simulation program will be the behaviors of the Atomic components
  * that you create to define the active pieces of your model. The state
  * of an Atomic model changes in three ways:
- * - An internal state transition. This is a change in state that
+ * - An internal state transition. This is a change of state that
  * the model undergoes all by itself, without any outside stimulation.
  * Internal state transitions are scheduled by the time advance function ta().
- * - An external state transition. This is a change in state that occurs
+ * - An external state transition. This is a change of state that occurs
  * in response to an input, which is also called an external event.
- * - A confluent state transition. This is a change in state that occurs
+ * - A confluent state transition. This is a change of state that occurs
  * when an input arrives at the same time as the model is scheduled to undergo
  * an internal state transition. Hence, the confluent state transition decides
  * what happens when the conditions for an internal and external state
@@ -196,19 +212,20 @@ class PinValue {
  * For example, suppose the model changes from state A to state B at time t.
  * This change happens because the Simulator called the delta_int(), delta_ext(),
  * or delta_conf() method at time t. After calling one of these methods to
- * calculate the new state of the component, the Simulator will call the time 
+ * calculate the new state of the component, the Simulator calls the time 
  * advance method ta(). The return value of ta() is used by the Simulator to
  * schedule the next internal event for time t+ta().
  *
  * Now, if the simulation reaches time t + ta() without the model receiving any input.
- * Then at this time the Simulator calls delta_int() to calculate the models new state,
+ * Then at this time the Simulator calls delta_int() to calculate the model's new state,
  * say state C. If instead the model receives an input x at time t + ta(), then the 
  * Simulator calculates the new state by calling the method delta_conf(x).
  * 
  * Suppose instead that the model receives an input x at some time t + e,, where e < ta().
  * In this case, the Simulator will call the method delta_ext(e, x) to calculate
- * the model's new state. Now the model is in a new state, say C, and the next
- * internal event will occur at time t + e + ta(). 
+ * the model's new state. Now the model is in a new state, say C. The Simulator
+ * calls the ta() method to get the time advance and the next internal event is
+ * scheduled for time t + e + ta(). 
  * 
  * The output function output_func() is called by the Simulator to let the Atomic
  * model generate PinValue objects. The output function is called immediately
@@ -217,6 +234,7 @@ class PinValue {
  * 
  * @see PinValue
  * @see Graph
+ * @see Coupled
  * @see Simulator
  */
 template <typename OutputType, typename TimeType = double>
@@ -239,7 +257,7 @@ class Atomic {
      * @brief The external transition function.
      * 
      * This is called by the Simulator when an input arrives before the next
-     * scheduled to the delta_int() method.
+     * scheduled call to the delta_int() method.
      * 
      * @param e Time elapsed since the previous change of state.
      * @param xb A list of input for the model.
@@ -261,6 +279,7 @@ class Atomic {
      * Output values should be added to the supplied list. Recall
      * that this method is called by the Simulator immediately before
      * the delta_int() or delta_conf() method is called.
+     * 
      * @param yb Empty list to be filled with the model's output.
      */
     virtual void output_func(std::list<PinValue<OutputType>> &yb) = 0;
@@ -269,7 +288,8 @@ class Atomic {
      * 
      * This method is called by the Simulator immediately after any call to
      * delta_int(), delta_ext(), or delta_conf(). The return value is used
-     * to schedule the next internal event. Return adevs_inf<TimeType>() for infinity.
+     * to schedule the next internal event. Return adevs_inf<TimeType>()
+     * for infinity; that is, to have no scheduled internal event.
      * 
      * @return The time to the next internal event.
      */
@@ -318,7 +338,9 @@ class MealyAtomic : public Atomic<OutputType, TimeType> {
      * 
      * This method is called when the model receives input before its
      * next internal event. The elapsed time and input will be the same as that
-     * passed to the delta_ext() method.
+     * passed to the delta_ext() method. This is called before the call to
+     * delta_ext().
+     * 
      * @param e The elapsed time since the last state change.
      * @param xb The input values that arrived at the model.
      * @param yb The output values produced by the model.
@@ -326,11 +348,11 @@ class MealyAtomic : public Atomic<OutputType, TimeType> {
     virtual void external_output_func(TimeType e, std::list<PinValue<OutputType>> const &xb,
                              std::list<PinValue<OutputType>> &yb) = 0;
     /**
-     * #@brief Produce output at a confluent transition.
+     * @brief Produce output at a confluent transition.
      * 
      * This method is called when the model receives input at the same time
      * as its next internal event. The input will be the same that is passed
-     * to the delta_conf() method.
+     * to the delta_conf() method. This method is called before delta_conf().
      *
      * @param xb The input values that arrived at the model.
      * @param yb The output values produced by the model.
@@ -355,7 +377,7 @@ class MealyAtomic : public Atomic<OutputType, TimeType> {
  * @brief A coupled model in the DEVS formalism.
  * 
  * A Coupled model is composed of Atomic models and other Coupled models.
- * It is used to construct complex components by interconneting simpler
+ * It is used to construct complex components by interconnecting simpler
  * piece parts. The components and connections of the Coupled model are imposed
  * a Graph when the Coupled model is added to that Graph. Later changes to
  * the Coupled model, such as adding or removing components or couplings, are
@@ -380,7 +402,7 @@ class Coupled {
     /**
      * @brief Destructor
      *
-     * The destuctor does not remove the coupled models components
+     * The destructor does not remove the coupled models components
      * and couplings from the underlying Graph. If you want to do this
      * it must be done explicitly before destroying the Coupled model.
      */ 
@@ -390,7 +412,7 @@ class Coupled {
      * @ brief Add an Atomic model to the CoupledModel.
      *
      * The Atomic model becomes part of the Coupled model. We do not
-     * enfore strict hierarchy and an Atomic model may belong to more
+     * enforce strict hierarchy and an Atomic model may belong to more
      * than one Coupled model. However, the Atomic model will must only
      * be added to a given Coupled model once.
      *  
@@ -427,7 +449,7 @@ class Coupled {
      * the Coupled model and components of all Coupled models that are in the tree
      * of models that have this model as its root. If any component appears more
      * than once in the underlying Graph, then it is not removed from the Graph. However,
-     * the connections associted with the removed hierarchy of are removed from the Graph.
+     * the connections associated with the removed hierarchy of are removed from the Graph.
      * 
      * @param model The Coupled model to remove.
      */
