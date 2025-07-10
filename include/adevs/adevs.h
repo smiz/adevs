@@ -28,22 +28,33 @@
  *
  * Bugs, comments, and questions can be sent to nutaro@gmail.com
  */
-/*
+/**
  * \mainpage
- * Links to the user manual, tutorials on DEVS, and other such
- * stuff are <a href="../index.html">here</a>.
+ * ADEVS is a C++ library for simulating discrete and hybrid dynamic systems.
+ * It is based on the DEVS formalism, which is an offshoot of general sytems
+ * theory. It is our hope that ADEVS will be useful for persons who do not
+ * have prior experience with DEVS, but you may nonetheless find it helpful
+ * to have at hand some useful references on the subject. The standard reference
+ * is <a href="https://shop.elsevier.com/books/theory-of-modeling-and-simulation/zeigler/978-0-12-813370-5">
+ * Theory of Modeling and Simulation</a> and you can find a great deal of
+ * tutorial material from univerisities on the web. Apart from its primary use
+ * as a tool for building simulation programs, the adevs library includes 
+ * explicit support for using your simulation as a component in some other
+ * simulation tool or program.
+ *
  */
+
 /*
  * Include everything needed to compile user models.
  */
 
+#ifndef _adevs_h_
+#define _adevs_h_
 #include "adevs/exception.h"
 #include "adevs/models.h"
-//#include "adevs/networks/cellspace.h"
-//#include "adevs/networks/digraph.h"
-//#include "adevs/networks/simpledigraph.h"
 #include "adevs/simulator.h"
 #include "adevs/solvers/event_locators.h"
 #include "adevs/solvers/corrected_euler.h"
 #include "adevs/solvers/hybrid.h"
 #include "adevs/solvers/rk_45.h"
+#endif

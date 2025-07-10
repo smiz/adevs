@@ -12,10 +12,10 @@
  *    and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EOutputTypePRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * ANY EValueTypePRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EOutputTypeEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EValueTypeEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -175,7 +175,7 @@ class EventListener {
  * models may produce output at this time, but non MealyAtomic models will not.
  * 7. Repeat from step 2.
  */
-template <class OutputType, class TimeType = double>
+template <class ValueType, class TimeType = double>
 class Simulator {
 
   public:
@@ -186,7 +186,7 @@ class Simulator {
      * time advance of the model is less than zero.
      * @param model The model to simulate.
      */
-    Simulator(shared_ptr<Atomic<OutputType, TimeType>> model);
+    Simulator(shared_ptr<Atomic<ValueType, TimeType>> model);
 
     /**
      * @brief Initialize the simulator with a collection of models.
@@ -195,14 +195,14 @@ class Simulator {
      * time advance of the model is less than zero.
      * @param model The graph to simulate.
      */
-    Simulator(std::shared_ptr<Graph<OutputType, TimeType>> model);
+    Simulator(std::shared_ptr<Graph<ValueType, TimeType>> model);
 
     /**
      * @brief Initialize the simulator with a Coupled model.
      * 
      * @param model The Coupled model to simulate.
      */
-    Simulator(std::shared_ptr<Coupled<OutputType, TimeType>> model);
+    Simulator(std::shared_ptr<Coupled<ValueType, TimeType>> model);
 
     /**
      * @brief Get the time of the next event.
@@ -236,7 +236,7 @@ class Simulator {
      * 
      * @param x The PinValue to inject into the simulation.
      */
-    void injectInput(PinValue<OutputType> &x) {
+    void injectInput(PinValue<ValueType> &x) {
         external_input.push_back(x);
         // We we need to recompute Mealy model outputs
     }
@@ -297,24 +297,24 @@ class Simulator {
      * @param listener The EventListener to be added.
      */
     void addEventListener(
-        std::shared_ptr<EventListener<OutputType, TimeType>> listener) {
+        std::shared_ptr<EventListener<ValueType, TimeType>> listener) {
         listeners.push_back(listener);
     }
 
   private:
-    std::shared_ptr<Graph<OutputType, TimeType>> graph;
-    std::list<shared_ptr<EventListener<OutputType, TimeType>>> listeners;
-    std::list<PinValue<OutputType>> external_input;
-    std::set<Atomic<OutputType, TimeType>*> active;
-    Schedule<OutputType, TimeType> sched;
+    std::shared_ptr<Graph<ValueType, TimeType>> graph;
+    std::list<shared_ptr<EventListener<ValueType, TimeType>>> listeners;
+    std::list<PinValue<ValueType>> external_input;
+    std::set<Atomic<ValueType, TimeType>*> active;
+    Schedule<ValueType, TimeType> sched;
     TimeType tNext;
 
-    void schedule(Atomic<OutputType, TimeType>* model, TimeType t);
+    void schedule(Atomic<ValueType, TimeType>* model, TimeType t);
 };
 
-template <typename OutputType, typename TimeType>
-Simulator<OutputType, TimeType>::Simulator(
-    std::shared_ptr<Graph<OutputType, TimeType>> model)
+template <typename ValueType, typename TimeType>
+Simulator<ValueType, TimeType>::Simulator(
+    std::shared_ptr<Graph<ValueType, TimeType>> model)
     : graph(model) {
     graph->set_provisional(true);
     for (auto atomic : model->get_atomics()) {
@@ -323,20 +323,20 @@ Simulator<OutputType, TimeType>::Simulator(
     tNext = sched.minPriority();
 }
 
-template <typename OutputType, typename TimeType>
-Simulator<OutputType, TimeType>::Simulator(
-    std::shared_ptr<Atomic<OutputType, TimeType>> model)
-    : graph(new Graph<OutputType, TimeType>()) {
+template <typename ValueType, typename TimeType>
+Simulator<ValueType, TimeType>::Simulator(
+    std::shared_ptr<Atomic<ValueType, TimeType>> model)
+    : graph(new Graph<ValueType, TimeType>()) {
     graph->add_atomic(model);
     graph->set_provisional(true);
     schedule(model.get(), adevs_zero<TimeType>());
     tNext = sched.minPriority();
 }
 
-template <typename OutputType, typename TimeType>
-Simulator<OutputType, TimeType>::Simulator(
-    std::shared_ptr<Coupled<OutputType, TimeType>> model)
-    : graph(new Graph<OutputType, TimeType>()) {
+template <typename ValueType, typename TimeType>
+Simulator<ValueType, TimeType>::Simulator(
+    std::shared_ptr<Coupled<ValueType, TimeType>> model)
+    : graph(new Graph<ValueType, TimeType>()) {
     model->assign_to_graph(graph.get());
     graph->set_provisional(true);
     for (auto atomic : graph->get_atomics()) {
@@ -345,11 +345,11 @@ Simulator<OutputType, TimeType>::Simulator(
     tNext = sched.minPriority();
 }
 
-template <class OutputType, class TimeType>
-void Simulator<OutputType, TimeType>::computeNextOutput() {
-    PinValue<OutputType> x;
-    std::list<std::pair<pin_t, std::shared_ptr<Atomic<OutputType, TimeType>>>> input;
-    std::set<MealyAtomic<OutputType, TimeType>*> pending_active;
+template <class ValueType, class TimeType>
+void Simulator<ValueType, TimeType>::computeNextOutput() {
+    PinValue<ValueType> x;
+    std::list<std::pair<pin_t, std::shared_ptr<Atomic<ValueType, TimeType>>>> input;
+    std::set<MealyAtomic<ValueType, TimeType>*> pending_active;
     // Undo prior output calculation
     for (auto model : active) {
         model->outputs.clear();
@@ -376,7 +376,7 @@ void Simulator<OutputType, TimeType>::computeNextOutput() {
     external_input.clear();
     // Route the output from the Moore type imminent models
     if (sched.minPriority() == tNext) {
-        std::list<Atomic<OutputType, TimeType>*> imm(sched.visitImminent());
+        std::list<Atomic<ValueType, TimeType>*> imm(sched.visitImminent());
         for (auto model : imm) {
             if (model->isMealyAtomic() != nullptr) {
                 // Wait to calculate Mealy outputs until we have the
@@ -451,9 +451,9 @@ void Simulator<OutputType, TimeType>::computeNextOutput() {
     }
 }
 
-template <class OutputType, class TimeType>
-TimeType Simulator<OutputType, TimeType>::computeNextState() {
-    PinValue<OutputType> x;
+template <class ValueType, class TimeType>
+TimeType Simulator<ValueType, TimeType>::computeNextState() {
+    PinValue<ValueType> x;
     TimeType t = tNext + adevs_epsilon<TimeType>();
     for (auto model : active) {
         // Notify listeners of input events
@@ -484,33 +484,33 @@ TimeType Simulator<OutputType, TimeType>::computeNextState() {
     active.clear();
     // Effect any changes in the model structure
     graph->set_provisional(false);
-    std::list<typename Graph<OutputType,TimeType>::graph_op>& pending = graph->get_pending();
+    std::list<typename Graph<ValueType,TimeType>::graph_op>& pending = graph->get_pending();
     while (!pending.empty()) {
         auto op = pending.front();
         pending.pop_front();
         switch(op.op)
         {
-            case Graph<OutputType, TimeType>::ADD_ATOMIC:
+            case Graph<ValueType, TimeType>::ADD_ATOMIC:
                 graph->add_atomic(op.model);
                 schedule(op.model.get(), t);
                 break;
-            case Graph<OutputType, TimeType>::REMOVE_ATOMIC:
+            case Graph<ValueType, TimeType>::REMOVE_ATOMIC:
                 sched.schedule(op.model.get(), adevs_inf<TimeType>());
                 graph->remove_atomic(op.model);
                 break;
-            case Graph<OutputType, TimeType>::REMOVE_PIN:
+            case Graph<ValueType, TimeType>::REMOVE_PIN:
                 graph->remove_pin(op.pin[0]);
                 break;
-            case Graph<OutputType, TimeType>::CONNECT_PIN_TO_PIN:
+            case Graph<ValueType, TimeType>::CONNECT_PIN_TO_PIN:
                 graph->connect(op.pin[0], op.pin[1]);
                 break;
-            case Graph<OutputType, TimeType>::DISCONNECT_PIN_FROM_PIN:
+            case Graph<ValueType, TimeType>::DISCONNECT_PIN_FROM_PIN:
                 graph->disconnect(op.pin[0], op.pin[1]);
                 break;
-            case Graph<OutputType, TimeType>::CONNECT_PIN_TO_ATOMIC:
+            case Graph<ValueType, TimeType>::CONNECT_PIN_TO_ATOMIC:
                 graph->connect(op.pin[0], op.model);
                 break;
-            case Graph<OutputType, TimeType>::DISCONNECT_PIN_FROM_ATOMIC:
+            case Graph<ValueType, TimeType>::DISCONNECT_PIN_FROM_ATOMIC:
                 graph->disconnect(op.pin[0], op.model);
                 break;
         }
@@ -521,9 +521,9 @@ TimeType Simulator<OutputType, TimeType>::computeNextState() {
     return t;
 }
 
-template <class OutputType, class TimeType>
-void Simulator<OutputType, TimeType>::schedule(
-    Atomic<OutputType, TimeType>* model, TimeType t) {
+template <class ValueType, class TimeType>
+void Simulator<ValueType, TimeType>::schedule(
+    Atomic<ValueType, TimeType>* model, TimeType t) {
     model->tL = t;
     TimeType dt = model->ta();
     if (dt == adevs_inf<TimeType>()) {

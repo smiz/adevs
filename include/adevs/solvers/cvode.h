@@ -46,8 +46,8 @@ namespace adevs {
  * derived Atomic model can be integrated directly into a larger adevs discrete
  * event simulation.
  */
-template <typename OutputType>
-class CVODE: public Atomic<OutputType> {
+template <typename ValueType>
+class CVODE: public Atomic<ValueType> {
   public:
   /**
    * The constructor should be used to initialize CVode for your model
@@ -68,18 +68,18 @@ class CVODE: public Atomic<OutputType> {
      * Do not override the external state transition function! Use cvode_delta_ext
      * instead to change state in response to external events.
      */
-    void delta_ext(double e, std::list<PinValue<OutputType>> const &xb);
+    void delta_ext(double e, std::list<PinValue<ValueType>> const &xb);
     /**
      * Do not override the confluent state transition function! Use cvode_delta_conf
      * instead to change state in response to simultaneous internal and external
      * events.
      */
-    void delta_conf(std::list<PinValue<OutputType>> const &xb);
+    void delta_conf(std::list<PinValue<ValueType>> const &xb);
     /**
      * Do not override the output function! Use cvode_output_func to produce
      * output at internal events.
      */
-    void output_func(std::list<PinValue<OutputType>> &yb);
+    void output_func(std::list<PinValue<ValueType>> &yb);
     /**
      * Do not override the time advance function! See cvode_integrate for how to
      * schedule time events.
@@ -101,21 +101,21 @@ class CVODE: public Atomic<OutputType> {
      * elapsed time plus the t0 value you provided to the constructor.
      * @param xb The list of input that arrived at the model.
      */
-    virtual void cvode_delta_ext(double t, std::list<PinValue<OutputType>> const &xb) = 0;
+    virtual void cvode_delta_ext(double t, std::list<PinValue<ValueType>> const &xb) = 0;
     /**
      * This is your CVode model's confluent transtion function. It is called only
      * if the event parameter based to cvode_integrate was set to true. Otherwise,
      * the model experiences an external event instead.
      * @param xb The list of input that arrived at the model.
      */
-    virtual void cvode_delta_conf(std::list<PinValue<OutputType>> const &xb) = 0;
+    virtual void cvode_delta_conf(std::list<PinValue<ValueType>> const &xb) = 0;
     /**
      * This where your CVode model can produce events to be consumed by other models
      * in the larger discrete event simulation. This is called when the simulation
      * time matches the tf value returned by cvod_integrate.
      * @param xb A list of fill with output events.
      */
-    virtual void cvode_output_func(std::list<PinValue<OutputType>> &yb) = 0;
+    virtual void cvode_output_func(std::list<PinValue<ValueType>> &yb) = 0;
     /**
      * Return the current state of the model. This is the state at the time
      * tf returned by cvode_integrate.
@@ -149,20 +149,20 @@ class CVODE: public Atomic<OutputType> {
     double t, t_projected;
 };
 
-template <typename OutputType>
-CVODE<OutputType>::CVODE():
-Atomic<OutputType,double>(),
+template <typename ValueType>
+CVODE<ValueType>::CVODE():
+Atomic<ValueType,double>(),
 y_checkpoint(nullptr),has_event(false),t(0.0){}
 
-template <typename OutputType>
-CVODE<OutputType>::~CVODE() {
+template <typename ValueType>
+CVODE<ValueType>::~CVODE() {
     if (y_checkpoint != nullptr) {
         N_VDestroy(y_checkpoint);
     }
 }
 
-template <typename OutputType>
-double CVODE<OutputType>::ta() {
+template <typename ValueType>
+double CVODE<ValueType>::ta() {
     if (y_checkpoint == nullptr) {
         y_checkpoint = N_VClone(this->cvode_get_state());
         N_VAddConst(this->cvode_get_state(),0.0,y_checkpoint);
@@ -172,8 +172,8 @@ double CVODE<OutputType>::ta() {
 }
 
 
-template <typename OutputType>
-void CVODE<OutputType>::delta_int() {
+template <typename ValueType>
+void CVODE<ValueType>::delta_int() {
     if (has_event) {
         this->cvode_delta_int();
     }
@@ -181,8 +181,8 @@ void CVODE<OutputType>::delta_int() {
     N_VAddConst(this->cvode_get_state(),0.0,y_checkpoint);
 }
 
-template <typename OutputType>
-void CVODE<OutputType>::delta_conf(std::list<PinValue<OutputType>> const &xb) {
+template <typename ValueType>
+void CVODE<ValueType>::delta_conf(std::list<PinValue<ValueType>> const &xb) {
     if (has_event) {
         this->cvode_delta_conf(xb);
     } else  {
@@ -192,8 +192,8 @@ void CVODE<OutputType>::delta_conf(std::list<PinValue<OutputType>> const &xb) {
     N_VAddConst(this->cvode_get_state(),0.0,y_checkpoint);
 }
 
-template <typename OutputType>
-void CVODE<OutputType>::delta_ext(double e, std::list<PinValue<OutputType>> const &xb) {
+template <typename ValueType>
+void CVODE<ValueType>::delta_ext(double e, std::list<PinValue<ValueType>> const &xb) {
     this->cvode_reinit(y_checkpoint,t);
     t += e;
     this->cvode_integrate_until(t,has_event);
@@ -205,8 +205,8 @@ void CVODE<OutputType>::delta_ext(double e, std::list<PinValue<OutputType>> cons
     N_VAddConst(this->cvode_get_state(),0.0,y_checkpoint);
 }
 
-template <typename OutputType>
-void CVODE<OutputType>::output_func(std::list<PinValue<OutputType>> &yb) {
+template <typename ValueType>
+void CVODE<ValueType>::output_func(std::list<PinValue<ValueType>> &yb) {
     if (has_event) {
         this->cvode_output_func(yb);
     } 

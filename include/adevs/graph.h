@@ -72,7 +72,7 @@ namespace adevs {
  * @see Simulator
  * @see Coupled
 */
-template <typename X, typename T = double>
+template <typename ValueType, typename TimeType = double>
 class Graph {
     public:
         /**
@@ -102,7 +102,7 @@ class Graph {
          * 
          * @param model The model to add.
          */
-        void add_atomic(std::shared_ptr<Atomic<X,T>> model);
+        void add_atomic(std::shared_ptr<Atomic<ValueType,TimeType>> model);
         /**
          * @brief Remove an atomic model from the graph.
          * 
@@ -114,7 +114,7 @@ class Graph {
          *
          *  @param model The model to remove.
          */
-        void remove_atomic(std::shared_ptr<Atomic<X, T>> model);
+        void remove_atomic(std::shared_ptr<Atomic<ValueType, TimeType>> model);
         /**
          * @brief Connect two pins in the graph.
          * 
@@ -142,7 +142,7 @@ class Graph {
          * @param pin The pin to connect.
          * @param model The model to receive the input.
          */
-        void connect(pin_t pin, std::shared_ptr<Atomic<X, T>> model);
+        void connect(pin_t pin, std::shared_ptr<Atomic<ValueType, TimeType>> model);
         /**
          * @brief  Remove a connection from a pin and to an Atomic model.
          * 
@@ -150,25 +150,25 @@ class Graph {
          * @param pin The pin to disconnect.
          * @param model The model to disconnect.
          */
-        void disconnect(pin_t pin, std::shared_ptr<Atomic<X, T>> model);
+        void disconnect(pin_t pin, std::shared_ptr<Atomic<ValueType, TimeType>> model);
         /**
          * @brief  Get the Atomic models that are connected to a pin.
          * 
          * This fills the supplied list with Atomic model and pin pairs. The pairs
-         * in the list are the pin to Atomic connections added with connect(pin_t, Atomic<X,T>).
+         * in the list are the pin to Atomic connections added with connect(pin_t, Atomic<ValueType,TimeType>).
          * The list contains just those pin and Atomic pairs for which their is a path
          * from the supplied pin.
          * @param pin The pin to query.
          * @param models A list to be filled with models and pins that are connected to the supplied pin.
          */
-        void route(pin_t pin, std::list<std::pair<pin_t,std::shared_ptr<Atomic<X, T>>>>& models) const;
+        void route(pin_t pin, std::list<std::pair<pin_t,std::shared_ptr<Atomic<ValueType, TimeType>>>>& models) const;
         /**
          *  @brief  Get the set of Atomic models that are part of the graph.
          * 
          * This returns a set of all Atomic models that have been added to the graph.
          * @return The set of all Atomic models.
          */
-        const std::set<std::shared_ptr<Atomic<X,T>>>& get_atomics() const { return models; }
+        const std::set<std::shared_ptr<Atomic<ValueType,TimeType>>>& get_atomics() const { return models; }
         /**
          * @brief Enable or disable the provisional model.
          * 
@@ -194,9 +194,9 @@ class Graph {
             CONNECT_PIN_TO_PIN,
             /// @brief  A pending call to disconnect(pin_t, pin_t).
             DISCONNECT_PIN_FROM_PIN,
-            /// @brief  A pending call to connect(pin_t, shared_ptr<Atomic<X,T>>).
+            /// @brief  A pending call to connect(pin_t, shared_ptr<Atomic<ValueType,TimeType>>).
             CONNECT_PIN_TO_ATOMIC,
-            /// @brief  A pending call to disconnect(pin_t, shared_ptr<Atomic<X,T>>).
+            /// @brief  A pending call to disconnect(pin_t, shared_ptr<Atomic<ValueType,TimeType>>).
             DISCONNECT_PIN_FROM_ATOMIC,
         };
         /**
@@ -215,7 +215,7 @@ class Graph {
              */
             pin_t pin[2];
             /// @brief The Atomic model that is involved in the operation, if any.
-            std::shared_ptr<Atomic<X,T>> model;
+            std::shared_ptr<Atomic<ValueType,TimeType>> model;
         };
         /**
          * @brief Get the set of operations that have been queued while in the provisional mode.
@@ -229,18 +229,18 @@ class Graph {
         std::list<graph_op>& get_pending() { return pending; }
 
     private:
-        std::map<pin_t,std::list<std::pair<std::shared_ptr<Atomic<X,T>>,int>>> pin_to_atomic;
+        std::map<pin_t,std::list<std::pair<std::shared_ptr<Atomic<ValueType,TimeType>>,int>>> pin_to_atomic;
         std::map<pin_t,std::list<std::pair<pin_t,int>>> pin_to_pin;
-        std::map<Atomic<X,T>*,int> atomic_instance_count;
-        std::set<std::shared_ptr<Atomic<X,T>>> models;
+        std::map<Atomic<ValueType,TimeType>*,int> atomic_instance_count;
+        std::set<std::shared_ptr<Atomic<ValueType,TimeType>>> models;
 
         void queue_remove_pin(pin_t p);
-        void queue_add_atomic(std::shared_ptr<Atomic<X,T>> model);
-        void queue_remove_atomic(std::shared_ptr<Atomic<X, T>> model);
+        void queue_add_atomic(std::shared_ptr<Atomic<ValueType,TimeType>> model);
+        void queue_remove_atomic(std::shared_ptr<Atomic<ValueType, TimeType>> model);
         void queue_connect(pin_t src, pin_t dst);
         void queue_disconnect(pin_t src, pin_t dst);
-        void queue_connect(pin_t pin, std::shared_ptr<Atomic<X, T>> model);
-        void queue_disconnect(pin_t pin, std::shared_ptr<Atomic<X, T>> model);
+        void queue_connect(pin_t pin, std::shared_ptr<Atomic<ValueType, TimeType>> model);
+        void queue_disconnect(pin_t pin, std::shared_ptr<Atomic<ValueType, TimeType>> model);
 
         // Pending changes are provisional? This is used by the simulator
         // to indicate that the graph is in a provisional state during execution.
@@ -249,8 +249,8 @@ class Graph {
         std::list<graph_op> pending;
     };
 
-template <typename X, typename T>
-void Graph<X, T>::remove_pin(pin_t pin) {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType, TimeType>::remove_pin(pin_t pin) {
     if (provisional) {
         queue_remove_pin(pin);
         return;
@@ -287,8 +287,8 @@ void Graph<X, T>::remove_pin(pin_t pin) {
     }
 }
 
-template <typename X, typename T>
-void Graph<X, T>::add_atomic(std::shared_ptr<Atomic<X,T>> model) {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType, TimeType>::add_atomic(std::shared_ptr<Atomic<ValueType,TimeType>> model) {
     if (provisional) {
         queue_add_atomic(model);
         return;
@@ -305,8 +305,8 @@ void Graph<X, T>::add_atomic(std::shared_ptr<Atomic<X,T>> model) {
     models.insert(model);
 }
 
-template <typename X, typename T>
-void Graph<X, T>::remove_atomic(std::shared_ptr<Atomic<X,T>> model) {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType, TimeType>::remove_atomic(std::shared_ptr<Atomic<ValueType,TimeType>> model) {
     if (provisional) {
         queue_remove_atomic(model);
         return;
@@ -334,8 +334,8 @@ void Graph<X, T>::remove_atomic(std::shared_ptr<Atomic<X,T>> model) {
     models.erase(model);
 }
 
-template <typename X, typename T>
-void Graph<X, T>::connect(pin_t src, pin_t dst) {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType, TimeType>::connect(pin_t src, pin_t dst) {
     if (provisional) {
         queue_connect(src, dst);
         return;
@@ -355,8 +355,8 @@ void Graph<X, T>::connect(pin_t src, pin_t dst) {
     pin_list.push_back(std::pair<pin_t,int>(dst,1));
 }
 
-template <typename X, typename T>
-void Graph<X, T>::disconnect(pin_t src, pin_t dst) {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType, TimeType>::disconnect(pin_t src, pin_t dst) {
     if (provisional) {
         queue_disconnect(src, dst);
         return;
@@ -382,8 +382,8 @@ void Graph<X, T>::disconnect(pin_t src, pin_t dst) {
     }
 }
 
-template <typename X, typename T>
-void Graph<X, T>::connect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType, TimeType>::connect(pin_t pin, std::shared_ptr<Atomic<ValueType,TimeType>> model) {
     if (provisional) {
         queue_connect(pin, model);
         return;
@@ -399,11 +399,11 @@ void Graph<X, T>::connect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
         iter++;
     }
     // Add the connection to the pin_to_atomic map.
-    pin_to_atomic[pin].push_back(std::pair<std::shared_ptr<Atomic<X,T>>,int>(model,1));
+    pin_to_atomic[pin].push_back(std::pair<std::shared_ptr<Atomic<ValueType,TimeType>>,int>(model,1));
 }
 
-template <typename X, typename T>
-void Graph<X, T>::disconnect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType, TimeType>::disconnect(pin_t pin, std::shared_ptr<Atomic<ValueType,TimeType>> model) {
     if (provisional) {
         queue_disconnect(pin, model);
         return;
@@ -427,12 +427,12 @@ void Graph<X, T>::disconnect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
     }
 }
 
-template <typename X, typename T>
-void Graph<X,T>::route(pin_t pin, std::list<std::pair<pin_t,std::shared_ptr<Atomic<X, T>>>>& models) const {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType,TimeType>::route(pin_t pin, std::list<std::pair<pin_t,std::shared_ptr<Atomic<ValueType, TimeType>>>>& models) const {
     auto i = pin_to_atomic.find(pin);
     if (i != pin_to_atomic.end()) {
         for (auto j = i->second.begin(); j != i->second.end(); j++) {
-            models.push_back(std::pair<pin_t,std::shared_ptr<Atomic<X, T>>>(pin,(*j).first));
+            models.push_back(std::pair<pin_t,std::shared_ptr<Atomic<ValueType, TimeType>>>(pin,(*j).first));
         }
     }
     auto r = pin_to_pin.find(pin);
@@ -443,32 +443,32 @@ void Graph<X,T>::route(pin_t pin, std::list<std::pair<pin_t,std::shared_ptr<Atom
     }
 }
 
-template <typename X, typename T>
-void Graph<X, T>::queue_add_atomic(std::shared_ptr<Atomic<X,T>> model) {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType, TimeType>::queue_add_atomic(std::shared_ptr<Atomic<ValueType,TimeType>> model) {
     graph_op op;
     op.op = ADD_ATOMIC;
     op.model = model;
     pending.push_back(op);
 }
 
-template <typename X, typename T>
-void Graph<X, T>::queue_remove_pin(pin_t pin) {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType, TimeType>::queue_remove_pin(pin_t pin) {
     graph_op op;
     op.op = REMOVE_PIN;
     op.pin[0] = pin;
     pending.push_back(op);
 }
 
-template <typename X, typename T>
-void Graph<X, T>::queue_remove_atomic(std::shared_ptr<Atomic<X,T>> model) {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType, TimeType>::queue_remove_atomic(std::shared_ptr<Atomic<ValueType,TimeType>> model) {
     graph_op op;
     op.op = REMOVE_ATOMIC;
     op.model = model;
     pending.push_back(op);
 }
 
-template <typename X, typename T>
-void Graph<X, T>::queue_connect(pin_t src, pin_t dst) {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType, TimeType>::queue_connect(pin_t src, pin_t dst) {
     graph_op op;
     op.op = CONNECT_PIN_TO_PIN;
     op.pin[0] = src;
@@ -476,8 +476,8 @@ void Graph<X, T>::queue_connect(pin_t src, pin_t dst) {
     pending.push_back(op);
 }
 
-template <typename X, typename T>
-void Graph<X, T>::queue_disconnect(pin_t src, pin_t dst) {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType, TimeType>::queue_disconnect(pin_t src, pin_t dst) {
     graph_op op;
     op.op = DISCONNECT_PIN_FROM_PIN;
     op.pin[0] = src;
@@ -485,8 +485,8 @@ void Graph<X, T>::queue_disconnect(pin_t src, pin_t dst) {
     pending.push_back(op);
 }
 
-template <typename X, typename T>
-void Graph<X, T>::queue_connect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType, TimeType>::queue_connect(pin_t pin, std::shared_ptr<Atomic<ValueType,TimeType>> model) {
     graph_op op;
     op.op = CONNECT_PIN_TO_ATOMIC;
     op.pin[0] = pin;
@@ -494,8 +494,8 @@ void Graph<X, T>::queue_connect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
     pending.push_back(op);
 }
 
-template <typename X, typename T>
-void Graph<X, T>::queue_disconnect(pin_t pin, std::shared_ptr<Atomic<X,T>> model) {
+template <typename ValueType, typename TimeType>
+void Graph<ValueType, TimeType>::queue_disconnect(pin_t pin, std::shared_ptr<Atomic<ValueType,TimeType>> model) {
     graph_op op;
     op.op = DISCONNECT_PIN_FROM_ATOMIC;
     op.pin[0] = pin;

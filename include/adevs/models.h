@@ -48,13 +48,13 @@ namespace adevs {
 /// \cond DEV
 /// doxygen will ignore these declarations while
 /// producing documentation for the user
-template <typename OutputType, typename TimeType>
+template <typename ValueType, typename TimeType>
 class Simulator;
-template <typename OutputType, typename TimeType>
+template <typename ValueType, typename TimeType>
 class Schedule;
-template <typename OutputType, typename TimeType>
+template <typename ValueType, typename TimeType>
 class MealyAtomic;
-template <typename OutputType, typename TimeType>
+template <typename ValueType, typename TimeType>
 class Graph;
 /// \endcond
 
@@ -237,7 +237,7 @@ class PinValue {
  * @see Coupled
  * @see Simulator
  */
-template <typename OutputType, typename TimeType = double>
+template <typename ValueType, typename TimeType = double>
 class Atomic {
   public:
     /// @brief The constructor should place the model into its initial state.
@@ -263,7 +263,7 @@ class Atomic {
      * @param xb A list of input for the model.
      */
     virtual void delta_ext(TimeType e,
-                           std::list<PinValue<OutputType>> const &xb) = 0;
+                           std::list<PinValue<ValueType>> const &xb) = 0;
     /***
      * @brief The confluent transition function.
      * 
@@ -272,7 +272,7 @@ class Atomic {
      * 
      * @param xb A list of input for the model.
      */
-    virtual void delta_conf(std::list<PinValue<OutputType>> const &xb) = 0;
+    virtual void delta_conf(std::list<PinValue<ValueType>> const &xb) = 0;
     /***
      * @brief The output function.
      * 
@@ -282,7 +282,7 @@ class Atomic {
      * 
      * @param yb Empty list to be filled with the model's output.
      */
-    virtual void output_func(std::list<PinValue<OutputType>> &yb) = 0;
+    virtual void output_func(std::list<PinValue<ValueType>> &yb) = 0;
     /***
      * @brief The time advance function.
      * 
@@ -296,18 +296,18 @@ class Atomic {
     virtual TimeType ta() = 0;
 
   private:
-    friend class Simulator<OutputType, TimeType>;
-    friend class Schedule<OutputType, TimeType>;
+    friend class Simulator<ValueType, TimeType>;
+    friend class Schedule<ValueType, TimeType>;
 
     // Time of last event
     TimeType tL, tN;
     // Index in the priority queue
     unsigned int q_index;
 
-    std::list<PinValue<OutputType>> inputs;
-    std::list<PinValue<OutputType>> outputs;
+    std::list<PinValue<ValueType>> inputs;
+    std::list<PinValue<ValueType>> outputs;
 
-    virtual MealyAtomic<OutputType, TimeType>* isMealyAtomic() { return nullptr; }
+    virtual MealyAtomic<ValueType, TimeType>* isMealyAtomic() { return nullptr; }
 
 };
 
@@ -328,11 +328,11 @@ class Atomic {
  * other Mealy models. The simulator will throw an
  * exception and abort if you attempt to do so.
  */
-template <typename OutputType, typename TimeType = double>
-class MealyAtomic : public Atomic<OutputType, TimeType> {
+template <typename ValueType, typename TimeType = double>
+class MealyAtomic : public Atomic<ValueType, TimeType> {
   public:
     /// @brief Default constructor.
-    MealyAtomic<OutputType, TimeType>() : Atomic<OutputType, TimeType>() {}
+    MealyAtomic<ValueType, TimeType>() : Atomic<ValueType, TimeType>() {}
     /**
      * @brief Produce output at an external transition.
      * 
@@ -345,8 +345,8 @@ class MealyAtomic : public Atomic<OutputType, TimeType> {
      * @param xb The input values that arrived at the model.
      * @param yb The output values produced by the model.
      */
-    virtual void external_output_func(TimeType e, std::list<PinValue<OutputType>> const &xb,
-                             std::list<PinValue<OutputType>> &yb) = 0;
+    virtual void external_output_func(TimeType e, std::list<PinValue<ValueType>> const &xb,
+                             std::list<PinValue<ValueType>> &yb) = 0;
     /**
      * @brief Produce output at a confluent transition.
      * 
@@ -357,15 +357,15 @@ class MealyAtomic : public Atomic<OutputType, TimeType> {
      * @param xb The input values that arrived at the model.
      * @param yb The output values produced by the model.
      */
-    virtual void confluent_output_func(std::list<PinValue<OutputType>> const &xb,
-                             std::list<PinValue<OutputType>> &yb) = 0;
+    virtual void confluent_output_func(std::list<PinValue<ValueType>> const &xb,
+                             std::list<PinValue<ValueType>> &yb) = 0;
     /// @brief Destructor
     virtual ~MealyAtomic() {}
 
   private:
-    friend class Simulator<OutputType, TimeType>;
+    friend class Simulator<ValueType, TimeType>;
 
-    MealyAtomic<OutputType, TimeType>* isMealyAtomic() { return this; }
+    MealyAtomic<ValueType, TimeType>* isMealyAtomic() { return this; }
 
 };
 
@@ -392,7 +392,7 @@ class MealyAtomic : public Atomic<OutputType, TimeType> {
  * @see Graph
  * @see Atomic
  */
-template <typename OutputType, typename TimeType = double>
+template <typename ValueType, typename TimeType = double>
 class Coupled {
   public:
     /**
@@ -418,7 +418,7 @@ class Coupled {
      *  
      * @param model The Atomic model to add.
      */
-    void add_atomic(std::shared_ptr<Atomic<OutputType, TimeType>> model);
+    void add_atomic(std::shared_ptr<Atomic<ValueType, TimeType>> model);
     /**
      * @brief Remove an Atomic model.
      * 
@@ -432,7 +432,7 @@ class Coupled {
      *  
      * @param model The Atomic model to remove.
      */
-    void remove_atomic(std::shared_ptr<Atomic<OutputType, TimeType>> model);
+    void remove_atomic(std::shared_ptr<Atomic<ValueType, TimeType>> model);
     /**
      * @brief Add a Coupled model to this model.
      * 
@@ -440,7 +440,7 @@ class Coupled {
      * 
      * @param model The Coupled model to add.
      */
-    void add_coupled_model(std::shared_ptr<Coupled<OutputType, TimeType>> model);
+    void add_coupled_model(std::shared_ptr<Coupled<ValueType, TimeType>> model);
     /**
      * @brief Remove a Coupled model from this model.
      * 
@@ -453,7 +453,7 @@ class Coupled {
      * 
      * @param model The Coupled model to remove.
      */
-    void remove_coupled_model(std::shared_ptr<Coupled<OutputType, TimeType>> model);
+    void remove_coupled_model(std::shared_ptr<Coupled<ValueType, TimeType>> model);
     /**
      * @brief Create a coupling in the model.
      * 
@@ -463,7 +463,7 @@ class Coupled {
      * @param pin The pin.
      * @param model The Atomic model that receives input on the destination pin.
      */
-    void create_coupling(pin_t pin, std::shared_ptr<Atomic<OutputType, TimeType>> model);
+    void create_coupling(pin_t pin, std::shared_ptr<Atomic<ValueType, TimeType>> model);
     /** 
      * @brief Add a coupling between pins in the Coupled model.
      * 
@@ -477,7 +477,7 @@ class Coupled {
      * @param pin The pin.
      * @param model The Atomic model that receives input on the destination pin.
      */
-    void remove_coupling(pin_t pin, std::shared_ptr<Atomic<OutputType, TimeType>> model);
+    void remove_coupling(pin_t pin, std::shared_ptr<Atomic<ValueType, TimeType>> model);
     /** 
      * @brief Remove a coupling between pins in the Coupled model.
      * 
@@ -488,54 +488,54 @@ class Coupled {
 
   private:
 
-    friend class Simulator<OutputType, TimeType>;
+    friend class Simulator<ValueType, TimeType>;
 
-    Graph<OutputType, TimeType>* g;
-    std::set<std::shared_ptr<Atomic<OutputType, TimeType>>> atomic_components;
-    std::set<std::shared_ptr<Coupled<OutputType, TimeType>>> coupled_components;
+    Graph<ValueType, TimeType>* g;
+    std::set<std::shared_ptr<Atomic<ValueType, TimeType>>> atomic_components;
+    std::set<std::shared_ptr<Coupled<ValueType, TimeType>>> coupled_components;
     /// Pins that provide input to the Atomic models 
-    std::set<std::pair<pin_t,std::shared_ptr<Atomic<OutputType, TimeType>>>> pin_to_atomic;
+    std::set<std::pair<pin_t,std::shared_ptr<Atomic<ValueType, TimeType>>>> pin_to_atomic;
     /// Pin to pin connections
     std::set<std::pair<pin_t,pin_t>> pin_to_pin;
 
-    void assign_to_graph(Graph<OutputType, TimeType>* graph);
+    void assign_to_graph(Graph<ValueType, TimeType>* graph);
     void remove_from_graph();
 };
 
-template <typename OutputType, typename TimeType>
-void Coupled<OutputType, TimeType>::create_coupling(pin_t pin, std::shared_ptr<Atomic<OutputType, TimeType>> model) {
+template <typename ValueType, typename TimeType>
+void Coupled<ValueType, TimeType>::create_coupling(pin_t pin, std::shared_ptr<Atomic<ValueType, TimeType>> model) {
     pin_to_atomic.insert(std::make_pair(pin, model));
     if (g != nullptr) {
         g->connect(pin, model);
     }
 }
 
-template <typename OutputType, typename TimeType>
-void Coupled<OutputType, TimeType>::remove_coupling(pin_t pin, std::shared_ptr<Atomic<OutputType, TimeType>> model) {
+template <typename ValueType, typename TimeType>
+void Coupled<ValueType, TimeType>::remove_coupling(pin_t pin, std::shared_ptr<Atomic<ValueType, TimeType>> model) {
     pin_to_atomic.erase(std::make_pair(pin, model));
     if (g != nullptr) {
         g->disconnect(pin, model);
     }
 }
 
-template <typename OutputType, typename TimeType>
-void Coupled<OutputType, TimeType>::create_coupling(pin_t src, pin_t dst) {
+template <typename ValueType, typename TimeType>
+void Coupled<ValueType, TimeType>::create_coupling(pin_t src, pin_t dst) {
     pin_to_pin.insert(std::make_pair(src, dst));
     if (g != nullptr) {
         g->connect(src, dst);
     }
 }
 
-template <typename OutputType, typename TimeType>
-void Coupled<OutputType, TimeType>::remove_coupling(pin_t src, pin_t dst) {
+template <typename ValueType, typename TimeType>
+void Coupled<ValueType, TimeType>::remove_coupling(pin_t src, pin_t dst) {
     pin_to_pin.erase(std::make_pair(src, dst));
     if (g != nullptr) {
         g->disconnect(src, dst);
     }
 }
 
-template <typename OutputType, typename TimeType>
-void Coupled<OutputType, TimeType>::assign_to_graph(Graph<OutputType, TimeType>* graph) {
+template <typename ValueType, typename TimeType>
+void Coupled<ValueType, TimeType>::assign_to_graph(Graph<ValueType, TimeType>* graph) {
     g = graph;
     for (auto atomic : atomic_components) {
         g->add_atomic(atomic);
@@ -551,8 +551,8 @@ void Coupled<OutputType, TimeType>::assign_to_graph(Graph<OutputType, TimeType>*
     }
 }
 
-template <typename OutputType, typename TimeType>
-void Coupled<OutputType, TimeType>::remove_from_graph() {
+template <typename ValueType, typename TimeType>
+void Coupled<ValueType, TimeType>::remove_from_graph() {
     for (auto atomic : atomic_components) {
         g->remove_atomic(atomic);
     }
@@ -567,32 +567,32 @@ void Coupled<OutputType, TimeType>::remove_from_graph() {
     }
 }
 
-template <typename OutputType, typename TimeType>
-void Coupled<OutputType, TimeType>::add_atomic(std::shared_ptr<Atomic<OutputType, TimeType>> model) {
+template <typename ValueType, typename TimeType>
+void Coupled<ValueType, TimeType>::add_atomic(std::shared_ptr<Atomic<ValueType, TimeType>> model) {
     atomic_components.insert(model);
     if (g != nullptr) {
         g->add_atomic(model);
     }
 }
 
-template <typename OutputType, typename TimeType>
-void Coupled<OutputType, TimeType>::remove_atomic(std::shared_ptr<Atomic<OutputType, TimeType>> model) {
+template <typename ValueType, typename TimeType>
+void Coupled<ValueType, TimeType>::remove_atomic(std::shared_ptr<Atomic<ValueType, TimeType>> model) {
     atomic_components.erase(model);
     if (g != nullptr) {
         g->remove_atomic(model);
     }
 }
 
-template <typename OutputType, typename TimeType>
-void Coupled<OutputType, TimeType>::add_coupled_model(std::shared_ptr<Coupled<OutputType, TimeType>> model) {
+template <typename ValueType, typename TimeType>
+void Coupled<ValueType, TimeType>::add_coupled_model(std::shared_ptr<Coupled<ValueType, TimeType>> model) {
     coupled_components.insert(model);
     if (g != nullptr) {
         model->assign_to_graph(g);
     }
 }
 
-template <typename OutputType, typename TimeType>
-void Coupled<OutputType, TimeType>::remove_coupled_model(std::shared_ptr<Coupled<OutputType, TimeType>> model) {
+template <typename ValueType, typename TimeType>
+void Coupled<ValueType, TimeType>::remove_coupled_model(std::shared_ptr<Coupled<ValueType, TimeType>> model) {
     coupled_components.erase(model);
     if (g != nullptr) {
         model->remove_from_graph();

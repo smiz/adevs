@@ -55,8 +55,8 @@ namespace adevs {
  * linear_event_locator, and discontinous_event_locator
  * constructors. 
  */
-template <typename OutputType>
-class event_locator_impl : public event_locator<OutputType> {
+template <typename ValueType>
+class event_locator_impl : public event_locator<ValueType> {
   public:
     /// @brief List of algorithms that can be used by this event locator
     enum Mode {
@@ -75,7 +75,7 @@ class event_locator_impl : public event_locator<OutputType> {
      * trigger an event detect.
      * @param mode The event localization method to be used
      */
-    event_locator_impl(ode_system<OutputType>* sys, double err_tol, Mode mode);
+    event_locator_impl(ode_system<ValueType>* sys, double err_tol, Mode mode);
     /// @brief Destructor leaves the ode_system object intact
     ~event_locator_impl();
     /**
@@ -93,7 +93,7 @@ class event_locator_impl : public event_locator<OutputType> {
      * @return true if at least one event was found and false otherwise.
      */
     bool find_events(bool* events, double const* qstart, double* qend,
-                     ode_solver<OutputType>* solver, double &h);
+                     ode_solver<ValueType>* solver, double &h);
 
   private:
     double* z[2];          // State events at the start and end of [0,h]
@@ -113,25 +113,25 @@ class event_locator_impl : public event_locator<OutputType> {
 
 /// \endcond
 
-template <typename OutputType>
-event_locator_impl<OutputType>::event_locator_impl(ode_system<OutputType>* sys,
+template <typename ValueType>
+event_locator_impl<ValueType>::event_locator_impl(ode_system<ValueType>* sys,
                                                    double err_tol, Mode mode)
-    : event_locator<OutputType>(sys), err_tol(err_tol), mode(mode) {
+    : event_locator<ValueType>(sys), err_tol(err_tol), mode(mode) {
     z[0] = new double[sys->numEvents()];
     z[1] = new double[sys->numEvents()];
 }
 
-template <typename OutputType>
-event_locator_impl<OutputType>::~event_locator_impl() {
+template <typename ValueType>
+event_locator_impl<ValueType>::~event_locator_impl() {
     delete[] z[0];
     delete[] z[1];
 }
 
-template <typename OutputType>
-bool event_locator_impl<OutputType>::find_events(bool* events,
+template <typename ValueType>
+bool event_locator_impl<ValueType>::find_events(bool* events,
                                                  double const* qstart,
                                                  double* qend,
-                                                 ode_solver<OutputType>* solver,
+                                                 ode_solver<ValueType>* solver,
                                                  double &h) {
     // Calculate the state event functions at the start
     // of the interval
@@ -194,8 +194,8 @@ bool event_locator_impl<OutputType>::find_events(bool* events,
  * 
  * Your z functions must be continuous for this to work.
  */
-template <typename OutputType>
-class bisection_event_locator : public event_locator_impl<OutputType> {
+template <typename ValueType>
+class bisection_event_locator : public event_locator_impl<ValueType> {
   public:
     /**
      * @brief Create an event locator that implements the bisection search mode
@@ -205,9 +205,9 @@ class bisection_event_locator : public event_locator_impl<OutputType> {
      * @param err_tol Sets how close to zero must a z function be before it triggers
      * a state event
      */ 
-    bisection_event_locator(ode_system<OutputType>* sys, double err_tol)
-        : event_locator_impl<OutputType>(
-              sys, err_tol, event_locator_impl<OutputType>::BISECTION) {}
+    bisection_event_locator(ode_system<ValueType>* sys, double err_tol)
+        : event_locator_impl<ValueType>(
+              sys, err_tol, event_locator_impl<ValueType>::BISECTION) {}
 };
 
 /**
@@ -217,8 +217,8 @@ class bisection_event_locator : public event_locator_impl<OutputType> {
  * correctly.
  * 
  */
-template <typename OutputType>
-class linear_event_locator : public event_locator_impl<OutputType> {
+template <typename ValueType>
+class linear_event_locator : public event_locator_impl<ValueType> {
   public:
     /**
      * @brief Create an event locator that implements the linear interpolation search mode
@@ -228,9 +228,9 @@ class linear_event_locator : public event_locator_impl<OutputType> {
      * @param err_tol Sets how close to zero must a z function be before it triggers
      * a state event
      */
-    linear_event_locator(ode_system<OutputType>* sys, double err_tol)
-        : event_locator_impl<OutputType>(
-              sys, err_tol, event_locator_impl<OutputType>::INTERPOLATE) {}
+    linear_event_locator(ode_system<ValueType>* sys, double err_tol)
+        : event_locator_impl<ValueType>(
+              sys, err_tol, event_locator_impl<ValueType>::INTERPOLATE) {}
 };
 
 /**
@@ -238,8 +238,8 @@ class linear_event_locator : public event_locator_impl<OutputType> {
  * 
  * A bisection search that does not require your z functions to be continous.Atomic
  */
-template <typename OutputType>
-class discontinuous_event_locator : public event_locator_impl<OutputType> {
+template <typename ValueType>
+class discontinuous_event_locator : public event_locator_impl<ValueType> {
   public:
     /**
      * @brief Create an event locator that implements a bisection search while
@@ -250,9 +250,9 @@ class discontinuous_event_locator : public event_locator_impl<OutputType> {
      * @param err_tol Sets how close to zero must a z function be before it triggers
      * a state event
      */
-    discontinuous_event_locator(ode_system<OutputType>* sys, double err_tol)
-        : event_locator_impl<OutputType>(
-              sys, err_tol, event_locator_impl<OutputType>::DISCONTINUOUS) {}
+    discontinuous_event_locator(ode_system<ValueType>* sys, double err_tol)
+        : event_locator_impl<ValueType>(
+              sys, err_tol, event_locator_impl<ValueType>::DISCONTINUOUS) {}
 };
 
 /**
@@ -263,14 +263,14 @@ class discontinuous_event_locator : public event_locator_impl<OutputType> {
  * to be found.
  * 
  */
-template <typename OutputType>
-class null_event_locator : public event_locator<OutputType> {
+template <typename ValueType>
+class null_event_locator : public event_locator<ValueType> {
   public:
-    null_event_locator() : event_locator<OutputType>(NULL) {}
+    null_event_locator() : event_locator<ValueType>(NULL) {}
     ~null_event_locator() {}
     /// @brief Always returns false without invoking any methods of the
     /// supplied ode_solver
-    bool find_events(bool*, double const*, double*, ode_solver<OutputType>*,
+    bool find_events(bool*, double const*, double*, ode_solver<ValueType>*,
                      double &) {
         return false;
     }
@@ -285,8 +285,8 @@ class null_event_locator : public event_locator<OutputType> {
  * with the associated increase in simulation time. This is probably
  * the best event locator for you to use.
  */
-template <typename OutputType>
-class fast_event_locator : public event_locator<OutputType> {
+template <typename ValueType>
+class fast_event_locator : public event_locator<ValueType> {
   public:
     /**
      * @brief Create an event locator for a system.
@@ -307,10 +307,10 @@ class fast_event_locator : public event_locator<OutputType> {
      * @param interpolate Interpolate using a spline instead of solving
      * directly using the solver while performing the event localization.
      */
-    fast_event_locator(ode_system<OutputType>* sys, double err_tol,
+    fast_event_locator(ode_system<ValueType>* sys, double err_tol,
                        bool interpolate = false);
     bool find_events(bool* events, double const* qstart, double* qend,
-                     ode_solver<OutputType>* solver, double &h);
+                     ode_solver<ValueType>* solver, double &h);
     ~fast_event_locator();
 
   private:
@@ -322,11 +322,11 @@ class fast_event_locator : public event_locator<OutputType> {
     bool is_sign_change(int i) const { return z0[i] * zf[i] <= 0.0; }
 };
 
-template <typename OutputType>
-fast_event_locator<OutputType>::fast_event_locator(ode_system<OutputType>* sys,
+template <typename ValueType>
+fast_event_locator<ValueType>::fast_event_locator(ode_system<ValueType>* sys,
                                                    double err_tol,
                                                    bool interpolate)
-    : event_locator<OutputType>(sys),
+    : event_locator<ValueType>(sys),
       err_tol(err_tol),
       z0(new double[sys->numEvents()]),
       zf(new double[sys->numEvents()]),
@@ -340,8 +340,8 @@ fast_event_locator<OutputType>::fast_event_locator(ode_system<OutputType>* sys,
     }
 }
 
-template <typename OutputType>
-fast_event_locator<OutputType>::~fast_event_locator() {
+template <typename ValueType>
+fast_event_locator<ValueType>::~fast_event_locator() {
     delete[] z0;
     delete[] zf;
     if (p != NULL) {
@@ -351,8 +351,8 @@ fast_event_locator<OutputType>::~fast_event_locator() {
     }
 }
 
-template <typename OutputType>
-bool fast_event_locator<OutputType>::is_sign_change() const {
+template <typename ValueType>
+bool fast_event_locator<ValueType>::is_sign_change() const {
     for (int i = 0; i < this->sys->numEvents(); i++) {
         if (is_sign_change(i)) {
             return true;
@@ -361,11 +361,11 @@ bool fast_event_locator<OutputType>::is_sign_change() const {
     return false;
 }
 
-template <typename OutputType>
-bool fast_event_locator<OutputType>::find_events(bool* events,
+template <typename ValueType>
+bool fast_event_locator<ValueType>::find_events(bool* events,
                                                  double const* qstart,
                                                  double* qend,
-                                                 ode_solver<OutputType>* solver,
+                                                 ode_solver<ValueType>* solver,
                                                  double &h) {
     int const N = this->sys->numEvents();
     bool sign_change;
