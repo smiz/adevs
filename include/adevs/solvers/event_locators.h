@@ -52,7 +52,7 @@ namespace adevs {
  * |z(t')| < err_tol.
  * 
  * You can create instances of this class using the bisection_event_locator,
- * linear_event_locator, and discontinous_event_locator
+ * linear_event_locator, and discontinuous_event_locator
  * constructors. 
  */
 template <typename ValueType>
@@ -65,7 +65,7 @@ class event_locator_impl : public event_locator<ValueType> {
         /// Use bisection to look for events assuming a continuous state event
         /// function
         BISECTION,
-        /// Use bisection assuming a discontinous state event function
+        /// Use bisection assuming a discontinuous state event function
         DISCONTINUOUS };
     /**
      * @brief Create an event locator that will act on the supplied ode_system.
@@ -236,7 +236,7 @@ class linear_event_locator : public event_locator_impl<ValueType> {
 /**
  * @brief Locate events using bisection assuming discontinuous z functions.
  * 
- * A bisection search that does not require your z functions to be continous.Atomic
+ * A bisection search that does not require your z functions to be continuous.Atomic
  */
 template <typename ValueType>
 class discontinuous_event_locator : public event_locator_impl<ValueType> {
@@ -281,7 +281,7 @@ class null_event_locator : public event_locator<ValueType> {
  * 
  * This is a bisection search that always tries to locate the event in the
  * interval rather than terminate early with a lower bound prior to the
- * event occurence. This event locator will avoid creeping up on an event
+ * event occurrence. This event locator will avoid creeping up on an event
  * with the associated increase in simulation time. This is probably
  * the best event locator for you to use.
  */

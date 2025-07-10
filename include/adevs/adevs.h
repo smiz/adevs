@@ -40,7 +40,10 @@
  * tutorial material from univerisities on the web. Apart from its primary use
  * as a tool for building simulation programs, the adevs library includes 
  * explicit support for using your simulation as a component in some other
- * simulation tool or program.
+ * simulation tool or program, simulating hybrid dynamic systems using the
+ * <a href="https://fmi-standard.org/">FMI</a> model exchange standard,
+ * and using CVode from the <a href="https://computing.llnl.gov/projects/sundials">SUNDIALS</a>
+ * package to simulate cyber-physical systems.
  *
  */
 

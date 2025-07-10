@@ -108,7 +108,7 @@ class ode_system {
      * This is the equivalent of a time advance for an Atomic but calculated 
      * using the continuous state q. The return value must be the time remaining
      * to the next internal event from the instant that the state entered
-     * the continuous state q. If you need to compute the curren time
+     * the continuous state q. If you need to compute the current time
      * to find the time to the next event, you can use the dx/dt = 1
      * in your set of differential equations (because the solution is
      * x(t) = t).
@@ -124,8 +124,8 @@ class ode_system {
      * 
      * This method is invoked immediately following an update of the
      * continuous state variables during numerical integration. The main use of this
-     * callback is to update algberaic variables that must satisfy a constraint
-     * equation g(x,y) = 0, where x are your continous state variables and y
+     * callback is to update algebraic variables that must satisfy a constraint
+     * equation g(x,y) = 0, where x are your continuous state variables and y
      * is some set of algebraic variables. The default implementation does nothing.
      * 
      * @param q The continuous state of the model
@@ -157,7 +157,7 @@ class ode_system {
      * 
      * @param q The continuous state of the model at the event. This can be modified
      * by the internal state transition by writing values to the entries in q.
-     * @param state_event Entries in this array indiciate the cause of the internal
+     * @param state_event Entries in this array indicate the cause of the internal
      * event.
      */
     virtual void internal_event(double* q, bool const* state_event) = 0;
@@ -186,7 +186,7 @@ class ode_system {
      * 
      * @param q The continuous state of the model at the event. This can be modified
      * by writing values to the entries in q.
-     * @param state_event Entries in this array indiciate the cause of the internal
+     * @param state_event Entries in this array indicate the cause of the internal
      * event.
      * @param xb The input arriving at the model.
      */
@@ -202,7 +202,7 @@ class ode_system {
      * be inserted into the supplied list.
      * 
      * @param q The continuous state of the model at the output
-     * @param state_event Entries in this array indiciate the cause of the internal event.
+     * @param state_event Entries in this array indicate the cause of the internal event.
      * @param yb A list to be filled with output from the component.
      */
     virtual void output_func(double const* q, bool const* state_event,
@@ -334,7 +334,7 @@ class event_locator {
      * events were activated. A true entry indicates an event and false no event.
      * @param qstart The continuous state at the left side of the interval to search
      * for state events.
-     * @param qend The continous state at the right side of the interval to search for
+     * @param qend The continuous state at the right side of the interval to search for
      * state events. The state at the time of the event must be copied into this array
      * or it can be left alone if no event is found.
      * @param solver The ode_solver that can be used to calculate new states in the interval.
@@ -567,7 +567,7 @@ class Hybrid : public Atomic<ValueType, TimeType> {
     bool event_exists;  // True if there is at least one event
     bool
         event_happened;  // True if a discrete event in the ode_system took place
-    double e_accum;      // Accumlated time between discrete events
+    double e_accum;      // Accumulated time between discrete events
     std::list<adevs::PinValue<ValueType>> missedOutput;  // Output missed at an external event
     // Execute a tentative step and calculate the time advance function
     void tentative_step() {

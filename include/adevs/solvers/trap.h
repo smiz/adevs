@@ -73,7 +73,7 @@ class trap : public ode_solver<ValueType> {
      * @param sys The system to solve
      * @param err_tol Truncation error limit.
      * @param h_max Maximum allowed step size
-     * @param silent If set to true, the KINSOL error and info messages are surpressed.
+     * @param silent If set to true, the KINSOL error and info messages are suppressed.
      * The default value is false.
      */
     trap(ode_system<ValueType>* sys, double err_tol, double h_max,

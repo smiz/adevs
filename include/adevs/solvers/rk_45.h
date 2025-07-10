@@ -226,7 +226,7 @@ double rk_45<ValueType>::trial_step(double step) {
         // Next state
         qq[j] += (1.0 / 24.0) * k[0][j] + (5.0 / 48.0) * k[3][j] +
                  (27.0 / 56.0) * k[4][j] + (125.0 / 336.0) * k[5][j];
-        // Componennt wise maximum of the approximate error
+        // Component wise maximum of the approximate error
         err = std::max(
             err, fabs(k[0][j] / 8.0 + 2.0 * k[2][j] / 3.0 + k[3][j] / 16.0 -
                       27.0 * k[4][j] / 56.0 - 125.0 * k[5][j] / 336.0));
