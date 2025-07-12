@@ -47,9 +47,11 @@ public:
         state++;
         std::cout << "State: " << state << std::endl;
     }
-    /// The external transition function is not used in this example,
+    /// The external transition function is not used in this example.
+    /// It is never called by the Simulator.
     void delta_ext(double, std::list<adevs::PinValue<>> const&) {}
     /// The confluent transition function is not used in this example,
+    /// It is never called by the Simulator.
     void delta_conf(std::list<adevs::PinValue<>> const&) {}
 
 private:

@@ -52,11 +52,32 @@
  *
  * \subpage ex1
  * 
+ * In this next example we have two components. The first is similar to the Periodic
+ * class in our previous example. It differs in placing an adevs::PinValue object
+ * into the list supplied to the output function. The second component recieves
+ * this adevs::PinValue object as an input via its external transition function.
+ * Let us call the first component A, the second B, and the adevs::pin_t that links
+ * A to B we will call p. The adevs::Graph class is used to form the connections as shown
+ * below:
+   \verbatim
+  
+   A --> p --> B
+
+   \endverbatim
+ * The source code for this simulation program is shown below.
+ * 
+ * \subpage ex2
+ * 
  */
 
  /**
  * \page ex1 Example #1
  * \verbinclude ex1.cpp
+ */
+
+/**
+ * \page ex2 Example #2
+ * \verbinclude ex2.cpp
  */
 
 /*
