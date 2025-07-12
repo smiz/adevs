@@ -37,6 +37,7 @@
 #include <memory>
 #include <set>
 #include <atomic>
+#include <any>
 #include "adevs/exception.h"
 #include "adevs/time.h"
 
@@ -152,7 +153,7 @@ class pin_t {
  * @see Coupled
  * @see Simulator
  */
-template <typename ValueType>
+template <typename ValueType = std::any>
 class PinValue {
   public:
     /// @brief Default constructor.
@@ -237,7 +238,7 @@ class PinValue {
  * @see Coupled
  * @see Simulator
  */
-template <typename ValueType, typename TimeType = double>
+template <typename ValueType = std::any, typename TimeType = double>
 class Atomic {
   public:
     /// @brief The constructor should place the model into its initial state.
@@ -328,7 +329,7 @@ class Atomic {
  * other Mealy models. The simulator will throw an
  * exception and abort if you attempt to do so.
  */
-template <typename ValueType, typename TimeType = double>
+template <typename ValueType = std::any, typename TimeType = double>
 class MealyAtomic : public Atomic<ValueType, TimeType> {
   public:
     /// @brief Default constructor.
@@ -392,7 +393,7 @@ class MealyAtomic : public Atomic<ValueType, TimeType> {
  * @see Graph
  * @see Atomic
  */
-template <typename ValueType, typename TimeType = double>
+template <typename ValueType = std::any, typename TimeType = double>
 class Coupled {
   public:
     /**

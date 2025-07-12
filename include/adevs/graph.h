@@ -72,7 +72,7 @@ namespace adevs {
  * @see Simulator
  * @see Coupled
 */
-template <typename ValueType, typename TimeType = double>
+template <typename ValueType = std::any, typename TimeType = double>
 class Graph {
     public:
         /**

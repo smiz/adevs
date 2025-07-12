@@ -36,6 +36,7 @@
 #include <cstdlib>
 #include <list>
 #include <set>
+#include <any>
 #include "adevs/graph.h"
 #include "adevs/models.h"
 #include "adevs/sched.h"
@@ -51,7 +52,7 @@ namespace adevs {
  * they occur in a simulation. It must be registered with the Simulator
  * that will provide the notifications.
  */
-template <typename ValueType, typename TimeType = double>
+template <typename ValueType = std::any, typename TimeType = double>
 class EventListener {
   public:
     /**
@@ -175,7 +176,7 @@ class EventListener {
  * models may produce output at this time, but non MealyAtomic models will not.
  * 7. Repeat from step 2.
  */
-template <class ValueType, class TimeType = double>
+template <class ValueType = std::any, class TimeType = double>
 class Simulator {
 
   public:

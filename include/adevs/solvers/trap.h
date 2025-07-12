@@ -59,7 +59,7 @@ namespace adevs {
  * and there is probably a pre-built version packaged for your operating
  * system.
  */
-template <typename ValueType>
+template <typename ValueType = std::any>
 class trap : public ode_solver<ValueType> {
   public:
     /**

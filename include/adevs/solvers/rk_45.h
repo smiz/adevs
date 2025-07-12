@@ -32,6 +32,7 @@
 #ifndef _adevs_rk_45_h_
 #define _adevs_rk_45_h_
 
+#include <any>
 #include <cmath>
 #include "adevs/solvers/hybrid.h"
 
@@ -48,7 +49,7 @@ namespace adevs {
  * @see ode_system
  * @see Hybrid
  */
-template <typename ValueType>
+template <typename ValueType = std::any>
 class rk_45 : public ode_solver<ValueType> {
   public:
     /**

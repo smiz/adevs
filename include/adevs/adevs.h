@@ -30,9 +30,9 @@
  */
 /**
  * \mainpage
- * ADEVS is a C++ library for simulating discrete and hybrid dynamic systems.
+ * adevs is a C++ library for simulating discrete and hybrid dynamic systems.
  * It is based on the DEVS formalism, which is an offshoot of general sytems
- * theory. It is our hope that ADEVS will be useful for persons who do not
+ * theory. It is our hope that adevs will be useful for persons who do not
  * have prior experience with DEVS, but you may nonetheless find it helpful
  * to have at hand some useful references on the subject. The standard reference
  * is <a href="https://shop.elsevier.com/books/theory-of-modeling-and-simulation/zeigler/978-0-12-813370-5">
@@ -44,7 +44,19 @@
  * <a href="https://fmi-standard.org/">FMI</a> model exchange standard,
  * and using CVode from the <a href="https://computing.llnl.gov/projects/sundials">SUNDIALS</a>
  * package to simulate cyber-physical systems.
+ * 
+ * Before looking at the tutorials, you may want to examine the document
+ * for the adevs::Atomic and adevs::Simulator classes. These are the fundamental
+ * building blocks of your simulation program. Here is a first example of a
+ * simulation program that uses these classes.
  *
+ * \subpage ex1
+ * 
+ */
+
+ /**
+ * \page ex1 Example #1
+ * \verbinclude ex1.cpp
  */
 
 /*

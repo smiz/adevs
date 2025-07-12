@@ -55,7 +55,7 @@ namespace adevs {
  * linear_event_locator, and discontinuous_event_locator
  * constructors. 
  */
-template <typename ValueType>
+template <typename ValueType = std::any>
 class event_locator_impl : public event_locator<ValueType> {
   public:
     /// @brief List of algorithms that can be used by this event locator
@@ -194,7 +194,7 @@ bool event_locator_impl<ValueType>::find_events(bool* events,
  * 
  * Your z functions must be continuous for this to work.
  */
-template <typename ValueType>
+template <typename ValueType = std::any>
 class bisection_event_locator : public event_locator_impl<ValueType> {
   public:
     /**
@@ -217,7 +217,7 @@ class bisection_event_locator : public event_locator_impl<ValueType> {
  * correctly.
  * 
  */
-template <typename ValueType>
+template <typename ValueType = std::any>
 class linear_event_locator : public event_locator_impl<ValueType> {
   public:
     /**
@@ -238,7 +238,7 @@ class linear_event_locator : public event_locator_impl<ValueType> {
  * 
  * A bisection search that does not require your z functions to be continuous.Atomic
  */
-template <typename ValueType>
+template <typename ValueType = std::any>
 class discontinuous_event_locator : public event_locator_impl<ValueType> {
   public:
     /**
@@ -263,7 +263,7 @@ class discontinuous_event_locator : public event_locator_impl<ValueType> {
  * to be found.
  * 
  */
-template <typename ValueType>
+template <typename ValueType = std::any>
 class null_event_locator : public event_locator<ValueType> {
   public:
     null_event_locator() : event_locator<ValueType>(NULL) {}
@@ -285,7 +285,7 @@ class null_event_locator : public event_locator<ValueType> {
  * with the associated increase in simulation time. This is probably
  * the best event locator for you to use.
  */
-template <typename ValueType>
+template <typename ValueType = std::any>
 class fast_event_locator : public event_locator<ValueType> {
   public:
     /**

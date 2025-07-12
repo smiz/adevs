@@ -32,8 +32,9 @@
 
 #ifndef _adevs_cvode_h_
 #define _adevs_cvode_h_
-#include "adevs/adevs.h"
+#include <any>
 #include <cvode/cvode.h>
+#include "adevs/adevs.h"
 
 using namespace std;
 
@@ -49,7 +50,7 @@ namespace adevs {
  * derived Atomic model can be integrated directly into a larger adevs discrete
  * event simulation.
  */
-template <typename ValueType>
+template <typename ValueType = std::any>
 class CVODE: public Atomic<ValueType> {
   public:
   /**

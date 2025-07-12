@@ -32,6 +32,7 @@
 #ifndef _adevs_hybrid_h_
 #define _adevs_hybrid_h_
 
+#include <any>
 #include <algorithm>
 #include <cmath>
 #include "adevs/models.h"
@@ -46,7 +47,7 @@ namespace adevs {
  * to define a component that is described by a piecewise continuous system of differential
  * equations.
  */
-template <typename ValueType>
+template <typename ValueType = std::any>
 class ode_system {
   public:
     /**
@@ -245,7 +246,7 @@ class ode_system {
  * If you want to create a new ODE solver for simulating your model with the Hybrid
  * class, then you will need that new solver to implement this interface.
  */
-template <typename ValueType>
+template <typename ValueType = std::any>
 class ode_solver {
   public:
     /**
@@ -307,7 +308,7 @@ class ode_solver {
  * detecting state events, then you will want your new algorithm to implement
  * this interface.
  */
-template <typename ValueType>
+template <typename ValueType = std::any>
 class event_locator {
   public:
     /**
@@ -363,7 +364,7 @@ class event_locator {
  * methods of the ode_system. The time advance of the Hybrid class ensures that
  * its internal events coincide with state and time events in the ode_system.
  */
-template <typename ValueType, class TimeType = double>
+template <typename ValueType = std::any, class TimeType = double>
 class Hybrid : public Atomic<ValueType, TimeType> {
   public:
     /**

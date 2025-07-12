@@ -34,6 +34,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <any>
 #include "adevs/solvers/hybrid.h"
 
 
@@ -49,7 +50,7 @@ namespace adevs {
  * @see Hybrid
  * @see ode_system
  */
-template <typename ValueType>
+template <typename ValueType = std::any>
 class corrected_euler : public ode_solver<ValueType> {
   public:
     /**
