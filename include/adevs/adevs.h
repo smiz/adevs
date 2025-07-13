@@ -31,13 +31,13 @@
 /**
  * \mainpage
  * adevs is a C++ library for simulating discrete and hybrid dynamic systems.
- * It is based on the DEVS formalism, which is an offshoot of general sytems
+ * It is based on the DEVS formalism, which is an offshoot of general systems
  * theory. It is our hope that adevs will be useful for persons who do not
  * have prior experience with DEVS, but you may nonetheless find it helpful
  * to have at hand some useful references on the subject. The standard reference
  * is <a href="https://shop.elsevier.com/books/theory-of-modeling-and-simulation/zeigler/978-0-12-813370-5">
  * Theory of Modeling and Simulation</a> and you can find a great deal of
- * tutorial material from univerisities on the web. Apart from its primary use
+ * tutorial material from universities on the web. Apart from its primary use
  * as a tool for building simulation programs, the adevs library includes 
  * explicit support for using your simulation as a component in some other
  * simulation tool or program, simulating hybrid dynamic systems using the
@@ -54,7 +54,7 @@
  * 
  * In this next example we have two components. The first is similar to the Periodic
  * class in our previous example. It differs in placing an adevs::PinValue object
- * into the list supplied to the output function. The second component recieves
+ * into the list supplied to the output function. The second component receives
  * this adevs::PinValue object as an input via its external transition function.
  * Let us call the first component A, the second B, and the adevs::pin_t that links
  * A to B we will call p. The adevs::Graph class is used to form the connections as shown
@@ -68,6 +68,14 @@
  * 
  * \subpage ex2
  * 
+ * In our third example we see the implementation of a typical queuing simulation.
+ * One adevs::Atomic component simulates the arrival of jobs (e.g., customers at
+ * a fast food restaurant) in time. A second adevs::Atomic component simulates the
+ * queue that holds jobs waiting to be processed and the server that does the
+ * processing (e.g., the line and clerk at the counter). This is the first example
+ * that exercises every aspect of the adevs::Atomic interface.
+ * 
+ * \subpage ex3
  */
 
  /**
@@ -78,6 +86,11 @@
 /**
  * \page ex2 Example #2
  * \verbinclude ex2.cpp
+ */
+
+/**
+ * \page ex3 Example #3
+ * \verbinclude ex3.cpp
  */
 
 /*
