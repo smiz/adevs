@@ -16,8 +16,7 @@
  * that are waiting to be processed (e.g., customers
  * standing in a line). A single job is processed in
  * 1 unit of time. The Server keeps track of how much
- * time each job spends waiting in line before it is
- * processed.
+ * time each job spends waiting in the Server.
  */
 
  /**

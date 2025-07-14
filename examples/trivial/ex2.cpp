@@ -2,11 +2,11 @@
 #include <iostream>
 
 /**
- * This example shows how to two connect to Atomic models
- * to form a larger model. The first component produces
+ * This example shows how to connect a pair of Atomic models
+ * to form a larger model. The first model produces
  * output and changes its state with a fixed period. The
- * second component receives its input from the first 
- * component. Here are console messages printed by this
+ * second model receives its input from the first 
+ * model. Here are console messages printed by this
  * simulation:
  *
  * Next event is @ time 1
@@ -19,22 +19,21 @@
  * Consumer received input: 1
  * 
  * The Simulator calculates the time of next event as the
- * smaller of the first component's time advance and the
- * second component's time advance. Because the time advance
- * of the second component will always be infinity, only
- * the first component places a meaningful role in causing
- * the simulation clock to advance.
+ * smaller of the first and second models' time advance
+ * functions. Because the time advance of the second model
+ * is always be infinity, only the first model plays a
+ * meaningful role in advancing the simulation clock.
  *
  * At the next event time, the Simulator calls the output
- * function of the first component. This component places
+ * function of the first model. This model places
  * the output it wishes to produce into the list supplied
  * to its output function. Then the contents of the list 
  * are routed, via the Graph supplied to the Simulator,
- * to the second component.
+ * to the second model.
  * 
  * Finally, the Simulator calls the internal transition function
- * of the first component and the external transition function
- * of the second components. 
+ * of the first model and the external transition function
+ * of the second model. 
  */
 
  /**
