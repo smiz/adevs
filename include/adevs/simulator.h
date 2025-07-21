@@ -56,10 +56,9 @@ template <typename ValueType = std::any, typename TimeType = double>
 class EventListener {
   public:
     /**
-     * @brief The virtual default constructor.
+     * @brief The virtual default destructor.
      * 
-     * The default constructor is empty and does not perform any
-     * initialization.
+     * The default destructor is empty.
      */
     virtual ~EventListener() {}
     /**
@@ -67,7 +66,7 @@ class EventListener {
      * 
      * This method is called for each PinValue appearing in the
      * list of outputs produced by the Atomic model's output_func()
-     * methods, including the MealyAtomic forms of output_func().
+     * methods and the MealyAtomic forms of output_func().
      * 
      * @param model The Atomic model that produced the output
      * @param value The PinValue created by the model
@@ -111,7 +110,7 @@ class EventListener {
  * This value is initialized to zero. The current simulation time is set to zero.
  * 2. Call the ta() method of each Atomic model and find the smallest value of ta()-e.
  * The set of models whose ta()-e equals this smallest value are the imminent models.
- * If the smallest ta()-e is infinity, then the simulation end. For brevity, we use
+ * If the smallest ta()-e is infinity, then the simulation ends. For brevity, we use
  * dt to indicate this smallest ta()-e.
  * 3. Add dt to the elapsed time e of each Atomic model and to the current simulation
  * time. Notice that imminent models now have e = ta() and non-imminent models
@@ -124,7 +123,7 @@ class EventListener {
  *     -# For each PinValue pair in the output list, use the Graph route() method to find
  * the models that receive this value as input. The receiving models that are not
  * MealyAtomic go into the active set. The MealyAtomic receivers go into the pending set.
- * If a MealyAtomic model already in the active set is added to the pending set,
+ * If a MealyAtomic model that is already in the active set is added to the pending set
  * then an exception is thrown and the simulation is aborted.
  *     -# If the pending set is empty, then go to step 5.
  *     -# Select a MealyAtomic model from the pending set and move it to the active set.
@@ -132,8 +131,8 @@ class EventListener {
  *         - If the model has received no input and is imminent, call output_func()
  *         - If the model has received input and is imminent, call confluent_output_func()
  *         - If the model has received input and is not imminent, call external_output_func()
-*      -# Go to step 4.a. 
- * 5. Calculate new states for the Atomic models.
+*      -# Go to step 4a. 
+ * 5. Calculate new states for the models.
  *     - If the model is imminent and is not in the active set, call its delta_int() method
  * and set its elapsed time e to zero. 
  *     - If the model is imminent and is in the active set, call its delta_conf() method
@@ -181,7 +180,7 @@ class Simulator {
 
   public:
     /** 
-     * @brief Create a simulator for the atomic model.
+     * @brief Create a simulator for an atomic model.
      * 
      * The constructor will fail and throw an adevs::exception if the
      * time advance of the model is less than zero.
@@ -191,9 +190,9 @@ class Simulator {
 
     /**
      * @brief Initialize the simulator with a collection of models.
-     
+     *
      * The constructor will fail and throw an adevs::exception if the
-     * time advance of the model is less than zero.
+     * time advance of any model is less than zero.
      * @param model The graph to simulate.
      */
     Simulator(std::shared_ptr<Graph<ValueType, TimeType>> model);
@@ -207,7 +206,7 @@ class Simulator {
 
     /**
      * @brief Get the time of the next event.
-     
+     *
      * This is the absolute time of the next output and change of state.
      * 
      * @return The absolute time of the next event.
@@ -239,7 +238,6 @@ class Simulator {
      */
     void injectInput(PinValue<ValueType> &x) {
         external_input.push_back(x);
-        // We we need to recompute Mealy model outputs
     }
 
     /**
@@ -247,7 +245,7 @@ class Simulator {
      * 
      * This erases all injected inputs that have not yet been applied
      * to the simulation via a call to computeNextOutput().
-     * It is cleared automatically at each call to computeNextOutput(),
+     * The inputs are cleared automatically at each call to computeNextOutput(),
      */
     void clearInjectedInput() {
         external_input.clear();
@@ -272,15 +270,15 @@ class Simulator {
      * Output is produced by models imminent at the next event time, 
      * MealyAtomic models that receive input from other models, and
      * MealyAtomic models that receive input injected into the simulation.
-     * This method notifies EventListener as output is produced. It
-     * does not change the simulation time or states of the models.
+     * This method notifies registered EventListener objects as output is produced.
+     * It does not change the simulation time or states of the models.
      */
     void computeNextOutput();
 
     /**
      * @brief Compute the next state of the model.
      * 
-     * This notifies EventListener as inputs are applied to models
+     * This notifies register EventListener objects as inputs are applied to models
      * and as new states are calculated. Provisional changes to
      * the model structure are applied after new states are computed
      * for the Atomic components.

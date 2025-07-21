@@ -190,7 +190,7 @@ class PinValue {
 /** 
  * @brief An atomic model in the DEVS formalism.
  * 
- * An atomic model has a state that evolves over time. The basic building
+ * An Atomic model has a state that evolves over time. The basic building
  * block of any simulation program will be the behaviors of the Atomic components
  * that you create to define the active pieces of your model. The state
  * of an Atomic model changes in three ways:
@@ -200,7 +200,7 @@ class PinValue {
  * - An external state transition. This is a change of state that occurs
  * in response to an input, which is also called an external event.
  * - A confluent state transition. This is a change of state that occurs
- * when an input arrives at the same time as the model is scheduled to undergo
+ * when an input arrives at the same time that the model is scheduled to undergo
  * an internal state transition. Hence, the confluent state transition decides
  * what happens when the conditions for an internal and external state
  * transition are satisfied at the same time.
@@ -217,7 +217,7 @@ class PinValue {
  * advance method ta(). The return value of ta() is used by the Simulator to
  * schedule the next internal event for time t+ta().
  *
- * Now, if the simulation reaches time t + ta() without the model receiving any input.
+ * Now, suppose the simulation reaches time t + ta() without the model receiving any input.
  * Then at this time the Simulator calls delta_int() to calculate the model's new state,
  * say state C. If instead the model receives an input x at time t + ta(), then the 
  * Simulator calculates the new state by calling the method delta_conf(x).
@@ -322,12 +322,12 @@ class Atomic {
 #endif
 
 /**
- * @brief A Mealy type atomic model where its output
+ * @brief A Mealy type atomic model whose output
  * may depend on its input.
  * 
  * Mealy models cannot appear in loops that contain
  * other Mealy models. The simulator will throw an
- * exception and abort if you attempt to do so.
+ * adevs::exception and abort if you attempt to do so.
  */
 template <typename ValueType = std::any, typename TimeType = double>
 class MealyAtomic : public Atomic<ValueType, TimeType> {
@@ -338,8 +338,8 @@ class MealyAtomic : public Atomic<ValueType, TimeType> {
      * @brief Produce output at an external transition.
      * 
      * This method is called when the model receives input before its
-     * next internal event. The elapsed time and input will be the same as that
-     * passed to the delta_ext() method. This is called before the call to
+     * next internal event. The elapsed time and input are the same as
+     * are passed to the delta_ext() method. This is called before the call to
      * delta_ext().
      * 
      * @param e The elapsed time since the last state change.
@@ -380,15 +380,17 @@ class MealyAtomic : public Atomic<ValueType, TimeType> {
  * A Coupled model is composed of Atomic models and other Coupled models.
  * It is used to construct complex components by interconnecting simpler
  * piece parts. The components and connections of the Coupled model are imposed
- * a Graph when the Coupled model is added to that Graph. Later changes to
+ * on a Graph when the Coupled model is added to that Graph. Later changes to
  * the Coupled model, such as adding or removing components or couplings, are
  * reflected in the Graph to which the Coupled model belongs.
  *
  * The Coupled model does not require strict hierarchy. An Atomic or Coupled
  * model can be a member of more than one Coupled model. However, edges
- * between pins, between pins and Atomic models, and Atomic models themselves
+ * between pins, between pins and Atomic models, and the Atomic models themselves
  * will only appear once in the underlying Graph. See the Graph documentation
- * for how multiple additions of the same Atomic model or edge is handled.
+ * for how multiple additions of the same Atomic model or edge is handled. A
+ * Graph is automatically assigned to the coupled model when it is handed to 
+ * the constructor of a Simulator.
  * 
  * @see Graph
  * @see Atomic
@@ -410,12 +412,11 @@ class Coupled {
     virtual ~Coupled(){}
 
     /**
-     * @ brief Add an Atomic model to the CoupledModel.
+     * @ brief Add an Atomic model to the Coupled model.
      *
      * The Atomic model becomes part of the Coupled model. We do not
      * enforce strict hierarchy and an Atomic model may belong to more
-     * than one Coupled model. However, the Atomic model will must only
-     * be added to a given Coupled model once.
+     * than one Coupled model. 
      *  
      * @param model The Atomic model to add.
      */
@@ -445,12 +446,12 @@ class Coupled {
     /**
      * @brief Remove a Coupled model from this model.
      * 
-     * This removes from the underlying graph all of the components and couplings
-     * of the Coupled model this is being removed. This method recursively removes
+     * This removes from the underlying Graph all of the components and couplings
+     * of the Coupled model that is being removed. This method recursively removes
      * the Coupled model and components of all Coupled models that are in the tree
      * of models that have this model as its root. If any component appears more
      * than once in the underlying Graph, then it is not removed from the Graph. However,
-     * the connections associated with the removed hierarchy of are removed from the Graph.
+     * the connections associated with the removed hierarchy are removed from the Graph.
      * 
      * @param model The Coupled model to remove.
      */

@@ -32,23 +32,39 @@
  * \mainpage
  * adevs is a C++ library for simulating discrete and hybrid dynamic systems.
  * It is based on the DEVS formalism, which is an offshoot of general systems
- * theory. It is our hope that adevs will be useful for persons who do not
+ * theory. It is our hope that adevs will be useful to persons who do not
  * have prior experience with DEVS, but you may nonetheless find it helpful
- * to have at hand some useful references on the subject. The standard reference
+ * to have at hand references on the subject. The standard reference
  * is <a href="https://shop.elsevier.com/books/theory-of-modeling-and-simulation/zeigler/978-0-12-813370-5">
- * Theory of Modeling and Simulation</a> and you can find a great deal of
- * tutorial material from universities on the web. Apart from its primary use
+ * Theory of Modeling and Simulation</a>. You might also be interested in
+ * <a href="https://www.wiley.com/en-us/Building+Software+for+Simulation%3A+Theory+and+Algorithms%2C+with+Applications+in+C%2B%2B-p-9781118099452">
+ * Building Software for Simulation</a>, which introduces the DEVS formalism
+ * through a previous version of adevs. You can also find a great deal of
+ * tutorial material on university websites, such as these
+ * 
+ * - <a href="https://simulation.tudelft.nl/SEN9110/lectures/04%20VanTendelooVangheluwe_SpringSim2017_DEVSTutorial.pdf">
+ * Introduction to parallel DEVS modeling and simulation</a>
+ * - <a href="http://msdl.uantwerpen.be/projects/DEVS/PythonPDEVS/Tutorial/18.WinterSim.DEVSTutorial.pdf">
+ * Discrete Event System Specification (DEVS) Modelling and Simulation</a>
+ * - <a href="https://www.cs.csi.cuny.edu/~gu/teaching/courses/csc754/slides/ACIMS%20DEVSTut%20AIS2002%20Final.pdf">
+ * DEVS component based M\&S framework: an introduction</a>
+ * - <a href="https://arslab.sce.carleton.ca/index.php/devs-tools/">DEVS Tools</a>. This is not a tutorial but
+ * a list of other DEVS based simulation tools that you might be interested in.
+ 
+ * Apart from the primary use of adevs
  * as a tool for building simulation programs, the adevs library includes 
  * explicit support for using your simulation as a component in some other
- * simulation tool or program, simulating hybrid dynamic systems using the
+ * simulation tool or program, for simulating hybrid dynamic systems using the
  * <a href="https://fmi-standard.org/">FMI</a> model exchange standard,
- * and using CVode from the <a href="https://computing.llnl.gov/projects/sundials">SUNDIALS</a>
+ * and for using CVode from the <a href="https://computing.llnl.gov/projects/sundials">SUNDIALS</a>
  * package to simulate cyber-physical systems.
- * 
- * Before looking at the tutorials, you may want to examine the document
+ * Before looking at the tutorials, you may want to examine the documentation
  * for the adevs::Atomic and adevs::Simulator classes. These are the fundamental
- * building blocks of your simulation program. Here is a first example of a
- * simulation program that uses these classes.
+ * building blocks of your simulation program.
+ * 
+ * Here is a first example of a simulation program that uses the adevs::Atomic and
+ * adevs::Simulator classes. This example presents a simple model derived from adevs::Atomic.
+ * This simple model produces output and undergoes a change of state and regular intervals.
  *
  * \subpage ex1
  * 
@@ -56,13 +72,25 @@
  * class in our previous example. It differs in placing an adevs::PinValue object
  * into the list supplied to the output function. The second component receives
  * this adevs::PinValue object as an input via its external transition function.
- * Let us call the first component A, the second B, and the adevs::pin_t that links
- * A to B we will call p. The adevs::Graph class is used to form the connections as shown
+ * Let us call the first Atomic model 'A', the second 'B', and the adevs::pin_t that links
+ * 'A' to 'B' we will call 'p'. The adevs::Graph class is used to form the connections shown
  * below:
-   \verbatim
-  
-   A --> p --> B
-
+ * 
+ * \dot
+ * digraph {
+ *  rankdir="LR";
+ *  node [shape="plaintext"]
+ *  A -> p [style="dashed"];
+ *  p -> B;
+ * }
+ * \enddot
+ *
+ * The dashed connection in the graph is created implicitly when the output
+ * function of a 'A' puts a PinValue object with pin 'p' into the list passed
+ * to the output function. The solid connection is created by calling the
+ * graph method
+ * \verbatim
+   graph->connect(p,B);
    \endverbatim
  * The source code for this simulation program is shown below.
  * 
@@ -76,21 +104,102 @@
  * that exercises every aspect of the adevs::Atomic interface.
  * 
  * \subpage ex3
+ *
+ * Our next example simulates a pipelined computer processor core. This example
+ * demonstrates how the adevs::Coupled class is used to create hierarchical
+ * models. It also demonstates the use of a adevs::MealyAtomic to create a model that
+ * produces output in direct response to an input. The components of a model with
+ * a single processor are shown in the graph below. The adevs::Atomic models are displayed in boxes.
+ * The adevs::pin_t objects are displayed without an outline. Comparing the graph that
+ * is displayed with the code in the example, you will see that the create_coupling() method
+ * of the adevs::Coupled class acts just as the connect() method of the adevs::Graph class.
+ *
+ * The adevs::MealyAtomic in this example is the InstructionSource. It produces an instruction
+ * for the Processor to execute whenever the processor indicates it is ready by issuing
+ * an event on the ready_to_receive pin. The Processor constains three stages. Stage 0
+ * fetches an instruction. State 1 decodes the instruction. Stage 2 executs the instruction.
+ * In this example we can create a computer with multiple Processor's by creating several
+ * instances of the Processor, which is an instance of an adevs::Coupled model.
+ * 
+ * \subpage ex4diagram
+ * 
+ * \subpage ex4
+ * 
+ 
  */
 
  /**
  * \page ex1 Example #1
- * \verbinclude ex1.cpp
+ * \include ex1.cpp
  */
 
 /**
  * \page ex2 Example #2
- * \verbinclude ex2.cpp
+ * \include ex2.cpp
  */
 
 /**
  * \page ex3 Example #3
- * \verbinclude ex3.cpp
+ * \include ex3.cpp
+ */
+ 
+/**
+ * \page ex4diagram Example #4 diagram
+ * \dot
+ * digraph {
+ *  {
+ *   node [shape="box",fontsize="11"]
+ *   InstructionSource
+ *   Stage_0
+ *   Stage_1
+ *   Stage_2
+ *  }
+ *  {
+ *   node [shape="plaintext",fontsize="10"]
+ *   receive_instruction_0
+ *   receive_instruction_1
+ *   receive_instruction_2
+ *   receive_instruction
+ *   execute_instruction
+ *   ready_to_receive_0
+ *   ready_to_receive_1
+ *   ready_to_receive_2
+ *   ready_to_receive
+ *   ready_to_transmit_0
+ *   ready_to_transmit_1
+ *   transmit_instruction_0
+ *   transmit_instruction_1
+ *  }
+ *  subgraph  cluster_0
+ *  {
+ *    label="Processor";
+ *    ready_to_receive_0 -> ready_to_receive;
+ *    Stage_0 -> ready_to_receive_0 [style="dashed"];
+ *    Stage_1 -> ready_to_receive_1 [style="dashed"];
+ *    Stage_2 -> ready_to_receive_2 [style="dashed"];
+ *    receive_instruction -> receive_instruction_0;
+ *    receive_instruction_0 -> Stage_0;
+ *    receive_instruction_1 -> Stage_1;
+ *    receive_instruction_2 -> Stage_2;
+ *    ready_to_receive_1 -> ready_to_transmit_0;
+ *    ready_to_receive_2 -> ready_to_transmit_1;
+ *    ready_to_transmit_0 -> Stage_0;
+ *    ready_to_transmit_1 -> Stage_1;
+ *    Stage_0 -> transmit_instruction_0 [style="dashed"];
+ *    Stage_1 -> transmit_instruction_1 [style="dashed"];
+ *    transmit_instruction_0 -> receive_instruction_1;
+ *    transmit_instruction_1 -> receive_instruction_2;
+ *  }
+ *  InstructionSource -> execute_instruction [style="dashed"];
+ *  execute_instruction -> receive_instruction;
+ *  ready_to_receive -> InstructionSource;
+ * }
+ * \enddot
+ */
+
+/**
+ * \page ex4 Example #4
+ * \include ex4.cpp
  */
 
 /*
