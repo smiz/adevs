@@ -63,6 +63,14 @@ class ode_system {
       */
     ode_system(int N_vars, int M_event_funcs) : N(N_vars), M(M_event_funcs) {}
 
+    /**
+      * @brief Create an uninitialized system
+      *
+      * You must call set_num_state_variables() and set_num_event_functions()
+      * before using this object.
+      */
+    ode_system() : N(-1), M(-1) {}
+
     /// @brief Get the number of state variables
     int numVars() const { return N; }
 
@@ -227,8 +235,35 @@ class ode_system {
     /// @brief Destructor
     virtual ~ode_system() {}
 
+    /**
+     * @brief Set the number of state variables
+     * 
+     * Set the number of state variables after construction.
+     * This must be set before the ode_system is used and
+     * cannot be changed after that.
+     * 
+     * @param N the number of state variables
+     */
+    void set_num_state_variables(int N) {
+        assert(this->N == -1);
+        this->N = N;
+    }
+
+    /**
+     * @brief Set the number of state event functions
+     * 
+     * Set the number of state event functions after construction.
+     * This must be set before the ode_system is used and
+     * cannot be changed after that.
+     * 
+     * @param M the number of state event functions
+     */
+    void set_num_event_functions(int M) {
+        assert(this->M == -1);
+        this->M = M;
+    }
   private:
-    int const N, M;
+    int N, M;
 };
 
 // Clang complains about the postTrialStep declaration.

@@ -1,44 +1,64 @@
 #include <iostream>
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
-#include "bounce/modelDescription.h"
 using namespace std;
 using namespace adevs;
 
 static double const epsilon = 1E-7;
 static double const err_tol = 1E-3;
 
-class bounce2 : public bounce {
+class bounce : public ModelExchange<double> {
   public:
-    bounce2() : bounce(), m_bounce(0), m_resetTime(0.0) {}
+    bounce() : ModelExchange<double>("bounce.fmu",err_tol), m_bounce(0), m_resetTime(0.0) {}
     void internal_event(double* q, bool const* state_event) {
-        cout << "internal" << endl;
         // Apply internal event function of the super class
-        bounce::internal_event(q, state_event);
+        ModelExchange<double>::internal_event(q, state_event);
+        double a = std::any_cast<double>(get_variable("a"));
+        double x = std::any_cast<double>(get_variable("x"));
+        int a_above = std::any_cast<int>(get_variable("aAbove"));
+        int x_above = std::any_cast<int>(get_variable("xAbove"));
+        int go_up = std::any_cast<int>(get_variable("goUp"));
+        int go_down = std::any_cast<int>(get_variable("goDown"));
+        cout << "internal @ " << get_time() << endl;
         // Change the direction as needed
         m_bounce++;
-        set_a(-get_a());
+        set_variable("a",-a);
         m_resetTime = get_time();
         // Reapply internal event function of the super class
-        bounce::internal_event(q, state_event);
-        assert((get_a() > 0.0) == get_aAbove());
-        assert((get_x() > 1.5) == get_xAbove());
-        assert(get_goUp() == (!get_aAbove() && !get_xAbove()));
-        assert(get_goDown() == (get_aAbove() && get_xAbove()));
+        ModelExchange<double>::internal_event(q, state_event);
+        a = std::any_cast<double>(get_variable("a"));
+        a = std::any_cast<double>(get_variable("a"));
+        x = std::any_cast<double>(get_variable("x"));
+        a_above = std::any_cast<int>(get_variable("aAbove"));
+        x_above = std::any_cast<int>(get_variable("xAbove"));
+        go_up = std::any_cast<int>(get_variable("goUp"));
+        go_down = std::any_cast<int>(get_variable("goDown"));
+        assert((a > 0.0) == a_above);
+        assert((x > 1.5) == x_above);
+        assert(go_up == (!a_above && !x_above));
+        assert(go_down == (a_above && x_above));
     }
     void print_state() {
-        cout << get_time() << " " << get_x() << " " << get_der_x_() << " "
-             << get_a() << " " << get_goUp() << " " << get_goDown() << " "
-             << get_aAbove() << " " << get_xAbove() << " " << endl;
+        double a = std::any_cast<double>(get_variable("a"));
+        double x = std::any_cast<double>(get_variable("x"));
+        double der_x = std::any_cast<double>(get_variable("der(x)"));
+        int a_above = std::any_cast<int>(get_variable("aAbove"));
+        int x_above = std::any_cast<int>(get_variable("xAbove"));
+        int go_up = std::any_cast<int>(get_variable("goUp"));
+        int go_down = std::any_cast<int>(get_variable("goDown"));
+        cout << get_time() << " " << x << " " << der_x << " "
+             << a << " " << go_up << " " << go_down << " "
+             << a_above << " " << x_above << " " << endl;
     }
     void test_state() {
         double x;
+        double xx = std::any_cast<double>(get_variable("x"));
         if (m_bounce % 2 == 0) {
             x = 2.0 * exp(m_resetTime - get_time());
         } else {
             x = exp(get_time() - m_resetTime);
         }
-        assert(fabs(x - get_x()) < err_tol);
+        assert(fabs(x - xx) < err_tol);
     }
 
   private:
@@ -47,7 +67,7 @@ class bounce2 : public bounce {
 };
 
 int main() {
-    bounce2* test_model = new bounce2();
+    bounce* test_model = new bounce();
     shared_ptr<Hybrid<double>> hybrid_model = make_shared<Hybrid<double>>(
         test_model, new corrected_euler<double>(test_model, epsilon, 0.001),
         new discontinuous_event_locator<double>(test_model, epsilon));
@@ -55,11 +75,15 @@ int main() {
     Simulator<double>* sim = new Simulator<double>(hybrid_model);
     // Check initial values
     assert(test_model->get_time() == 0.0);
-    cout << test_model->get_x() << " " << test_model->get_der_x_() << endl;
-    assert(fabs(test_model->get_x() - 2.0) < err_tol);
-    assert(fabs(test_model->get_der_x_() + 2.0) < err_tol);
-    assert(test_model->get_goUp() == false);
-    assert(test_model->get_goDown() == false);
+    double x = std::any_cast<double>(test_model->get_variable("x"));
+    double der_x = std::any_cast<double>(test_model->get_variable("der(x)"));
+    int go_up = std::any_cast<int>(test_model->get_variable("goUp"));
+    int go_down = std::any_cast<int>(test_model->get_variable("goDown"));
+    cout << x << " " << der_x << endl;
+    assert(fabs(x - 2.0) < err_tol);
+    assert(fabs(der_x + 2.0) < err_tol);
+    assert(go_up == false);
+    assert(go_down == false);
     test_model->print_state();
     // Run the simulation, testing the solution as we go
     while (sim->nextEventTime() <= 2.0) {

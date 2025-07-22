@@ -39,53 +39,22 @@
 #include <cstdlib>
 #include <iostream>
 #include "adevs/solvers/hybrid.h"
-#include "fmi2FunctionTypes.h"
-#include "fmi2Functions.h"
-#include "fmi2TypesPlatform.h"
-
-// Functions for loading DLL and so files
-#ifdef _WIN32
-#include <windows.h>
-#define OPEN_LIB(name)       LoadLibrary(name)
-#define GET_FUNC(hndl, name) GetProcAddress(hndl, name)
-#define CLOSE_LIB(hndl)      FreeLibrary(hndl)
-#else
-#include <dlfcn.h>
-#define OPEN_LIB(name)       dlopen(name, RTLD_LAZY)
-#define GET_FUNC(hndl, name) dlsym(hndl, name)
-#define CLOSE_LIB(hndl)      dlclose(hndl)
-#endif
-
+#include "fmilib.h"
 
 namespace adevs {
 
 /*
- * Load an FMI wrapped continuous system model for use in a
- * discrete event simulation. The FMI can then be attached
+ * Load an FMU wrapped continuous system model for use in a
+ * discrete event simulation. The FMU can then be attached
  * to any of the ODE solvers and event detectors in adevs
- * for simulation with the Hybrid class. This FMI loader
- * does not automatically extract model information from the
- * description XML, and so that information must be provided
- * explicitly by the end-user, but you probably need to know
- * this information regardless if you are using the FMI inside
- * of a larger discrete event simulation.
+ * for simulation with the Hybrid class.
  */
-template <typename ValueType>
-class FMI : public ode_system<ValueType> {
+template <typename ValueType = std::any>
+class ModelExchange : public ode_system<ValueType> {
   public:
-    /*
-     * This constructs a wrapper around an FMI. The constructor
-     * must be provided with the FMI's GUID, the number of state variables,
-     * number of event indicators, and the path to the .so file
-     * that contains the FMI functions for this model.
-     */
-    FMI(char const* modelname, char const* guid, char const* resource_location,
-        int num_state_variables, int num_event_indicators,
-        char const* shared_lib_name, double const tolerance = 1E-8,
-        int num_extra_event_indicators = 0, double start_time = 0.0,
-        bool provides_jacobian = false);
+    ModelExchange(const char* const fmu, double tolerance);
     /// Destructor
-    virtual ~FMI();
+    virtual ~ModelExchange();
     /// Copy the initial state of the model to q
     virtual void init(double* q);
     /// Compute the derivative for state q and put it in dq
@@ -96,7 +65,7 @@ class FMI : public ode_system<ValueType> {
     virtual double time_event_func(double const* q);
     /*
      * This method is invoked immediately following an update of the
-     * continuous state variables and signal to the FMI the end
+     * continuous state variables and signal to the FMU the end
      * of an integration state.
      */
     virtual void postStep(double* q);
@@ -112,7 +81,7 @@ class FMI : public ode_system<ValueType> {
     virtual void postTrialStep(double* q);
     /*
      * The internal transition function. This function will process all events
-     * required by the FMI. Any derived class should call this method for the
+     * required by the FMU. Any derived class should call this method for the
      * parent class, then set or get any variables as appropriate, and then
      * call the base class method again to account for these changes.
      */
@@ -130,7 +99,7 @@ class FMI : public ode_system<ValueType> {
     virtual void confluent_event(double* q, bool const* state_event,
                                  std::list<PinValue<ValueType>> const &xb);
     /*
-     * The output function. This can read variables from the FMI, but should
+     * The output function. This can read variables from the FMU, but should
      * not make any modifications to those variables.
      */
     virtual void output_func(double const* q, bool const* state_event,
@@ -138,266 +107,192 @@ class FMI : public ode_system<ValueType> {
 
     /// Get the current time
     double get_time() const { return t_now; }
-    /// Get the value of a real variable
-    double get_real(int k);
-    /// Set the value of a real variable
-    void set_real(int k, double val);
-    /// Get the value of an integer variable
-    int get_int(int k);
-    /// Set the value of an integer variable
-    void set_int(int k, int val);
-    /// Get the value of a boolean variable
-    bool get_bool(int k);
-    /// Set the value of a boolean variable
-    void set_bool(int k, bool val);
-    /// Get the value of a string variable
-    std::string get_string(int k);
-    /// Set the value of a string variable
-    void set_string(int k, std::string &val);
-    /// Get the jacobian if this is supported by the FMI
+    /// Get the value of a variable
+    std::any get_variable(std::string name);
+    /// Set the value of a variable
+    void set_variable(std::string name, std::any value);
+    /// Get the jacobian if this is supported by the FMU
     bool get_jacobian(double const* q, double* J);
 
   private:
-    // Reference to the FMI
-    fmi2Component c;
-    // Pointer to the FMI interface
-    fmi2Component (*_fmi2Instantiate)(fmi2String, fmi2Type, fmi2String,
-                                      fmi2String, fmi2CallbackFunctions const*,
-                                      fmi2Boolean, fmi2Boolean);
-    void (*_fmi2FreeInstance)(fmi2Component);
-    fmi2Status (*_fmi2SetupExperiment)(fmi2Component, fmi2Boolean, fmi2Real,
-                                       fmi2Real, fmi2Boolean, fmi2Real);
-    fmi2Status (*_fmi2EnterInitializationMode)(fmi2Component);
-    fmi2Status (*_fmi2ExitInitializationMode)(fmi2Component);
-    fmi2Status (*_fmi2GetReal)(fmi2Component, fmi2ValueReference const*, size_t,
-                               fmi2Real*);
-    fmi2Status (*_fmi2GetInteger)(fmi2Component, fmi2ValueReference const*,
-                                  size_t, fmi2Integer*);
-    fmi2Status (*_fmi2GetBoolean)(fmi2Component, fmi2ValueReference const*,
-                                  size_t, fmi2Boolean*);
-    fmi2Status (*_fmi2GetString)(fmi2Component, fmi2ValueReference const*,
-                                 size_t, fmi2String*);
-    fmi2Status (*_fmi2SetReal)(fmi2Component, fmi2ValueReference const*, size_t,
-                               fmi2Real const*);
-    fmi2Status (*_fmi2SetInteger)(fmi2Component, fmi2ValueReference const*,
-                                  size_t, fmi2Integer const*);
-    fmi2Status (*_fmi2SetBoolean)(fmi2Component, fmi2ValueReference const*,
-                                  size_t, fmi2Boolean const*);
-    fmi2Status (*_fmi2SetString)(fmi2Component, fmi2ValueReference const*,
-                                 size_t, fmi2String const*);
-    fmi2Status (*_fmi2EnterEventMode)(fmi2Component);
-    fmi2Status (*_fmi2NewDiscreteStates)(fmi2Component, fmi2EventInfo*);
-    fmi2Status (*_fmi2EnterContinuousTimeMode)(fmi2Component);
-    fmi2Status (*_fmi2CompletedIntegratorStep)(fmi2Component, fmi2Boolean,
-                                               fmi2Boolean*, fmi2Boolean*);
-    fmi2Status (*_fmi2SetTime)(fmi2Component, fmi2Real);
-    fmi2Status (*_fmi2SetContinuousStates)(fmi2Component, fmi2Real const*,
-                                           size_t);
-    fmi2Status (*_fmi2GetDerivatives)(fmi2Component, fmi2Real*, size_t);
-    fmi2Status (*_fmi2GetEventIndicators)(fmi2Component, fmi2Real*, size_t);
-    fmi2Status (*_fmi2GetContinuousStates)(fmi2Component, fmi2Real*, size_t);
-    fmi2Status (*_fmi2GetDirectionalDerivative)(
-        fmi2Component, fmi2ValueReference const*, size_t,
-        fmi2ValueReference const*, size_t, fmi2Real const*, fmi2Real*);
+    // Reference to the FMU
+    fmi2_import_t* fmu;
     // Instant of the next time event
     double next_time_event;
     // Current time
     double t_now;
-// so library handle
-#ifdef _WIN32
-    HINSTANCE so_hndl;
-#else
-    void* so_hndl;
-#endif
     // Are we in continuous time mode?
     bool cont_time_mode;
-    // Number of event indicators that are not governed by the FMI
-    int num_extra_event_indicators;
-    // Start time of the simulation
-    double start_time;
-
-    static void fmilogger(fmi2ComponentEnvironment componentEnvironment,
-                          fmi2String instanceName, fmi2Status status,
-                          fmi2String category, fmi2String message, ...) {
-        if (message != NULL) {
-
-            fprintf(stderr, message, "\n");
-        }
-    }
-
-    fmi2CallbackFunctions* callbackFuncs;
 
     void iterate_events();
-    /* Set to true if this FMI provides directional
-          * directives for calculating a jacobian. The
-          * default is false.
-          */
-    bool const provides_jacobian;
     /// Identifiers for variables used to calculate the
-    /// jacobian column by column with a single FMI call
+    /// jacobian column by column with a single FMU call
     /// per column
-    fmi2ValueReference* jac_col;
-    // FMI derivative gain term
+    fmi2_value_reference_t* jac_col;
+    // FMU derivative gain term
     double* jac_v;
+
+    struct variable_info_t {
+        fmi2_value_reference_t ref;
+        fmi2_base_type_enu_t var_type;
+    };
+    std::map<std::string,variable_info_t> name_to_variable_map;
 };
 
-
 template <typename ValueType>
-FMI<ValueType>::FMI(char const* modelname, char const* guid,
-                     char const* resource_location, int num_state_variables,
-                     int num_event_indicators, char const* so_file_name,
-                     double const tolerance, int num_extra_event_indicators,
-                     double start_time, bool provides_jacobian)
-    :  // One extra variable at the end for time
-      ode_system<ValueType>(num_state_variables + 1,
-                             num_event_indicators + num_extra_event_indicators),
-      next_time_event(adevs_inf<double>()),
-      t_now(start_time),
-      so_hndl(NULL),
-      cont_time_mode(false),
-      num_extra_event_indicators(num_extra_event_indicators),
-      provides_jacobian(provides_jacobian),
-      jac_col(NULL),
-      jac_v(NULL) {
-    // If we will get the jacobian, this holds everything except the time
-    // derivative that has been appended to the FMI equation set
-    if (provides_jacobian) {
-        jac_col = new fmi2ValueReference[num_state_variables];
-        jac_v = new double[num_state_variables];
-        // References to each of our derivative functions f_1, f_2, etc.
-        for (int i = 0; i < num_state_variables; i++) {
-            jac_col[i] = num_state_variables + i;
-            jac_v[i] = 1.0;
+std::any ModelExchange<ValueType>::get_variable(std::string name) {
+    fmi2_status_t status;
+    variable_info_t var_info = name_to_variable_map[name];
+    switch(var_info.var_type) {
+        case fmi2_base_type_real:
+        {
+            fmi2_real_t val;
+            status = fmi2_import_get_real(fmu,&var_info.ref,1,&val);
+            assert(status == fmi2_status_ok);
+            return val;
+        }
+        case fmi2_base_type_int:
+        {
+            fmi2_integer_t val;
+            status = fmi2_import_get_integer(fmu,&var_info.ref,1,&val);
+            assert(status == fmi2_status_ok);
+            return val;
+        }
+        case fmi2_base_type_bool:
+        {
+            fmi2_boolean_t val;
+            status = fmi2_import_get_boolean(fmu,&var_info.ref,1,&val);
+            assert(status == fmi2_status_ok);
+            return val;
+        }
+        default:
+        {
+            return 0; 
         }
     }
-    // Get points to the FMI functions
-    fmi2CallbackFunctions tmp = {adevs::FMI<ValueType>::fmilogger, calloc,
-                                 free, NULL, NULL};
-    callbackFuncs = new fmi2CallbackFunctions(tmp);
-    so_hndl = OPEN_LIB(so_file_name);
-    if (so_hndl == NULL) {
-        throw adevs::exception("Could not load so file", this);
-    }
-    // This only works with a POSIX compliant compiler/system
-    _fmi2Instantiate =
-        (fmi2Component(*)(fmi2String, fmi2Type, fmi2String, fmi2String,
-                          fmi2CallbackFunctions const*, fmi2Boolean,
-                          fmi2Boolean))GET_FUNC(so_hndl, "fmi2Instantiate");
-    assert(_fmi2Instantiate != NULL);
-    _fmi2FreeInstance =
-        (void (*)(fmi2Component))GET_FUNC(so_hndl, "fmi2FreeInstance");
-    assert(_fmi2FreeInstance != NULL);
-    _fmi2SetupExperiment = (fmi2Status(*)(
-        fmi2Component, fmi2Boolean, fmi2Real, fmi2Real, fmi2Boolean,
-        fmi2Real))GET_FUNC(so_hndl, "fmi2SetupExperiment");
-    assert(_fmi2SetupExperiment != NULL);
-    _fmi2EnterInitializationMode = (fmi2Status(*)(fmi2Component))GET_FUNC(
-        so_hndl, "fmi2EnterInitializationMode");
-    assert(_fmi2EnterInitializationMode != NULL);
-    _fmi2ExitInitializationMode = (fmi2Status(*)(fmi2Component))GET_FUNC(
-        so_hndl, "fmi2ExitInitializationMode");
-    assert(_fmi2ExitInitializationMode != NULL);
-    _fmi2GetReal =
-        (fmi2Status(*)(fmi2Component, fmi2ValueReference const*, size_t,
-                       fmi2Real*))GET_FUNC(so_hndl, "fmi2GetReal");
-    assert(_fmi2GetReal != NULL);
-    _fmi2GetInteger =
-        (fmi2Status(*)(fmi2Component, fmi2ValueReference const*, size_t,
-                       fmi2Integer*))GET_FUNC(so_hndl, "fmi2GetInteger");
-    assert(_fmi2GetInteger != NULL);
-    _fmi2GetBoolean =
-        (fmi2Status(*)(fmi2Component, fmi2ValueReference const*, size_t,
-                       fmi2Boolean*))GET_FUNC(so_hndl, "fmi2GetBoolean");
-    assert(_fmi2GetBoolean != NULL);
-    _fmi2GetString =
-        (fmi2Status(*)(fmi2Component, fmi2ValueReference const*, size_t,
-                       fmi2String*))GET_FUNC(so_hndl, "fmi2GetString");
-    assert(_fmi2GetString != NULL);
-    _fmi2SetReal =
-        (fmi2Status(*)(fmi2Component, fmi2ValueReference const*, size_t,
-                       fmi2Real const*))GET_FUNC(so_hndl, "fmi2SetReal");
-    assert(_fmi2SetReal != NULL);
-    _fmi2SetInteger =
-        (fmi2Status(*)(fmi2Component, fmi2ValueReference const*, size_t,
-                       fmi2Integer const*))GET_FUNC(so_hndl, "fmi2SetInteger");
-    assert(_fmi2SetInteger != NULL);
-    _fmi2SetBoolean =
-        (fmi2Status(*)(fmi2Component, fmi2ValueReference const*, size_t,
-                       fmi2Boolean const*))GET_FUNC(so_hndl, "fmi2SetBoolean");
-    assert(_fmi2SetBoolean != NULL);
-    _fmi2SetString =
-        (fmi2Status(*)(fmi2Component, fmi2ValueReference const*, size_t,
-                       fmi2String const*))GET_FUNC(so_hndl, "fmi2SetString");
-    assert(_fmi2SetString != NULL);
-    _fmi2EnterEventMode =
-        (fmi2Status(*)(fmi2Component))GET_FUNC(so_hndl, "fmi2EnterEventMode");
-    assert(_fmi2EnterEventMode != NULL);
-    _fmi2NewDiscreteStates =
-        (fmi2Status(*)(fmi2Component, fmi2EventInfo*))GET_FUNC(
-            so_hndl, "fmi2NewDiscreteStates");
-    assert(_fmi2NewDiscreteStates != NULL);
-    _fmi2EnterContinuousTimeMode = (fmi2Status(*)(fmi2Component))GET_FUNC(
-        so_hndl, "fmi2EnterContinuousTimeMode");
-    assert(_fmi2EnterContinuousTimeMode != NULL);
-    _fmi2CompletedIntegratorStep = (fmi2Status(*)(
-        fmi2Component, fmi2Boolean, fmi2Boolean*,
-        fmi2Boolean*))GET_FUNC(so_hndl, "fmi2CompletedIntegratorStep");
-    assert(_fmi2CompletedIntegratorStep != NULL);
-    _fmi2SetTime = (fmi2Status(*)(fmi2Component, fmi2Real))GET_FUNC(
-        so_hndl, "fmi2SetTime");
-    assert(_fmi2SetTime != NULL);
-    _fmi2SetContinuousStates =
-        (fmi2Status(*)(fmi2Component, fmi2Real const*, size_t))GET_FUNC(
-            so_hndl, "fmi2SetContinuousStates");
-    assert(_fmi2SetContinuousStates != NULL);
-    _fmi2GetDerivatives =
-        (fmi2Status(*)(fmi2Component, fmi2Real*, size_t))GET_FUNC(
-            so_hndl, "fmi2GetDerivatives");
-    assert(_fmi2GetDerivatives != NULL);
-    _fmi2GetEventIndicators =
-        (fmi2Status(*)(fmi2Component, fmi2Real*, size_t))GET_FUNC(
-            so_hndl, "fmi2GetEventIndicators");
-    assert(_fmi2GetEventIndicators != NULL);
-    _fmi2GetContinuousStates =
-        (fmi2Status(*)(fmi2Component, fmi2Real*, size_t))GET_FUNC(
-            so_hndl, "fmi2GetContinuousStates");
-    assert(_fmi2GetContinuousStates != NULL);
-    _fmi2GetContinuousStates =
-        (fmi2Status(*)(fmi2Component, fmi2Real*, size_t))GET_FUNC(
-            so_hndl, "fmi2GetContinuousStates");
-    assert(_fmi2GetContinuousStates != NULL);
-    // If this is NULL then the function is not supported
-    _fmi2GetDirectionalDerivative = (fmi2Status(*)(
-        fmi2Component, fmi2ValueReference const*, size_t,
-        fmi2ValueReference const*, size_t, fmi2Real const*,
-        fmi2Real*))GET_FUNC(so_hndl, "fmi2GetDirectionalDerivative");
-    // Create the FMI component
-    c = _fmi2Instantiate(modelname, fmi2ModelExchange, guid, resource_location,
-                         callbackFuncs, fmi2False, fmi2False);
-    assert(c != NULL);
-    _fmi2SetupExperiment(c, fmi2True, tolerance, -1.0, fmi2False, -1.0);
 }
 
 template <typename ValueType>
-bool FMI<ValueType>::get_jacobian(double const* q, double* J) {
-    fmi2Status status;
-    // Number of FMI variables. Does not include time.
-    unsigned const N = this->numVars() - 1;
-    // If we just checking for support then exit immediately
-    if (!provides_jacobian || J == NULL) {
-        return provides_jacobian;
+void ModelExchange<ValueType>::set_variable(std::string name, std::any value) {
+    fmi2_status_t status;
+    variable_info_t var_info = name_to_variable_map[name];
+    switch(var_info.var_type) {
+        case fmi2_base_type_real:
+        {
+            fmi2_real_t val = std::any_cast<fmi2_real_t>(value);
+            status = fmi2_import_set_real(fmu,&var_info.ref,1,&val);
+            assert(status == fmi2_status_ok);
+            return;
+        }
+        case fmi2_base_type_int:
+        {
+            fmi2_integer_t val = std::any_cast<fmi2_integer_t>(value);
+            status = fmi2_import_set_integer(fmu,&var_info.ref,1,&val);
+            assert(status == fmi2_status_ok);
+            return;
+        }
+        case fmi2_base_type_bool:
+        {
+            fmi2_boolean_t val= std::any_cast<fmi2_boolean_t>(value);
+            status = fmi2_import_set_boolean(fmu,&var_info.ref,1,&val);
+            assert(status == fmi2_status_ok);
+        }
+    }
+}
+
+template <typename ValueType>
+ModelExchange<ValueType>::ModelExchange(const char* const fmu_file, double tolerance) :
+        // One extra variable at the end for time
+        ode_system<ValueType>(),
+        next_time_event(adevs_inf<double>()),
+        t_now(0.0),
+        cont_time_mode(false),
+        jac_col(nullptr),
+        jac_v(nullptr) {
+
+    jm_status_enu_t status_enum;
+
+    char* tmpPath = fmi_import_mk_temp_dir(nullptr,nullptr,nullptr);
+    assert(tmpPath);
+  
+    fmi_import_context_t* context = fmi_import_allocate_context(nullptr);
+    fmi_version_enu_t version = fmi_import_get_fmi_version(context, fmu_file, tmpPath);
+  
+    if(version != fmi_version_2_0_enu) {
+        throw adevs::exception("Only version FMI 2.0 is supported");
+    }
+  
+    fmu = fmi2_import_parse_xml(context,tmpPath,0);
+  
+    if(!fmu) {
+        throw adevs::exception("Error parsing FMI XML");
+    }    
+  
+    if(fmi2_import_get_fmu_kind(fmu) == fmi2_fmu_kind_cs) {
+        throw adevs::exception("Only ME 2.0 is supported\n");
+    }
+
+    // Load the dll
+    status_enum = fmi2_import_create_dllfmu(fmu, fmi2_fmu_kind_me, nullptr);
+    assert(status_enum != jm_status_error);
+    status_enum = fmi2_import_instantiate(fmu,"adevs::ModelExchange",fmi2_model_exchange,nullptr,false);
+    assert(status_enum != jm_status_error);
+
+    // Done with the context and temporary directory
+    fmi_import_free_context(context);
+    fmi_import_rmdir(nullptr,tmpPath);
+    free(tmpPath);
+
+    this->set_num_state_variables(fmi2_import_get_number_of_continuous_states(fmu)+1);
+    this->set_num_event_functions(fmi2_import_get_number_of_event_indicators(fmu));
+
+    /// Load the variable list
+    fmi2_import_variable_list_t* variable_list = fmi2_import_get_variable_list(fmu,0);
+    size_t num_variables = fmi2_import_get_variable_list_size(variable_list);
+    for (size_t i = 0; i < num_variables; i++) {
+        fmi2_import_variable_t* var = fmi2_import_get_variable(variable_list,i);
+        std::string name = fmi2_import_get_variable_name(var);
+        variable_info_t info;
+        info.ref = fmi2_import_get_variable_vr(var);
+        info.var_type = fmi2_import_get_variable_base_type(var);
+        name_to_variable_map[name] = info;
+    }
+    fmi2_import_free_variable_list(variable_list);
+    /// Setup the FMU for simulation
+    fmi2_import_set_debug_logging(fmu,false,0,nullptr);
+    fmi2_import_setup_experiment(fmu, true, tolerance, 0.0, false, -1.0);
+    /// Prep for jacobian calculations
+    if (fmi2_import_get_capability(fmu,fmi2_me_providesDirectionalDerivatives)) {
+        jac_col = new fmi2_value_reference_t[this->numVars()-1];
+        jac_v = new double[this->numVars()-1];
+        // References to each of our derivative functions f_1, f_2, etc.
+        for (int i = 0; i < this->numVars()-1; i++) {
+            jac_col[i] = this->numVars()-1 + i;
+            jac_v[i] = 1.0;
+        }
+    }
+}
+
+template <typename ValueType>
+bool ModelExchange<ValueType>::get_jacobian(double const* q, double* J) {
+    fmi2_status_t status;
+    // Number of FMU variables. Does not include time.
+    unsigned const N = this->numVars()-1;
+    // Do we support Jacobians?
+    if (J == nullptr || jac_col == nullptr) {
+        return jac_col != nullptr;
     }
     // Enter continuous time mode to calculate Jacobian entries
     if (!cont_time_mode) {
-        status = _fmi2EnterContinuousTimeMode(c);
-        assert(status == fmi2OK);
+        status = fmi2_import_enter_continuous_time_mode(fmu);
+        assert(status == fmi2_status_ok);
         cont_time_mode = true;
     }
     // Set state variables to their current values
-    status = _fmi2SetTime(c, q[N]);
-    assert(status == fmi2OK);
-    status = _fmi2SetContinuousStates(c, q, N);
-    assert(status == fmi2OK);
+    status = fmi2_import_set_time(fmu, q[N]);
+    assert(status == fmi2_status_ok);
+    status = fmi2_import_set_continuous_states(fmu, q, N);
+    assert(status == fmi2_status_ok);
     // Zero out J
     for (unsigned i = 0; i < (N + 1) * (N + 1); i++) {
         J[i] = 0.0;
@@ -406,13 +301,16 @@ bool FMI<ValueType>::get_jacobian(double const* q, double* J) {
     // appears to use 0..N-1 for the state variable reference
     // numbers and N..2N-1 for the corresponding derivative numbers.
     // For the moment, we assume this is the case.
-    for (fmi2ValueReference state_var = 0; state_var < N; state_var++) {
-        status = _fmi2GetDirectionalDerivative(c, jac_col, N, &state_var, 1,
+    // BEWARE!!!! fmi2_import_get_directional_derivative swaps the
+    // reference lists under the hood. In a direct call to the FMI
+    // API state_var and jac_col would be in reversed positions.
+    for (fmi2_value_reference_t state_var = 0; state_var < N; state_var++) {
+        status = fmi2_import_get_directional_derivative(fmu, &state_var, 1, jac_col, N, 
                                                jac_v, J + state_var * N);
-        assert(status == fmi2OK);
+        assert(status == fmi2_status_ok);
     }
     // Partial of time is 1 and nobody else depends on it. This, of course, may
-    // be wrong but FMI does not appear to support partials of f with respect to
+    // be wrong but FMU does not appear to support partials of f with respect to
     // time. If you really need this, add dtau/dt = 1 to your equation set and use
     // tau as your time variable.
     J[(N + 1) * (N + 1) - 1] = 1.0;
@@ -420,255 +318,182 @@ bool FMI<ValueType>::get_jacobian(double const* q, double* J) {
 }
 
 template <typename ValueType>
-void FMI<ValueType>::iterate_events() {
-    fmi2Status status;
+void ModelExchange<ValueType>::iterate_events() {
+    fmi2_status_t status;
     // Put into consistent initial state
-    fmi2EventInfo eventInfo;
+    fmi2_event_info_t eventInfo;
     do {
-        status = _fmi2NewDiscreteStates(c, &eventInfo);
-        assert(status == fmi2OK);
-    } while (eventInfo.newDiscreteStatesNeeded == fmi2True);
-    if (eventInfo.nextEventTimeDefined == fmi2True) {
+        status = fmi2_import_new_discrete_states(fmu,&eventInfo);
+        assert(status == fmi2_status_ok);
+    } while (eventInfo.newDiscreteStatesNeeded);
+    if (eventInfo.nextEventTimeDefined) {
         next_time_event = eventInfo.nextEventTime;
     } else {
         next_time_event = adevs_inf<double>();
     }
-    assert(status == fmi2OK);
+    assert(status == fmi2_status_ok);
 }
 
 template <typename ValueType>
-void FMI<ValueType>::init(double* q) {
-    fmi2Status status;
+void ModelExchange<ValueType>::init(double* q) {
+    fmi2_status_t status;
     // Initialize all variables
-    status = _fmi2EnterInitializationMode(c);
-    assert(status == fmi2OK);
+    status = fmi2_import_enter_initialization_mode(fmu);
+    assert(status == fmi2_status_ok);
     // Done with initialization
-    status = _fmi2ExitInitializationMode(c);
-    assert(status == fmi2OK);
+    status = fmi2_import_exit_initialization_mode(fmu);
+    assert(status == fmi2_status_ok);
     // Put into consistent initial state
     iterate_events();
     // Enter continuous time mode to start integration
-    status = _fmi2EnterContinuousTimeMode(c);
-    assert(status == fmi2OK);
+    status = fmi2_import_enter_continuous_time_mode(fmu);
+    assert(status == fmi2_status_ok);
     // Set initial value for time
-    status = _fmi2SetTime(c, t_now);
-    assert(status == fmi2OK);
+    status = fmi2_import_set_time(fmu,t_now);
+    assert(status == fmi2_status_ok);
     // Get starting state variable values
-    status = _fmi2GetContinuousStates(c, q, this->numVars() - 1);
-    assert(status == fmi2OK);
-    q[this->numVars() - 1] = t_now;
+    status = fmi2_import_get_continuous_states(fmu,q,this->numVars()-1);
+    assert(status == fmi2_status_ok);
+    q[this->numVars()-1] = t_now;
     cont_time_mode = true;
 }
 
 template <typename ValueType>
-void FMI<ValueType>::der_func(double const* q, double* dq) {
-    fmi2Status status;
+void ModelExchange<ValueType>::der_func(double const* q, double* dq) {
+    fmi2_status_t status;
     if (!cont_time_mode) {
-        status = _fmi2EnterContinuousTimeMode(c);
-        assert(status == fmi2OK);
+        status = fmi2_import_enter_continuous_time_mode(fmu);
+        assert(status == fmi2_status_ok);
         cont_time_mode = true;
     }
-    status = _fmi2SetTime(c, q[this->numVars() - 1]);
-    assert(status == fmi2OK);
-    status = _fmi2SetContinuousStates(c, q, this->numVars() - 1);
-    assert(status == fmi2OK);
-    status = _fmi2GetDerivatives(c, dq, this->numVars() - 1);
-    assert(status == fmi2OK);
-    dq[this->numVars() - 1] = 1.0;
+    status = fmi2_import_set_time(fmu,q[this->numVars()-1]);
+    assert(status == fmi2_status_ok);
+    status = fmi2_import_set_continuous_states(fmu,q,this->numVars()-1);
+    assert(status == fmi2_status_ok);
+    status = fmi2_import_get_derivatives(fmu,dq,this->numVars()-1);
+    assert(status == fmi2_status_ok);
+    dq[this->numVars()-1] = 1.0;
 }
 
 template <typename ValueType>
-void FMI<ValueType>::state_event_func(double const* q, double* z) {
-    fmi2Status status;
+void ModelExchange<ValueType>::state_event_func(double const* q, double* z) {
+    fmi2_status_t status;
     if (!cont_time_mode) {
-        status = _fmi2EnterContinuousTimeMode(c);
-        assert(status == fmi2OK);
+        status = fmi2_import_enter_continuous_time_mode(fmu);
+        assert(status == fmi2_status_ok);
         cont_time_mode = true;
     }
-    status = _fmi2SetTime(c, q[this->numVars() - 1]);
-    assert(status == fmi2OK);
-    status = _fmi2SetContinuousStates(c, q, this->numVars() - 1);
-    assert(status == fmi2OK);
-    status = _fmi2GetEventIndicators(
-        c, z, this->numEvents() - num_extra_event_indicators);
-    assert(status == fmi2OK);
+    status = fmi2_import_set_time(fmu,q[this->numVars()-1]);
+    assert(status == fmi2_status_ok);
+    status = fmi2_import_set_continuous_states(fmu,q,this->numVars()-1);
+    assert(status == fmi2_status_ok);
+    status = fmi2_import_get_event_indicators(fmu,z,this->numEvents());
+    assert(status == fmi2_status_ok);
 }
 
 template <typename ValueType>
-double FMI<ValueType>::time_event_func(double const* q) {
-    return next_time_event - q[this->numVars() - 1];
+double ModelExchange<ValueType>::time_event_func(double const* q) {
+    return next_time_event - q[this->numVars()-1];
 }
 
 template <typename ValueType>
-void FMI<ValueType>::postStep(double* q) {
+void ModelExchange<ValueType>::postStep(double* q) {
     assert(cont_time_mode);
-    // Don't advance the FMI state by zero units of time
+    // Don't advance the FMU state by zero units of time
     // when in continuous mode
-    if (q[this->numVars() - 1] <= t_now) {
+    if (q[this->numVars()-1] <= t_now) {
         return;
     }
     // Try to complete the integration step
-    fmi2Status status;
-    fmi2Boolean enterEventMode;
-    fmi2Boolean terminateSimulation;
+    fmi2_status_t status;
+    fmi2_boolean_t enterEventMode;
+    fmi2_boolean_t terminateSimulation;
     t_now = q[this->numVars() - 1];
-    status = _fmi2SetTime(c, t_now);
-    assert(status == fmi2OK);
-    status = _fmi2SetContinuousStates(c, q, this->numVars() - 1);
-    assert(status == fmi2OK);
-    status = _fmi2CompletedIntegratorStep(c, fmi2True, &enterEventMode,
-                                          &terminateSimulation);
-    assert(status == fmi2OK);
+    status = fmi2_import_set_time(fmu,t_now);
+    assert(status == fmi2_status_ok);
+    status = fmi2_import_set_continuous_states(fmu,q,this->numVars()-1);
+    assert(status == fmi2_status_ok);
+    status = fmi2_import_completed_integrator_step(
+        fmu,true, &enterEventMode,&terminateSimulation);
+    assert(status == fmi2_status_ok);
     // Force an event if one is indicated
-    if (enterEventMode == fmi2True) {
+    if (enterEventMode) {
         next_time_event = t_now;
     }
 }
 
 template <typename ValueType>
-void FMI<ValueType>::postTrialStep(double* q) {
+void ModelExchange<ValueType>::postTrialStep(double* q) {
     assert(cont_time_mode);
     // Restore values changed by der_func and state_event_func
-    fmi2Status status;
-    status = _fmi2SetTime(c, q[this->numVars() - 1]);
-    assert(status == fmi2OK);
-    status = _fmi2SetContinuousStates(c, q, this->numVars() - 1);
-    assert(status == fmi2OK);
+    fmi2_status_t status;
+    status = fmi2_import_set_time(fmu,q[this->numVars()-1]);
+    assert(status == fmi2_status_ok);
+    status = fmi2_import_set_continuous_states(fmu,q,this->numVars()-1);
+    assert(status == fmi2_status_ok);
 }
 
 template <typename ValueType>
-void FMI<ValueType>::internal_event(double* q, bool const* state_event) {
-    fmi2Status status;
+void ModelExchange<ValueType>::internal_event(double* q, bool const* state_event) {
+    fmi2_status_t status;
     // postStep will have updated the continuous variables, so
     // we just process discrete events here.
     if (cont_time_mode) {
-        status = _fmi2EnterEventMode(c);
-        assert(status == fmi2OK);
+        status = fmi2_import_enter_event_mode(fmu);
+        assert(status == fmi2_status_ok);
         cont_time_mode = false;
     }
     // Process events
     iterate_events();
     // Update the state variable array
-    status = _fmi2GetContinuousStates(c, q, this->numVars() - 1);
-    assert(status == fmi2OK);
+    status = fmi2_import_get_continuous_states(fmu,q,this->numVars()-1);
+    assert(status == fmi2_status_ok);
 }
 
 template <typename ValueType>
-void FMI<ValueType>::external_event(double* q, double e,
+void ModelExchange<ValueType>::external_event(double* q, double e,
                                      std::list<PinValue<ValueType>> const &xb) {
-    fmi2Status status;
+    fmi2_status_t status;
     // Go to event mode if we have not yet done so
     if (cont_time_mode) {
-        status = _fmi2EnterEventMode(c);
-        assert(status == fmi2OK);
+        status = fmi2_import_enter_event_mode(fmu);
+        assert(status == fmi2_status_ok);
         cont_time_mode = false;
     }
     // process any events that need processing
     iterate_events();
-    status = _fmi2GetContinuousStates(c, q, this->numVars() - 1);
-    assert(status == fmi2OK);
+    status = fmi2_import_get_continuous_states(fmu,q,this->numVars()-1);
+    assert(status == fmi2_status_ok);
 }
 
 template <typename ValueType>
-void FMI<ValueType>::confluent_event(double* q, bool const* state_event,
+void ModelExchange<ValueType>::confluent_event(double* q, bool const* state_event,
                                       std::list<PinValue<ValueType>> const &xb) {
-    fmi2Status status;
+    fmi2_status_t status;
     // postStep will have updated the continuous variables, so
     // we just process discrete events here.
     if (cont_time_mode) {
-        status = _fmi2EnterEventMode(c);
-        assert(status == fmi2OK);
+        status = fmi2_import_enter_event_mode(fmu);
+        assert(status == fmi2_status_ok);
         cont_time_mode = false;
     }
     iterate_events();
-    status = _fmi2GetContinuousStates(c, q, this->numVars() - 1);
-    assert(status == fmi2OK);
+    status = fmi2_import_get_continuous_states(fmu,q,this->numVars()-1);
+    assert(status == fmi2_status_ok);
 }
 
 template <typename ValueType>
-void FMI<ValueType>::output_func(double const* q, bool const* state_event,
+void ModelExchange<ValueType>::output_func(double const* q, bool const* state_event,
                                   std::list<PinValue<ValueType>> &yb) {}
 
 template <typename ValueType>
-FMI<ValueType>::~FMI() {
-    _fmi2FreeInstance(c);
-    delete callbackFuncs;
-    if (jac_col != NULL) {
-        delete[] jac_col;
-        delete[] jac_v;
+ModelExchange<ValueType>::~ModelExchange() {
+    fmi2_import_destroy_dllfmu(fmu);
+    fmi2_import_free(fmu);
+    if (jac_col != nullptr) {
+        delete [] jac_col;
+        delete [] jac_v;
     }
-    CLOSE_LIB(so_hndl);
-}
-
-template <typename ValueType>
-double FMI<ValueType>::get_real(int k) {
-    fmi2ValueReference const ref = k;
-    fmi2Real val;
-    fmi2Status status = _fmi2GetReal(c, &ref, 1, &val);
-    assert(status == fmi2OK);
-    return val;
-}
-
-template <typename ValueType>
-void FMI<ValueType>::set_real(int k, double val) {
-    fmi2ValueReference const ref = k;
-    fmi2Real fmi_val = val;
-    fmi2Status status = _fmi2SetReal(c, &ref, 1, &fmi_val);
-    assert(status == fmi2OK);
-}
-
-template <typename ValueType>
-int FMI<ValueType>::get_int(int k) {
-    fmi2ValueReference const ref = k;
-    fmi2Integer val;
-    fmi2Status status = _fmi2GetInteger(c, &ref, 1, &val);
-    assert(status == fmi2OK);
-    return val;
-}
-
-template <typename ValueType>
-void FMI<ValueType>::set_int(int k, int val) {
-    fmi2ValueReference const ref = k;
-    fmi2Integer fmi_val = val;
-    fmi2Status status = _fmi2SetInteger(c, &ref, 1, &fmi_val);
-    assert(status == fmi2OK);
-}
-
-template <typename ValueType>
-bool FMI<ValueType>::get_bool(int k) {
-    fmi2ValueReference const ref = k;
-    fmi2Boolean val;
-    fmi2Status status = _fmi2GetBoolean(c, &ref, 1, &val);
-    assert(status == fmi2OK);
-    return (val == fmi2True);
-}
-
-template <typename ValueType>
-void FMI<ValueType>::set_bool(int k, bool val) {
-    fmi2ValueReference const ref = k;
-    fmi2Boolean fmi_val = fmi2False;
-    if (val) {
-        fmi_val = fmi2True;
-    }
-    fmi2Status status = _fmi2SetBoolean(c, &ref, 1, &fmi_val);
-    assert(status == fmi2OK);
-}
-
-template <typename ValueType>
-std::string FMI<ValueType>::get_string(int k) {
-    fmi2ValueReference const ref = k;
-    fmi2String val;
-    fmi2Status status = _fmi2GetString(c, &ref, 1, &val);
-    assert(status == fmi2OK);
-    return val;
-}
-
-template <typename ValueType>
-void FMI<ValueType>::set_string(int k, std::string &val) {
-    fmi2ValueReference const ref = k;
-    fmi2String fmi_val = fmi2False;
-    fmi2Status status = _fmi2SetString(c, &ref, 1, &fmi_val);
-    assert(status == fmi2OK);
 }
 
 }  // namespace adevs

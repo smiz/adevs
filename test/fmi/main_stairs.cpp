@@ -1,25 +1,21 @@
 #include <iostream>
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
-#include "stairs/modelDescription.h"
 using namespace std;
-using namespace adevs;
 
-static double const epsilon = 1E-7;
-static double const err_tol = 1E-3;
+static double const err_tol = 1E-6;
 
 int main() {
-    stairs* fmi = new stairs();
-    shared_ptr<Hybrid<double>> hybrid_model = make_shared<Hybrid<double>>(
-        fmi, new corrected_euler<double>(fmi, epsilon, 0.001),
-        new discontinuous_event_locator<double>(fmi, epsilon));
+    auto fmu = new adevs::ModelExchange<>("stairs.fmu",err_tol);
+    auto model = make_shared<adevs::ExplicitHybrid<>>(fmu,err_tol,0.01);
     // Create the simulator
-    Simulator<double>* sim = new Simulator<double>(hybrid_model);
+    adevs::Simulator<> sim(model);
     // Run the simulation, testing the solution as we go
-    while (sim->nextEventTime() <= 20.5) {
-        sim->execNextEvent();
-        assert(floor(fmi->get_x()) == fmi->get_step());
+    while (sim.nextEventTime() <= 20.5) {
+        sim.execNextEvent();
+        double x = std::any_cast<double>(fmu->get_variable("x"));
+        double step = std::any_cast<double>(fmu->get_variable("step"));
+        assert(floor(x) == step);
     }
-    delete sim;
     return 0;
 }

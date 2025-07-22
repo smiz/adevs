@@ -1,11 +1,11 @@
 #include <iostream>
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
-#include "test1/modelDescription.h"
 using namespace std;
 
 int main() {
-    test1* fmi = new test1();
+    double err_tol = 1E-6;
+    auto fmi = new adevs::ModelExchange<int>("test1.fmu",err_tol);
     double* J = new double[fmi->numVars() * fmi->numVars()];
     double* q = new double[fmi->numVars()];
     adevs::corrected_euler<int>* solver1 =
@@ -17,8 +17,8 @@ int main() {
     assert(sim->nextEventTime() < 10.0);
     while (sim->nextEventTime() < 10.0) {
         double t = q[1] = fmi->get_time();
-        double x = q[0] = fmi->get_x();
-        double a = fmi->get_a();
+        double x = q[0] = std::any_cast<double>(fmi->get_variable("x"));
+        double a =std::any_cast<double>(fmi->get_variable("a"));
         // Solution error
         double err = fabs(x - exp(a * t));
         assert(err < 1E-3);
