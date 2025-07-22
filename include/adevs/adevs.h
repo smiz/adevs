@@ -124,6 +124,20 @@
  * \subpage ex4diagram
  * 
  * \subpage ex4
+ *
+ * This next example shows how to use the adevs::Hybrid class to simulate a model with a component
+ * that has a piecewise continuous dynamic. The adevs::ode_system class is used to define
+ * the dynamic behavior. The virtual methods of the adevs::ode_system are overriden to 
+ * define the derivative function, state event function, output function, and discrete
+ * state transition functions. The adevs::Hybrid class is derived from the adevs::Atomic class,
+ * and it implements a numerical solver for the equations defined by the adevs::ode_system class.
+ * The adevs::ode_system is supplied to the adevs::Hybrid object to define the model's
+ * dynamic behavior. Then the adevs::Hybrid object is added to your model just like an other
+ * adevs::Atomic component.
+ * 
+ * \subpage ex5plot
+ * 
+ * \subpage ex5
  * 
  
  */
@@ -200,6 +214,11 @@
 /**
  * \page ex4 Example #4
  * \include ex4.cpp
+ * 
+ * \page ex5plot Voltage, diode state, and switch state vs time
+ * 
+ * \page ex5 Example #5
+ * \include ex5.cpp
  */
 
 /*

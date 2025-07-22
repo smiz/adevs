@@ -43,7 +43,7 @@
 #include <cmath>
 #include <cstring>
 #include "adevs/solvers/hybrid.h"
-
+#include "adevs/solvers/event_locators.h"
 
 namespace adevs {
 
@@ -355,6 +355,34 @@ double trap<ValueType>::integrate(double* q, double h_lim) {
     // Return the step size that we used
     return h;
 }
+
+/**
+ * @brief A Hybrid equation solver that uses the trapezoidal integrator
+ * and bisection search to find state events.
+ * 
+ * This specialization of the Hybrid method is a convenience shortcut
+ * for create a Hybrid object with a trap ODE solver and discontinuous_event_locator.
+ * You need the <a href="https://computing.llnl.gov/projects/sundials/kinsol">KINSOL</a>
+ * library, which is part of <a href="https://computing.llnl.gov/projects/sundials">SUNDIALS</a>
+ * to use this solver.
+ */
+template <typename ValueType = std::any>
+class ImplicitHybrid : public Hybrid<ValueType> {
+    public:
+     /**
+     * @brief Create and initialize solvers for the ode_system.
+     * 
+     * The ode_sytems is adopted by the ExplicitHybrid object and
+     * is deleted when it is.
+     * 
+     * @param sys The system of equations to solve
+     * @param tol The error tolerance for the solvers
+     * @param h_max The step size limit for the solvers
+     */
+    ImplicitHybrid(ode_system<ValueType>* sys, double tol, double h_max):
+        Hybrid<ValueType>(sys,new trap<ValueType>(sys,tol,h_max),new discontinuous_event_locator<ValueType>(sys,tol)) {
+    }
+};
 
 }  // namespace adevs
 #endif

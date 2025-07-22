@@ -35,7 +35,7 @@
 #include <any>
 #include <cmath>
 #include "adevs/solvers/hybrid.h"
-
+#include "adevs/solvers/event_locators.h"
 
 namespace adevs {
 
@@ -235,6 +235,31 @@ double rk_45<ValueType>::trial_step(double step) {
     // Return the error
     return err;
 }
+
+/**
+ * @brief A Hybrid equation solver that uses the rk45 integrator
+ * and bisection search to find state events.
+ * 
+ * This specialization of the Hybrid method is a convenience shortcut
+ * for create a Hybrid object with a rk45 ODE solver and discontinuous_event_locator.
+ */
+template <typename ValueType = std::any>
+class ExplicitHybrid : public Hybrid<ValueType> {
+    public:
+     /**
+     * @brief Create and initialize solvers for the ode_system.
+     * 
+     * The ode_sytems is adopted by the ExplicitHybrid object and
+     * is deleted when it is.
+     * 
+     * @param sys The system of equations to solve
+     * @param tol The error tolerance for the solvers
+     * @param h_max The step size limit for the solvers
+     */
+    ExplicitHybrid(ode_system<ValueType>* sys, double tol, double h_max):
+        Hybrid<ValueType>(sys,new rk_45<ValueType>(sys,tol,h_max),new discontinuous_event_locator<ValueType>(sys,tol)) {
+    }
+};
 
 }  // namespace adevs
 #endif
