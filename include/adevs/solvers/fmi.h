@@ -32,6 +32,7 @@
 #ifndef _adevs_fmi_h_
 #define _adevs_fmi_h_
 
+#include <filesystem>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -43,35 +44,63 @@
 
 namespace adevs {
 
-/*
+/**
+ * @brief Wrap an FMI for Model Exchange object in and ode_system
+ *  
  * Load an FMU wrapped continuous system model for use in a
  * discrete event simulation. The FMU can then be attached
  * to any of the ODE solvers and event detectors in adevs
- * for simulation with the Hybrid class.
+ * for simulation with the Hybrid class. You need to have the
+ * <a href="https://github.com/modelon-community/fmi-library">
+ * FMI Library</a> installed to used this class. At this time,
+ * the ModelExchange class supports FMI 2.0
+ * 
+ * @see ode_system
  */
 template <typename ValueType = std::any>
 class ModelExchange : public ode_system<ValueType> {
   public:
+    /**
+     * @brief Load and fmu for use in a simulation
+     * 
+     * This loads the FMU from a .fmu file.
+     * 
+     * @param fmu Path to the fmu file
+     * @param tolerance Tolerance for the algebraic loop solvers
+     * inside the FMU
+     */
     ModelExchange(const char* const fmu, double tolerance);
-    /// Destructor
+    /// @brief Destructor
     virtual ~ModelExchange();
-    /// Copy the initial state of the model to q
+    /// @brief Copy the initial state of the model to q
+    ///
+    /// Do no overload
     virtual void init(double* q);
-    /// Compute the derivative for state q and put it in dq
+    /// @brief Computes the derivative for state q and put it in dq
+    ///
+    /// Do no overload
     virtual void der_func(double const* q, double* dq);
-    /// Compute the state event functions for state q and put them in z
+    /// @compute Compute the state event functions for state q and put them in z
+    ///
+    /// Do no overload
     virtual void state_event_func(double const* q, double* z);
-    /// Compute the time event function using state q
+    /// @brief Compute the time event function using state q
+    ///
+    /// Do no overload
     virtual double time_event_func(double const* q);
-    /*
-     * This method is invoked immediately following an update of the
-     * continuous state variables and signal to the FMU the end
-     * of an integration state.
+    /** 
+     * @brief This method is invoked immediately following an update of the
+     * continuous state variables.
+     * 
+     * Signal the FMU the end to end an integration step. Do not
+     * overload.
      */
     virtual void postStep(double* q);
-    /*
-     * Like the postStep() method, but this is called at the end
-     * of a trial step made by the numerical integrator. Trial steps
+    /**
+     * @brief Like the postStep() method, but this is called at the end
+     * of a trial step made by the numerical integrator.
+     * 
+     * Do not overload. Trial steps
      * are used to locate state events and to estimate numerical
      * errors. The state vector q passed to this method may not be
      * the final vector assigned to the model at the end of
@@ -79,39 +108,65 @@ class ModelExchange : public ode_system<ValueType> {
      * the postStep() method.
      */
     virtual void postTrialStep(double* q);
-    /*
-     * The internal transition function. This function will process all events
+    /**
+     * @brief The internal transition function
+     *
+     * This function will process all events
      * required by the FMU. Any derived class should call this method for the
      * parent class, then set or get any variables as appropriate, and then
-     * call the base class method again to account for these changes.
+     * call the base class method again to account for these changes. If you
+     * overload the internal_event() method you must call the parent method
+     * at the start of your method and call it again if you use the set_variable()
+     * method.
      */
     virtual void internal_event(double* q, bool const* state_event);
-    /*
-     * The external transition See the notes on the internal_event function for
+    /**
+     * @brief The external transition
+     * 
+     * See the notes on the internal_event function for
      * derived classes.
      */
     virtual void external_event(double* q, double e,
                                 std::list<PinValue<ValueType>> const &xb);
-    /*
-     * The confluent transition function. See the notes on the internal_event function for
+    /**
+     * @brief The confluent transition function.
+     * 
+     * See the notes on the internal_event function for
      * derived classes.
      */
     virtual void confluent_event(double* q, bool const* state_event,
                                  std::list<PinValue<ValueType>> const &xb);
-    /*
-     * The output function. This can read variables from the FMU, but should
+    /**
+     * @brief The output function.
+     * 
+     * This can read variables from the FMU, but should
      * not make any modifications to those variables.
      */
     virtual void output_func(double const* q, bool const* state_event,
                              std::list<PinValue<ValueType>> &yb);
 
-    /// Get the current time
+    /// @brief Get the current time
+    ///
+    /// @return The simulation time at the last instant this object
+    /// had an integration step of an event
     double get_time() const { return t_now; }
-    /// Get the value of a variable
+    /// @brief Get the value of a variable
+    ///
+    /// The argument must be the variable name as it appears in the
+    /// xml file that comes with the FMU. You can unzip the fmu file
+    /// and look in the modelDescription.xml to get this information.
+    ///
+    /// @param name The name of the variable whose value will be returned
     std::any get_variable(std::string name);
-    /// Set the value of a variable
+    /// @brief Set the value of a variable
+    ///
+    /// See get_variable()
+    /// @param name The name of the variable whose value will be returned
+    /// @param value The value to assign
     void set_variable(std::string name, std::any value);
-    /// Get the jacobian if this is supported by the FMU
+    /// @brief Get the jacobian if this is supported by the FMU
+    ///
+    /// Do not overload
     bool get_jacobian(double const* q, double* J);
 
   private:
@@ -131,6 +186,8 @@ class ModelExchange : public ode_system<ValueType> {
     fmi2_value_reference_t* jac_col;
     // FMU derivative gain term
     double* jac_v;
+    // FMI library callbacks
+    jm_callbacks callbacks;
 
     struct variable_info_t {
         fmi2_value_reference_t ref;
@@ -143,60 +200,47 @@ template <typename ValueType>
 std::any ModelExchange<ValueType>::get_variable(std::string name) {
     fmi2_status_t status;
     variable_info_t var_info = name_to_variable_map[name];
-    switch(var_info.var_type) {
-        case fmi2_base_type_real:
-        {
-            fmi2_real_t val;
-            status = fmi2_import_get_real(fmu,&var_info.ref,1,&val);
-            assert(status == fmi2_status_ok);
-            return val;
-        }
-        case fmi2_base_type_int:
-        {
-            fmi2_integer_t val;
-            status = fmi2_import_get_integer(fmu,&var_info.ref,1,&val);
-            assert(status == fmi2_status_ok);
-            return val;
-        }
-        case fmi2_base_type_bool:
-        {
-            fmi2_boolean_t val;
-            status = fmi2_import_get_boolean(fmu,&var_info.ref,1,&val);
-            assert(status == fmi2_status_ok);
-            return val;
-        }
-        default:
-        {
-            return 0; 
-        }
+    if (var_info.var_type == fmi2_base_type_real) {
+        fmi2_real_t val;
+        status = fmi2_import_get_real(fmu,&var_info.ref,1,&val);
+        assert(status == fmi2_status_ok);
+        return val;
     }
+    if (var_info.var_type == fmi2_base_type_int) {
+        fmi2_integer_t val;
+        status = fmi2_import_get_integer(fmu,&var_info.ref,1,&val);
+        assert(status == fmi2_status_ok);
+        return val;
+    }
+    if (var_info.var_type == fmi2_base_type_bool) {
+        fmi2_boolean_t val;
+        status = fmi2_import_get_boolean(fmu,&var_info.ref,1,&val);
+        assert(status == fmi2_status_ok);
+        return val;
+    }
+    return 0; 
 }
 
 template <typename ValueType>
 void ModelExchange<ValueType>::set_variable(std::string name, std::any value) {
     fmi2_status_t status;
     variable_info_t var_info = name_to_variable_map[name];
-    switch(var_info.var_type) {
-        case fmi2_base_type_real:
-        {
-            fmi2_real_t val = std::any_cast<fmi2_real_t>(value);
-            status = fmi2_import_set_real(fmu,&var_info.ref,1,&val);
-            assert(status == fmi2_status_ok);
-            return;
-        }
-        case fmi2_base_type_int:
-        {
-            fmi2_integer_t val = std::any_cast<fmi2_integer_t>(value);
-            status = fmi2_import_set_integer(fmu,&var_info.ref,1,&val);
-            assert(status == fmi2_status_ok);
-            return;
-        }
-        case fmi2_base_type_bool:
-        {
-            fmi2_boolean_t val= std::any_cast<fmi2_boolean_t>(value);
-            status = fmi2_import_set_boolean(fmu,&var_info.ref,1,&val);
-            assert(status == fmi2_status_ok);
-        }
+    if (var_info.var_type == fmi2_base_type_real) {
+        fmi2_real_t val = std::any_cast<fmi2_real_t>(value);
+        status = fmi2_import_set_real(fmu,&var_info.ref,1,&val);
+        assert(status == fmi2_status_ok);
+        return;
+    }
+    if (var_info.var_type == fmi2_base_type_int) {
+        fmi2_integer_t val = std::any_cast<fmi2_integer_t>(value);
+        status = fmi2_import_set_integer(fmu,&var_info.ref,1,&val);
+        assert(status == fmi2_status_ok);
+        return;
+    }
+    if (var_info.var_type == fmi2_base_type_bool) {
+        fmi2_boolean_t val= std::any_cast<fmi2_boolean_t>(value);
+        status = fmi2_import_set_boolean(fmu,&var_info.ref,1,&val);
+        assert(status == fmi2_status_ok);
     }
 }
 
@@ -212,10 +256,18 @@ ModelExchange<ValueType>::ModelExchange(const char* const fmu_file, double toler
 
     jm_status_enu_t status_enum;
 
-    char* tmpPath = fmi_import_mk_temp_dir(nullptr,nullptr,nullptr);
+    callbacks.malloc = malloc;
+    callbacks.calloc = calloc;
+    callbacks.realloc = realloc;
+    callbacks.free = free;
+    callbacks.logger = jm_default_logger;
+    callbacks.log_level = jm_log_level_fatal;
+    callbacks.context = 0;
+
+    char* tmpPath = fmi_import_mk_temp_dir(&callbacks,std::filesystem::temp_directory_path().c_str(),nullptr);
     assert(tmpPath);
   
-    fmi_import_context_t* context = fmi_import_allocate_context(nullptr);
+    fmi_import_context_t* context = fmi_import_allocate_context(&callbacks);
     fmi_version_enu_t version = fmi_import_get_fmi_version(context, fmu_file, tmpPath);
   
     if(version != fmi_version_2_0_enu) {
@@ -322,6 +374,11 @@ void ModelExchange<ValueType>::iterate_events() {
     fmi2_status_t status;
     // Put into consistent initial state
     fmi2_event_info_t eventInfo;
+    // For some reason, the call to new_discrete_states() does
+    // not always set these if an event does not happen. We
+    // initialize them here to avoid a false alarm.
+    eventInfo.newDiscreteStatesNeeded = false;
+    eventInfo.nextEventTimeDefined = false;
     do {
         status = fmi2_import_new_discrete_states(fmu,&eventInfo);
         assert(status == fmi2_status_ok);
@@ -378,6 +435,8 @@ void ModelExchange<ValueType>::der_func(double const* q, double* dq) {
 template <typename ValueType>
 void ModelExchange<ValueType>::state_event_func(double const* q, double* z) {
     fmi2_status_t status;
+    // Don't do anything if we don't have any state events
+    if (this->numEvents() == 0) return;
     if (!cont_time_mode) {
         status = fmi2_import_enter_continuous_time_mode(fmu);
         assert(status == fmi2_status_ok);
@@ -393,7 +452,10 @@ void ModelExchange<ValueType>::state_event_func(double const* q, double* z) {
 
 template <typename ValueType>
 double ModelExchange<ValueType>::time_event_func(double const* q) {
-    return next_time_event - q[this->numVars()-1];
+    if (next_time_event < adevs_inf<double>()) {
+        return next_time_event - q[this->numVars()-1];
+    }
+    return adevs_inf<double>();
 }
 
 template <typename ValueType>
@@ -488,6 +550,8 @@ void ModelExchange<ValueType>::output_func(double const* q, bool const* state_ev
 
 template <typename ValueType>
 ModelExchange<ValueType>::~ModelExchange() {
+    fmi2_import_terminate(fmu);
+    fmi2_import_free_instance(fmu);
     fmi2_import_destroy_dllfmu(fmu);
     fmi2_import_free(fmu);
     if (jac_col != nullptr) {

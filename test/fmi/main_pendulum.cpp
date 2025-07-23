@@ -1,7 +1,6 @@
 #include <iostream>
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
-#include "pendulum/modelDescription.h"
 using namespace std;
 using namespace adevs;
 
@@ -52,11 +51,11 @@ class oracle : public ode_system<double> {
     int test_count;
 };
 
-class pendulum2 : public pendulum {
+class pendulum : public ModelExchange<double> {
   public:
-    pendulum2() : pendulum(), query(false) {}
+    pendulum() : ModelExchange<double>("pendulum.fmu",1E-6), query(false) {}
     double time_event_func(double const* q) {
-        pendulum::time_event_func(q);
+        ModelExchange<double>::time_event_func(q);
         if (query) {
             return 0;
         } else {
@@ -64,17 +63,18 @@ class pendulum2 : public pendulum {
         }
     }
     void internal_event(double* q, bool const* state_events) {
-        pendulum::internal_event(q, state_events);
+        ModelExchange<double>::internal_event(q, state_events);
         query = false;
     }
     void external_event(double* q, double e, list<PinValue<double>> const &xb) {
-        pendulum::external_event(q, e, xb);
+        ModelExchange<double>::external_event(q, e, xb);
         query = true;
     }
     void output_func(double const* q, bool const* state_events,
                      list<PinValue<double>> &yb) {
-        pendulum::output_func(q, state_events, yb);
-        yb.push_back(PinValue<double>(output,get_theta()));
+        double theta = std::any_cast<double>(get_variable("theta"));
+        ModelExchange<double>::output_func(q, state_events, yb);
+        yb.push_back(PinValue<double>(output,theta));
     }
 
     const pin_t output;
@@ -85,7 +85,7 @@ class pendulum2 : public pendulum {
 
 int main() {
     // Create the open modelica model
-    pendulum2* model = new pendulum2();
+    pendulum* model = new pendulum();
     shared_ptr<Hybrid<double>> hybrid_model = make_shared<Hybrid<double>>(
         model, new corrected_euler<double>(model, 1E-8, 0.01),
         new discontinuous_event_locator<double>(model, 1E-6));
@@ -102,13 +102,17 @@ int main() {
     dig_model->connect(test_oracle->output, hybrid_model);
     // Create the simulator
     Simulator<double>* sim = new Simulator<double>(dig_model);
-    assert(fabs(model->get_theta()) < 1E-6);
+    double theta = std::any_cast<double>(model->get_variable("theta"));
+    assert(fabs(theta) < 1E-6);
     cout << "# time, x, y" << endl;
     while (sim->nextEventTime() <= 15.0) {
         cout << sim->nextEventTime() << " ";
         sim->execNextEvent();
-        cout << model->get_x() << " " << model->get_y() << " "
-             << model->get_theta() << " " << hybrid_model_oracle->getState(0)
+        theta = std::any_cast<double>(model->get_variable("theta"));
+        double x = std::any_cast<double>(model->get_variable("x"));
+        double y = std::any_cast<double>(model->get_variable("y"));
+        cout << x << " " << y << " "
+             << theta << " " << hybrid_model_oracle->getState(0)
              << " " << endl;
     }
     assert(test_oracle->getTestCount() > 0);
