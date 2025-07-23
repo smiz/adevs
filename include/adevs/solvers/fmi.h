@@ -80,7 +80,7 @@ class ModelExchange : public ode_system<ValueType> {
     ///
     /// Do no overload
     virtual void der_func(double const* q, double* dq);
-    /// @compute Compute the state event functions for state q and put them in z
+    /// @brief Compute the state event functions for state q and put them in z
     ///
     /// Do no overload
     virtual void state_event_func(double const* q, double* z);

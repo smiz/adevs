@@ -33,7 +33,6 @@
 #define _adevs_simulator_h_
 
 #include <cassert>
-#include <cstdlib>
 #include <list>
 #include <set>
 #include <any>
@@ -108,19 +107,20 @@ class EventListener {
  * algorithm can be described briefly as follows:
  * 1. Each Atomic model has an associated clock called its elapsed time, denoted by e.
  * This value is initialized to zero. The current simulation time is set to zero.
- * 2. Call the ta() method of each Atomic model and find the smallest value of ta()-e.
- * The set of models whose ta()-e equals this smallest value are the imminent models.
- * If the smallest ta()-e is infinity, then the simulation ends. For brevity, we use
- * dt to indicate this smallest ta()-e.
+ * 2. Call the Atomic::ta() method of each Atomic model and find the smallest value of
+ * Atomic::ta()-e.
+ * The set of models whose Atomic::ta()-e equals this smallest value are the imminent models.
+ * If the smallest Atomic::ta()-e is infinity then the simulation ends. For brevity, we use
+ * dt to indicate this smallest Atomic::ta()-e.
  * 3. Add dt to the elapsed time e of each Atomic model and to the current simulation
- * time. Notice that imminent models now have e = ta() and non-imminent models
- * have e < ta().
- * 4. Call the output_func() method of each imminent model that is not a MealyAtomic
+ * time. Notice that imminent models now have e = Atomic::ta() and non-imminent models
+ * have e < Atomic::ta().
+ * 4. Call the Atomic::output_func() method of each imminent model that is not a MealyAtomic
  * and collect these output values in a list. The imminent models that are not MealyAtomic
  * models are put into the active set. The imminent models that are MealyAtomic are put
  * into the pending set. The pending set contains only MealyAtomic models. Now
  * do the following:
- *     -# For each PinValue pair in the output list, use the Graph route() method to find
+ *     -# For each PinValue pair in the output list, use the Graph::route() method to find
  * the models that receive this value as input. The receiving models that are not
  * MealyAtomic go into the active set. The MealyAtomic receivers go into the pending set.
  * If a MealyAtomic model that is already in the active set is added to the pending set
@@ -128,22 +128,22 @@ class EventListener {
  *     -# If the pending set is empty, then go to step 5.
  *     -# Select a MealyAtomic model from the pending set and move it to the active set.
  *     -# Call the selected model's output function to get a new output list
- *         - If the model has received no input and is imminent, call output_func()
- *         - If the model has received input and is imminent, call confluent_output_func()
- *         - If the model has received input and is not imminent, call external_output_func()
+ *         - If the model has received no input and is imminent, call MealyAtomic::output_func()
+ *         - If the model has received input and is imminent, call MealyAtomic::confluent_output_func()
+ *         - If the model has received input and is not imminent, call MealyAtomic::external_output_func()
 *      -# Go to step 4a. 
  * 5. Calculate new states for the models.
- *     - If the model is imminent and is not in the active set, call its delta_int() method
+ *     - If the model is imminent and is not in the active set, call its Atomic::delta_int() method
  * and set its elapsed time e to zero. 
- *     - If the model is imminent and is in the active set, call its delta_conf() method
+ *     - If the model is imminent and is in the active set, call its Atomic::delta_conf() method
  * with the input produced in step 4. Set its elapsed time e to zero.         
- *     - If the model is not imminent and is in the active set, call its delta_ext() method
+ *     - If the model is not imminent and is in the active set, call its Atomic::delta_ext() method
  * with its elapsed time e and the input produced in step 4. Set its elapsed time e to zero.
  *     - Otherwise, do nothing.
  * 6. Apply provisional changes to the Graph structure.
  * 7. Go to step 2.
  * 
- * Looking at this algorithm we can see two important features. First, the time advance ta()
+ * Looking at this algorithm we can see two important features. First, the time advance Atomic::ta()
  * of each model is used to determine the time of the next event. The value returned by time advance 
  * is how long the Atomic model will stay in its current state before changing state spontaneously.
  * Second, the current simulation time is the sum of the dt values calculated in each iteration
@@ -156,23 +156,23 @@ class EventListener {
  * federation. The general idea is as follows:
  * 1. Register one or more EventListener objects that will gather output events that are to
  * be published to the HLA federation.
- * 2. Get your time of next event by calling the Simulator nextEventTime() method.
- * 3. Call computeNextOutput(). Send Events and Object Updates (i.e., HLA messages)
+ * 2. Get your time of next event by calling the Simulator::nextEventTime() method.
+ * 3. Call Simulator::computeNextOutput(). Send Events and Object Updates (i.e., HLA messages)
  * as your registered EventListener objects receive output events. The time stamp for
- * these messages is the time returned by nextEventTime(). Make sure they are published
+ * these messages is the time returned by Simulator::nextEventTime(). Make sure they are published
  * as retractable messages so that they can be canceled if you receive input before
  * your next event time.
- * 4. Issue a next event request to the HLA federation for your nextEventTime().
+ * 4. Issue a next event request to the HLA federation for your Simulator::nextEventTime().
  * 5. You will receive one or more messages from the federation, each with an identical
  * time stamp.
- *   -# If this time stamp is less than your nextEventTime() then call setNextTime()
- * with the time stamp of the received message and retract any messages published in
- * step 3.
- *   -# Inject the data from the received messages into your Simulator by using the injectInput() method.
+ *   -# If this time stamp is less than your Simulator::nextEventTime() then call
+ * Simulator::setNextTime() with the time stamp of the received message and retract 
+ * any messages published in step 3.
+ *   -# Inject the data from the received messages into your Simulator by using Simulator::injectInput().
  * 6. You will receive a time advance grant from the federation.
- *   -# If the grant is equal to the time you requested, call computeNextState().
- *   -# If the grant is less than the time you requested, call execNextEvent(). MealyAtomic
- * models may produce output at this time, but non MealyAtomic models will not.
+ *   -# If the grant is equal to the time you requested, call Simulator::computeNextState().
+ *   -# If the grant is less than the time you requested, call Simulator::execNextEvent(). MealyAtomic
+ * models may produce output at this time, but plain Atomic models will not.
  * 7. Repeat from step 2.
  */
 template <class ValueType = std::any, class TimeType = double>
@@ -186,7 +186,7 @@ class Simulator {
      * time advance of the model is less than zero.
      * @param model The model to simulate.
      */
-    Simulator(shared_ptr<Atomic<ValueType, TimeType>> model);
+    Simulator(std::shared_ptr<Atomic<ValueType, TimeType>> model);
 
     /**
      * @brief Initialize the simulator with a collection of models.

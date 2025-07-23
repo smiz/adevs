@@ -111,8 +111,6 @@ class event_locator_impl : public event_locator<ValueType> {
     }
 };
 
-/// \endcond
-
 template <typename ValueType>
 event_locator_impl<ValueType>::event_locator_impl(ode_system<ValueType>* sys,
                                                    double err_tol, Mode mode)

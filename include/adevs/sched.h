@@ -33,8 +33,6 @@
 #define _adevs_schedule_h_
 
 #include <cassert>
-#include <cfloat>
-#include <cstdlib>
 #include <list>
 #include <memory>
 #include "adevs/models.h"

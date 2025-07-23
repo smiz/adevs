@@ -32,7 +32,6 @@
 #ifndef _adevs_models_h_
 #define _adevs_models_h_
 
-#include <cstdlib>
 #include <list>
 #include <memory>
 #include <set>
@@ -40,9 +39,6 @@
 #include <any>
 #include "adevs/exception.h"
 #include "adevs/time.h"
-
-using namespace std;
-
 
 namespace adevs {
 
@@ -82,10 +78,10 @@ class Graph;
  * \endverbatim
  *
  * A component places output on a pin by creating a PinValue object
- * and adding it to the list of output values in the Atomic output_func().
- * A component receives input on a pin where connect() or create_coupling()
+ * and adding it to the list of output values in Atomic::output_func().
+ * A component receives input on a pin where Graph::connect() or Coupled::create_coupling()
  * methods are called such that a path exists from the pin used in the
- * output_func() to the Atomic model that receives the input.
+ * Atomic::output_func() method to the Atomic model that receives the input.
  *
  * @see Atomic
  * @see Coupled  
@@ -140,10 +136,10 @@ class pin_t {
 /**
  * @brief An event that appears on a pin.
  *
- * An Atomic creates PinValue objects in its output_func()
+ * An Atomic creates PinValue objects in its Atomic::output_func()
  * method and it consumes PinValue objects in its state
- * transition functions: delta_int(), delta_ext(), and
- * delta_conf(). The PinValue objects can also be 
+ * transition functions: Atomic::delta_int(), Atomic::delta_ext(), and
+ * Atomic::delta_conf(). The PinValue objects can also be 
  * injected into and extracted from a running Simulator so
  * that the simulation can be used as part of a larger program.
  * 
@@ -194,44 +190,43 @@ class PinValue {
  * block of any simulation program will be the behaviors of the Atomic components
  * that you create to define the active pieces of your model. The state
  * of an Atomic model changes in three ways:
- * - An internal state transition. This is a change of state that
+ * - An internal state transition using Atomic::delta_int(). This is a change of state that
  * the model undergoes all by itself, without any outside stimulation.
- * Internal state transitions are scheduled by the time advance function ta().
- * - An external state transition. This is a change of state that occurs
+ * - An external state transition using Atomic::delta_ext(). This is a change of state that occurs
  * in response to an input, which is also called an external event.
- * - A confluent state transition. This is a change of state that occurs
+ * - A confluent state transition using Atomic::delta_conf(). This is a change of state that occurs
  * when an input arrives at the same time that the model is scheduled to undergo
  * an internal state transition. Hence, the confluent state transition decides
  * what happens when the conditions for an internal and external state
  * transition are satisfied at the same time.
  *
- * The time advance function ta() informs the Simulator of when internal 
+ * The time advance function Atomic::ta() informs the Simulator of when internal 
  * state transitions should occur. The time advance returns the amount of
  * time until the next internal state transition relative to the time at
  * which the previous state transition occurred.
  * 
  * For example, suppose the model changes from state A to state B at time t.
- * This change happens because the Simulator called the delta_int(), delta_ext(),
- * or delta_conf() method at time t. After calling one of these methods to
+ * This change happens because the Simulator called Atomic::delta_int(), Atomic::delta_ext(),
+ * or Atomic::delta_conf() at time t. After calling one of these methods to
  * calculate the new state of the component, the Simulator calls the time 
- * advance method ta(). The return value of ta() is used by the Simulator to
- * schedule the next internal event for time t+ta().
+ * advance method Atomic::ta(). The return value is used by the Simulator to
+ * schedule the next internal event for time t+Atomic::ta().
  *
- * Now, suppose the simulation reaches time t + ta() without the model receiving any input.
- * Then at this time the Simulator calls delta_int() to calculate the model's new state,
- * say state C. If instead the model receives an input x at time t + ta(), then the 
- * Simulator calculates the new state by calling the method delta_conf(x).
+ * Now, suppose the simulation reaches time t + Atomic::ta() without the model receiving any input.
+ * Then at this time the Simulator calls Atomic::delta_int() to calculate the model's new state,
+ * say state C. If instead the model receives an input x at time t + Atomic::ta(), then the 
+ * Simulator calculates the new state by calling Atomic::delta_conf(x).
  * 
- * Suppose instead that the model receives an input x at some time t + e,, where e < ta().
- * In this case, the Simulator will call the method delta_ext(e, x) to calculate
+ * Suppose instead that the model receives an input x at some time t + e where e < Atomic::ta().
+ * In this case, the Simulator will call the method Atomic::delta_ext() with arguments e and x to calculate
  * the model's new state. Now the model is in a new state, say C. The Simulator
- * calls the ta() method to get the time advance and the next internal event is
- * scheduled for time t + e + ta(). 
+ * calls the Atomic::ta() method to get the time advance and the next internal event is
+ * scheduled for time t + e + Atomic::ta(). 
  * 
- * The output function output_func() is called by the Simulator to let the Atomic
+ * The output function Atomic::output_func() is called by the Simulator to let the Atomic
  * model generate PinValue objects. The output function is called immediately
- * before the Simulator calls the delta_int() or delta_conf(). It is not called
- * prior to calling the delta_ext() method.
+ * before the Simulator calls the Atomic::delta_int() or Atomic::delta_conf(). It is not called
+ * prior to calling the Atomic::delta_ext() method.
  * 
  * @see PinValue
  * @see Graph
