@@ -28,8 +28,8 @@ If you want to run the tests you will need to install meson.
 You will also need the [SUNDIALS](https://computing.llnl.gov/projects/sundials)
 development libraries. To build and run the tests use
 
-meson setup builddir
-meson compile -C builddir
+meson setup builddir\
+meson compile -C builddir\
 meson test -C builddir
 
 
