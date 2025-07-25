@@ -216,7 +216,8 @@
  * \include ex4.cpp
  * 
  * \page ex5plot Voltage, diode state, and switch state vs time
- * 
+ * \image html circuit.png
+ *
  * \page ex5 Example #5
  * \include ex5.cpp
  */

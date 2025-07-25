@@ -40,6 +40,11 @@ using namespace std;
 
 namespace adevs {
 
+ /**
+  * \page cvode.cpp
+  * \include cvode.cpp
+  */
+
 /**
  * @brief Use CVode from the SUNDIALS package to simulate a piecewise continuous ODE model
  * that produces and responds to discrete events.
@@ -48,8 +53,10 @@ namespace adevs {
  * <a href="https://computing.llnl.gov/projects/sundials">SUNDIALS</a>
  * CVode package to use this class. Your CVODE
  * derived Atomic model can be integrated directly into a larger adevs discrete
- * event simulation.
+ * event simulation. An example of using the CVODE class is in the
+ * test case \subpage cvode.cpp
  */
+
 template <typename ValueType = std::any>
 class CVODE: public Atomic<ValueType> {
   public:
@@ -70,7 +77,7 @@ class CVODE: public Atomic<ValueType> {
     /**
      * @brief Do not override!
      * 
-     * Do not override the internal state transition function! Use cvode_delta_int
+     * Do not override the internal state transition function! Use cvode_delta_int()
      * instead to change state in response to internal events.
      */
     void delta_int();
@@ -119,8 +126,7 @@ class CVODE: public Atomic<ValueType> {
      * This is called when a discrete event arrives at the model prior to the next
      * internal event. Use this method to implement your model's external transition
      * function.
-     * @param t  This is the current time as seen by the model. It will be the total
-     * elapsed time plus the t0 value you provided to the constructor.
+     * @param t  This is the current time as seen by the model and not the elapsed time.
      * @param xb The list of input that arrived at the model.
      */
     virtual void cvode_delta_ext(double t, std::list<PinValue<ValueType>> const &xb) = 0;
@@ -128,7 +134,7 @@ class CVODE: public Atomic<ValueType> {
      * @brief Override this method to implement your confluent transition function.
      * 
      * This is your CVode model's confluent transition function. It is called only
-     * if the event parameter based to cvode_integrate was set to true. Otherwise,
+     * if the event parameter passed to cvode_integrate() was set to true. Otherwise,
      * the model experiences an external event instead.
      * 
      * @param xb The list of input that arrived at the model.
@@ -139,7 +145,7 @@ class CVODE: public Atomic<ValueType> {
      * 
      * This where your CVode model can produce events to be consumed by other models
      * in the larger discrete event simulation. This is called when the simulation
-     * time matches the tf value returned by cvode_integrate.
+     * time matches the time value returned by cvode_integrate().
      * 
      * @param yb A list of fill with output events.
      */
@@ -148,7 +154,7 @@ class CVODE: public Atomic<ValueType> {
      * @brief Override this method so that it returns the current state of the model.
      * 
      * Return the current state of the model. This is the state at the time
-     * tf returned by cvode_integrate.
+     * value returned by cvode_integrate().
      * 
      * @return The current state of the model.
      */

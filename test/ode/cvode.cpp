@@ -14,11 +14,16 @@ using namespace adevs;
 #define CLIMB 1
 
 /**
- * Simple test which simulates a bouncing ball. The output value is the height of
- * the ball. Input values cause the system to produce an output sample immediately.
+ * Simple test which simulates a bouncing ball. The output value is the height
+ * of the ball. Input cause the system to produce an output sample immediately.
  */
 class bouncing_ball : public CVODE<double> {
   public:
+    /** 
+     * Constructor initializes the CVODE system.
+     * 
+     * @param h_max The maximum step size that CVODE should take
+     */
     bouncing_ball(double h_max):
     CVODE<double>(),
     phase(FALL),
@@ -47,6 +52,9 @@ class bouncing_ball : public CVODE<double> {
         retval = CVodeSetUserData(cvode_mem,(void*)(&phase));
         assert(retval == CV_SUCCESS);
     }
+    /**
+     * Cleanup the CVODE system
+     */
     ~bouncing_ball() {
         N_VDestroy(y);
         N_VDestroy(abstol);
@@ -56,7 +64,13 @@ class bouncing_ball : public CVODE<double> {
         SUNContext_Free(&sunctx);
     }
 
+    /**
+     * The internal transition function. This is called when
+     * the ball bounces and when it generates a sample following
+     * the receipt of an input.
+     */
     void cvode_delta_int() {
+        /// Did we bounce?
         if (event_flag) {
             if (phase == FALL)  // Hit the ground
             {
@@ -70,35 +84,55 @@ class bouncing_ball : public CVODE<double> {
         }
         sample = false;
     }
+    /**
+     * Schedule an output immediately in response to an input.
+     */
     void cvode_delta_ext(double t, std::list<PinValue<double>> const &) {
         this->t = t;
-        sample = true;
+        sample = true; // tell cvode_integrate() to take a step size of zero
     }
 
+    /**
+     * Schedule an output immediately in response to an input.
+     */
     void cvode_delta_conf(std::list<PinValue<double>> const &) {
-        sample = true;
+        sample = true; // tell cvode_integrate() to take a step size of zero
     }
 
+    /**
+     * Send the height of the ball and an output
+     */
     void cvode_output_func(std::list<PinValue<double>> &yb) {
         PinValue<double> event(sample_pin, NV_Ith_S(y,0));
         yb.push_back(event);
     }
+
     N_Vector cvode_get_state() { return y; };
 
+    /**
+     * Run an integration step
+     */
     void cvode_integrate(double& tf, bool& event) {
+        // If we are sampling, the step size is zero and
+        // we want an internal event
         if (sample) {
-            tf = t;
-            event = true;
+            tf = t; // Next time is current time
+            event = true; // We want an internal event
             return;
         }
+        // Integrate up to our maximum step size and check for state events
         int retval = CVode(cvode_mem,t+h_max,y,&t,CV_NORMAL);
         assert(retval == CV_SUCCESS || retval == CV_ROOT_RETURN);
         retval = CVodeGetRootInfo(cvode_mem,&event_flag);
         assert(retval == CV_SUCCESS);
+        // Return the time that we integrated up to
         tf = t;
+        // Are there any state events at that time?
         event = (event_flag != 0);
     }
 
+    /// Integrate until exactly time tf and report if there are
+    /// any state events at that time
     void cvode_integrate_until(double tf, bool& event) {
         int retval = CVode(cvode_mem,tf,y,&t,CV_NORMAL);
         assert(retval == CV_SUCCESS);
@@ -108,6 +142,7 @@ class bouncing_ball : public CVODE<double> {
         event = (event_flag != 0);
     }
 
+    /// Reinitialize continuous variables following and event
     void cvode_reinit(N_Vector y, double t) {
         int retval = CVodeReInit(cvode_mem,t,y);
         assert(retval == CV_SUCCESS);
@@ -134,12 +169,14 @@ class bouncing_ball : public CVODE<double> {
     void* cvode_mem;
 };
 
+/// dy/dt = f(y)
 int bouncing_ball::f(double, N_Vector y, N_Vector ydot, void*) {
     NV_Ith_S(ydot,0) = NV_Ith_S(y,1);
     NV_Ith_S(ydot,1) = -2.0;  // For test case
     return 0;
 }
 
+/// this is the state event detection function
 int bouncing_ball::g(double, N_Vector y, double* gout, void* user_data) {
     int phase = *((int*)user_data);
     if (phase == FALL) {
