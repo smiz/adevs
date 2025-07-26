@@ -148,7 +148,17 @@
  * and couplings that change in time.
  * 
  * \subpage ex6
+ * 
+ * Below are several miscellaneous example.
+ *
+ * The \subpage game_of_life is a famous cellular automaton. You can read about it
+ * <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">here</a>.
  */
+
+ /**
+  * \page game_of_life Game of Life
+  * \include game_of_life.cpp
+  */
 
  /**
  * \page ex1 Example #1
