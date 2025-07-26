@@ -39,7 +39,9 @@
  * Theory of Modeling and Simulation</a>. You might also be interested in
  * <a href="https://www.wiley.com/en-us/Building+Software+for+Simulation%3A+Theory+and+Algorithms%2C+with+Applications+in+C%2B%2B-p-9781118099452">
  * Building Software for Simulation</a>, which introduces the DEVS formalism
- * through a previous version of adevs. You can also find a great deal of
+ * through a previous version of adevs. Another excellent reference is
+ * <a href="https://www.routledge.com/Discrete-Event-Modeling-and-Simulation-A-Practitioners-Approach/Wainer/p/book/9781420053364?srsltid=AfmBOooqmd8In3-qK3DojTjMkWKb6IBehk0BHt2HAeooIs24Sifi7cFE">Discrete-Event Modeling and Simulation: A Practitioner's Approach</a>.
+ * You can also find a great deal of
  * tutorial material on university websites, such as these
  * 
  * - <a href="https://simulation.tudelft.nl/SEN9110/lectures/04%20VanTendelooVangheluwe_SpringSim2017_DEVSTutorial.pdf">
@@ -138,8 +140,14 @@
  * \subpage ex5plot
  * 
  * \subpage ex5
+ *
+ * The test case below illustrates how components and couplings can be added to and removed
+ * from an adevs::Coupled model within a running simulation. This example very
+ * closely resembles the <a href="https://dl.acm.org/doi/10.1145/224401.224731">
+ * Dynamic Structure DEVS</a> approach to organizing a simulation model with components
+ * and couplings that change in time.
  * 
- 
+ * \subpage ex6
  */
 
  /**
@@ -220,6 +228,9 @@
  *
  * \page ex5 Example #5
  * \include ex5.cpp
+ * 
+ * \page ex6 Example #6
+ * \include coupled_test.cpp
  */
 
 /*
