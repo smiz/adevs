@@ -36,6 +36,10 @@ using namespace std;
  * drops below Vd. A small hysteris value epsilon
  * is used to prevent the model getting stuck 
  * at Vd.
+ * 
+ * You can build this from the command line with
+ * 
+ * g++ -Wall -I../../include -L../.. ex5.cpp -ladevs
  */
 
 /**
@@ -69,15 +73,15 @@ class Circuit : public adevs::ode_system<> {
             /// dVc/dt = 0 , capacitor holds its charge
             dq[0] = 0.0;
         } else if (!switch_conducting && diode_conducting) {
-            /// dVc/dt = -Vc / (C * Rl) , capacitor discharging
-            dq[0] = -q[0] / (C * Rl);
+            /// dVc/dt = -(Vc-vd) / (C * Rl) , capacitor discharging
+            dq[0] = -(q[0]-vd) / (C * Rl);
         } else if (switch_conducting && !diode_conducting) {
             /// dVc/dt = (Vs - Vc) / (C * Rs) , capacitor charging
             dq[0] = (vs - q[0]) / (C * Rs);
         } else {
-            /// dVc/dt = ((Vs - Vc) / Rs - Vc / Rl) / C
+            /// dVc/dt = ((Vs - Vc) / Rs - (Vc-vd) / Rl) / C
             /// Simultaneously charging an discharging
-            dq[0] = ((vs - q[0]) / Rs - q[0] / Rl) / C;
+            dq[0] = ((vs - q[0]) / Rs - (q[0]-vd) / Rl) / C;
         }
     }
     /// Called by the Hybrid class to get the values of the
@@ -168,7 +172,7 @@ int main() {
     adevs::Simulator<> sim(model);
     // Simulate until the switch and diode have both experienced an event
     double tNow = 0.0;
-    while (sim.nextEventTime() < 2.0) {
+    while (sim.nextEventTime() < 5.0) {
         cout << tNow << " " << hybrid_model->getState(0) << " "
              << circuit->getSwitch() << " " << circuit->getDiode() << endl;
         tNow = sim.execNextEvent();

@@ -153,6 +153,11 @@
  *
  * The \subpage game_of_life is a famous cellular automaton. You can read about it
  * <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">here</a>.
+ * 
+ * This \subpage circuit example illustrates the use of the adevs::ModelExchange
+ * class to import a model that is package as an <a href="https://fmi-standard.org/">FMI</a>
+ * for Model Exchange. You will need the <a href="https://openmodelica.org/">OpenModelica</a> compiler and
+ * <a href="https://computing.llnl.gov/projects/sundials">SUNDIALS</a> to build and run this example.
  */
 
  /**
@@ -241,6 +246,9 @@
  * 
  * \page ex6 Example #6
  * \include coupled_test.cpp
+ * 
+ * \page circuit Circuit
+ * \include circuit.cpp
  */
 
 /*
