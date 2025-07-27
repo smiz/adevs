@@ -30,11 +30,11 @@
  */
 /**
  * \mainpage
- * adevs is a C++ library for simulating discrete and hybrid dynamic systems.
+ * adevs is a C++ library for simulating discrete event and hybrid dynamic systems.
  * It is based on the DEVS formalism, which is an offshoot of general systems
  * theory. It is our hope that adevs will be useful to persons who do not
  * have prior experience with DEVS, but you may nonetheless find it helpful
- * to have at hand references on the subject. The standard reference
+ * to have a references on the subject. The standard reference
  * is <a href="https://shop.elsevier.com/books/theory-of-modeling-and-simulation/zeigler/978-0-12-813370-5">
  * Theory of Modeling and Simulation</a>. You might also be interested in
  * <a href="https://www.wiley.com/en-us/Building+Software+for+Simulation%3A+Theory+and+Algorithms%2C+with+Applications+in+C%2B%2B-p-9781118099452">
@@ -88,7 +88,7 @@
  * \enddot
  *
  * The dashed connection in the graph is created implicitly when the output
- * function of a 'A' puts a PinValue object with pin 'p' into the list passed
+ * function of 'A' puts an adevs::PinValue object with pin 'p' into the list passed
  * to the output function. The solid connection is created by calling the
  * graph method
  * \verbatim
@@ -109,19 +109,20 @@
  *
  * Our next example simulates a pipelined computer processor core. This example
  * demonstrates how the adevs::Coupled class is used to create hierarchical
- * models. It also demonstates the use of a adevs::MealyAtomic to create a model that
+ * models. It also demonstrates the use of an adevs::MealyAtomic to create a model that
  * produces output in direct response to an input. The components of a model with
- * a single processor are shown in the graph below. The adevs::Atomic models are displayed in boxes.
+ * a single processor are shown in the diagram below. The adevs::Atomic models are displayed in boxes.
  * The adevs::pin_t objects are displayed without an outline. Comparing the graph that
- * is displayed with the code in the example, you will see that the create_coupling() method
- * of the adevs::Coupled class acts just as the connect() method of the adevs::Graph class.
+ * is displayed with the code in the example, you will see that the Coupled::create_coupling() method
+ * of the adevs::Coupled class acts as the Graph::connect() method of the adevs::Graph class.
  *
  * The adevs::MealyAtomic in this example is the InstructionSource. It produces an instruction
- * for the Processor to execute whenever the processor indicates it is ready by issuing
- * an event on the ready_to_receive pin. The Processor constains three stages. Stage 0
- * fetches an instruction. State 1 decodes the instruction. Stage 2 executs the instruction.
- * In this example we can create a computer with multiple Processor's by creating several
- * instances of the Processor, which is an instance of an adevs::Coupled model.
+ * for the Processor when the Processor indicates it is ready to receive an instruction.
+ * The Processor indicates this by issuing
+ * an event on the ready_to_receive pin. The Processor contains three stages. Stage 0
+ * fetches an instruction. State 1 decodes the instruction. Stage 2 executes the instruction.
+ * In this example we can create a computer with multiple Processor objects by creating several
+ * instances of the Processor class.
  * 
  * \subpage ex4diagram
  * 
@@ -129,12 +130,12 @@
  *
  * This next example shows how to use the adevs::Hybrid class to simulate a model with a component
  * that has a piecewise continuous dynamic. The adevs::ode_system class is used to define
- * the dynamic behavior. The virtual methods of the adevs::ode_system are overriden to 
+ * the dynamic behavior. The virtual methods of the adevs::ode_system are overridden to 
  * define the derivative function, state event function, output function, and discrete
  * state transition functions. The adevs::Hybrid class is derived from the adevs::Atomic class,
  * and it implements a numerical solver for the equations defined by the adevs::ode_system class.
  * The adevs::ode_system is supplied to the adevs::Hybrid object to define the model's
- * dynamic behavior. Then the adevs::Hybrid object is added to your model just like an other
+ * dynamic behavior. Then the adevs::Hybrid object is added to your model just like any other
  * adevs::Atomic component.
  * 
  * \subpage ex5plot
@@ -155,9 +156,10 @@
  * <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">here</a>.
  * 
  * This \subpage circuit example illustrates the use of the adevs::ModelExchange
- * class to import a model that is package as an <a href="https://fmi-standard.org/">FMI</a>
- * for Model Exchange. You will need the <a href="https://openmodelica.org/">OpenModelica</a> compiler and
- * <a href="https://computing.llnl.gov/projects/sundials">SUNDIALS</a> to build and run this example.
+ * class to import a model component packaged as an <a href="https://fmi-standard.org/">FMI</a>
+ * for Model Exchange. You will need the <a href="https://openmodelica.org/">OpenModelica</a> compiler,
+ * <a href="https://computing.llnl.gov/projects/sundials">SUNDIALS</a>, and the
+ * <a href="https://github.com/modelon-community/fmi-library">FMI library</a> to build and run this example.
  */
 
  /**
