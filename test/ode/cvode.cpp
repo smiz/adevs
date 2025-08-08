@@ -31,7 +31,13 @@ class bouncing_ball : public CVODE<double> {
     t(0.0),
     h_max(h_max) {
         int retval;
+
+#if SUNDIALS_VERSION_MAJOR < 7
         SUNContext_Create(nullptr,&sunctx);
+#else // SUNDIALS_VERSION_MAJOR >= 7
+        SUNContext_Create(0,&sunctx);
+#endif
+
         y = N_VNew_Serial(2,sunctx);
         abstol = N_VNew_Serial(2,sunctx);
         NV_Ith_S(y,0) = 1.0;  // Initial height
