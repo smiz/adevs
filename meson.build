@@ -22,6 +22,11 @@ adevs = include_directories('include')
 # Imports used other places
 fs = import('fs')
 
+# Dependencies for Sundials
+# If Sundials is not default/system-wide installed one should set the CMAKE_PREFIX_PATH environmental variable
+# before running "meson setup build_dir" 
+sundials_dep = dependency('SUNDIALS', method: 'cmake', modules: ['SUNDIALS::core', 'SUNDIALS::cvode', 'SUNDIALS::kinsol'])
+
 # Scripts/helpers for tests
 compare = find_program('utilities/compare.sh')
 run_and_compare = find_program('utilities/run_and_compare.sh')

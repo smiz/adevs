@@ -143,9 +143,16 @@ class trap : public ode_solver<ValueType> {
     static int jac(N_Vector y, N_Vector f, SUNMatrix J, void* user_data,
                    N_Vector tmp1, N_Vector tmp2);
     static int check_retval(void* retvalvalue, char const* funcname, int opt);
-    static void silent_error_handler(int, char const*, char const*, char*,
-                                     void*) {}
+
+#if SUNDIALS_VERSION_MAJOR < 7
+    static void silent_error_handler(int, char const*, char const*, char*, void*) {}
     static void silent_info_handler(char const*, char const*, char*, void*) {}
+#else //SUNDIALS_VERSION_MAJOR >= 7
+    static void silent_error_handler(int , const char *, const char *, const char *, SUNErrCode , void *, SUNContext){}
+    // There is no  silent_info_handler equivalent?
+    static void silent_info_handler(char const*, char const*, char*, void*) {}
+#endif
+
 };
 
 template <typename ValueType>
@@ -172,8 +179,8 @@ int trap<ValueType>::check_retval(void* retvalvalue, char const* ,
 
 template <typename ValueType>
 int trap<ValueType>::func(N_Vector y, N_Vector f, void* user_data) {
-    realtype* yd = N_VGetArrayPointer(y);
-    realtype* fd = N_VGetArrayPointer(f);
+    auto yd = N_VGetArrayPointer(y);
+    auto fd = N_VGetArrayPointer(f);
     kinsol_data_t* data = static_cast<kinsol_data_t*>(user_data);
     data->self->sys->der_func(yd, fd);
     for (int i = 0; i < data->self->sys->numVars(); i++) {
@@ -185,8 +192,8 @@ int trap<ValueType>::func(N_Vector y, N_Vector f, void* user_data) {
 template <typename ValueType>
 int trap<ValueType>::jac(N_Vector y, N_Vector , SUNMatrix J, void* user_data,
                          N_Vector , N_Vector ) {
-    realtype* yd = N_VGetArrayPointer(y);
-    realtype* Jd = SUNDenseMatrix_Data(J);
+    auto yd = N_VGetArrayPointer(y);
+    auto Jd = SUNDenseMatrix_Data(J);
     kinsol_data_t* data = static_cast<kinsol_data_t*>(user_data);
     int const N = data->self->sys->numVars();
     data->self->sys->get_jacobian(yd, Jd);
@@ -204,8 +211,14 @@ template <typename ValueType>
 void trap<ValueType>::prep_kinsol(bool silent) {
     int retval;
     kinsol_data.self = this;
+
     /* Create a context */
+#if SUNDIALS_VERSION_MAJOR < 7
     retval = SUNContext_Create(nullptr,&sunctx);
+#else // SUNDIALS_VERSION_MAJOR >= 7
+    retval = SUNContext_Create(0, &sunctx);
+#endif
+
     if (check_retval(&retval, "SUNContext_Create", 1)) {
         throw adevs::exception("SUNContext_Create failed");
     }
@@ -219,7 +232,13 @@ void trap<ValueType>::prep_kinsol(bool silent) {
         throw adevs::exception("N_VClone failed");
     }
     // No scaling
+#if SUNDIALS_VERSION_MAJOR < 7
     N_VConst(RCONST(1.0), scale);
+#else //SUNDIALS_VERSION_MAJOR >= 7
+    N_VConst(SUN_RCONST(1.0), scale);
+#endif
+
+    N_VConst(1.0, scale);
     J = SUNDenseMatrix(this->sys->numVars(), this->sys->numVars(), sunctx);
     if (check_retval((void*)J, "SUNDenseMatrix", 0)) {
         throw adevs::exception("SUNDenseMatrix failed");
@@ -256,8 +275,14 @@ void trap<ValueType>::prep_kinsol(bool silent) {
         }
     }
     if (silent) {
+#if SUNDIALS_VERSION_MAJOR < 7
         KINSetErrHandlerFn(kmem, silent_error_handler, NULL);
         KINSetInfoHandlerFn(kmem, silent_info_handler, NULL);
+#else //SUNDIALS_VERSION_MAJOR >= 7
+        SUNContext_PushErrHandler(sunctx, silent_error_handler, NULL);
+        // There is no  silent_info_handler equivalent?
+        // KINSetInfoHandlerFn(kmem, silent_info_handler, NULL);
+#endif
     }
 }
 
@@ -296,7 +321,7 @@ void trap<ValueType>::advance(double* q, double h) {
 template <typename ValueType>
 bool trap<ValueType>::step(double* q, double h, double const* dq0) {
     int const N = this->sys->numVars();
-    realtype* yd = N_VGetArrayPointer(y);
+    auto yd = N_VGetArrayPointer(y);
     // Fixed term in the trapezoidal integration rule
     for (int i = 0; i < N; i++) {
         k[i] = q[i] + (h / 2.0) * dq0[i];
