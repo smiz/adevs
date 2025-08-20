@@ -27,6 +27,7 @@ fs = import('fs')
 # If Sundials is not default/system-wide installed one should set the CMAKE_PREFIX_PATH environmental variable
 # before running "meson setup build_dir" 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
 dep_check = dependency('SUNDIALS', method: 'cmake', modules: ['SUNDIALS::cvode'], required: true)
 message('Found SUNDIALS version: ' + dep_check.version())
@@ -38,6 +39,9 @@ else
   sundials_dep = dependency('SUNDIALS', method: 'cmake', modules: ['SUNDIALS::cvode', 'SUNDIALS::kinsol'])
   message('SUNDIALS < 7; using modules: cvode, kinsol')
 endif
+=======
+sundials_dep = dependency('SUNDIALS', method: 'cmake', modules: ['SUNDIALS::cvode', 'SUNDIALS::kinsol'])
+>>>>>>> Stashed changes
 =======
 sundials_dep = dependency('SUNDIALS', method: 'cmake', modules: ['SUNDIALS::cvode', 'SUNDIALS::kinsol'])
 >>>>>>> Stashed changes
