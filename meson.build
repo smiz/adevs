@@ -24,8 +24,10 @@ fs = import('fs')
 
 # Dependencies for Sundials
 
-# If Sundials is not default/system-wide installed one should set the CMAKE_PREFIX_PATH environmental variable
-# before running "meson setup build_dir" 
+# If Sundials is not installed as a "system library" the Meson build system must be told where to find
+# the library. In that case one should set the CMAKE_PREFIX_PATH environmental variable
+# before running "meson setup build_dir" or call "meson setup" with 
+# "CMAKE_PREFIX_PATH=/path/to/sundials/installation meson setup build_dir"
 
 dep_check = dependency('SUNDIALS', method: 'cmake', modules: ['SUNDIALS::cvode'], required: true)
 message('Found SUNDIALS version: ' + dep_check.version())
@@ -38,16 +40,30 @@ else
   message('SUNDIALS < 7; using modules: cvode, kinsol')
 endif
 
+# Dependencies for FMI: 
+#
+# By default the Meson build system tries to find the FMI library as a "system library", i.e. it expects that  the headers
+# and library can be found by the compiler/linker in their default search paths.
+#   
+# If the library FMI is not installed as a "system library" the Meson build system must be told where to find
+# the library. In that case you should copy the "meson_native.ini.example" file to "meson_native.ini", edit the paths
+# in that file as appropriate (see the file) and call "meson setup" with
+# "meson setup build_dir --native-file=meson_native.ini"
+#
+# Also see examples.fmi/meson.build for more information
+
+# If *both* Sundials and FMI are not installed as "system libraries, call "meson setup" with
+# "CMAKE_PREFIX_PATH=/path/to/sundials/installation meson setup build_dir --native-file=meson_native.ini"
+
 # Scripts/helpers for tests
 compare = find_program('utilities/compare.sh')
 run_and_compare = find_program('utilities/run_and_compare.sh')
 run_and_compare_output = find_program('utilities/run_and_compare_output.sh')
 
 # Add all the subdirectoriess
-#subdir('examples')
 subdir('src')
 subdir('test')
-
+subdir('examples')
 
 # Additional targets for clang-tidy and Doxygen
 

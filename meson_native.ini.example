@@ -1,0 +1,7 @@
+
+[project options]
+
+# fmi_inc: the path to the directory that contains fmi.h
+fmi_inc = '/home/jkr/Programming/C++/fmi-library-3.0.4/install/include'
+# fmi_libdir: the path to the directory that contains libfmilib_shared.so
+fmi_libdir = '/home/jkr/Programming/C++/fmi-library-3.0.4/install/lib'
