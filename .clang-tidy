@@ -1,0 +1,43 @@
+---
+# Either disable all checks and enable the required ones (1) 
+# OR enable all checks and disable the not required ones (2)
+#
+# For student-projects: it is better to know the warnings and disable them than disabling them and 
+# not knowing what you disabled. For all possible checks see https://clang.llvm.org/extra/clang-tidy/checks/list.html
+
+# Ratio for disabling the ones that are now disabled:
+# - abseil, altera, android, fuchsia and zircom are for (specific) Google-projects and we don't work there...
+# - google-objc*: we don't use objective-c
+# - other google*: to much noise if enabled/ too Google specific
+# - llvm:  this is specific for the LLVM-project
+# - modernize-use-trailing-return-type : too disruptive
+ 
+Checks: "*,
+        -abseil-*,
+        -altera-*,
+        -android-*,        
+        -fuchsia-*,
+        -google-objc*,
+        -google-readability-avoid-underscore-in-googletest-name,
+        -google-readability-todo,
+        -google-runtime-int,
+        -google-upgrade-googletest-case,
+        -zircon-*,        
+        -llvm*,
+        -modernize-use-trailing-return-type,
+        -google-default-arguments,
+"
+WarningsAsErrors: ''
+HeaderFilterRegex: ''
+UseColor: 'false'
+FormatStyle:     none
+
+CheckOptions:
+  - { key: readability-identifier-length.IgnoredVariableNames,                 value: (os|i|PI|x|y|dX|dY|tm|dc)}
+  - { key: readability-identifier-length.MinimumParameterNameLength,           value: 1 }
+  - { key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor,    value: true }  
+  - { key: hicpp-special-member-functions.AllowSoleDefaultDtor,                value: true }  
+  - { key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic, value: true }  
+  - { key: bugprone-easily-swappable-parameters.NamePrefixSuffixSilenceDissimilarityTreshold,           value: 2 }  
+  - { key: performance-unnecessary-value-param.AllowedTypes,                   value: "Ptr?$" }  
+  - { key: performance-for-range-copy.AllowedTypes,                            value: "Ptr?$" }  

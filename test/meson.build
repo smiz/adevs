@@ -13,8 +13,8 @@ subdir('zero_time')
 test_alt_time = executable('alt_time', 'alt_time_tests.cpp', include_directories: adevs, link_with: adevs_lib)
 test('alt_time', test_alt_time)
 
-test_atomic = executable('atomic', 'atomic_test.cpp', include_directories: adevs, link_with: adevs_lib)
-test('atomic', test_atomic)
+test_atomic = executable('atomic_t', 'atomic_test.cpp', include_directories: adevs, link_with: adevs_lib)
+test('atomic_t', test_atomic)
 
 test_double_fcmp = executable('double_fcmp', 'double_fcmp_test.cpp', include_directories: adevs, link_with: adevs_lib)
 test('double_fcmp', test_double_fcmp)
