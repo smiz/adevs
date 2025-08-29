@@ -1,0 +1,5 @@
+option('fmi_inc', type: 'string', value: '',
+  description: 'The path to the directory that contains fmi.h')
+
+option('fmi_libdir', type: 'string', value: '',
+  description: 'The path to the directory that contains libfmilib_shared.so')

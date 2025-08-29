@@ -4,3 +4,4 @@
 /.texlipse
 /.settings/
 /clang-tidy-output.txt
+/meson_native.ini

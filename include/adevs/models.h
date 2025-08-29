@@ -328,7 +328,7 @@ template <typename ValueType = std::any, typename TimeType = double>
 class MealyAtomic : public Atomic<ValueType, TimeType> {
   public:
     /// @brief Default constructor.
-    MealyAtomic<ValueType, TimeType>() : Atomic<ValueType, TimeType>() {}
+    MealyAtomic() : Atomic<ValueType, TimeType>() {}
     /**
      * @brief Produce output at an external transition.
      * 
