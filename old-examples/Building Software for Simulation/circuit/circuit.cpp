@@ -1,6 +1,6 @@
 #include <iostream>
 #include "adevs/adevs.h"
-using namespace std;
+
 using namespace adevs;
 
 /**
@@ -48,14 +48,14 @@ class Circuit : public ode_system<bool> {
         assert(events[0]);  // only one event type; make sure it fired
         d = !d;
     }
-    void external_event(double*, double, list<bool> const &xb) {
+    void external_event(double*, double, std::list<bool> const &xb) {
         s = *(xb.begin());
     }
-    void confluent_event(double* q, bool const* events, list<bool> const &xb) {
+    void confluent_event(double* q, bool const* events, std::list<bool> const &xb) {
         internal_event(q, events);
         external_event(q, 0.0, xb);
     }
-    void output_func(double const* q, bool const* events, list<bool> &yb) {
+    void output_func(double const* q, bool const* events, std::list<bool> &yb) {
         assert(events[0]);
         yb.push_back(!d);
     }
@@ -75,8 +75,8 @@ class StateListener : public EventListener<bool> {
   public:
     StateListener(Hybrid<bool>* c1, Circuit* c2) : c1(c1), c2(c2) {}
     void stateChange(Atomic<bool>*, double t) {
-        cout << t << " " << c1->getState(0) << " " << c2->getSwitch() << " "
-             << c2->getDiode() << endl;
+        std::cout << t << " " << c1->getState(0) << " " << c2->getSwitch() << " "
+             << c2->getDiode() << std::endl;
     }
     void outputEvent(Event<bool>, double) {}
 
@@ -99,7 +99,7 @@ int main() {
         sim->execNextEvent();
     }
     // Open the switch
-    list<Event<bool>> xb;
+    std::list<Event<bool>> xb;
     xb.push_back(Event<bool>(hybrid_model, 0));
     sim->computeNextState(xb, 1.0);
     // Simulate for another second

@@ -5,7 +5,7 @@
 #include <iostream>
 #include "Cell.h"
 #include "adevs/adevs.h"
-using namespace std;
+
 using namespace adevs;
 
 // Cellspace dimensions
@@ -87,15 +87,15 @@ void simulateSpace() {
 
 int main(int argc, char** argv) {
     if (argc < 4) {
-        cout << "Need a seed, rule number (0-255), and number of steps to "
+        std::cout << "Need a seed, rule number (0-255), and number of steps to "
                 "simulate"
-             << endl;
+             << std::endl;
         return 0;
     }
     int seed = atoi(argv[1]);
     rule = atoi(argv[2]);
     numSteps = atoi(argv[3]);
-    cout << seed << " " << rule << " " << numSteps << endl;
+    std::cout << seed << " " << rule << " " << numSteps << std::endl;
     // Seed the random number generator
     srand(seed);
     // Setup the display

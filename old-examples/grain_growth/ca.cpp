@@ -4,7 +4,7 @@
 #include <random>
 #include "params.h"  // Includes SIZE and W
 #include "save_results.h"
-using namespace std;
+
 
 // Random number generators
 default_random_engine generator;
@@ -86,8 +86,8 @@ void simulateSpace() {
     }
     // Report end time, clock ticks needed, and state changes calculated
     trun = clock() - trun;
-    cout << tend << " " << trun << " " << state_changes << " "
-         << (double)trun / (double)state_changes << endl;
+    std::cout << tend << " " << trun << " " << state_changes << " "
+         << (double)trun / (double)state_changes << std::endl;
     // Record the outcome to a png file
     k = 0;
     for (int i = 0; i < SIZE; i++) {

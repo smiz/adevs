@@ -36,8 +36,6 @@
 #include <cvode/cvode.h>
 #include "adevs/adevs.h"
 
-using namespace std;
-
 namespace adevs {
 
  /**

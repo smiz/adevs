@@ -1,7 +1,7 @@
 #include "SimControl.h"
 #include <sys/time.h>
 #include <iostream>
-using namespace std;
+
 
 // Return time in milliseconds
 static unsigned long getTime() {
@@ -53,7 +53,7 @@ void SimControl::run() {
             sim->execNextEvent();
             t = getTime();
             if (t - t_start > 1000) {
-                cerr << "Can not run fast enough" << endl;
+                std::cerr << "Can not run fast enough" << std::endl;
                 break;
             }
         }
@@ -102,12 +102,12 @@ void SimControl::quit() {
 
 void SimControl::increaseFreq() {
     freq += 100.0;
-    cout << "Freq = " << freq << endl;
+    std::cout << "Freq = " << freq << std::endl;
 }
 
 void SimControl::decreaseFreq() {
     freq -= 100.0;
-    cout << "Freq = " << freq << endl;
+    std::cout << "Freq = " << freq << std::endl;
 }
 
 void SimControl::outputEvent(ModelOutput event, double t) {

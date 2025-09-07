@@ -1,7 +1,7 @@
 #include <iostream>
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
-using namespace std;
+
 
 int main() {
     double err_tol = 1E-6;
@@ -12,7 +12,7 @@ int main() {
         new adevs::corrected_euler<int>(fmi, 1E-6, 0.001);
     adevs::bisection_event_locator<int>* solver2 =
         new adevs::bisection_event_locator<int>(fmi, 1E-7);
-    shared_ptr<adevs::Hybrid<int>> model = make_shared<adevs::Hybrid<int>>(fmi, solver1, solver2);
+    std::shared_ptr<adevs::Hybrid<int>> model = std::make_shared<adevs::Hybrid<int>>(fmi, solver1, solver2);
     adevs::Simulator<int>* sim = new adevs::Simulator<int>(model);
     assert(sim->nextEventTime() < 10.0);
     while (sim->nextEventTime() < 10.0) {

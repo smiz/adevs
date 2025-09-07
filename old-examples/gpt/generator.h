@@ -25,13 +25,13 @@ class Generator : public adevs::Atomic<PortValue> {
         sigma = period;
     }
 
-    void delta_ext(double e, list<PortValue> const &x) {
+    void delta_ext(double e, std::list<PortValue> const &x) {
         // Continue with next event time unchanged if, for some reason,
         // the input is on neither on these ports.
         sigma -= e;
         // Look for input on the start port.  If input is found,
         // hold until it is time to produce the first output.
-        list<PortValue>::const_iterator iter;
+        std::list<PortValue>::const_iterator iter;
         for (iter = x.begin(); iter != x.end(); iter++) {
             if ((*iter).port == start) {
                 sigma = period;
@@ -46,14 +46,14 @@ class Generator : public adevs::Atomic<PortValue> {
         }
     }
 
-    void delta_conf(list<PortValue> const &x) {
+    void delta_conf(std::list<PortValue> const &x) {
         // When an internal and external event coincide, compute
         // the internal state transition then process the input.
         delta_int();
         delta_ext(0.0, x);
     }
 
-    void output_func(list<PortValue> &y) {
+    void output_func(std::list<PortValue> &y) {
         // Place a new job on the output port
         Job j(count);
         PortValue pv(out, j);

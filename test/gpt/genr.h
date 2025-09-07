@@ -53,7 +53,7 @@ class genr : public adevs::Atomic<job> {
         delta_ext(0.0, x);
     }
     /// Output function.
-    void output_func(list<PortValue> &y) {
+    void output_func(std::list<PortValue> &y) {
         // Place a new job on the output port
         job j(count);
         PortValue pv(out, j);

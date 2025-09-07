@@ -3,7 +3,7 @@
 #include <iostream>
 #include <set>
 
-using namespace std;
+
 using namespace adevs;
 
 Tank::Tank(double freq, double x0, double y0, double theta0, double cint)
@@ -20,7 +20,7 @@ void Tank::getComponents(set<Devs<SimEvent>*> &c) {
 }
 
 void Tank::route(SimEvent const &value, Devs<SimEvent>* model,
-                 list<Event<SimEvent>> &r) {
+                 std::list<Event<SimEvent>> &r) {
     // Packets go to the computer
     if (value.getType() == SIM_PACKET) {
         r.push_back(Event<SimEvent>(&computer, value));

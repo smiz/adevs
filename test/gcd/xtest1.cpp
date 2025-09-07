@@ -4,10 +4,10 @@
 #include "adevs/adevs.h"
 #include "gcd.h"
 
-using namespace std;
+
 
 int main() {
-    cout << "Test 1x" << endl;
+    std::cout << "Test 1x" << std::endl;
     auto model = std::make_shared<adevs::Coupled<ObjectPtr>>();
     auto c = std::make_shared<gcd>(10.0, 2.0, 1, false);
     auto g = std::make_shared<genr>(10.0, 1, true);
@@ -21,6 +21,6 @@ int main() {
         sim.setNextTime(sim.nextEventTime());
         assert(sim.computeNextState() == tnew + adevs_epsilon<double>());
     }
-    cout << "Test done" << endl;
+    std::cout << "Test done" << std::endl;
     return 0;
 }

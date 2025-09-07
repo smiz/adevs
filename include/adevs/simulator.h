@@ -36,6 +36,7 @@
 #include <list>
 #include <set>
 #include <any>
+#include <memory>
 #include "adevs/graph.h"
 #include "adevs/models.h"
 #include "adevs/sched.h"
@@ -302,7 +303,7 @@ class Simulator {
 
   private:
     std::shared_ptr<Graph<ValueType, TimeType>> graph;
-    std::list<shared_ptr<EventListener<ValueType, TimeType>>> listeners;
+    std::list<std::shared_ptr<EventListener<ValueType, TimeType>>> listeners;
     std::list<PinValue<ValueType>> external_input;
     std::set<Atomic<ValueType, TimeType>*> active;
     Schedule<ValueType, TimeType> sched;

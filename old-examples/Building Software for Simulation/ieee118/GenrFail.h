@@ -9,10 +9,10 @@ class GenrFail : public adevs::Atomic<adevs::PortValue<BasicEvent*>> {
 
     GenrFail(unsigned which, double time_to_drop, ElectricalData* data);
     void delta_int();
-    void output_func(list<adevs::PortValue<BasicEvent*>> &yb);
+    void output_func(std::list<adevs::PortValue<BasicEvent*>> &yb);
     double ta();
-    void delta_ext(double, list<adevs::PortValue<BasicEvent*>> const &) {}
-    void delta_conf(list<adevs::PortValue<BasicEvent*>> const &) {}
+    void delta_ext(double, std::list<adevs::PortValue<BasicEvent*>> const &) {}
+    void delta_conf(std::list<adevs::PortValue<BasicEvent*>> const &) {}
 
 
   private:

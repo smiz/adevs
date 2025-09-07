@@ -1,5 +1,5 @@
 #include "TankPhysics.h"
-using namespace std;
+
 using namespace adevs;
 
 // Get the state variable values

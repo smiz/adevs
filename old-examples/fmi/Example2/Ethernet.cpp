@@ -1,5 +1,5 @@
 #include "Ethernet.h"
-using namespace std;
+
 using namespace adevs;
 
 /**
@@ -16,8 +16,8 @@ void Rx::delta_int() {
     data = NULL;
 }
 
-void Rx::delta_ext(double e, list<IO_Type> const &xb) {
-    list<IO_Type>::const_iterator iter;
+void Rx::delta_ext(double e, std::list<IO_Type> const &xb) {
+    std::list<IO_Type>::const_iterator iter;
     for (iter = xb.begin(); iter != xb.end(); iter++) {
         NetworkData* pckt = dynamic_cast<NetworkData*>((*iter).value);
         if (pckt->getAddr() == addr &&
@@ -29,12 +29,12 @@ void Rx::delta_ext(double e, list<IO_Type> const &xb) {
     }
 }
 
-void Rx::delta_conf(list<IO_Type> const &xb) {
+void Rx::delta_conf(std::list<IO_Type> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
 
-void Rx::output_func(list<IO_Type> &yb) {
+void Rx::output_func(std::list<IO_Type> &yb) {
     IO_Type msg;
     msg.port = to_app;
     msg.value = data;
@@ -107,10 +107,10 @@ void Tx::delta_int() {
     }
 }
 
-void Tx::delta_ext(double e, list<IO_Type> const &xb) {
+void Tx::delta_ext(double e, std::list<IO_Type> const &xb) {
     int startMsgs = 0, cmpltMsgs = 0;
     timeToTx -= e;
-    list<IO_Type>::const_iterator iter;
+    std::list<IO_Type>::const_iterator iter;
     for (iter = xb.begin(); iter != xb.end(); iter++) {
         // Somebody is transmitting
         if ((*iter).port == from_media) {
@@ -144,12 +144,12 @@ void Tx::delta_ext(double e, list<IO_Type> const &xb) {
     }
 }
 
-void Tx::delta_conf(list<IO_Type> const &xb) {
+void Tx::delta_conf(std::list<IO_Type> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
 
-void Tx::output_func(list<IO_Type> &yb) {
+void Tx::output_func(std::list<IO_Type> &yb) {
     IO_Type msg;
     msg.port = to_media;
     if (mode == START && tryCount <= maxTries) {

@@ -1,7 +1,7 @@
 #include <iostream>
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
-using namespace std;
+
 using namespace adevs;
 
 class oracle : public ode_system<double> {
@@ -20,7 +20,7 @@ class oracle : public ode_system<double> {
     void state_event_func(double const*, double*) {}
     double time_event_func(double const* q) { return q[2]; }
     void internal_event(double* q, bool const*) { q[2] = 0.01; }
-    void external_event(double* q, double, list<PinValue<double>> const &xb) {
+    void external_event(double* q, double, std::list<PinValue<double>> const &xb) {
         static double const pi = 3.1415926535897931;
         test_count++;
         double test_angle = xb.front().value;
@@ -32,15 +32,15 @@ class oracle : public ode_system<double> {
             diff -= 2.0 * pi;
         }
         if (fabs(diff) > 1E-3) {
-            cerr << "AGGGH: " << q[0] << "," << test_angle << "," << diff
-                 << endl;
+            std::cerr << "AGGGH: " << q[0] << "," << test_angle << "," << diff
+                 << std::endl;
         }
         assert(fabs(diff) < 1E-3);
     }
-    void confluent_event(double*, bool const*, list<PinValue<double>> const &) {
+    void confluent_event(double*, bool const*, std::list<PinValue<double>> const &) {
         assert(false);
     }
-    void output_func(double const*, bool const*, list<PinValue<double>> &yb) {
+    void output_func(double const*, bool const*, std::list<PinValue<double>> &yb) {
         yb.push_back(PinValue<double>(output,0));
     }
     int getTestCount() { return test_count; }
@@ -66,12 +66,12 @@ class pendulum : public ModelExchange<double> {
         ModelExchange<double>::internal_event(q, state_events);
         query = false;
     }
-    void external_event(double* q, double e, list<PinValue<double>> const &xb) {
+    void external_event(double* q, double e, std::list<PinValue<double>> const &xb) {
         ModelExchange<double>::external_event(q, e, xb);
         query = true;
     }
     void output_func(double const* q, bool const* state_events,
-                     list<PinValue<double>> &yb) {
+                     std::list<PinValue<double>> &yb) {
         double theta = std::any_cast<double>(get_variable("theta"));
         ModelExchange<double>::output_func(q, state_events, yb);
         yb.push_back(PinValue<double>(output,theta));
@@ -86,16 +86,16 @@ class pendulum : public ModelExchange<double> {
 int main() {
     // Create the open modelica model
     pendulum* model = new pendulum();
-    shared_ptr<Hybrid<double>> hybrid_model = make_shared<Hybrid<double>>(
+    std::shared_ptr<Hybrid<double>> hybrid_model = std::make_shared<Hybrid<double>>(
         model, new corrected_euler<double>(model, 1E-8, 0.01),
         new discontinuous_event_locator<double>(model, 1E-6));
     // Create the test oracle
     oracle* test_oracle = new oracle();
-    shared_ptr<Hybrid<double>> hybrid_model_oracle = make_shared<Hybrid<double>>(
+    std::shared_ptr<Hybrid<double>> hybrid_model_oracle = std::make_shared<Hybrid<double>>(
         test_oracle, new corrected_euler<double>(test_oracle, 1E-8, 0.01),
         new linear_event_locator<double>(test_oracle, 1E-6));
     // Combine them
-    shared_ptr<Graph<double>> dig_model = make_shared<Graph<double>>();
+    std::shared_ptr<Graph<double>> dig_model = std::make_shared<Graph<double>>();
     dig_model->add_atomic(hybrid_model);
     dig_model->add_atomic(hybrid_model_oracle);
     dig_model->connect(model->output, hybrid_model_oracle);
@@ -104,16 +104,16 @@ int main() {
     Simulator<double>* sim = new Simulator<double>(dig_model);
     double theta = std::any_cast<double>(model->get_variable("theta"));
     assert(fabs(theta) < 1E-6);
-    cout << "# time, x, y" << endl;
+    std::cout << "# time, x, y" << std::endl;
     while (sim->nextEventTime() <= 15.0) {
-        cout << sim->nextEventTime() << " ";
+        std::cout << sim->nextEventTime() << " ";
         sim->execNextEvent();
         theta = std::any_cast<double>(model->get_variable("theta"));
         double x = std::any_cast<double>(model->get_variable("x"));
         double y = std::any_cast<double>(model->get_variable("y"));
-        cout << x << " " << y << " "
+        std::cout << x << " " << y << " "
              << theta << " " << hybrid_model_oracle->getState(0)
-             << " " << endl;
+             << " " << std::endl;
     }
     assert(test_oracle->getTestCount() > 0);
     delete sim;

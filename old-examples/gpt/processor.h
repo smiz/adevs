@@ -32,7 +32,7 @@ class Processor : public adevs::Atomic<PortValue> {
         val = NULL;
     }
 
-    void delta_ext(double e, list<PortValue> const &x) {
+    void delta_ext(double e, std::list<PortValue> const &x) {
         t += e;
         // If we are waiting for a job
         if (sigma == DBL_MAX) {
@@ -49,14 +49,14 @@ class Processor : public adevs::Atomic<PortValue> {
         }
     }
 
-    void delta_conf(list<PortValue> const &x) {
+    void delta_conf(std::list<PortValue> const &x) {
         // Discard the old job
         delta_int();
         // Process the incoming job
         delta_ext(0.0, x);
     }
 
-    void output_func(list<PortValue> &y) {
+    void output_func(std::list<PortValue> &y) {
         // Produce a copy of the completed job on the out port
         PortValue pv(out, *val);
         y.push_back(pv);

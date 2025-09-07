@@ -8,7 +8,7 @@
 #include "adevs/fmi.h"
 #include "io.h"
 
-using namespace std;
+
 using namespace adevs;
 
 /**
@@ -39,13 +39,13 @@ class App : public AtomicModel {
 
     void delta_int() {}
 
-    void delta_ext(double, list<IO_Type> const &) {}
+    void delta_ext(double, std::list<IO_Type> const &) {}
 
-    void delta_conf(list<IO_Type> const &) {}
+    void delta_conf(std::list<IO_Type> const &) {}
 
 
     /// Put a packet on the network
-    void output_func(list<IO_Type> &yb) {
+    void output_func(std::list<IO_Type> &yb) {
         IO_Type y;
         y.port = data_out;
         y.value =
@@ -88,7 +88,7 @@ class ControlExt : public Control {
         Control::internal_event(q, state_event);
         doCmd = false;
     }
-    void external_event(double* q, double e, list<IO_Type> const &xb) {
+    void external_event(double* q, double e, std::list<IO_Type> const &xb) {
         // We generate commands in response to new data
         Control::external_event(q, e, xb);
         // Nothing to do if no time has elapsed
@@ -99,7 +99,7 @@ class ControlExt : public Control {
         Control::external_event(q, e, xb);
     }
     void confluent_event(double* q, bool const* state_event,
-                         list<IO_Type> const &xb) {
+                         std::list<IO_Type> const &xb) {
         double h = time_event_func(q);
         // We generate commands in response to new data
         Control::confluent_event(q, state_event, xb);
@@ -111,7 +111,7 @@ class ControlExt : public Control {
         Control::confluent_event(q, state_event, xb);
     }
     void output_func(double const* q, bool const* state_event,
-                     list<IO_Type> &yb) {
+                     std::list<IO_Type> &yb) {
         Control::output_func(q, state_event, yb);
         CommandSig* sig = new CommandSig(T[0], T[1]);
         IO_Type msg;
@@ -123,8 +123,8 @@ class ControlExt : public Control {
   private:
     bool doCmd;
     double err[2], ierr[2], T[2];
-    void process_input_data(double h, list<IO_Type> const &xb) {
-        for (list<IO_Type>::const_iterator iter = xb.begin(); iter != xb.end();
+    void process_input_data(double h, std::list<IO_Type> const &xb) {
+        for (std::list<IO_Type>::const_iterator iter = xb.begin(); iter != xb.end();
              iter++) {
             NetworkData* pkt = dynamic_cast<NetworkData*>((*iter).value);
             SampleSig* sig = dynamic_cast<SampleSig*>(pkt->getPayload());
@@ -178,20 +178,20 @@ class RobotExt : public Robot {
         // own event.
         Robot::internal_event(q, state_event);
     }
-    void external_event(double* q, double e, list<IO_Type> const &xb) {
+    void external_event(double* q, double e, std::list<IO_Type> const &xb) {
         Robot::external_event(q, e, xb);
         process_input_data(xb);
         Robot::external_event(q, e, xb);
     }
     void confluent_event(double* q, bool const* state_event,
-                         list<IO_Type> const &xb) {
+                         std::list<IO_Type> const &xb) {
         Robot::confluent_event(q, state_event, xb);
         test_for_sample();
         process_input_data(xb);
         Robot::confluent_event(q, state_event, xb);
     }
     void output_func(double const* q, bool const* state_event,
-                     list<IO_Type> &yb) {
+                     std::list<IO_Type> &yb) {
         if (doSample) {
             SampleSig* sig = new SampleSig(get_q1(), get_q2());
             IO_Type msg;
@@ -206,8 +206,8 @@ class RobotExt : public Robot {
     double q1_sample_value, q2_sample_value;
     bool doSample;
 
-    void process_input_data(list<IO_Type> const &xb) {
-        for (list<IO_Type>::const_iterator iter = xb.begin(); iter != xb.end();
+    void process_input_data(std::list<IO_Type> const &xb) {
+        for (std::list<IO_Type>::const_iterator iter = xb.begin(); iter != xb.end();
              iter++) {
             assert((*iter).port == command);
             assert((*iter).value != NULL);
@@ -298,16 +298,16 @@ int main(int argc, char** argv) {
         sim->execNextEvent();
         if (t != tReport) {
             tReport = t;
-            cout << tReport << " " << arm->get_x() << " " << arm->get_z() << " "
+            std::cout << tReport << " " << arm->get_x() << " " << arm->get_z() << " "
                  << ctrl->get_xd() << " " << ctrl->get_zd() << " "
                  << arm->get_q1() << " " << arm->get_q2() << " "
-                 << arm->get_error() << " " << maxError << endl;
+                 << arm->get_error() << " " << maxError << std::endl;
         }
     }
     if (maxError < arm->get_error()) {
         maxError = arm->get_error();
     }
-    cerr << "L1 err = " << maxError << endl;
+    std::cerr << "L1 err = " << maxError << std::endl;
     delete sim;
     delete model;
     return 0;

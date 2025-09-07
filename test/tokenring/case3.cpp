@@ -2,18 +2,18 @@
 #include <memory>
 #include "node.h"
 
-using namespace std;
 
-using Simulator = adevs::Simulator<shared_ptr<token_t>>;
-using Graph = adevs::Graph<shared_ptr<token_t>>;
+
+using Simulator = adevs::Simulator<std::shared_ptr<token_t>>;
+using Graph = adevs::Graph<std::shared_ptr<token_t>>;
 
 int main() {
-    shared_ptr<Graph> model = make_shared<Graph>();
-    shared_ptr<token_t> token0 = make_shared<token_t>();
-    shared_ptr<token_t> token1 = make_shared<token_t>(1);
+    std::shared_ptr<Graph> model = std::make_shared<Graph>();
+    std::shared_ptr<token_t> token0 = std::make_shared<token_t>();
+    std::shared_ptr<token_t> token1 = std::make_shared<token_t>(1);
 
-    shared_ptr<Node> n1 = make_shared<Node>(0, 1, token0);
-    shared_ptr<Node> n2 = make_shared<Node>(1, 1, token1);
+    std::shared_ptr<Node> n1 = std::make_shared<Node>(0, 1, token0);
+    std::shared_ptr<Node> n2 = std::make_shared<Node>(1, 1, token1);
 
     model->add_atomic(n1);
     model->add_atomic(n2);
@@ -22,15 +22,15 @@ int main() {
     model->connect(n1->out, n2->in);
     model->connect(n2->out, n1->in);
 
-    shared_ptr<Simulator> sim = make_shared<Simulator>(model);
+    std::shared_ptr<Simulator> sim = std::make_shared<Simulator>(model);
 
     for (int i = 0; i < 10 && sim->nextEventTime() < adevs_inf<double>(); i++) {
-        cout << endl;
+        std::cout << std::endl;
         sim->execNextEvent();
     }
 
-    cout << endl;
-    cout << "End of run!" << endl;
+    std::cout << std::endl;
+    std::cout << "End of run!" << std::endl;
 
     return 0;
 }

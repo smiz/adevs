@@ -2,21 +2,21 @@
 #include <iostream>
 #include "adevs/adevs.h"
 #include "gcd.h"
-using namespace std;
+
 
 class generatorEventListener : public adevs::EventListener<ObjectPtr> {
   public:
     void stateChange(adevs::Atomic<ObjectPtr>&, double) {}
     void inputEvent(adevs::Atomic<ObjectPtr>&, adevs::PinValue<ObjectPtr>&, double) {}
     void outputEvent(adevs::Atomic<ObjectPtr>& model, adevs::PinValue<ObjectPtr>& x, double) {
-        auto event = pair<adevs::Atomic<ObjectPtr>&,adevs::PinValue<ObjectPtr>>(model, x);
+        auto event = std::pair<adevs::Atomic<ObjectPtr>&,adevs::PinValue<ObjectPtr>>(model, x);
         output.push_back(event);
     }
-    vector<pair<adevs::Atomic<ObjectPtr>&,adevs::PinValue<ObjectPtr>>> output;
+    std::vector<std::pair<adevs::Atomic<ObjectPtr>&,adevs::PinValue<ObjectPtr>>> output;
 };
 
 int main() {
-    cout << "Test 2x" << endl;
+    std::cout << "Test 2x" << std::endl;
     auto c = std::make_shared<gcd>(10.0, 2.0, 1, false);
     auto g = std::make_shared<genr>(10.0, 1, true);
     auto listener = std::make_shared<generatorEventListener>();
@@ -24,7 +24,7 @@ int main() {
     adevs::Simulator<ObjectPtr> sim_g(g);
     sim_g.addEventListener(listener);
     while (sim_c.nextEventTime() < adevs_inf<double>() || sim_g.nextEventTime() < adevs_inf<double>()) {
-        double tN = min(sim_c.nextEventTime(), sim_g.nextEventTime());
+        double tN = std::min(sim_c.nextEventTime(), sim_g.nextEventTime());
         sim_c.setNextTime(tN);
         sim_g.setNextTime(tN);
         sim_g.computeNextOutput();
@@ -43,6 +43,6 @@ int main() {
         assert(sim_c.computeNextState() == tN + adevs_epsilon<double>());
         assert(sim_g.computeNextState() == tN + adevs_epsilon<double>());
     }
-    cout << "Test done" << endl;
+    std::cout << "Test done" << std::endl;
     return 0;
 }

@@ -7,7 +7,7 @@
 #include "cell.h"
 #include "params.h"
 #include "save_results.h"
-using namespace std;
+
 
 double tend;
 
@@ -42,8 +42,8 @@ void simulateSpace() {
         sim->execNextEvent();
     }
     trun = clock() - trun;
-    cout << tL << " " << trun << " " << Cell::state_changes << " "
-         << (double)trun / (double)Cell::state_changes << endl;
+    std::cout << tL << " " << trun << " " << Cell::state_changes << " "
+         << (double)trun / (double)Cell::state_changes << std::endl;
     // Record the outcome
     k = 0;
     for (int i = 0; i < SIZE; i++) {

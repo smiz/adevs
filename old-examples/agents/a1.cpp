@@ -8,7 +8,7 @@
 #include <memory>
 #include "adevs/adevs.h"
 
-using namespace std;
+
 using namespace adevs;
 
 
@@ -21,9 +21,9 @@ class Agent : public Atomic<int> {
   public:
     Agent() : Atomic<int>(), ttg(gsl_ran_exponential(rnd, a)) { pop++; }
     void delta_int() { ttg = adevs_inf<double>(); }
-    void delta_ext(double, list<int> const &) {}
-    void delta_conf(list<int> const &) {}
-    void output_func(list<int> &) { pop--; }
+    void delta_ext(double, std::list<int> const &) {}
+    void delta_conf(std::list<int> const &) {}
+    void output_func(std::list<int> &) { pop--; }
     double ta() { return ttg; }
     static int getPop() { return pop; }
 
@@ -38,17 +38,17 @@ double run() {
 
     double max_error = 0.0;
 
-    shared_ptr<SimpleDigraph<int>> world = make_shared<SimpleDigraph<int>>();
+    std::shared_ptr<SimpleDigraph<int>> world = std::make_shared<SimpleDigraph<int>>();
 
     for (int i = 0; i < num_agents; i++) {
-        world->add(make_shared<Agent>());
+        world->add(std::make_shared<Agent>());
     }
 
-    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(world);
+    std::shared_ptr<Simulator<int>> sim = std::make_shared<Simulator<int>>(world);
 
     if (verbose) {
-        cout << 0 << " " << ((double)(Agent::getPop()) / (double)(num_agents))
-             << " " << exp(-a * 0.0) << endl;
+        std::cout << 0 << " " << ((double)(Agent::getPop()) / (double)(num_agents))
+             << " " << exp(-a * 0.0) << std::endl;
     }
 
     while (sim->nextEventTime() < adevs_inf<double>()) {
@@ -59,7 +59,7 @@ double run() {
         double err = asoln - tsoln;
         max_error = ::max(fabs(err), max_error);
         if (verbose) {
-            cout << t << " " << asoln << " " << tsoln << " " << err << endl;
+            std::cout << t << " " << asoln << " " << tsoln << " " << err << std::endl;
         }
     }
     return max_error;
@@ -69,7 +69,7 @@ int main() {
     //for (num_agents = 10000; num_agents < 5000000; num_agents += 10000) {
     for (num_agents = 10000; num_agents < 100000; num_agents += 10000) {
         double err = run();
-        cout << num_agents << " " << err << endl;
+        std::cout << num_agents << " " << err << std::endl;
     }
     return 0;
 }

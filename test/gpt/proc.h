@@ -54,7 +54,7 @@ class proc : public adevs::Atomic<job> {
         delta_ext(0.0, x);
     }
     /// Output function.
-    void output_func(list<PortValue> &y) {
+    void output_func(std::list<PortValue> &y) {
         // Produce a copy of the completed job on the out port
         PortValue pv(out, *val);
         y.push_back(pv);

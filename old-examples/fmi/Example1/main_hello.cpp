@@ -2,7 +2,7 @@
 #include "HelloWorld.h"
 #include "adevs/adevs.h"
 #include "adevs/fmi.h"
-using namespace std;
+
 using namespace adevs;
 
 /**
@@ -32,7 +32,7 @@ class HelloWorldExt : public HelloWorld {
     }
     // Print state at each output event
     void output_func(double const* q, bool const* state_event,
-                     list<double> &yb) {
+                     std::list<double> &yb) {
         HelloWorld::output_func(q, state_event, yb);
         // Get the model state. This is real variable 0 according to modelDescription.xml
         double x = get_x();
@@ -42,7 +42,7 @@ class HelloWorldExt : public HelloWorld {
         // Output our state
         yb.push_back(x);
         // Print the time, computed state, and exact state
-        cout << get_time() << " " << x << " " << exp(a * get_time()) << endl;
+        std::cout << get_time() << " " << x << " " << exp(a * get_time()) << std::endl;
     }
 
   private:

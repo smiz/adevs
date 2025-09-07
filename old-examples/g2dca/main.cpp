@@ -8,7 +8,7 @@
 #include <sstream>
 #include "Cell.h"
 #include "adevs/adevs.h"
-using namespace std;
+
 
 // Cellspace dimensions
 #define WIDTH  350
@@ -20,7 +20,7 @@ Phase phase[WIDTH][HEIGHT];
 #define CELL_SIZE 3
 GLint const win_width = WIDTH * CELL_SIZE;
 GLint const win_height = HEIGHT * CELL_SIZE;
-string name;
+std::string name;
 
 void drawSpace() {
     static bool init = true;

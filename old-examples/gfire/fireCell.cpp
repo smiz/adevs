@@ -1,7 +1,7 @@
 #include "fireCell.h"
 #include <cassert>
 #include <iostream>
-using namespace std;
+
 
 // Movement rate of the fire
 double const fireCell::move_rate = 1.0;
@@ -56,13 +56,13 @@ void fireCell::delta_int() {
     }
 }
 
-void fireCell::delta_ext(double e, list<CellEvent> const &xb) {
+void fireCell::delta_ext(double e, std::list<CellEvent> const &xb) {
     // If we are on fire, then update the fuel supply
     if (phase == IGNITE || phase == BURN || phase == BURN_FAST) {
         fuel -= e;
     }
     // Change heat level of this cell
-    list<CellEvent>::const_iterator iter;
+    std::list<CellEvent>::const_iterator iter;
     for (iter = xb.begin(); iter != xb.end(); iter++) {
         heat += (*iter).value;
     }
@@ -79,12 +79,12 @@ void fireCell::delta_ext(double e, list<CellEvent> const &xb) {
     }
 }
 
-void fireCell::delta_conf(list<CellEvent> const &xb) {
+void fireCell::delta_conf(std::list<CellEvent> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
 
-void fireCell::output_func(list<CellEvent> &yb) {
+void fireCell::output_func(std::list<CellEvent> &yb) {
     // Output only if cell is burning out or igniting
     if (phase == IGNITE || phase == BURN) {
         // Set the cell output value

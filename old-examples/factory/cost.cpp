@@ -1,7 +1,7 @@
 #include <fstream>
 #include <iostream>
 
-using namespace std;
+
 
 
 int main(int argc, char** argv) {
@@ -19,8 +19,8 @@ int main(int argc, char** argv) {
 
     fin.close();
 
-    cout << "Cost/year: " << cost << endl;
-    cout << "Max: " << max_count << endl;
+    std::cout << "Cost/year: " << cost << std::endl;
+    std::cout << "Max: " << max_count << std::endl;
 
     return 0;
 }

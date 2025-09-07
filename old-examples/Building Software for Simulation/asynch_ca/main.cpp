@@ -3,7 +3,7 @@
 #include "Display.h"
 #include "LookLeft.h"
 #include "adevs/adevs.h"
-using namespace std;
+
 using namespace adevs;
 
 CellSpace<int>* space;
@@ -45,7 +45,7 @@ void draw() {
 int main(int argc, char** argv) {
     // Get the number of generations to run the simulation
     if (argc != 4) {
-        cout << "Requires # cells, end time, start record time" << endl;
+        std::cout << "Requires # cells, end time, start record time" << std::endl;
         return 0;
     }
     num_cells = atoi(argv[1]);

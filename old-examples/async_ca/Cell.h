@@ -13,11 +13,11 @@ class Cell : public adevs::Atomic<adevs::CellEvent<value_t>> {
     Cell(int position, bool const* const state, double h);
     // State transition functions
     void delta_int();
-    void delta_ext(double e, list<adevs::CellEvent<value_t>> const &xb);
-    void delta_conf(list<adevs::CellEvent<value_t>> const &xb);
+    void delta_ext(double e, std::list<adevs::CellEvent<value_t>> const &xb);
+    void delta_conf(std::list<adevs::CellEvent<value_t>> const &xb);
     double ta();
 
-    void output_func(list<adevs::CellEvent<value_t>> &yb);
+    void output_func(std::list<adevs::CellEvent<value_t>> &yb);
 
     bool getState() { return q; }
     static void setParams(bool* vis, unsigned rule, int length);

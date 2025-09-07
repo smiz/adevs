@@ -11,7 +11,7 @@
 #include <iostream>
 #include "harmonic_compensator.h"
 #include "pwm.h"
-using namespace std;
+
 using namespace adevs;
 
 /**
@@ -38,7 +38,7 @@ class Listener : public EventListener<event_t> {
     void saveCurrent() {
         ofstream fout("soln.txt");
         for (int i = 0; i < num_samples; i++) {
-            fout << time[i] << " " << samples[i] << endl;
+            fout << time[i] << " " << samples[i] << std::endl;
         }
     }
     void stateChange(Atomic<event_t>*, double) {}
@@ -141,15 +141,15 @@ void opt() {
             simRuns++;
             if (local.score < best.score) {
                 best = local;
-                cout << "After " << simRuns << " tries..." << endl;
-                cout << "main = " << main_sig << endl;
-                cout << "harmonic = " << har_sig << endl;
-                cout << "the rest = " << remainder << endl;
-                cout << "C = " << best.C << endl;
-                cout << "Linv = " << best.Linv << endl;
-                cout << "G = " << best.G << endl;
-                cout << "H = " << best.H << endl;
-                cout << "score = " << best.score << endl;
+                std::cout << "After " << simRuns << " tries..." << std::endl;
+                std::cout << "main = " << main_sig << std::endl;
+                std::cout << "harmonic = " << har_sig << std::endl;
+                std::cout << "the rest = " << remainder << std::endl;
+                std::cout << "C = " << best.C << std::endl;
+                std::cout << "Linv = " << best.Linv << std::endl;
+                std::cout << "G = " << best.G << std::endl;
+                std::cout << "H = " << best.H << std::endl;
+                std::cout << "score = " << best.score << std::endl;
                 l->saveCurrent();
             } else {
                 local = best;

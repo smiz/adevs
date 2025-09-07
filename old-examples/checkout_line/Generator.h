@@ -14,9 +14,9 @@ class Generator : public adevs::Atomic<EventType> {
     Generator(std::string data_file);
 
     void delta_int();
-    void delta_ext(double e, list<EventType> const &xb);
-    void delta_conf(list<EventType> const &xb);
-    void output_func(list<EventType> &yb);
+    void delta_ext(double e, std::list<EventType> const &xb);
+    void delta_conf(std::list<EventType> const &xb);
+    void output_func(std::list<EventType> &yb);
     double ta();
 
     /// Model output port.

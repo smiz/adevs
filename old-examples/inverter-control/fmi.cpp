@@ -5,12 +5,12 @@
 #include "adevs/trap.h"
 
 typedef adevs::PortValue<double> IOType;
-typedef list<IOType> IOList;
+typedef std::list<IOType> IOList;
 
 #include "TestCircuitAdevs.h"
 #include "TestCircuitModelica.h"
 
-using namespace std;
+
 using namespace adevs;
 
 // Output interval and maximum step size
@@ -244,11 +244,11 @@ int main() {
         bool print = sim->nextEventTime() > tL + cint;
         if (print) {
             tL = sim->nextEventTime();
-            cout << tL;
+            std::cout << tL;
         }
         sim->execNextEvent();
         if (print) {
-            cout << "," << circuit->get_i_load_phase_a() << endl;
+            std::cout << "," << circuit->get_i_load_phase_a() << std::endl;
         }
     }
     // Cleanup

@@ -1,6 +1,6 @@
 #include <iostream>
 #include "adevs/adevs.h"
-using namespace std;
+
 using namespace adevs;
 
 static double const period = 0.001;
@@ -11,9 +11,9 @@ class Genr : public Atomic<int> {
     Genr() : Atomic<int>() {}
     double ta() { return period; }
     void delta_int() {}
-    void delta_ext(double, list<PinValue<int>> const &) {}
-    void delta_conf(list<PinValue<int>> const &) {}
-    void output_func(list<PinValue<int>> &yb) { yb.push_back(PinValue<int>(output,1)); }
+    void delta_ext(double, std::list<PinValue<int>> const &) {}
+    void delta_conf(std::list<PinValue<int>> const &) {}
+    void output_func(std::list<PinValue<int>> &yb) { yb.push_back(PinValue<int>(output,1)); }
 
     const pin_t output;
 };
@@ -32,18 +32,18 @@ class test_model : public ode_system<int> {
         assert(is_confluent);
         q[0] = period;
     }
-    void external_event(double*, double, list<PinValue<int>> const &xb) {
+    void external_event(double*, double, std::list<PinValue<int>> const &xb) {
         assert(is_confluent);
         assert(xb.size() == 1);
     }
     void confluent_event(double* q, bool const* event_flag,
-                         list<PinValue<int>> const &xb) {
+                         std::list<PinValue<int>> const &xb) {
         is_confluent = true;
         internal_event(q, event_flag);
         external_event(q, 0.0, xb);
         is_confluent = false;
     }
-    void output_func(double const*, bool const*, list<PinValue<int>> &) {}
+    void output_func(double const*, bool const*, std::list<PinValue<int>> &) {}
 
 
   private:
@@ -51,9 +51,9 @@ class test_model : public ode_system<int> {
 };
 
 void run_test(ode_system<int>* b, ode_solver<int>* s, event_locator<int>* l) {
-    shared_ptr<Hybrid<int>> ball = make_shared<Hybrid<int>>(b, s, l);
-    shared_ptr<Genr> genr = make_shared<Genr>();
-    shared_ptr<Graph<int>> model = make_shared<Graph<int>>();
+    std::shared_ptr<Hybrid<int>> ball = std::make_shared<Hybrid<int>>(b, s, l);
+    std::shared_ptr<Genr> genr = std::make_shared<Genr>();
+    std::shared_ptr<Graph<int>> model = std::make_shared<Graph<int>>();
     model->add_atomic(ball);
     model->add_atomic(genr);
     model->connect(genr->output, ball);

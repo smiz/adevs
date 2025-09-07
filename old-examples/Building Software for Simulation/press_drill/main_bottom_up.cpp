@@ -1,6 +1,6 @@
 #include <iostream>
 #include "AssemblyLine_bottom_up.h"
-using namespace std;
+
 using namespace adevs;
 
 // Listener for recording the state and output of the assembly line.
@@ -11,20 +11,20 @@ class AssemblyLineListener : public EventListener<int> {
     void outputEvent(Event<int> y, double t) {
         // Output from the AssembyLine
         if (y.model == assembly_line) {
-            cout << "Output, t = " << t << ", y = " << y.value << endl;
+            std::cout << "Output, t = " << t << ", y = " << y.value << std::endl;
         }
     }
     void stateChange(Atomic<int>* model, double t) {
         // Get the model of the machine
         Machine* m = dynamic_cast<Machine*>(model);
         // Print the state of the machine
-        cout << "State, t = " << t;
+        std::cout << "State, t = " << t;
         if (model == assembly_line->getPress()) {
-            cout << ", press = (";
+            std::cout << ", press = (";
         } else {
-            cout << ", drill = (";
+            std::cout << ", drill = (";
         }
-        cout << m->getParts() << "," << m->getSigma() << ")" << endl;
+        std::cout << m->getParts() << "," << m->getSigma() << ")" << std::endl;
     }
 
   private:
@@ -43,7 +43,7 @@ int main() {
     // Run the simulation
     while (true) {
 
-        list<Event<int>> input;
+        std::list<Event<int>> input;
         // The value to inject
         int blanks;
         // Time to inject the input
@@ -57,23 +57,23 @@ int main() {
         }
         // Simulate until time t and then inject the input
         while (sim->nextEventTime() < t) {
-            cout << endl;
+            std::cout << std::endl;
             sim->execNextEvent();
         }
         // Simulate the transient events
         for (int i = 0; i < c && sim->nextEventTime() == t; i++) {
-            cout << endl;
+            std::cout << std::endl;
             sim->execNextEvent();
         }
         // Inject the input
         Event<int> input_event(assembly_line, blanks);
         input.push_back(input_event);
-        cout << endl;
+        std::cout << std::endl;
         sim->computeNextState(input, t);
     }
     // Run until the simulation completes
     while (sim->nextEventTime() < DBL_MAX) {
-        cout << endl;
+        std::cout << std::endl;
         sim->execNextEvent();
     }
     // Clean up

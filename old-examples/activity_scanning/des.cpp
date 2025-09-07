@@ -1,10 +1,10 @@
 #include "des.h"
 #include <list>
 
-using namespace std;
 
 
-void Partition::schedule(shared_ptr<Event> event) {
+
+void Partition::schedule(std::shared_ptr<Event> event) {
     // If this is not ours it must go to its owner
     if (event->partition().get() != this) {
         other_events.push_back(event);
@@ -16,7 +16,7 @@ void Partition::schedule(shared_ptr<Event> event) {
     }
     // Otherwise put this into our schedule
     else {
-        list<shared_ptr<Event>>::iterator iter = future_events.begin();
+        std::list<std::shared_ptr<Event>>::iterator iter = future_events.begin();
         for (; iter != future_events.end(); iter++) {
             if ((*iter)->timestamp() > event->timestamp()) {
                 future_events.insert(iter, event);
@@ -37,10 +37,10 @@ void Partition::delta_int() {
     }
 }
 
-void Partition::delta_ext(double e, list<shared_ptr<Event>> const &xb) {
+void Partition::delta_ext(double e, std::list<std::shared_ptr<Event>> const &xb) {
     time_now += e;
     mode = Mode::CONDITIONAL;
-    list<shared_ptr<Event>>::const_iterator iter = xb.begin();
+    std::list<std::shared_ptr<Event>>::const_iterator iter = xb.begin();
     for (; iter != xb.end(); iter++) {
         if (*iter != NULL && (*iter)->partition().get() == this) {
             schedule(*iter);
@@ -48,7 +48,7 @@ void Partition::delta_ext(double e, list<shared_ptr<Event>> const &xb) {
     }
 }
 
-void Partition::delta_conf(list<shared_ptr<Event>> const &xb) {
+void Partition::delta_conf(std::list<std::shared_ptr<Event>> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
@@ -63,7 +63,7 @@ double Partition::ta() {
     }
 }
 
-void Partition::output_func(list<shared_ptr<Event>> &yb) {
+void Partition::output_func(std::list<std::shared_ptr<Event>> &yb) {
     // Notify others
     for (auto ii : other_events) {
         yb.push_back(ii);
@@ -80,7 +80,7 @@ void Partition::output_func(list<shared_ptr<Event>> &yb) {
         } while (!future_events.empty() &&
                  future_events.front()->timestamp() == time_now);
     } else if (mode == Mode::CONDITIONAL) {
-        list<shared_ptr<Event>>::iterator iter = conditional_events.begin();
+        std::list<std::shared_ptr<Event>>::iterator iter = conditional_events.begin();
         while (iter != conditional_events.end()) {
             if ((*iter)->prep()) {
                 imminent_events.push_back(*iter);

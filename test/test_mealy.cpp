@@ -4,7 +4,7 @@
 #include <memory>
 #include "adevs/adevs.h"
 
-using namespace std;
+
 using namespace adevs;
 
 
@@ -35,9 +35,9 @@ class Periodic : public Atomic<int> {
         return period;
     }
     void delta_int() { internal_transitions++; }
-    void delta_ext(double, list<PinValue<int>> const &) {}
-    void delta_conf(list<PinValue<int>> const &) {}
-    void output_func(list<PinValue<int>> &output) {
+    void delta_ext(double, std::list<PinValue<int>> const &) {}
+    void delta_conf(std::list<PinValue<int>> const &) {}
+    void output_func(std::list<PinValue<int>> &output) {
         output.push_back(PinValue<int>(this->output,1));
     }
 
@@ -53,12 +53,12 @@ class Receiver : public Atomic<int> {
     Receiver() : Atomic<int>(), event_count(0) {}
     double ta() { return adevs_inf<double>(); }
     void delta_int() {}
-    void delta_ext(double, list<PinValue<int>> const &xb) {
+    void delta_ext(double, std::list<PinValue<int>> const &xb) {
         event_count += xb.size();
     }
-    void delta_conf(list<PinValue<int>> const &xb) { delta_ext(0.0, xb); }
+    void delta_conf(std::list<PinValue<int>> const &xb) { delta_ext(0.0, xb); }
     int get_event_count() const { return event_count; }
-    void output_func(list<PinValue<int>> &) {}
+    void output_func(std::list<PinValue<int>> &) {}
 
   private:
     int event_count;
@@ -73,21 +73,21 @@ class Trigger : public MealyAtomic<int> {
     int external_event_count() const { return external_events; }
     double ta() { return time_left; }
     void delta_int() { time_left = adevs_inf<double>(); }
-    void delta_ext(double e, list<PinValue<int>> const &) {
+    void delta_ext(double e, std::list<PinValue<int>> const &) {
         assert(time_elapsed == e);
         external_events++;
         time_left = 1.0;
     }
-    void delta_conf(list<PinValue<int>> const &) { time_left = 1.0; }
-    void output_func(list<PinValue<int>> &yb) {
+    void delta_conf(std::list<PinValue<int>> const &) { time_left = 1.0; }
+    void output_func(std::list<PinValue<int>> &yb) {
         // Turn off
         yb.push_back(PinValue<int>(output,0));
     }
-    void confluent_output_func(list<PinValue<int>> const &xb, list<PinValue<int>> &yb) {
+    void confluent_output_func(std::list<PinValue<int>> const &xb, std::list<PinValue<int>> &yb) {
         // Turn on
         yb.push_back(PinValue<int>(output,(*(xb.begin())).value));
     }
-    void external_output_func(double e, list<PinValue<int>> const &xb, list<PinValue<int>> &yb) {
+    void external_output_func(double e, std::list<PinValue<int>> const &xb, std::list<PinValue<int>> &yb) {
         time_elapsed = e;
         confluent_output_func(xb, yb);
     }
@@ -99,17 +99,17 @@ class Trigger : public MealyAtomic<int> {
 };
 
 void test1() {
-    shared_ptr<Graph<int>> model = make_shared<Graph<int>>();
-    shared_ptr<Trigger> trigger = make_shared<Trigger>();
-    shared_ptr<Periodic> periodic = make_shared<Periodic>(sqrt(2.0));
+    std::shared_ptr<Graph<int>> model = std::make_shared<Graph<int>>();
+    std::shared_ptr<Trigger> trigger = std::make_shared<Trigger>();
+    std::shared_ptr<Periodic> periodic = std::make_shared<Periodic>(sqrt(2.0));
 
     model->add_atomic(trigger);
     model->add_atomic(periodic);
 
     model->connect(periodic->output, trigger);
 
-    shared_ptr<Listener> listener = make_shared<Listener>();
-    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
+    std::shared_ptr<Listener> listener = std::make_shared<Listener>();
+    std::shared_ptr<Simulator<int>> sim = std::make_shared<Simulator<int>>(model);
     sim->addEventListener(listener);
 
     while (sim->nextEventTime() < adevs_inf<double>()) {
@@ -123,17 +123,17 @@ void test1() {
 }
 
 void test2() {
-    shared_ptr<Graph<int>> model = make_shared<Graph<int>>();
-    shared_ptr<Trigger> triggera = make_shared<Trigger>();
-    shared_ptr<Trigger> triggerb = make_shared<Trigger>();
-    shared_ptr<Periodic> periodic = make_shared<Periodic>(sqrt(2.0));
+    std::shared_ptr<Graph<int>> model = std::make_shared<Graph<int>>();
+    std::shared_ptr<Trigger> triggera = std::make_shared<Trigger>();
+    std::shared_ptr<Trigger> triggerb = std::make_shared<Trigger>();
+    std::shared_ptr<Periodic> periodic = std::make_shared<Periodic>(sqrt(2.0));
     model->add_atomic(triggera);
     model->add_atomic(triggerb);
     model->add_atomic(periodic);
     model->connect(periodic->output, triggera);
     model->connect(periodic->output, triggerb);
-    shared_ptr<Listener> l = make_shared<Listener>();
-    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
+    std::shared_ptr<Listener> l = std::make_shared<Listener>();
+    std::shared_ptr<Simulator<int>> sim = std::make_shared<Simulator<int>>(model);
     sim->addEventListener(l);
     while (sim->nextEventTime() < adevs_inf<double>()) {
         sim->execNextEvent();
@@ -146,11 +146,11 @@ void test2() {
 }
 
 void test3() {
-    shared_ptr<Graph<int>> model = make_shared<Graph<int>>();
-    shared_ptr<Trigger> triggera = make_shared<Trigger>();
-    shared_ptr<Trigger> triggerb = make_shared<Trigger>();
-    shared_ptr<Periodic> periodic = make_shared<Periodic>(sqrt(2.0));
-    shared_ptr<Receiver> rx = make_shared<Receiver>();
+    std::shared_ptr<Graph<int>> model = std::make_shared<Graph<int>>();
+    std::shared_ptr<Trigger> triggera = std::make_shared<Trigger>();
+    std::shared_ptr<Trigger> triggerb = std::make_shared<Trigger>();
+    std::shared_ptr<Periodic> periodic = std::make_shared<Periodic>(sqrt(2.0));
+    std::shared_ptr<Receiver> rx = std::make_shared<Receiver>();
     model->add_atomic(triggera);
     model->add_atomic(triggerb);
     model->add_atomic(periodic);
@@ -159,8 +159,8 @@ void test3() {
     model->connect(periodic->output, triggerb);
     model->connect(triggera->output, rx);
     model->connect(triggerb->output, rx);
-    shared_ptr<Listener> l = make_shared<Listener>();
-    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
+    std::shared_ptr<Listener> l = std::make_shared<Listener>();
+    std::shared_ptr<Simulator<int>> sim = std::make_shared<Simulator<int>>(model);
     sim->addEventListener(l);
     while (sim->nextEventTime() < adevs_inf<double>()) {
         int c = rx->get_event_count();
@@ -176,17 +176,17 @@ void test3() {
 
 void test4() {
     bool except = false;
-    shared_ptr<Graph<int>> model = make_shared<Graph<int>>();
-    shared_ptr<Trigger> triggera = make_shared<Trigger>();
-    shared_ptr<Trigger> triggerb = make_shared<Trigger>();
-    shared_ptr<Periodic> periodic = make_shared<Periodic>(sqrt(2.0));
+    std::shared_ptr<Graph<int>> model = std::make_shared<Graph<int>>();
+    std::shared_ptr<Trigger> triggera = std::make_shared<Trigger>();
+    std::shared_ptr<Trigger> triggerb = std::make_shared<Trigger>();
+    std::shared_ptr<Periodic> periodic = std::make_shared<Periodic>(sqrt(2.0));
     model->add_atomic(triggera);
     model->add_atomic(triggerb);
     model->add_atomic(periodic);
     model->connect(periodic->output, triggera);
     model->connect(triggera->output, triggerb);
     model->connect(triggerb->output, triggera);
-    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
+    std::shared_ptr<Simulator<int>> sim = std::make_shared<Simulator<int>>(model);
     while (sim->nextEventTime() < adevs_inf<double>()) {
         try {
             sim->execNextEvent();
@@ -199,12 +199,12 @@ void test4() {
 }
 
 void test5() {
-    cout << "TEST 5" << endl;
-    shared_ptr<Graph<int>> model = make_shared<Graph<int>>();
-    shared_ptr<Trigger> triggera = make_shared<Trigger>();
-    shared_ptr<Trigger> triggerb = make_shared<Trigger>();
-    shared_ptr<Periodic> periodic = make_shared<Periodic>(1.0);
-    shared_ptr<Receiver> rx = make_shared<Receiver>();
+    std::cout << "TEST 5" << std::endl;
+    std::shared_ptr<Graph<int>> model = std::make_shared<Graph<int>>();
+    std::shared_ptr<Trigger> triggera = std::make_shared<Trigger>();
+    std::shared_ptr<Trigger> triggerb = std::make_shared<Trigger>();
+    std::shared_ptr<Periodic> periodic = std::make_shared<Periodic>(1.0);
+    std::shared_ptr<Receiver> rx = std::make_shared<Receiver>();
     model->add_atomic(triggera);
     model->add_atomic(triggerb);
     model->add_atomic(periodic);
@@ -213,8 +213,8 @@ void test5() {
     model->connect(periodic->output, triggerb);
     model->connect(triggera->output, rx);
     model->connect(triggerb->output, rx);
-    shared_ptr<Listener> l = make_shared<Listener>();
-    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
+    std::shared_ptr<Listener> l = std::make_shared<Listener>();
+    std::shared_ptr<Simulator<int>> sim = std::make_shared<Simulator<int>>(model);
     sim->addEventListener(l);
     while (sim->nextEventTime() < adevs_inf<double>()) {
         int c = rx->get_event_count();
@@ -226,23 +226,23 @@ void test5() {
         l->value = -1;
         assert(rx->get_event_count() == c + 2);
     }
-    cout << "TEST 5 PASSED" << endl;
+    std::cout << "TEST 5 PASSED" << std::endl;
 }
 
 void test6() {
-    cout << "TEST 6" << endl;
-    shared_ptr<Graph<int>> model = make_shared<Graph<int>>();
-    shared_ptr<Periodic> periodic = make_shared<Periodic>(10.0);
-    shared_ptr<Trigger> trigger = make_shared<Trigger>();
+    std::cout << "TEST 6" << std::endl;
+    std::shared_ptr<Graph<int>> model = std::make_shared<Graph<int>>();
+    std::shared_ptr<Periodic> periodic = std::make_shared<Periodic>(10.0);
+    std::shared_ptr<Trigger> trigger = std::make_shared<Trigger>();
     model->add_atomic(periodic);
     model->add_atomic(trigger);
     model->connect(periodic->output, trigger);
-    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
+    std::shared_ptr<Simulator<int>> sim = std::make_shared<Simulator<int>>(model);
     while (sim->nextEventTime() < 12.0) {
         sim->execNextEvent();
     }
     assert(trigger->external_event_count() == 1);
-    cout << "TEST 6 PASSED" << endl;
+    std::cout << "TEST 6 PASSED" << std::endl;
 }
 
 int main() {

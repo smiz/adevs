@@ -1,7 +1,7 @@
 #include "Generator.h"
 #include <fstream>
 
-using namespace std;
+
 using namespace adevs;
 
 
@@ -15,7 +15,7 @@ Generator::Generator(std::string sched_file) : Atomic<EventType>() {
     double next_arrival_time = 0.0;
     double last_arrival_time = 0.0;
     while (true) {
-        shared_ptr<Customer> customer = make_shared<Customer>();
+        std::shared_ptr<Customer> customer = std::make_shared<Customer>();
         input_strm >> next_arrival_time >> customer->time_wait;
         // Check for end of file
         if (input_strm.eof()) {
@@ -44,15 +44,15 @@ void Generator::delta_int() {
     arrivals.pop_front();
 }
 
-void Generator::delta_ext(double e, list<EventType> const &xb) {
+void Generator::delta_ext(double e, std::list<EventType> const &xb) {
     // The generator is input free, so it ignores external events.
 }
 
-void Generator::delta_conf(list<EventType> const &xb) {
+void Generator::delta_conf(std::list<EventType> const &xb) {
     delta_int();
 }
 
-void Generator::output_func(list<EventType> &yb) {
+void Generator::output_func(std::list<EventType> &yb) {
     // First customer in the list is produced as output
     EventType output(arrive, arrivals.front());
     yb.push_back(output);

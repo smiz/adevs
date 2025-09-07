@@ -8,9 +8,9 @@ class bogus_atomic : public Atomic<char> {
   public:
     bogus_atomic() : Atomic<char>() {}
     void delta_int() {}
-    void delta_ext(double, list<PinValue<char>> const &) {}
-    void delta_conf(list<PinValue<char>> const &) {}
-    void output_func(list<PinValue<char>> &) {}
+    void delta_ext(double, std::list<PinValue<char>> const &) {}
+    void delta_conf(std::list<PinValue<char>> const &) {}
+    void output_func(std::list<PinValue<char>> &) {}
     double ta() { return 0.0; }
 };
 

@@ -1,12 +1,12 @@
 #include "SimEvents.h"
 #include "Tank.h"
 #include "TankEventListener.h"
-using namespace std;
+
 
 int main(int argc, char** argv) {
     // Get the parameters for the experiment from the command line
     if (argc != 4) {
-        cout << "freq left_throttle right_throttle" << endl;
+        std::cout << "freq left_throttle right_throttle" << std::endl;
         return 0;
     }
     // Get the frequency of the voltage signal from the first argument
@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
         sim->execNextEvent();
     }
     // Write the result to the console
-    cout << freq << " " << l->getPowerLost() << endl;
+    std::cout << freq << " " << l->getPowerLost() << std::endl;
     // Clean up and exit
     delete sim;
     delete tank;

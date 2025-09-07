@@ -7,7 +7,7 @@
 #include <iostream>
 #include "Configuration.h"
 #include "fireCell.h"
-using namespace std;
+
 
 // Phase space to visualize
 Phase** phase = NULL;
@@ -29,9 +29,9 @@ class PhaseListener : public adevs::EventListener<CellEvent> {
 };
 
 static int iterations = 0;
-static shared_ptr<adevs::CellSpace<int>> cell_space = nullptr;
-static shared_ptr<adevs::AbstractSimulator<CellEvent>> simulator = nullptr;
-static shared_ptr<PhaseListener> listener = nullptr;
+static std::shared_ptr<adevs::CellSpace<int>> cell_space = nullptr;
+static std::shared_ptr<adevs::AbstractSimulator<CellEvent>> simulator = nullptr;
+static std::shared_ptr<PhaseListener> listener = nullptr;
 static bool initialized = false;
 
 
@@ -128,12 +128,12 @@ void simulateSpace() {
         if (iterations > 10) {
             exit(0);
         }
-        cell_space = make_shared<adevs::CellSpace<int>>(config->get_width(),
+        cell_space = std::make_shared<adevs::CellSpace<int>>(config->get_width(),
                                                         config->get_height());
         // Create a model to go into each point of the cellspace
         for (int x = 0; x < config->get_width(); x++) {
             for (int y = 0; y < config->get_height(); y++) {
-                shared_ptr<fireCell> cell = make_shared<fireCell>(
+                std::shared_ptr<fireCell> cell = std::make_shared<fireCell>(
                     config->get_fuel(x, y), config->get_fire(x, y), x, y);
                 max_init_fuel = max(max_init_fuel, config->get_fuel(x, y));
                 cell_space->add(cell, x, y);
@@ -141,9 +141,9 @@ void simulateSpace() {
             }
         }
         // Create a simulator for the model
-        simulator = make_shared<adevs::Simulator<CellEvent>>(cell_space);
+        simulator = std::make_shared<adevs::Simulator<CellEvent>>(cell_space);
         // Create a listener for the model
-        listener = make_shared<PhaseListener>();
+        listener = std::make_shared<PhaseListener>();
         simulator->addEventListener(listener);
         // Ready to go
         phase_data_ready = true;
@@ -158,7 +158,7 @@ void simulateSpace() {
         try {
             simulator->execUntil(tN + 10.0);
         } catch (adevs::exception &err) {
-            cout << err.what() << endl;
+            std::cout << err.what() << std::endl;
             exit(-1);
         }
     }

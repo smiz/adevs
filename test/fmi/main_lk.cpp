@@ -4,7 +4,7 @@
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
 #include "adevs/solvers/trap.h"
-using namespace std;
+
 using namespace adevs;
 
 void test(ode_system<double>* sys, adevs::ode_solver<double>* solver,
@@ -14,12 +14,12 @@ void test(ode_system<double>* sys, adevs::ode_solver<double>* solver,
     sys->init(q);
     for (double t = h; t < 50.0; t += h) {
         solver->advance(q, h);
-        cout << t;
+        std::cout << t;
         traj.push_back(std::pair<double, double>(q[0], q[1]));
         for (int i = 0; i < sys->numVars(); i++) {
-            cout << " " << q[i];
+            std::cout << " " << q[i];
         }
-        cout << endl;
+        std::cout << std::endl;
     }
     delete[] q;
     delete solver;

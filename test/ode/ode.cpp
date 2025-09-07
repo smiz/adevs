@@ -2,7 +2,7 @@
 #include "adevs/adevs.h"
 #include "adevs/solvers/trap.h"
 using namespace adevs;
-using namespace std;
+
 
 /**
  * A simple ODE to test numerical integration methods.
@@ -21,9 +21,9 @@ class simple_system : public ode_system<int> {
     void state_event_func(double const*, double*) {}
     double time_event_func(double const*) { return adevs_inf<double>(); }
     void internal_event(double*, bool const*) {}
-    void external_event(double*, double, list<PinValue<int>> const &) {}
-    void confluent_event(double*, bool const*, list<PinValue<int>> const&){}
-    void output_func(double const*, bool const*, list<PinValue<int>> &) {}
+    void external_event(double*, double, std::list<PinValue<int>> const &) {}
+    void confluent_event(double*, bool const*, std::list<PinValue<int>> const&){}
+    void output_func(double const*, bool const*, std::list<PinValue<int>> &) {}
 
     bool get_jacobian(double const*, double* J) {
         if (J == nullptr) {
@@ -57,9 +57,9 @@ class lk_system : public ode_system<int> {
     void state_event_func(double const*, double*) {}
     double time_event_func(double const*) { return adevs_inf<double>(); }
     void internal_event(double*, bool const*) {}
-    void external_event(double*, double, list<PinValue<int>> const &) {}
-    void confluent_event(double*, bool const*,list<PinValue<int>> const &) {}
-    void output_func(double const*, bool const*, list<PinValue<int>> &) {}
+    void external_event(double*, double, std::list<PinValue<int>> const &) {}
+    void confluent_event(double*, bool const*,std::list<PinValue<int>> const &) {}
+    void output_func(double const*, bool const*, std::list<PinValue<int>> &) {}
 
     bool get_jacobian(double const* q, double* J) {
         if (J == NULL) {
@@ -85,14 +85,14 @@ void test(ode_system<int>* sys, double tend) {
     for (double t = h; t < tend; t += h) {
         trap_solver->advance(q_trap, h);
         rk_solver->advance(q_rk, h);
-        cout << t;
+        std::cout << t;
         for (int i = 0; i < sys->numVars(); i++) {
-            cout << " " << q_trap[i] << " " << q_rk[i] << " "
+            std::cout << " " << q_trap[i] << " " << q_rk[i] << " "
                  << (q_trap[i] - q_rk[i]);
             // Solutions should be very close.
             assert(fabs(q_trap[i] - q_rk[i]) < 1E-3);
         }
-        cout << endl;
+        std::cout << std::endl;
     }
     delete[] q_trap;
     delete[] q_rk;

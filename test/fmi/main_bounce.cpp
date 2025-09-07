@@ -1,7 +1,7 @@
 #include <iostream>
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
-using namespace std;
+
 using namespace adevs;
 
 static double const epsilon = 1E-7;
@@ -19,7 +19,7 @@ class bounce : public ModelExchange<double> {
         int x_above = std::any_cast<int>(get_variable("xAbove"));
         int go_up = std::any_cast<int>(get_variable("goUp"));
         int go_down = std::any_cast<int>(get_variable("goDown"));
-        cout << "internal @ " << get_time() << endl;
+        std::cout << "internal @ " << get_time() << std::endl;
         // Change the direction as needed
         m_bounce++;
         set_variable("a",-a);
@@ -46,9 +46,9 @@ class bounce : public ModelExchange<double> {
         int x_above = std::any_cast<int>(get_variable("xAbove"));
         int go_up = std::any_cast<int>(get_variable("goUp"));
         int go_down = std::any_cast<int>(get_variable("goDown"));
-        cout << get_time() << " " << x << " " << der_x << " "
+        std::cout << get_time() << " " << x << " " << der_x << " "
              << a << " " << go_up << " " << go_down << " "
-             << a_above << " " << x_above << " " << endl;
+             << a_above << " " << x_above << " " << std::endl;
     }
     void test_state() {
         double x;
@@ -68,7 +68,7 @@ class bounce : public ModelExchange<double> {
 
 int main() {
     bounce* test_model = new bounce();
-    shared_ptr<Hybrid<double>> hybrid_model = make_shared<Hybrid<double>>(
+    std::shared_ptr<Hybrid<double>> hybrid_model = std::make_shared<Hybrid<double>>(
         test_model, new corrected_euler<double>(test_model, epsilon, 0.001),
         new discontinuous_event_locator<double>(test_model, epsilon));
     // Create the simulator
@@ -79,7 +79,7 @@ int main() {
     double der_x = std::any_cast<double>(test_model->get_variable("der(x)"));
     int go_up = std::any_cast<int>(test_model->get_variable("goUp"));
     int go_down = std::any_cast<int>(test_model->get_variable("goDown"));
-    cout << x << " " << der_x << endl;
+    std::cout << x << " " << der_x << std::endl;
     assert(fabs(x - 2.0) < err_tol);
     assert(fabs(der_x + 2.0) < err_tol);
     assert(go_up == false);

@@ -1,10 +1,10 @@
 #include "des.h"
-using namespace std;
+
 
 class Machine : public Partition {
   public:
-    Machine(string name) : Partition(), name(name) {}
-    void exec(vector<shared_ptr<Event>> &imminent) {
+    Machine(std::string name) : Partition(), name(name) {}
+    void exec(std::vectorstd::shared_ptr<Event>> &imminent) {
         for (auto ii : imminent) {
             ii->exec();
         }
@@ -12,75 +12,75 @@ class Machine : public Partition {
     unsigned int jobsFinished = 0;
     unsigned int jobsPending = 0;
     unsigned int jobsReceived = 0;
-    string const name;
+    std::string const name;
 };
 
-shared_ptr<Machine> machine1;
-shared_ptr<Machine> machine2;
+std::shared_ptr<Machine> machine1;
+std::shared_ptr<Machine> machine2;
 
 class Leave : public Event {
   public:
-    Leave(shared_ptr<Machine> m, double t) : Event(m, t), _machine(m) {}
+    Leave(std::shared_ptr<Machine> m, double t) : Event(m, t), _machine(m) {}
     void exec();
     bool prep() { return true; }
 
   private:
-    shared_ptr<Machine> _machine;
+    std::shared_ptr<Machine> _machine;
 };
 
 class Arrive : public Event {
   public:
-    Arrive(shared_ptr<Machine> m, double t) : Event(m, t), _machine(m) {}
+    Arrive(std::shared_ptr<Machine> m, double t) : Event(m, t), _machine(m) {}
     void exec();
     bool prep() { return true; }
 
   private:
-    shared_ptr<Machine> _machine;
+    std::shared_ptr<Machine> _machine;
 };
 
 void Leave::exec() {
-    cout << "Leave " << _machine->name << " @ " << _machine->now() << endl;
+    std::cout << "Leave " << _machine->name << " @ " << _machine->now() << std::endl;
     assert(_machine->jobsPending > 0);
     _machine->jobsPending--;
     _machine->jobsFinished++;
     if (_machine->jobsPending > 0) {
-        _machine->schedule(make_shared<Leave>(_machine, _machine->now() + 1));
+        _machine->schedule(std::make_shared<Leave>(_machine, _machine->now() + 1));
     }
     if (_machine == machine1) {
-        _machine->schedule(make_shared<Arrive>(machine2, _machine->now()));
+        _machine->schedule(std::make_shared<Arrive>(machine2, _machine->now()));
     }
 }
 
 void Arrive::exec() {
-    cout << "Arrive " << _machine->name << " @ " << _machine->now() << endl;
+    std::cout << "Arrive " << _machine->name << " @ " << _machine->now() << std::endl;
     _machine->jobsReceived++;
     _machine->jobsPending++;
     if (_machine->jobsPending == 1) {
-        _machine->schedule(make_shared<Leave>(_machine, _machine->now() + 1));
+        _machine->schedule(std::make_shared<Leave>(_machine, _machine->now() + 1));
     }
     if (_machine == machine1) {
-        _machine->schedule(make_shared<Arrive>(_machine, _machine->now() + 1));
+        _machine->schedule(std::make_shared<Arrive>(_machine, _machine->now() + 1));
     }
 }
 
 int main() {
-    machine1 = make_shared<Machine>("M1");
-    machine2 = make_shared<Machine>("M2");
-    machine1->schedule(make_shared<Arrive>(machine1, 0));
+    machine1 = std::make_shared<Machine>("M1");
+    machine2 = std::make_shared<Machine>("M2");
+    machine1->schedule(std::make_shared<Arrive>(machine1, 0));
 
-    shared_ptr<World> world = make_shared<World>();
+    std::shared_ptr<World> world = std::make_shared<World>();
     world->add(machine1);
     world->add(machine2);
     world->couple(machine1, machine2);
 
-    shared_ptr<Simulator> sim = make_shared<Simulator>(world);
+    std::shared_ptr<Simulator> sim = std::make_shared<Simulator>(world);
     sim->execUntil(5);
 
-    cout << "Machine\tR\tP\tF" << endl;
-    cout << "M1\t" << machine1->jobsReceived << "\t" << machine1->jobsPending
-         << "\t" << machine1->jobsFinished << endl;
-    cout << "M2\t" << machine2->jobsReceived << "\t" << machine2->jobsPending
-         << "\t" << machine2->jobsFinished << endl;
+    std::cout << "Machine\tR\tP\tF" << std::endl;
+    std::cout << "M1\t" << machine1->jobsReceived << "\t" << machine1->jobsPending
+         << "\t" << machine1->jobsFinished << std::endl;
+    std::cout << "M2\t" << machine2->jobsReceived << "\t" << machine2->jobsPending
+         << "\t" << machine2->jobsFinished << std::endl;
 
     return 0;
 }

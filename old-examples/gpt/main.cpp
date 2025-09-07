@@ -7,13 +7,13 @@ int main() {
     // Get experiment parameters
     Arguments args;
 
-    cout << "Generator period: ";
+    std::cout << "Generator period: ";
     cin >> args.generator_period;
 
-    cout << "Processor time: ";
+    std::cout << "Processor time: ";
     cin >> args.processor_time;
 
-    cout << "Observation time: ";
+    std::cout << "Observation time: ";
     cin >> args.observation_time;
 
     return gpt(args);

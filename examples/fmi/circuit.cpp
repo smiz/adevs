@@ -2,7 +2,7 @@
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h" // Get the ModelExchange class
 #include "adevs/solvers/trap.h" // Get the ImplicitHybrid class
-using namespace std;
+
 
 /**
  * This is exactly the same as tutorial/ex5.cpp and Example #5
@@ -30,14 +30,14 @@ class Circuit : public adevs::ModelExchange<> {
     Circuit() : adevs::ModelExchange<>("Circuit.fmu",1E-6) {}
     /// The external state transition function sets the state of
     /// the switch.
-    void external_event(double* state, double e, list<adevs::PinValue<>> const &xb) {
+    void external_event(double* state, double e, std::list<adevs::PinValue<>> const &xb) {
         ModelExchange<>::external_event(state,0.0,xb);
         set_variable("switch",1);
         /// Process the change in state of the switch
         ModelExchange<>::external_event(state,0.0,xb);
     }
     /// Confluent transition function of the circuit.
-    void confluent_event(double* state, bool const* events, list<adevs::PinValue<>> const &xb) {
+    void confluent_event(double* state, bool const* events, std::list<adevs::PinValue<>> const &xb) {
         ModelExchange<>::confluent_event(state,events,xb);
         set_variable("switch",1);
         /// Process the change in state of the switch
@@ -46,7 +46,7 @@ class Circuit : public adevs::ModelExchange<> {
     /// Output function of the circuit. This is called prior to an confluent
     /// or internal event. Place your output in the supplied list. This
     /// output function produces the new state of the diode at a state event.
-    void output_func(double const*, bool const*, list<adevs::PinValue<>> &yb) {
+    void output_func(double const*, bool const*, std::list<adevs::PinValue<>> &yb) {
         yb.push_back(adevs::PinValue<>(diode,get_variable("D.off")));
     }
 
@@ -62,9 +62,9 @@ class OpenSwitch : public adevs::Atomic<> {
     OpenSwitch(double t_open) : adevs::Atomic<>(), t_open(t_open) {}
     double ta() { return t_open; }
     void delta_int() { t_open = adevs_inf<double>(); }
-    void delta_ext(double, list<adevs::PinValue<>> const &) {}
-    void delta_conf(list<adevs::PinValue<>> const &) {}
-    void output_func(list<adevs::PinValue<>> &yb) {
+    void delta_ext(double, std::list<adevs::PinValue<>> const &) {}
+    void delta_conf(std::list<adevs::PinValue<>> const &) {}
+    void output_func(std::list<adevs::PinValue<>> &yb) {
         yb.push_back(adevs::PinValue<>(open_close,false));
     }
 
@@ -91,8 +91,8 @@ int main() {
     // Simulate until the switch and diode have both experienced an event
     double tNow = 0.0;
     while (sim.nextEventTime() < 5.0) {
-        cout << tNow << " " << hybrid_model->getState(0) << " "
-             << circuit->getSwitch() << " " << circuit->getDiode() << endl;
+        std::cout << tNow << " " << hybrid_model->getState(0) << " "
+             << circuit->getSwitch() << " " << circuit->getDiode() << std::endl;
         tNow = sim.execNextEvent();
     }
     return 0;

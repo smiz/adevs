@@ -7,7 +7,7 @@
 #include <sunmatrix/sunmatrix_dense.h>
 #include "check_ball1d_solution.h"
 #include "sampler.h"
-using namespace std;
+
 using namespace adevs;
 
 #define FALL 0
@@ -212,13 +212,13 @@ class SolutionChecker : public EventListener<double> {
 };
 
 void run_solution(double h_max, bool to_cout) {
-    auto graph = make_shared<adevs::Graph<double>>();
-    auto ball = make_shared<bouncing_ball>(h_max);
-    auto sample = make_shared<sampler>(0.01);
+    auto graph = std::make_shared<adevs::Graph<double>>();
+    auto ball = std::make_shared<bouncing_ball>(h_max);
+    auto sample = std::make_shared<sampler>(0.01);
     graph->add_atomic(ball);
     graph->add_atomic(sample);
     graph->connect(sample->sample_pin,ball);
-    auto checker = make_shared<SolutionChecker>(ball.get(),to_cout);
+    auto checker = std::make_shared<SolutionChecker>(ball.get(),to_cout);
     adevs::Simulator<double> sim(graph);
     sim.addEventListener(checker);
     while (sim.nextEventTime() < 10.0) {

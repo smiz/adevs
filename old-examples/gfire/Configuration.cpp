@@ -1,5 +1,5 @@
 #include "Configuration.h"
-using namespace std;
+
 
 Configuration::Configuration(std::string config_file) {
     std::string field;

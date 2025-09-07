@@ -12,9 +12,9 @@ class Rx : public AtomicModel {
 
     Rx(int addr);
     void delta_int();
-    void delta_ext(double e, list<IO_Type> const &xb);
-    void delta_conf(list<IO_Type> const &xb);
-    void output_func(list<IO_Type> &yb);
+    void delta_ext(double e, std::list<IO_Type> const &xb);
+    void delta_conf(std::list<IO_Type> const &xb);
+    void output_func(std::list<IO_Type> &yb);
     double ta();
     ~Rx();
 
@@ -31,9 +31,9 @@ class Tx : public AtomicModel {
 
     Tx(int maxTries);
     void delta_int();
-    void delta_ext(double e, list<IO_Type> const &xb);
-    void delta_conf(list<IO_Type> const &xb);
-    void output_func(list<IO_Type> &yb);
+    void delta_ext(double e, std::list<IO_Type> const &xb);
+    void delta_conf(std::list<IO_Type> const &xb);
+    void output_func(std::list<IO_Type> &yb);
     double ta();
     int getCollisions() const { return collisions; }
     ~Tx();
@@ -41,7 +41,7 @@ class Tx : public AtomicModel {
   private:
     enum Mode { BACKOFF, FAIL, START, TRANSMIT, IDLE };
     Mode mode;
-    list<NetworkData*> q;
+    std::list<NetworkData*> q;
     bool busy;
     int tryCount;
     int const maxTries;

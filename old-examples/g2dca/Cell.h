@@ -21,12 +21,12 @@ class Cell : public adevs::Atomic<CellEvent, int> {
     Cell(int x, int y, Phase phase, Phase* vis_phase = NULL);
     // State transition functions
     void delta_int();
-    void delta_ext(int e, list<CellEvent> const &xb);
-    void delta_conf(list<CellEvent> const &xb);
+    void delta_ext(int e, std::list<CellEvent> const &xb);
+    void delta_conf(std::list<CellEvent> const &xb);
     // Time advance function
     int ta();
     // Output function
-    void output_func(list<CellEvent> &yb);
+    void output_func(std::list<CellEvent> &yb);
 
     // Destructor
     ~Cell() {}

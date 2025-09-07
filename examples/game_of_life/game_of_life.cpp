@@ -13,7 +13,7 @@
 #include <iostream>
 #include "adevs/adevs.h"
 
-using namespace std;
+
 
 // Cellspace dimensions
 #define WIDTH  100

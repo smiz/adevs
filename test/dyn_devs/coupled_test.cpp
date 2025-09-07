@@ -56,13 +56,13 @@ class Activity: public adevs::Coupled<> {
     Activity() : adevs::Coupled<>() {
         // Create an action that an initial input
         // to the diagram
-        auto initial = make_shared<Action>(1);
+        auto initial = std::make_shared<Action>(1);
         add_atomic(initial);
         create_coupling(in,initial->in);
         create_coupling(initial->in,initial);
         // Create a terminal action that needs two input
         // and produces an output from the diagram
-        auto terminal = make_shared<Action>(2);
+        auto terminal = std::make_shared<Action>(2);
         add_atomic(terminal);
         create_coupling(terminal->out,out);
         create_coupling(initial->out,terminal->in);
@@ -71,13 +71,13 @@ class Activity: public adevs::Coupled<> {
         if (rand()%2 == 0) {
             // Deepen the diagram by adding an Activity to
             // this Activity
-            auto intermediate = make_shared<Activity>();
+            auto intermediate = std::make_shared<Activity>();
             add_coupled_model(intermediate);
             create_coupling(initial->out,intermediate->in);
             create_coupling(intermediate->out,terminal->in);
         } else {
             // Otherwise create an atomic action
-            auto intermediate = make_shared<Action>(1);
+            auto intermediate = std::make_shared<Action>(1);
             add_atomic(intermediate);
             create_coupling(initial->out,intermediate->in);
             create_coupling(intermediate->out,terminal->in);

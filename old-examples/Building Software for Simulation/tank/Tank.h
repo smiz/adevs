@@ -14,7 +14,7 @@ class Tank : public adevs::Network<SimEvent> {
     void getComponents(set<adevs::Devs<SimEvent>*> &c);
     // Route events within the computer
     void route(SimEvent const &value, adevs::Devs<SimEvent>* model,
-               list<adevs::Event<SimEvent>> &r);
+               std::list<adevs::Event<SimEvent>> &r);
     // Get the physics model
     TankPhysics const* getPhysics() const { return &physics; }
     // Get the computer

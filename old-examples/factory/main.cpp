@@ -6,7 +6,7 @@
 #include "Genr.h"
 
 using namespace adevs;
-using namespace std;
+
 
 
 /**
@@ -33,9 +33,9 @@ class Observer : public EventListener<int> {
         // Compute statistics for orders that are complete
         else {
             // Maximum time to process any order
-            max_time = max(max_time, t - orders[x.value]);
+            max_time = std::max(max_time, t - orders[x.value]);
             // Min time to process any order
-            min_time = min(min_time, t - orders[x.value]);
+            min_time = std::min(min_time, t - orders[x.value]);
             // Update the average
             count++;
             avg_time += t - orders[x.value];
@@ -51,48 +51,48 @@ class Observer : public EventListener<int> {
     double avgServiceTime() { return avg_time / count; }
 
   private:
-    map<int, double> orders;
+    std::map<int, double> orders;
     double max_time, avg_time, min_time;
     int count;
 };
 
 int main(int argc, char** argv) {
     // Create the model
-    shared_ptr<Factory> factory = make_shared<Factory>();
+    std::shared_ptr<Factory> factory = std::make_shared<Factory>();
 
     long seed = 0;
     if (argc > 1) {
         seed = atoi(argv[1]);  // Seed from command line argument
     }
 
-    shared_ptr<Genr> genr = make_shared<Genr>(seed);
+    std::shared_ptr<Genr> genr = std::make_shared<Genr>(seed);
 
-    shared_ptr<SimpleDigraph<int>> model = make_shared<SimpleDigraph<int>>();
+    std::shared_ptr<SimpleDigraph<int>> model = std::make_shared<SimpleDigraph<int>>();
     model->add(factory);
     model->add(genr);
     model->couple(genr, factory);
 
     // Create the simulator
-    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(model);
+    std::shared_ptr<Simulator<int>> sim = std::make_shared<Simulator<int>>(model);
 
     // Add an observer
-    shared_ptr<Observer> obs = make_shared<Observer>();
+    std::shared_ptr<Observer> obs = std::make_shared<Observer>();
     sim->addEventListener(obs);
 
     // Initial active count (should be 0)
-    cout << "0 " << factory->get_machine_count() << endl;
+    std::cout << "0 " << factory->get_machine_count() << estd::ndl;
 
     // Run the simulation and output active machine count at each iteration
     while (sim->nextEventTime() <= 365.0) {
-        cout << sim->nextEventTime() << " ";
+    	std::cout << sim->nextEventTime() << " ";
         sim->execNextEvent();
-        cout << factory->get_machine_count() << endl;
+        std::cout << factory->get_machine_count() << std::endl;
     }
 
     // Output service time statistics
-    cerr << "Avg. service time: " << obs->avgServiceTime() << " days" << endl;
-    cerr << "Max. service time: " << obs->maxServiceTime() << " days" << endl;
-    cerr << "Min. service time: " << obs->minServiceTime() << " days" << endl;
+    std::cerr << "Avg. service time: " << obs->avgServiceTime() << " days" << std::endl;
+    std::cerr << "Max. service time: " << obs->maxServiceTime() << " days" << std::endl;
+    std::cerr << "Min. service time: " << obs->minServiceTime() << " days" << std::endl;
 
     return 0;
 }

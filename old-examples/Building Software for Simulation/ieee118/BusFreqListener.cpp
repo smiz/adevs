@@ -1,12 +1,12 @@
 #include "BusFreqListener.h"
-using namespace std;
+
 using namespace adevs;
 
 BusFreqListener::BusFreqListener(ElectricalModel* model, double cint,
-                                 string model_name)
+                                 std::string model_name)
     : EventListener<PortValue<BasicEvent*>>(),
       cint(cint),
-      fout(string(model_name + "_all_freq.dat").c_str()),
+      fout(std::string(model_name + "_all_freq.dat").c_str()),
       t_last_record(0.0),
       src(model) {
     freq = new double[src->getElectricalData()->getNodeCount()];
@@ -23,7 +23,7 @@ void BusFreqListener::stateChange(Atomic<PortValue<BasicEvent*>>* model,
              i++) {
             fout << freq[i] / 6.28 << " ";  // in the pu system
         }
-        fout << endl;
+        fout << std::endl;
     }
 }
 

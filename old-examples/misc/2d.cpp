@@ -5,7 +5,7 @@
 #include <iostream>
 #include "adevs/adevs.h"
 using namespace adevs;
-using namespace std;
+
 
 static double const A[2][2] = {{-2.0, 1.0}, {0.0, -1.0}};
 
@@ -28,12 +28,12 @@ class qss1 : public Atomic<event_t> {
         xi = xl = xn;
         pick_next(q);
     }
-    void delta_conf(list<event_t> const &xb) {
+    void delta_conf(std::list<event_t> const &xb) {
         xj = xb[0].x;
         xi = xl = xn;
         pick_next(q);
     }
-    void delta_ext(double e, list<event_t> const &xb) {
+    void delta_ext(double e, std::list<event_t> const &xb) {
         double f = A[i][i] * xi + A[i][j] * xj;
         xi += e * f;
         xj = xb[0].x;
@@ -45,7 +45,7 @@ class qss1 : public Atomic<event_t> {
             pick_next(dx);
         }
     }
-    void output_func(list<event_t> &y) {
+    void output_func(std::list<event_t> &y) {
         event_t yy;
         yy.k = i;
         yy.x = xn;
@@ -82,12 +82,12 @@ class qss2 : public Atomic<event_t> {
         xi = xl = xn;
         pick_next(q);
     }
-    void delta_conf(list<event_t> const &xb) {
+    void delta_conf(std::list<event_t> const &xb) {
         xj = xb[0].x;
         xi = xl = xn;
         pick_next(q);
     }
-    void delta_ext(double e, list<event_t> const &xb) {
+    void delta_ext(double e, std::list<event_t> const &xb) {
         double f1 = A[i][i] * xi + A[i][j] * xj;
         xj = xb[0].x;
         double f2 = A[i][i] * (xi + e * f1) + A[i][j] * xj;
@@ -100,7 +100,7 @@ class qss2 : public Atomic<event_t> {
             pick_next(dx);
         }
     }
-    void output_func(list<event_t> &y) {
+    void output_func(std::list<event_t> &y) {
         event_t yy;
         yy.k = i;
         yy.x = xn;
@@ -135,11 +135,11 @@ class report : public Atomic<event_t> {
         x[0] = x0[0];
         x[1] = x0[1];
         err[0] = err[1] = 0.0;
-        cout << t << " " << x[0] << " " << x[1] << " 0 0 " << x[0] << " "
-             << x[1] << endl;
+        std::cout << t << " " << x[0] << " " << x[1] << " 0 0 " << x[0] << " "
+             << x[1] << std::endl;
     }
     void delta_int() { t += ta(); }
-    void delta_ext(double e, list<event_t> const &xb) {
+    void delta_ext(double e, std::list<event_t> const &xb) {
         // Calculate solution
         t += e;
         double x1 = x0[0] * exp(A[0][0] * t) +
@@ -155,11 +155,11 @@ class report : public Atomic<event_t> {
                 err[1] = fabs(x[k] - x2);
             }
         }
-        cout << t << " " << x[0] << " " << x[1] << " " << err[0] << " "
-             << err[1] << " " << x1 << " " << x2 << endl;
+        std::cout << t << " " << x[0] << " " << x[1] << " " << err[0] << " "
+             << err[1] << " " << x1 << " " << x2 << std::endl;
     }
-    void delta_conf(list<event_t> const &xb) { delta_ext(ta(), xb); }
-    void output_func(list<event_t> &) {}
+    void delta_conf(std::list<event_t> const &xb) { delta_ext(ta(), xb); }
+    void output_func(std::list<event_t> &) {}
     double ta() { return adevs_inf<double>(); }
 
 

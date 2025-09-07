@@ -8,18 +8,18 @@
 #include "proc.h"
 #include "transd.h"
 
-using namespace std;
+
 
 int main(int argc, char** argv) {
     double g, p, t;
     /// Get experiment parameters
     if (argc == 1) {
-        cout << "Genr period: ";
-        cin >> g;
-        cout << "Proc time: ";
-        cin >> p;
-        cout << "Observation time: ";
-        cin >> t;
+        std::cout << "Genr period: ";
+        std::cin >> g;
+        std::cout << "Proc time: ";
+        std::cin >> p;
+        std::cout << "Observation time: ";
+        std::cin >> t;
     } else {
         std::ifstream fin(argv[1]);
         fin >> g >> p >> t;
@@ -27,10 +27,10 @@ int main(int argc, char** argv) {
     }
 
     /// Create and connect the atomic components using a digraph model.
-    shared_ptr<adevs::Graph<job>> model = make_shared<adevs::Graph<job>>();
-    shared_ptr<genr> gnr = make_shared<genr>(g);
-    shared_ptr<transd> trnsd = make_shared<transd>(t);
-    shared_ptr<proc> prc = make_shared<proc>(p);
+    std::shared_ptr<adevs::Graph<job>> model = std::make_shared<adevs::Graph<job>>();
+    std::shared_ptr<genr> gnr = std::make_shared<genr>(g);
+    std::shared_ptr<transd> trnsd = std::make_shared<transd>(t);
+    std::shared_ptr<proc> prc = std::make_shared<proc>(p);
     /// Add the components to the digraph
     model->add_atomic(gnr);
     model->add_atomic(trnsd);

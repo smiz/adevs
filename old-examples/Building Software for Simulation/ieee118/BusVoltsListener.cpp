@@ -1,19 +1,19 @@
 #include "BusVoltsListener.h"
-using namespace std;
+
 using namespace adevs;
 
 BusVoltsListener::BusVoltsListener(ElectricalModel* model, double cint,
-                                   string model_name)
+                                   std::string model_name)
     : EventListener<PortValue<BasicEvent*>>(),
       cint(cint),
-      fout(string(model_name + "_volt.dat").c_str()),
+      fout(std::string(model_name + "_volt.dat").c_str()),
       t_last_record(0.0),
       src(model) {
     fout << 0.0;
     for (unsigned i = 0; i < src->getElectricalData()->getNodeCount(); i++) {
         fout << " " << abs(src->getVoltage(i));
     }
-    fout << endl;
+    fout << std::endl;
 }
 
 void BusVoltsListener::stateChange(Atomic<PortValue<BasicEvent*>>* model,
@@ -25,7 +25,7 @@ void BusVoltsListener::stateChange(Atomic<PortValue<BasicEvent*>>* model,
              i++) {
             fout << " " << abs(src->getVoltage(i));
         }
-        fout << endl;
+        fout << std::endl;
     }
 }
 

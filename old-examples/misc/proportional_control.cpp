@@ -1,8 +1,8 @@
 #include <iostream>
 #include "adevs/adevs.h"
-using namespace std;
 
-typedef list<double> IO_List;
+
+typedef std::list<double> IO_List;
 
 /**
  * Linear SISO model of a plant in the form
@@ -115,7 +115,7 @@ int main() {
     double t = 0.0;
     while (sim->nextEventTime() < 10.0) {
         double x = plant->getState(1);
-        cout << t << " " << x << endl;
+        std::cout << t << " " << x << std::endl;
         t = sim->nextEventTime();
         sim->execNextEvent();
     }
