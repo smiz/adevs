@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <iostream>
 #include <map>
-using namespace std;
+
 
 struct rgb_t {
     unsigned char r, g, b;

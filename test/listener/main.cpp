@@ -1,10 +1,10 @@
 #include "relay.h"
-using namespace std;
+
 using namespace adevs;
 
-shared_ptr<Relay> r = nullptr;
-vector<PinValue<int>> output;
-vector<PinValue<int>> input;
+std::shared_ptr<Relay> r = nullptr;
+std::vector<PinValue<int>> output;
+std::vector<PinValue<int>> input;
 
 class Listener : public EventListener<int> {
   public:
@@ -43,14 +43,14 @@ class Listener : public EventListener<int> {
 };
 
 int main() {
-    shared_ptr<Graph<int>> d = make_shared<Graph<int>>();
-    r = make_shared<Relay>();
+    std::shared_ptr<Graph<int>> d = std::make_shared<Graph<int>>();
+    r = std::make_shared<Relay>();
     d->add_atomic(r);
     d->connect(r->in, r);
     // Create the simulator and add the listener
-    shared_ptr<Listener> listener = make_shared<Listener>();
+    std::shared_ptr<Listener> listener = std::make_shared<Listener>();
 
-    shared_ptr<Simulator<int>> sim = make_shared<Simulator<int>>(d);
+    std::shared_ptr<Simulator<int>> sim = std::make_shared<Simulator<int>>(d);
     sim->addEventListener(listener);
 
     // This input should cause two outputEvent() calls at time 1

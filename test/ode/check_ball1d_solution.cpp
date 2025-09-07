@@ -2,7 +2,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
-using namespace std;
+
 
 double check_ball1d_solution(double t, double h) {
     double hh;
@@ -20,8 +20,8 @@ double check_ball1d_solution(double t, double h) {
 
 bool ball1d_soln_ok(double t, double h) {
     if (check_ball1d_solution(t, h) > 1E-4) {
-        cerr << "ERR: " << t << " " << h << " " << check_ball1d_solution(t, h)
-             << endl;
+        std::cerr << "ERR: " << t << " " << h << " " << check_ball1d_solution(t, h)
+             << std::endl;
     }
     return (check_ball1d_solution(t, h) < 1E-4);
 }

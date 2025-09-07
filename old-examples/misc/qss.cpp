@@ -10,7 +10,7 @@
 #include <iostream>
 #include "adevs/adevs.h"
 using namespace adevs;
-using namespace std;
+
 
 static double sign(double x) {
     if (x > 0.0) {
@@ -37,12 +37,12 @@ class qss : public Atomic<double> {
         q = ql = y[species];
         dqdx = der(species);
     }
-    void delta_ext(double e, list<double> const &x) {
+    void delta_ext(double e, std::list<double> const &x) {
         q += dqdx * e;
         dqdx = der(species);
     }
-    void delta_conf(list<double> const &x) { delta_int(); }
-    void output_func(list<double> &yb) {
+    void delta_conf(std::list<double> const &x) { delta_int(); }
+    void output_func(std::list<double> &yb) {
         y[species] = ql + sign(dqdx) * Q;
         yb.push_back(y[species]);
     }
@@ -107,14 +107,14 @@ int main() {
     double tL = 0.0;
     Simulator<double>* sim = new Simulator<double>(mixture);
     while (tL < 1000.0) {
-        cout << tL << " ";
+        std::cout << tL << " ";
         for (int i = 0; i < 3; i++) {
-            cout << p[i]->get_y() << " ";
+            std::cout << p[i]->get_y() << " ";
         }
         for (int i = 0; i < 3; i++) {
-            cout << p[i]->get_count() << " ";
+            std::cout << p[i]->get_count() << " ";
         }
-        cout << endl;
+        std::cout << std::endl;
         tL = sim->nextEventTime();
         sim->execNextEvent();
     }

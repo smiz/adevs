@@ -3,7 +3,7 @@
 #include <set>
 
 using namespace adevs;
-using namespace std;
+
 
 
 Factory::Factory() : Network<int>() {
@@ -17,7 +17,7 @@ void Factory::getComponents(set<Devs<int>*> &c) {
     }
 }
 
-void Factory::route(int const &order, Devs<int>* src, list<Event<int>> &r) {
+void Factory::route(int const &order, Devs<int>* src, std::list<Event<int>> &r) {
     // If this is a machine output, then it leaves the factory
     if (src != this) {
         r.push_back(Event<int>(this, order));
@@ -25,7 +25,7 @@ void Factory::route(int const &order, Devs<int>* src, list<Event<int>> &r) {
     }
 
     // Otherwise, look for the machine that has the shortest time to fill the order
-    shared_ptr<Machine> pick = nullptr;  // No machine
+    std::shared_ptr<Machine> pick = nullptr;  // No machine
     double pick_time = DBL_MAX;          // Infinite time for service
 
     for (auto iter : machines) {
@@ -47,7 +47,7 @@ void Factory::route(int const &order, Devs<int>* src, list<Event<int>> &r) {
 
 bool Factory::model_transition() {
     // Remove idle machines
-    list<shared_ptr<Machine>>::iterator iter = machines.begin();
+    std::list<std::shared_ptr<Machine>>::iterator iter = machines.begin();
     while (iter != machines.end()) {
         if ((*iter)->getQueueSize() == 0) {
             if (this->simulator != nullptr) {
@@ -70,7 +70,7 @@ bool Factory::model_transition() {
 }
 
 void Factory::add_machine() {
-    shared_ptr<Machine> machine = make_shared<Machine>();
+    std::shared_ptr<Machine> machine = std::make_shared<Machine>();
     machine->setParent(this);
     if (this->simulator != nullptr) {
         this->simulator->pending_schedule.insert(machine);
@@ -78,7 +78,7 @@ void Factory::add_machine() {
     machines.push_back(machine);
 }
 
-double Factory::compute_service_time(shared_ptr<Machine> m) {
+double Factory::compute_service_time(std::shared_ptr<Machine> m) {
     // If the machine is working 3 days + queued orders * 3 + time for current order
     if (m->ta() < DBL_MAX) {
         return 3.0 + (m->getQueueSize() - 1) * 3.0 + m->ta();

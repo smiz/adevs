@@ -1,13 +1,13 @@
 #include <iostream>
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
-using namespace std;
+
 
 static double const err_tol = 1E-6;
 
 int main() {
     auto fmu = new adevs::ModelExchange<>("stairs.fmu",err_tol);
-    auto model = make_shared<adevs::ExplicitHybrid<>>(fmu,err_tol,0.01);
+    auto model = std::make_shared<adevs::ExplicitHybrid<>>(fmu,err_tol,0.01);
     // Create the simulator
     adevs::Simulator<> sim(model);
     // Run the simulation, testing the solution as we go

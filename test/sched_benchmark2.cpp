@@ -31,27 +31,27 @@ void benchmark_new() {
     srand(200);
     // Add a bunch of models with random times
     for (int ii = 0; ii < 1000; ii++) {
-        shared_ptr<bogus_atomic> m = make_shared<bogus_atomic>();
+        std::shared_ptr<bogus_atomic> m = std::make_shared<bogus_atomic>();
         q.add(m);
     }
 
     // Simulate a bunch of things happening
     unsigned long iterations = 100000000;
-    cout << "Running: " << iterations << " iterations" << endl;
+    std::cout << "Running: " << iterations << " iterations" << std::endl;
 
     unsigned int percentage = 0;
     unsigned long loops_per_percent = iterations / 100;
 
     for (unsigned long ii = 0; ii < iterations; ii++) {
         if (ii % loops_per_percent == 0) {
-            cout << percentage << "%\r" << flush;
+            std::cout << percentage << "%\r" << std::flush;
             percentage++;
         }
         auto m = q.get_next();
         m->delta_int();
         q.update(m);
     }
-    cout << "100%" << "\n" << "Done!" << endl;
+    std::cout << "100%" << "\n" << "Done!" << std::endl;
 }
 
 

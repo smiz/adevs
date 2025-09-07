@@ -2,7 +2,7 @@
 #include <cassert>
 #include <climits>
 #include <iostream>
-using namespace std;
+
 
 int Cell::state_changes = 0;
 default_random_engine Cell::generator;
@@ -82,7 +82,7 @@ void Cell::delta_int() {
     set_time_advance();
 }
 
-void Cell::delta_ext(double e, list<CellEvent> const &xb) {
+void Cell::delta_ext(double e, std::list<CellEvent> const &xb) {
     state_changes++;
     // Update time to next event
     if (h < adevs_inf<double>()) {
@@ -98,7 +98,7 @@ void Cell::delta_ext(double e, list<CellEvent> const &xb) {
     set_time_advance();
 }
 
-void Cell::delta_conf(list<CellEvent> const &xb) {
+void Cell::delta_conf(std::list<CellEvent> const &xb) {
     state_changes++;
     // Record our selected output value as the new state
     q[1][1] = angle[x][y];
@@ -113,7 +113,7 @@ void Cell::delta_conf(list<CellEvent> const &xb) {
     set_time_advance();
 }
 
-void Cell::output_func(list<CellEvent> &yb) {
+void Cell::output_func(std::list<CellEvent> &yb) {
     // What will our new choice be?
     int pick, dx, dy;
     do {

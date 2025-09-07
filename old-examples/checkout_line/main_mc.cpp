@@ -8,23 +8,23 @@
 #include "Observer.h"
 #include "adevs/adevs.h"
 
-using namespace std;
+
 using namespace adevs;
 
 
 int main(int argc, char** argv) {
 
     if (argc != 3) {
-        cout << "Need an input and output file!" << endl;
+        std::cout << "Need an input and output file!" << std::endl;
         return 1;
     }
 
-    shared_ptr<adevs::Digraph<shared_ptr<Customer>>> store =
-        make_shared<adevs::Digraph<shared_ptr<Customer>>>();
+    std::shared_ptr<adevs::Digraph<std::shared_ptr<Customer>>> store =
+        std::make_shared<adevs::Digraph<std::shared_ptr<Customer>>>();
 
-    shared_ptr<MultiClerk> clerk = make_shared<MultiClerk>();
-    shared_ptr<Generator> generator = make_shared<Generator>(argv[1]);
-    shared_ptr<Observer> observer = make_shared<Observer>(argv[2]);
+    std::shared_ptr<MultiClerk> clerk = std::make_shared<MultiClerk>();
+    std::shared_ptr<Generator> generator = std::make_shared<Generator>(argv[1]);
+    std::shared_ptr<Observer> observer = std::make_shared<Observer>(argv[2]);
 
     store->add(clerk);
     store->add(generator);

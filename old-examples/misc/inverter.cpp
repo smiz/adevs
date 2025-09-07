@@ -9,7 +9,7 @@
  */
 #include <iostream>
 #include "adevs/adevs.h"
-using namespace std;
+
 using namespace adevs;
 
 #define VOLTAGE 0
@@ -83,9 +83,9 @@ class inverter : public ode_system<IO_Type> {
     // Don't need any of this stuff for this model
     double time_event_func(double const*) { return adevs_inf<double>(); }
     void postStep(double*) {}
-    void external_event(double*, double, list<IO_Type> const &) {}
-    void confluent_event(double*, bool const*, list<IO_Type> const &) {}
-    void output_func(double const*, bool const*, list<IO_Type> &) {}
+    void external_event(double*, double, std::list<IO_Type> const &) {}
+    void confluent_event(double*, bool const*, std::list<IO_Type> const &) {}
+    void output_func(double const*, bool const*, std::list<IO_Type> &) {}
 
     ~inverter() {}
     // Get the current control mode
@@ -170,19 +170,19 @@ int main(int argc, char** argv) {
     // Create the simulator
     Simulator<IO_Type>* sim = new Simulator<IO_Type>(solver);
     // Print the initial state
-    cout << 0.0 << " ";
-    cout << solver->getState(VOLTAGE) << " " << solver->getState(CURRENT) << " "
+    std::cout << 0.0 << " ";
+    std::cout << solver->getState(VOLTAGE) << " " << solver->getState(CURRENT) << " "
          << model->getControl() << " "
          << model->V(solver->getState(VOLTAGE), solver->getState(CURRENT))
-         << endl;
+         << std::endl;
     // Run the simulation, printing the time and state at each event
     while (sim->nextEventTime() < end_time) {
-        cout << sim->nextEventTime() << " ";
+        std::cout << sim->nextEventTime() << " ";
         sim->execNextEvent();
-        cout << solver->getState(VOLTAGE) << " " << solver->getState(CURRENT)
+        std::cout << solver->getState(VOLTAGE) << " " << solver->getState(CURRENT)
              << " " << model->getControl() << " "
              << model->V(solver->getState(VOLTAGE), solver->getState(CURRENT))
-             << endl;
+             << std::endl;
     }
     // Cleanup and exit
     delete sim;

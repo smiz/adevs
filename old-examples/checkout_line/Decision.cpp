@@ -1,7 +1,7 @@
 #include "Decision.h"
 #include <iostream>
 
-using namespace std;
+
 using namespace adevs;
 
 
@@ -25,15 +25,15 @@ void Decision::delta_int() {
     deciding.clear();
 }
 
-void Decision::delta_ext(double e, list<EventType> const &x) {
+void Decision::delta_ext(double e, std::list<EventType> const &x) {
     // Assign new arrivals to a line and update the line length
-    list<EventType>::const_iterator iter = x.begin();
+    std::list<EventType>::const_iterator iter = x.begin();
     for (; iter != x.end(); iter++) {
         if ((*iter).port == decide) {
             int line_choice = find_shortest_line();
-            shared_ptr<Customer> customer =
-                make_shared<Customer>(*((*iter).value));
-            pair<int, shared_ptr<Customer>> p(line_choice, customer);
+            std::shared_ptr<Customer> customer =
+                std::make_shared<Customer>(*((*iter).value));
+            pair<int, std::shared_ptr<Customer>> p(line_choice, customer);
             deciding.push_back(p);
             line_length[p.first]++;
         }
@@ -49,7 +49,7 @@ void Decision::delta_ext(double e, list<EventType> const &x) {
     }
 }
 
-void Decision::delta_conf(list<EventType> const &x) {
+void Decision::delta_conf(std::list<EventType> const &x) {
     delta_int();
     delta_ext(0.0, x);
 }
@@ -66,9 +66,9 @@ double Decision::ta() {
     }
 }
 
-void Decision::output_func(list<EventType> &y) {
+void Decision::output_func(std::list<EventType> &y) {
     // Send all customers to their lines
-    list<pair<int, shared_ptr<Customer>>>::iterator ii = deciding.begin();
+    std::list<pair<int, std::shared_ptr<Customer>>>::iterator ii = deciding.begin();
     for (; ii != deciding.end(); ii++) {
         EventType event((*ii).first, (*ii).second);
         y.push_back(event);

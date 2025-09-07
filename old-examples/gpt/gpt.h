@@ -10,7 +10,7 @@
 #include "processor.h"
 #include "transducer.h"
 
-using namespace std;
+
 
 
 struct Arguments {
@@ -23,11 +23,11 @@ struct Arguments {
 int gpt(Arguments args) {
 
     // Create and connect the atomic components using a digraph model.
-    shared_ptr<adevs::Digraph<Job>> model = make_shared<adevs::Digraph<Job>>();
+    std::shared_ptr<adevs::Digraph<Job>> model = std::make_shared<adevs::Digraph<Job>>();
 
-    shared_ptr<Generator> generator = make_shared<Generator>(args.generator_period);
-    shared_ptr<Transducer> transducer = make_shared<Transducer>(args.processor_time);
-    shared_ptr<Processor> processor = make_shared<Processor>(args.observation_time);
+    std::shared_ptr<Generator> generator = std::make_shared<Generator>(args.generator_period);
+    std::shared_ptr<Transducer> transducer = std::make_shared<Transducer>(args.processor_time);
+    std::shared_ptr<Processor> processor = std::make_shared<Processor>(args.observation_time);
 
     // Add the components to the digraph
     model->add(generator);

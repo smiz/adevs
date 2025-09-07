@@ -30,10 +30,10 @@ class Cell : public adevs::Atomic<CellEvent> {
     Cell(int x, int y);
 
     void delta_int();
-    void delta_ext(double e, list<CellEvent> const &xb);
-    void delta_conf(list<CellEvent> const &xb);
+    void delta_ext(double e, std::list<CellEvent> const &xb);
+    void delta_conf(std::list<CellEvent> const &xb);
 
-    void output_func(list<CellEvent> &yb);
+    void output_func(std::list<CellEvent> &yb);
 
     double ta();
 

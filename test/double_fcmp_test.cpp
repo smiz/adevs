@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 #include "adevs/adevs.h"
-using namespace std;
+
 using namespace adevs;
 
 double double_fcmp::epsilon = DBL_EPSILON;
@@ -18,9 +18,9 @@ class genr : public Atomic<char, double_fcmp> {
             sigma = adevs_inf<double_fcmp>();
         }
     }
-    void delta_ext(double_fcmp, list<PinValue<char>> const &) { sigma = DBL_MAX; }
-    void delta_conf(list<PinValue<char>> const &) { sigma = DBL_MAX; }
-    void output_func(list<PinValue<char>> &y) {
+    void delta_ext(double_fcmp, std::list<PinValue<char>> const &) { sigma = DBL_MAX; }
+    void delta_conf(std::list<PinValue<char>> const &) { sigma = DBL_MAX; }
+    void output_func(std::list<PinValue<char>> &y) {
         PinValue<char> output(output_pin,'a');
         y.push_back(output);
     }
@@ -35,7 +35,7 @@ class genr : public Atomic<char, double_fcmp> {
 };
 
 void test1() {
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
+    std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
     Simulator<char, double_fcmp> sim(g);
     while (sim.nextEventTime() < DBL_MAX) {
         sim.execNextEvent();
@@ -44,7 +44,7 @@ void test1() {
 }
 
 void test2() {
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
+    std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
     Simulator<char, double_fcmp> sim(g);
     while (sim.nextEventTime() < DBL_MAX) {
         sim.computeNextOutput();
@@ -71,9 +71,9 @@ class MyEventListener : public EventListener<char, double_fcmp> {
 };
 
 void test3() {
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
+    std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
     Simulator<char, double_fcmp> sim(g);
-    shared_ptr<MyEventListener> listener = make_shared<MyEventListener>();
+    std::shared_ptr<MyEventListener> listener = std::make_shared<MyEventListener>();
     sim.addEventListener(listener);
     while (sim.nextEventTime() < DBL_MAX) {
         sim.computeNextOutput();
@@ -85,7 +85,7 @@ void test3() {
 }
 
 void test4() {
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
+    std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
     Simulator<char, double_fcmp> sim(g);
     sim.setNextTime(5.0);
     sim.execNextEvent();
@@ -111,8 +111,8 @@ void test4() {
 }
 
 void test5() {
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
-    auto graph = make_shared<Graph<char,double_fcmp>>();
+    std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
+    auto graph = std::make_shared<Graph<char,double_fcmp>>();
     PinValue<char> input(g->input_pin,'a');
     graph->add_atomic(g);
     graph->connect(g->input_pin,g);

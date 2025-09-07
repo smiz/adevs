@@ -19,11 +19,11 @@ class Clerk : public adevs::Atomic<EventType> {
     /// Internal transition function.
     void delta_int();
     /// External transition function.
-    void delta_ext(double e, list<EventType> const &xb);
+    void delta_ext(double e, std::list<EventType> const &xb);
     /// Confluent transition function.
-    void delta_conf(list<EventType> const &xb);
+    void delta_conf(std::list<EventType> const &xb);
     /// Output function.
-    void output_func(list<EventType> &yb);
+    void output_func(std::list<EventType> &yb);
     /// Time advance function.
     double ta();
 

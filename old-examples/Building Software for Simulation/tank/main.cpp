@@ -1,13 +1,13 @@
 #include <iostream>
 #include "SimControl.h"
-using namespace std;
+
 
 int main() {
     try {
         SimControl control;
         control.run();
     } catch (DisplayException err) {
-        cerr << err.what() << endl;
+        std::cerr << err.what() << std::endl;
     }
     return 0;
 }

@@ -266,11 +266,11 @@ private:
 class Computer : public Coupled {
 public:
     Computer(int processors) {
-        source = make_shared<InstructionSource>();
+        source = std::make_shared<InstructionSource>();
         add_atomic(source);
         for (int i = 0; i < processors; i++) {
             adevs::pin_t execute_instruction;
-            std::shared_ptr<Processor> processor = make_shared<Processor>();
+            std::shared_ptr<Processor> processor = std::make_shared<Processor>();
             add_coupled_model(processor);
             source->map_ready_to_core(processor->ready_to_receive,execute_instruction);
             create_coupling(execute_instruction,processor->receive_instruction);

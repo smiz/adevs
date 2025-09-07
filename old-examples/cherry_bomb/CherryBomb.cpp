@@ -1,6 +1,6 @@
 #include <iostream>
 #include "adevs/adevs.h"
-using namespace std;
+
 using namespace adevs;
 
 // Array indices for the CherryBomb state variables
@@ -10,10 +10,10 @@ using namespace adevs;
 // Discrete variable enumeration for the CherryBomb
 typedef enum { FUSE_LIT, DOUSE, EXPLODE } Phase;
 
-class CherryBomb : public ode_system<string> {
+class CherryBomb : public ode_system<std::string> {
   public:
     CherryBomb()
-        : ode_system<string>(3,  // three state variables including time
+        : ode_system<std::string>(3,  // three state variables including time
                              1   // 1 state event condition
           ) {
         phase = FUSE_LIT;  // Light the fuse!
@@ -43,7 +43,7 @@ class CherryBomb : public ode_system<string> {
             return DBL_MAX;  // Don't do anything after that
         }
     }
-    void external_event(double* q, double e, list<string> const &xb) {
+    void external_event(double* q, double e, std::list<std::string> const &xb) {
         phase = DOUSE;  // Any input is a douse event
     }
     void internal_event(double* q, bool const* state_event) {
@@ -55,19 +55,19 @@ class CherryBomb : public ode_system<string> {
         }
     }
     void confluent_event(double* q, bool const* state_event,
-                         list<string> const &xb) {
+                         std::list<std::string> const &xb) {
         internal_event(q, state_event);
         external_event(q, 0.0, xb);
     }
     void output_func(double const* q, bool const* state_event,
-                     list<string> &yb) {
+                     std::list<std::string> &yb) {
         if (state_event[1] && phase == FUSE_LIT) {
             yb.push_back("BOOM!");  // Explode!
         }
     }
     void postStep(double* q) {
         // Write the current state to std out
-        cout << q[T] << " " << q[H] << " " << q[V] << " " << phase << endl;
+        std::cout << q[T] << " " << q[H] << " " << q[V] << " " << phase << std::endl;
     }
 
     // Get the current value of the discrete variable
@@ -83,18 +83,18 @@ int main() {
     // Create the ODE solver for this model. Maximum error
     // tolerance at each step is 1E-4 and the maximum
     // size of an integration step is 0.01.
-    ode_solver<string>* ode_solve =
-        new corrected_euler<string>(bomb, 1E-4, 0.01);
+    ode_solver<std::string>* ode_solve =
+        new corrected_euler<std::string>(bomb, 1E-4, 0.01);
     // Create the event locator for this model. Maximum
     // error tolerace for the location of an event in
     // the state space is 1E-8.
-    event_locator<string>* event_find =
-        new linear_event_locator<string>(bomb, 1E-8);
+    event_locator<std::string>* event_find =
+        new linear_event_locator<std::string>(bomb, 1E-8);
     // Create an atomic model that puts all of these
     // together to simulate the continuous system.
-    Hybrid<string>* model = new Hybrid<string>(bomb, ode_solve, event_find);
+    Hybrid<std::string>* model = new Hybrid<std::string>(bomb, ode_solve, event_find);
     // Create and run a simulator for this model
-    Simulator<string>* sim = new Simulator<string>(model);
+    Simulator<std::string>* sim = new Simulator<std::string>(model);
     while (bomb->getPhase() == FUSE_LIT) {
         sim->execNextEvent();
     }

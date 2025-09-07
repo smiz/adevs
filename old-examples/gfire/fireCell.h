@@ -32,11 +32,11 @@ class fireCell : public adevs::Atomic<CellEvent> {
     // Internal transition function
     void delta_int();
     // External transition function
-    void delta_ext(double e, list<CellEvent> const &xb);
+    void delta_ext(double e, std::list<CellEvent> const &xb);
     // Confluent transition function
-    void delta_conf(list<CellEvent> const &xb);
+    void delta_conf(std::list<CellEvent> const &xb);
     // Output function
-    void output_func(list<CellEvent> &yb);
+    void output_func(std::list<CellEvent> &yb);
     // Time advance function
     double ta();
 

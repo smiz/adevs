@@ -44,9 +44,6 @@
 #include "adevs/models.h"
 #include "adevs/time.h"
 
-using namespace std;
-
-
 namespace adevs {
 
 /*
@@ -73,7 +70,7 @@ class Schedule {
 
     // --- Model management functions ---
 
-    void add(shared_ptr<Model> model) {
+    void add(std::shared_ptr<Model> model) {
         // Make sure this model is not already in the schedule
         if (auto search = model_index.find(model); search != model_index.end()) {
             throw exception("Model is already active!");
@@ -85,7 +82,7 @@ class Schedule {
         percolate_up(model_heap.size() - 1);
     }
 
-    void remove(shared_ptr<Model> model) {
+    void remove(std::shared_ptr<Model> model) {
         // Find the model if it is in the schedule
         auto search = model_index.find(model);
         if (search == model_index.end()) {
@@ -97,7 +94,7 @@ class Schedule {
         model_index.erase(search);
     }
 
-    void update(shared_ptr<Model> model) {
+    void update(std::shared_ptr<Model> model) {
         // Find the model if it is in the schedule
         auto search = model_index.find(model);
         if (search == model_index.end()) {
@@ -133,12 +130,12 @@ class Schedule {
     }
 
     void check_imminent(size_t index, size_t maximum, TimeType minimum,
-                        list<shared_ptr<Model>> &activated) {
+						std::list<std::shared_ptr<Model>> &activated) {
         if (index > maximum) {
             return;
         }
 
-        shared_ptr<Model> tmp = model_heap[index];
+        std::shared_ptr<Model> tmp = model_heap[index];
         if (tmp.time_advance > minimum) {
             return;
         }
@@ -159,14 +156,14 @@ class Schedule {
     }
 
     /// Gets a list of all imminent models
-    list<shared_ptr<Model>> get_imminent() {
-        list<shared_ptr<Model>> activated;
+    std::list<std::shared_ptr<Model>> get_imminent() {
+    	std::list<std::shared_ptr<Model>> activated;
         check_imminent(0, model_heap.size() - 1, get_minimum(), activated);
         return activated;
     }
 
     /// Get the model at the front of the queue.
-    shared_ptr<Model> get_next() const {
+    std::shared_ptr<Model> get_next() const {
         if (!model_heap.empty()) {
             //return model_heap.front().model;
             return model_heap[0].model;
@@ -198,15 +195,15 @@ class Schedule {
 
   private:
     struct Entry {
-        Entry(shared_ptr<Model> m) : model(m), time_advance(m->ta()) {}
-        shared_ptr<Model> model;
+        Entry(std::shared_ptr<Model> m) : model(m), time_advance(m->ta()) {}
+        std::shared_ptr<Model> model;
         TimeType time_advance;
     };
 
     // Stores all models using a heap as a priority queue
-    vector<Entry> model_heap;
+    std::vector<Entry> model_heap;
     // Stores location of all models in the heap (So they can be updated directly)
-    unordered_map<shared_ptr<Model>, size_t> model_index;
+    std::unordered_map<std::shared_ptr<Model>, size_t> model_index;
 
     // The custom comparison operator is needed for make_heap() in update_all().
     // Compares model priorities by looking at their time advance.
@@ -241,7 +238,7 @@ class Schedule {
 
         while (child != 0 && model_heap[child].time_advance < model_heap[parent].time_advance) {
             // Swap the models since the child's time advance is less than the parent's
-            swap(model_heap[child], model_heap[parent]);
+        	std::swap(model_heap[child], model_heap[parent]);
 
             // Update the index locations of the new swapped models
             model_index[model_heap[parent].model] = parent;
@@ -273,7 +270,7 @@ class Schedule {
             // Sawp the models if the child's time_advance is less than the current
             if (model_heap[child].time_advance < model_heap[current].time_advance) {
                 // Swap the models since the child's time advance is less than the parent's
-                swap(model_heap[current], model_heap[child]);
+            	std::swap(model_heap[current], model_heap[child]);
 
                 // Update the index locations of the new swapped models
                 model_index[model_heap[current].model] = current;

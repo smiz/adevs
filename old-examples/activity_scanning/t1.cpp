@@ -2,13 +2,13 @@
 
 #include "des.h"
 
-using namespace std;
+
 
 
 class Machine : public Partition {
   public:
     Machine() : Partition() {}
-    void exec(vector<shared_ptr<Event>> &imminent) {
+    void exec(std::vectorstd::shared_ptr<Event>> &imminent) {
         for (auto ii : imminent) {
             ii->exec();
         }
@@ -21,56 +21,56 @@ class Machine : public Partition {
 
 class Leave : public Event {
   public:
-    Leave(shared_ptr<Machine> m, double t) : Event(m, t), _machine(m) {}
+    Leave(std::shared_ptr<Machine> m, double t) : Event(m, t), _machine(m) {}
     void exec();
     bool prep() { return true; }
 
   private:
-    shared_ptr<Machine> _machine;
+    std::shared_ptr<Machine> _machine;
 };
 
 void Leave::exec() {
-    cout << "Leave @ " << _machine->now() << endl;
+    std::cout << "Leave @ " << _machine->now() << std::endl;
     assert(_machine->jobsPending > 0);
     _machine->jobsPending--;
     _machine->jobsFinished++;
     if (_machine->jobsPending > 0) {
-        _machine->schedule(make_shared<Leave>(_machine, _machine->now() + 1));
+        _machine->schedule(std::make_shared<Leave>(_machine, _machine->now() + 1));
     }
 }
 
 class Arrive : public Event {
   public:
-    Arrive(shared_ptr<Machine> m, double t) : Event(m, t), _machine(m) {}
+    Arrive(std::shared_ptr<Machine> m, double t) : Event(m, t), _machine(m) {}
     void exec() {
-        cout << "Arrive @ " << _machine->now() << endl;
+        std::cout << "Arrive @ " << _machine->now() << std::endl;
         _machine->jobsReceived++;
         _machine->jobsPending++;
         if (_machine->jobsPending == 1) {
             _machine->schedule(
-                make_shared<Leave>(_machine, _machine->now() + 1));
+                std::make_shared<Leave>(_machine, _machine->now() + 1));
         }
-        _machine->schedule(make_shared<Arrive>(_machine, _machine->now() + 1));
+        _machine->schedule(std::make_shared<Arrive>(_machine, _machine->now() + 1));
     }
     bool prep() { return true; }
 
   private:
-    shared_ptr<Machine> _machine;
+    std::shared_ptr<Machine> _machine;
 };
 
 int main() {
-    shared_ptr<Machine> machine = make_shared<Machine>();
-    machine->schedule(make_shared<Arrive>(machine, 0));
+    std::shared_ptr<Machine> machine = std::make_shared<Machine>();
+    machine->schedule(std::make_shared<Arrive>(machine, 0));
 
-    shared_ptr<World> world = make_shared<World>();
+    std::shared_ptr<World> world = std::make_shared<World>();
     world->add(machine);
 
-    shared_ptr<Simulator> sim = make_shared<Simulator>(world);
+    std::shared_ptr<Simulator> sim = std::make_shared<Simulator>(world);
     sim->execUntil(5);
 
-    cout << "Machine\tR\tP\tF" << endl;
-    cout << "M\t" << machine->jobsReceived << "\t" << machine->jobsPending
-         << "\t" << machine->jobsFinished << endl;
+    std::cout << "Machine\tR\tP\tF" << std::endl;
+    std::cout << "M\t" << machine->jobsReceived << "\t" << machine->jobsPending
+         << "\t" << machine->jobsFinished << std::endl;
 
     return 0;
 }

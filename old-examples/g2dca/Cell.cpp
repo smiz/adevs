@@ -1,5 +1,5 @@
 #include "Cell.h"
-using namespace std;
+
 
 // Cellspace dimensions
 int Cell::w = 0;
@@ -78,13 +78,13 @@ void Cell::delta_int() {
     phase = y_space[x][y];
 }
 
-void Cell::delta_ext(int e, list<CellEvent> const &xb) {}
+void Cell::delta_ext(int e, std::list<CellEvent> const &xb) {}
 
-void Cell::delta_conf(list<CellEvent> const &xb) {
+void Cell::delta_conf(std::list<CellEvent> const &xb) {
     delta_int();
 }
 
-void Cell::output_func(list<CellEvent> &yb) {
+void Cell::output_func(std::list<CellEvent> &yb) {
     CellEvent e;
     // Assume we are dying
     e.value = (rule[rule_index()]) ? Alive : Dead;

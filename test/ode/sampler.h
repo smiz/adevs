@@ -24,7 +24,7 @@ class sampler : public adevs::Atomic<double> {
         sigma -= e;
         t += e;
         std::cout << t << " ";
-        list<adevs::PinValue<double>>::const_iterator iter;
+        std::list<adevs::PinValue<double>>::const_iterator iter;
         for (iter = xb.begin(); iter != xb.end(); iter++) {
             std::cout << (*iter).value << " ";
         }

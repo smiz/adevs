@@ -2,23 +2,23 @@
 #include <list>
 #include "adevs/adevs.h"
 using namespace adevs;
-using namespace std;
+
 
 class Model;
-using ModelPtr = shared_ptr<Model>;
+using ModelPtr = std::shared_ptr<Model>;
 
 class Model : public Atomic<ModelPtr> {
   public:
-    Model(bool active, shared_ptr<Graph<ModelPtr>>& g) : Atomic<ModelPtr>(),g(g),self(nullptr),active(active) { num_models++; }
+    Model(bool active, std::shared_ptr<Graph<ModelPtr>>& g) : Atomic<ModelPtr>(),g(g),self(nullptr),active(active) { num_models++; }
 
     void delta_int() {
         g->remove_atomic(self);
         self = nullptr;
     }
 
-    void delta_ext(double, const list<PinValue<ModelPtr>>& xb) {
+    void delta_ext(double, const std::list<PinValue<ModelPtr>>& xb) {
         assert(!active);
-        shared_ptr<Model> m = make_shared<Model>(false,g);
+        std::shared_ptr<Model> m = std::make_shared<Model>(false,g);
         m->self_ptr(m);
         g->add_atomic(m);
         g->connect(m->in, m);
@@ -27,9 +27,9 @@ class Model : public Atomic<ModelPtr> {
         active = true;
         num_externals++;
     }
-    void delta_conf(const list<PinValue<ModelPtr>>&) { assert(false); }
+    void delta_conf(const std::list<PinValue<ModelPtr>>&) { assert(false); }
     
-    void output_func(list<PinValue<ModelPtr>>& yb) {
+    void output_func(std::list<PinValue<ModelPtr>>& yb) {
         yb.push_back(PinValue<ModelPtr>(out, self));
     }
     double ta() { return (active) ? 1.0 : adevs_inf<double>(); }
@@ -40,7 +40,7 @@ class Model : public Atomic<ModelPtr> {
     pin_t in, out;
     static int num_models, num_externals;
   private:
-    shared_ptr<Graph<ModelPtr>> g;
+    std::shared_ptr<Graph<ModelPtr>> g;
     ModelPtr self;
     bool active;
 };
@@ -50,13 +50,13 @@ int Model::num_externals = 0;
 
 int main() {
     int count = 0;
-    shared_ptr<Graph<ModelPtr>> g = make_shared<Graph<ModelPtr>>();
-    shared_ptr<Model> m = make_shared<Model>(true,g);
+    std::shared_ptr<Graph<ModelPtr>> g = std::make_shared<Graph<ModelPtr>>();
+    std::shared_ptr<Model> m = std::make_shared<Model>(true,g);
     m->self_ptr(m);
     g->add_atomic(m);
 
-    shared_ptr<Simulator<ModelPtr>> sim =
-        make_shared<Simulator<ModelPtr>>(g);
+    std::shared_ptr<Simulator<ModelPtr>> sim =
+        std::make_shared<Simulator<ModelPtr>>(g);
 
     while (sim->nextEventTime() < 10.0) {
         sim->execNextEvent();

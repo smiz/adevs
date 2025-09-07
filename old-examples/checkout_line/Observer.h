@@ -19,10 +19,10 @@ class Observer : public adevs::Atomic<EventType> {
     ~Observer();
 
     void delta_int();
-    void delta_ext(double e, list<EventType> const &xb);
-    void delta_conf(list<EventType> const &xb);
+    void delta_ext(double e, std::list<EventType> const &xb);
+    void delta_conf(std::list<EventType> const &xb);
     double ta();
-    void output_func(list<EventType> &yb);
+    void output_func(std::list<EventType> &yb);
 
   private:
     /// File for storing information about departing customers.

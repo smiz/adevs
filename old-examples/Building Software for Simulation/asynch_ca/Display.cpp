@@ -1,6 +1,6 @@
 #include "Display.h"
 #include <iostream>
-using namespace std;
+
 
 int const Display::xunit = 1;
 int const Display::yunit = 5;

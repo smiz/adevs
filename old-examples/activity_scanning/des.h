@@ -7,7 +7,7 @@
 
 #include "adevs/adevs.h"
 
-using namespace std;
+
 
 
 enum class Mode {
@@ -29,7 +29,7 @@ class Event {
      * Create an event to act on a partition. The timestamp
      * must be inf for a conditional event.
      */
-    Event(shared_ptr<Partition> p, double t = adevs_inf<double>())
+    Event(std::shared_ptr<Partition> p, double t = adevs_inf<double>())
         : _partition(p), _time(t) {}
     virtual ~Event() {}
     /**
@@ -44,14 +44,14 @@ class Event {
     /// Execute the event.
     virtual void exec() = 0;
     /// Get the partition
-    shared_ptr<Partition> partition() { return _partition; }
+    std::shared_ptr<Partition> partition() { return _partition; }
     /// Get the timestamp
     double timestamp() const { return _time; }
     /// Is this a conditional event?
     bool conditional() const { return _time == adevs_inf<double>(); }
 
   private:
-    shared_ptr<Partition> _partition;
+    std::shared_ptr<Partition> _partition;
     double const _time;
 };
 
@@ -64,10 +64,10 @@ class Event {
  * However, when executed that event must only change variables
  * within the partition.</p>
  */
-class Partition : public adevs::Atomic<shared_ptr<Event>> {
+class Partition : public adevs::Atomic<std::shared_ptr<Event>> {
   public:
     Partition()
-        : adevs::Atomic<shared_ptr<Event>>(),
+        : adevs::Atomic<std::shared_ptr<Event>>(),
           time_now(0.0),
           mode(Mode::FUTURE) {}
 
@@ -80,25 +80,25 @@ class Partition : public adevs::Atomic<shared_ptr<Event>> {
      * way that is appropriate to the model.</p>
      * <p>All imminent events are deleted when exec returns.</p>
      */
-    virtual void exec(std::vector<shared_ptr<Event>> &imminent) = 0;
+    virtual void exec(std::vector<std::shared_ptr<Event>> &imminent) = 0;
     /// Get the simulation time
     double now() const { return time_now; }
     /// Schedule an event for this or another partition
-    void schedule(shared_ptr<Event> event);
+    void schedule(std::shared_ptr<Event> event);
 
   private:
-    std::list<shared_ptr<Event>> conditional_events;
-    std::list<shared_ptr<Event>> future_events;
-    std::vector<shared_ptr<Event>> other_events;
-    std::vector<shared_ptr<Event>> imminent_events;
+    std::list<std::shared_ptr<Event>> conditional_events;
+    std::list<std::shared_ptr<Event>> future_events;
+    std::vector<std::shared_ptr<Event>> other_events;
+    std::vector<std::shared_ptr<Event>> imminent_events;
     double time_now;
     Mode mode;
 
   public:
     void delta_int();
-    void delta_ext(double e, list<shared_ptr<Event>> const &xb);
-    void delta_conf(list<shared_ptr<Event>> const &xb);
-    void output_func(list<shared_ptr<Event>> &yb);
+    void delta_ext(double e, std::list<std::shared_ptr<Event>> const &xb);
+    void delta_conf(std::list<std::shared_ptr<Event>> const &xb);
+    void output_func(std::list<std::shared_ptr<Event>> &yb);
     double ta();
 };
 
@@ -110,7 +110,7 @@ class Partition : public adevs::Atomic<shared_ptr<Event>> {
  * activities. The World class is an instance of an
  * adevs::SimpleDigraph object.
  */
-typedef adevs::SimpleDigraph<shared_ptr<Event>> World;
-typedef adevs::Simulator<shared_ptr<Event>> Simulator;
+typedef adevs::SimpleDigraph<std::shared_ptr<Event>> World;
+typedef adevs::Simulator<std::shared_ptr<Event>> Simulator;
 
 #endif

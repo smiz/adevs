@@ -194,9 +194,9 @@ class Graph {
             CONNECT_PIN_TO_PIN,
             /// @brief  A pending call to disconnect(pin_t, pin_t).
             DISCONNECT_PIN_FROM_PIN,
-            /// @brief  A pending call to connect(pin_t, shared_ptr<Atomic<ValueType,TimeType>>).
+            /// @brief  A pending call to connect(pin_t, std::shared_ptr<Atomic<ValueType,TimeType>>).
             CONNECT_PIN_TO_ATOMIC,
-            /// @brief  A pending call to disconnect(pin_t, shared_ptr<Atomic<ValueType,TimeType>>).
+            /// @brief  A pending call to disconnect(pin_t, std::shared_ptr<Atomic<ValueType,TimeType>>).
             DISCONNECT_PIN_FROM_ATOMIC,
         };
         /**

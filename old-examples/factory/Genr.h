@@ -23,15 +23,15 @@ class Genr : public adevs::Atomic<int> {
     }
 
     // Output function produces the next order
-    void output_func(list<int> &yb) { yb.push_back(next); }
+    void output_func(std::list<int> &yb) { yb.push_back(next); }
 
     // Time advance returns the time until the next order
     double ta() { return time_to_order; }
 
     // Model is input free, so these methods are empty
-    void delta_ext(double, list<int> const &) {}
+    void delta_ext(double, std::list<int> const &) {}
 
-    void delta_conf(list<int> const &) {}
+    void delta_conf(std::list<int> const &) {}
 
   private:
     // Next order ID

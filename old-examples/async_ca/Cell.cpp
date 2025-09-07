@@ -1,5 +1,5 @@
 #include "Cell.h"
-using namespace std;
+
 using namespace adevs;
 
 bool* Cell::vis;
@@ -33,7 +33,7 @@ void Cell::delta_int() {
     dt = h;
 }
 
-void Cell::delta_ext(double e, list<CellEvent<value_t>> const &xb) {
+void Cell::delta_ext(double e, std::list<CellEvent<value_t>> const &xb) {
     dt -= e;
     for (auto iter = xb.begin(); iter != xb.end(); iter++) {
         if ((*iter).value.pos == left) {
@@ -44,12 +44,12 @@ void Cell::delta_ext(double e, list<CellEvent<value_t>> const &xb) {
     }
 }
 
-void Cell::delta_conf(list<CellEvent<value_t>> const &xb) {
+void Cell::delta_conf(std::list<CellEvent<value_t>> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
 
-void Cell::output_func(list<CellEvent<value_t>> &yb) {
+void Cell::output_func(std::list<CellEvent<value_t>> &yb) {
     CellEvent<value_t> y;
     y.y = y.z = 0;
     y.value.pos = pos;

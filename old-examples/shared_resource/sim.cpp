@@ -5,7 +5,7 @@
 
 #include "adevs/adevs.h"
 
-using namespace std;
+
 using namespace adevs;
 
 
@@ -15,7 +15,7 @@ struct request_t {
 };
 
 typedef PortValue<request_t> IO_Type;
-typedef list<IO_Type> IO_List;
+typedef std::list<IO_Type> IO_List;
 
 class Resource : public Atomic<IO_Type> {
   public:
@@ -84,7 +84,7 @@ class Resource : public Atomic<IO_Type> {
     // Somebody has the resource?
     bool avail;
     // List of user IDs that want the resource
-    list<int> q;
+    std::list<int> q;
 };
 
 int const Resource::release = 0;
@@ -116,12 +116,12 @@ class User : public Atomic<IO_Type> {
     void delta_int() {
         // We requested a resource, now wait to get it
         if (stage == REQUEST) {
-            cout << ID << " is waiting" << endl;
+            std::cout << ID << " is waiting" << std::endl;
             stage = WAIT;
         }
         // We are working with the resources, now release them
         else if (stage == WORK) {
-            cout << ID << " done working" << endl;
+            std::cout << ID << " done working" << std::endl;
             stage = RELEASE;
         }
         // We released the resources, now get them back
@@ -141,11 +141,11 @@ class User : public Atomic<IO_Type> {
             if ((*iter).value.userID == ID) {
                 // Got the resource
                 if ((*iter).port == grant) {
-                    cout << ID << " got " << (*iter).value.resID << endl;
+                    std::cout << ID << " got " << (*iter).value.resID << std::endl;
                     wants.erase((*iter).value.resID);
                     // If we have them all, start working
                     if (wants.empty()) {
-                        cout << ID << " is working" << endl;
+                        std::cout << ID << " is working" << std::endl;
                         stage = WORK;
                     }
                 }
@@ -202,19 +202,19 @@ int main() {
     int numRes = 3;
     int numUsers = 5;
 
-    list<shared_ptr<User>> users;
-    list<shared_ptr<Resource>> resources;
+    std::list<std::shared_ptr<User>> users;
+    std::list<std::shared_ptr<Resource>> resources;
 
-    shared_ptr<Digraph<request_t>> model = make_shared<Digraph<request_t>>();
+    std::shared_ptr<Digraph<request_t>> model = std::make_shared<Digraph<request_t>>();
 
     for (int ii = 0; ii < numRes; ii++) {
-        shared_ptr<Resource> resource = make_shared<Resource>(ii);
+        std::shared_ptr<Resource> resource = std::make_shared<Resource>(ii);
         resources.push_back(resource);
         model->add(resource);
     }
 
     for (int ii = 0; ii < numUsers; ii++) {
-        shared_ptr<User> user = make_shared<User>(ii, rand() % numRes);
+        std::shared_ptr<User> user = std::make_shared<User>(ii, rand() % numRes);
         users.push_back(user);
         model->add(user);
 
@@ -227,7 +227,7 @@ int main() {
 
     adevs::Simulator<IO_Type> simulator(model);
     while (simulator.nextEventTime() < 100.0) {
-        cout << "t = " << simulator.nextEventTime() << endl;
+        std::cout << "t = " << simulator.nextEventTime() << std::endl;
         simulator.execNextEvent();
     }
 

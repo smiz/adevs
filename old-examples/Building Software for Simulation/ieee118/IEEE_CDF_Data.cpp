@@ -1,7 +1,7 @@
 #include "IEEE_CDF_Data.h"
 #include <fstream>
 #include <iostream>
-using namespace std;
+
 
 #define DEGS_TO_RADS (3.14 / 180.0)
 int const IEEE_CDF_Data::LINE_LEN = 1000;

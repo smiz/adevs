@@ -1,6 +1,6 @@
 #include <iostream>
 #include "InterruptHandler.h"
-using namespace std;
+
 using namespace adevs;
 
 InterruptHandler::InterruptHandler(double freq)
@@ -54,11 +54,11 @@ void InterruptHandler::delta_int() {
     }
 }
 
-void InterruptHandler::delta_ext(double e, list<SimEvent> const &xb) {
+void InterruptHandler::delta_ext(double e, std::list<SimEvent> const &xb) {
     /// Decrement the time to go
     ttg -= e;
     /// Look for input
-    for (list<SimEvent>::iterator iter = xb.begin(); iter != xb.end(); iter++) {
+    for (std::list<SimEvent>::iterator iter = xb.begin(); iter != xb.end(); iter++) {
         assert((*iter).getType() == SIM_MOTOR_ON_TIME);
         left_on_time = (*iter).simMotorOnTime().left;
         right_on_time = (*iter).simMotorOnTime().right;
@@ -67,12 +67,12 @@ void InterruptHandler::delta_ext(double e, list<SimEvent> const &xb) {
     }
 }
 
-void InterruptHandler::delta_conf(list<SimEvent> const &xb) {
+void InterruptHandler::delta_conf(std::list<SimEvent> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
 
-void InterruptHandler::output_func(list<SimEvent> &yb) {
+void InterruptHandler::output_func(std::list<SimEvent> &yb) {
     // If this is the start of an interrupt, send the motor voltage
     // and an interrupt indicator
     if (phase == OUTPUT) {

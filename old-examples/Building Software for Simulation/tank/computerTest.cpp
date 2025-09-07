@@ -1,19 +1,19 @@
 #include <fstream>
 #include "Computer.h"
 #include "SimEvents.h"
-using namespace std;
+
 using namespace adevs;
 
 class ComputerListener : public EventListener<SimEvent> {
   public:
     ComputerListener(Computer const* computer)
         : EventListener<SimEvent>(), computer(computer), vout("voltage.dat") {
-        vout << 0 << " " << 0 << " " << 0 << endl;  // Print volts @ t=0
+        vout << 0 << " " << 0 << " " << 0 << std::endl;  // Print volts @ t=0
     }
     void outputEvent(Event<SimEvent> y, double t) {
         if (y.model == computer) {
             SimMotorVoltage event = y.value.simMotorVoltage();
-            vout << t << " " << event.el << " " << event.er << endl;
+            vout << t << " " << event.el << " " << event.er << std::endl;
         }
     }
     void stateChange(Atomic<SimEvent>*, double) {}
@@ -26,7 +26,7 @@ class ComputerListener : public EventListener<SimEvent> {
 int main(int argc, char** argv) {
     // Get the parameters for the experiment from the command line
     if (argc != 4) {
-        cout << "freq left_throttle right_throttle" << endl;
+        std::cout << "freq left_throttle right_throttle" << std::endl;
         return 0;
     }
     // Get the frequency of the voltage signal from the first argument
@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
     // Add an event listener to plot the voltage signals
     sim->addEventListener(l);
     // Inject the driver command into the simulation at time 0
-    list<Event<SimEvent>> input;
+    std::list<Event<SimEvent>> input;
     SimEvent cmd(sim_command);
     Event<SimEvent> event(computer, cmd);
     input.push_back(event);

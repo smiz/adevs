@@ -1,7 +1,7 @@
 #include <iostream>
 #include "InterruptHandler.h"
 #include "adevs/adevs.h"
-using namespace std;
+
 using namespace adevs;
 
 // Listener for recording the state and output of the interrupt handler
@@ -9,33 +9,33 @@ class InterruptListener : public EventListener<SimEvent> {
   public:
     InterruptListener() {}
     void outputEvent(Atomic<SimEvent>* model, SimEvent const &value, double t) {
-        cout << "Output, t = " << t << ", ";
+        std::cout << "Output, t = " << t << ", ";
         if (value.getType() == SIM_INTERRUPT) {
-            cout << "interrupt" << endl;
+            std::cout << "interrupt" << std::endl;
         } else if (value.getType() == SIM_MOTOR_VOLTAGE) {
-            cout << "el = " << value.simMotorVoltage().el
-                 << ", er = " << value.simMotorVoltage().er << endl;
+            std::cout << "el = " << value.simMotorVoltage().el
+                 << ", er = " << value.simMotorVoltage().er << std::endl;
         }
     }
     void stateChange(Atomic<SimEvent>* model, double t) {
         InterruptHandler* ih = dynamic_cast<InterruptHandler*>(model);
-        cout << "State, t = " << t;
-        cout << ", el = " << ih->getLeftOutput();
-        cout << ", er = " << ih->getRightOutput();
-        cout << ", e'l = " << ih->getLastLeftOutput();
-        cout << ", e'r = " << ih->getLastRightOutput();
-        cout << ",\n\tc = " << ih->getCounter();
-        cout << ",ol = " << ih->getLeftOnTime();
-        cout << ",or = " << ih->getRightOnTime();
-        cout << ",rl = " << ih->getLeftReverse();
-        cout << ",rr = " << ih->getRightReverse();
-        cout << ",i = ";
+        std::cout << "State, t = " << t;
+        std::cout << ", el = " << ih->getLeftOutput();
+        std::cout << ", er = " << ih->getRightOutput();
+        std::cout << ", e'l = " << ih->getLastLeftOutput();
+        std::cout << ", e'r = " << ih->getLastRightOutput();
+        std::cout << ",\n\tc = " << ih->getCounter();
+        std::cout << ",ol = " << ih->getLeftOnTime();
+        std::cout << ",or = " << ih->getRightOnTime();
+        std::cout << ",rl = " << ih->getLeftReverse();
+        std::cout << ",rr = " << ih->getRightReverse();
+        std::cout << ",i = ";
         if (ih->getPhase() == InterruptHandler::WAIT) {
-            cout << "WAIT" << endl;
+            std::cout << "WAIT" << std::endl;
         } else if (ih->getPhase() == InterruptHandler::EXEC) {
-            cout << "EXEC" << endl;
+            std::cout << "EXEC" << std::endl;
         } else if (ih->getPhase() == InterruptHandler::OUTPUT) {
-            cout << "OUTPUT" << endl;
+            std::cout << "OUTPUT" << std::endl;
         }
     }
 };
@@ -43,11 +43,11 @@ class InterruptListener : public EventListener<SimEvent> {
 int main(int argc, char** argv) {
     // Make sure that a frequency was given
     if (argc != 2) {
-        cout << "Must provide a signal frequency" << endl;
+        std::cout << "Must provide a signal frequency" << std::endl;
         return 0;
     }
     // Set the output precision to make the small time advances apparent
-    cout.precision(12);
+    std::cout.precision(12);
     // Create the model, event listener, and simulator
     InterruptHandler* ih = new InterruptHandler(atof(argv[1]));
     InterruptListener* l = new InterruptListener();
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
     // Run the simulation
     while (true) {
 
-        list<SimEvent> input;
+        std::list<SimEvent> input;
         // The value to inject
         SimMotorOnTime motor_setting;
         // Time to inject the input
@@ -76,17 +76,17 @@ int main(int argc, char** argv) {
         }
         // Simulate until time t and then inject the input
         while (sim->nextEventTime() < t) {
-            cout << endl;
+            std::cout << std::endl;
             sim->execNextEvent();
         }
         // Simulate the transient events
         for (int i = 0; i < c && sim->nextEventTime() == t; i++) {
-            cout << endl;
+            std::cout << std::endl;
             sim->execNextEvent();
         }
         // Inject the input
         input.push_back(SimEvent(motor_setting));
-        cout << endl;
+        std::cout << std::endl;
         sim->computeNextState(input, t);
     }
     // Clean up

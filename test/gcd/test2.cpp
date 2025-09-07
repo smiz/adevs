@@ -1,12 +1,12 @@
 #include <iostream>
 #include "adevs/adevs.h"
 #include "gcd.h"
-using namespace std;
+
 
 int main() {
-    cout << "Test 2" << endl;
+    std::cout << "Test 2" << std::endl;
     auto model = std::make_shared<adevs::Coupled<ObjectPtr>>();
-    vector<double> pat;
+    std::vector<double> pat;
     pat.push_back(0);
     pat.push_back(0);
     auto c = std::make_shared<gcd>(10, 2, 1, false);
@@ -18,6 +18,6 @@ int main() {
     while (sim.nextEventTime() < adevs_inf<double>()) {
         sim.execNextEvent();
     }
-    cout << "Test done" << endl;
+    std::cout << "Test done" << std::endl;
     return 0;
 }

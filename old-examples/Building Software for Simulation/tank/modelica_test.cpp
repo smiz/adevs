@@ -1,12 +1,12 @@
 #include "SimEventListener.h"
 #include "SimEvents.h"
 #include "Tank.h"
-using namespace std;
+
 
 int main(int argc, char** argv) {
     // Get the parameters for the experiment from the command line
     if (argc != 4) {
-        cout << "freq left_throttle right_throttle" << endl;
+        std::cout << "freq left_throttle right_throttle" << std::endl;
         return 0;
     }
     // Get the frequency of the voltage signal from the first argument
@@ -30,13 +30,13 @@ int main(int argc, char** argv) {
     sim->computeNextState(input, 0.0);
     // Run the simulation for 3 seconds
     while (sim->nextEventTime() <= 1.0) {
-        cout << sim->nextEventTime() << " ";
+        std::cout << sim->nextEventTime() << " ";
         sim->execNextEvent();
-        cout << tank->getPhysics()->getSpeed() << " "
+        std::cout << tank->getPhysics()->getSpeed() << " "
              << tank->getPhysics()->getTurnSpeed() << " "
              << tank->getPhysics()->getHeading() << " "
              << tank->getPhysics()->getX() << " " << tank->getPhysics()->getY()
-             << " " << endl;
+             << " " << std::endl;
     }
     // Clean up and exit
     delete sim;

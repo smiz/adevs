@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
-using namespace std;
+
 
 IEEE118::IEEE118() : IEEE_CDF_Data("ieee118cdf.txt") {
     initialize();
@@ -13,7 +13,7 @@ void IEEE118::initialize() {
     double t;
     fin >> t;
     int breaker;
-    for (vector<unsigned>::const_iterator iter = getGenrs().begin();
+    for (std::vectorunsigned>::const_iterator iter = getGenrs().begin();
          iter != getGenrs().end(); iter++) {
         genr_t p = getGenrParams(*iter);
         fin >> p.w0 >> p.T0 >> p.C0 >> p.Pm0 >> p.Ef0 >> breaker;

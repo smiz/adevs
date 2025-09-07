@@ -38,9 +38,6 @@
 #include "adevs/models.h"
 #include "adevs/time.h"
 
-using namespace std;
-
-
 namespace adevs {
 
 /*
@@ -63,7 +60,7 @@ class Schedule {
     /// Get the time of the next event.
     TimeType minPriority() const { return heap[1].priority; }
     /// Visit the imminent models.
-    list<Atomic<ValueType, TimeType>*> visitImminent(void) {
+    std::list<Atomic<ValueType, TimeType>*> visitImminent(void) {
         activated.clear();
         visitImminent(1);
         return activated;
@@ -90,7 +87,7 @@ class Schedule {
     unsigned int capacity, size;
     heap_element* heap;
 
-    list<Atomic<ValueType, TimeType>*> activated;
+    std::list<Atomic<ValueType, TimeType>*> activated;
 
     /// Double the schedule capacity
     void enlarge();

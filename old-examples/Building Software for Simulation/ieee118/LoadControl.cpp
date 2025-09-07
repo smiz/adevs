@@ -3,7 +3,7 @@
 #include <vector>
 #include "ElectricalData.h"
 #include "events.h"
-using namespace std;
+
 using namespace adevs;
 
 int const LoadControl::load_change = 0;
@@ -19,7 +19,7 @@ LoadControl::LoadControl(ElectricalData* data, int freq_steps, double K)
       max_adjust(0.3) {
     init = true;
     signal = false;
-    for (vector<unsigned>::const_iterator iter = data->getGenrs().begin();
+    for (std::vectorunsigned>::const_iterator iter = data->getGenrs().begin();
          iter != data->getGenrs().end(); iter++) {
         fdata[*iter] = 0.0;
     }
@@ -36,13 +36,13 @@ void LoadControl::delta_int() {
     init = signal = false;
 }
 
-void LoadControl::delta_conf(list<PortValue<BasicEvent*>> const &xb) {
+void LoadControl::delta_conf(std::list<PortValue<BasicEvent*>> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
 
-void LoadControl::delta_ext(double e, list<PortValue<BasicEvent*>> const &xb) {
-    list<PortValue<BasicEvent*>>::const_iterator iter = xb.begin();
+void LoadControl::delta_ext(double e, std::list<PortValue<BasicEvent*>> const &xb) {
+    std::list<PortValue<BasicEvent*>>::const_iterator iter = xb.begin();
     for (; iter != xb.end(); iter++) {
         GenrSampleEvent* measurement =
             dynamic_cast<GenrSampleEvent*>((*iter).value);
@@ -75,7 +75,7 @@ void LoadControl::delta_ext(double e, list<PortValue<BasicEvent*>> const &xb) {
     assert(fabs(adjustment) <= max_adjust);
 }
 
-void LoadControl::output_func(list<PortValue<BasicEvent*>> &yb) {
+void LoadControl::output_func(std::list<PortValue<BasicEvent*>> &yb) {
     if (signal) {
         LoadAdjustEvent* load_adjust = new LoadAdjustEvent(adjustment);
         yb.push_back(PortValue<BasicEvent*>(load_change, load_adjust));

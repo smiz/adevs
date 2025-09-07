@@ -4,24 +4,24 @@
 #include "Generator.h"
 #include "Observer.h"
 
-using namespace std;
+
 using namespace adevs;
 
 
 int main(int argc, char** argv) {
 
     if (argc != 3) {
-        cout << "Need an input file and output file!" << endl;
+        std::cout << "Need an input file and output file!" << std::endl;
         return 1;
     }
 
     // Create the model
-    shared_ptr<adevs::Digraph<shared_ptr<Customer>>> store =
-        make_shared<adevs::Digraph<shared_ptr<Customer>>>();
+    std::shared_ptr<adevs::Digraph<std::shared_ptr<Customer>>> store =
+        std::make_shared<adevs::Digraph<std::shared_ptr<Customer>>>();
 
-    shared_ptr<Clerk2> clerk = make_shared<Clerk2>();
-    shared_ptr<Generator> generator = make_shared<Generator>(argv[1]);
-    shared_ptr<Observer> observer = make_shared<Observer>(argv[2]);
+    std::shared_ptr<Clerk2> clerk = std::make_shared<Clerk2>();
+    std::shared_ptr<Generator> generator = std::make_shared<Generator>(argv[1]);
+    std::shared_ptr<Observer> observer = std::make_shared<Observer>(argv[2]);
 
     store->add(clerk);
     store->add(generator);
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     store->couple(clerk, clerk->depart, observer, observer->departed);
 
     // Run the simulation
-    Simulator<PortValue<shared_ptr<Customer>>> simulator(store);
+    Simulator<PortValue<std::shared_ptr<Customer>>> simulator(store);
     while (simulator.nextEventTime() < DBL_MAX) {
         simulator.execNextEvent();
     }

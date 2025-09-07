@@ -2,7 +2,7 @@
 #include <iostream>
 #include "adevs/models.h"
 #include "adevs/simulator.h"
-using namespace std;
+
 using namespace adevs;
 
 class genr : public Atomic<char> {
@@ -17,9 +17,9 @@ class genr : public Atomic<char> {
             sigma = adevs_inf<double>();
         }
     }
-    void delta_ext(double, list<PinValue<char>> const &) { sigma = adevs_inf<double>(); }
-    void delta_conf(list<PinValue<char>> const &) { sigma = adevs_inf<double>(); }
-    void output_func(list<PinValue<char>> &y) {
+    void delta_ext(double, std::list<PinValue<char>> const &) { sigma = adevs_inf<double>(); }
+    void delta_conf(std::list<PinValue<char>> const &) { sigma = adevs_inf<double>(); }
+    void output_func(std::list<PinValue<char>> &y) {
         PinValue<char> output(output_pin,'a');
         y.push_back(output);
     }
@@ -33,7 +33,7 @@ class genr : public Atomic<char> {
 };
 
 void test1() {
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
+    std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
     Simulator<char> sim(g);
     while (sim.nextEventTime() < adevs_inf<double>()) {
         sim.execNextEvent();
@@ -42,7 +42,7 @@ void test1() {
 }
 
 void test2() {
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
+    std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
     Simulator<char> sim(g);
     while (sim.nextEventTime() < adevs_inf<double>()) {
         sim.computeNextOutput();
@@ -68,9 +68,9 @@ class MyEventListener : public EventListener<char> {
 };
 
 void test3() {
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
+    std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
     Simulator<char> sim(g);
-    shared_ptr<MyEventListener> listener = make_shared<MyEventListener>();
+    std::shared_ptr<MyEventListener> listener = std::make_shared<MyEventListener>();
     sim.addEventListener(listener);
     while (sim.nextEventTime() < adevs_inf<double>()) {
         sim.computeNextOutput();
@@ -82,7 +82,7 @@ void test3() {
 }
 
 void test4() {
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
+    std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
     Simulator<char> sim(g);
     sim.setNextTime(5.0);
     sim.execNextEvent();
@@ -110,8 +110,8 @@ void test4() {
 void test5() {
     pin_t input_pin;
     PinValue<char> input(input_pin,'a');
-    shared_ptr<genr> g = make_shared<genr>(10.0, 10);
-    shared_ptr<Graph<char>> graph = make_shared<Graph<char>>();
+    std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
+    std::shared_ptr<Graph<char>> graph = std::make_shared<Graph<char>>();
     graph->add_atomic(g);
     graph->connect(input_pin,g);
     Simulator<char> sim(graph);

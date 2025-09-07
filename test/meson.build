@@ -25,9 +25,9 @@ test('sched', test_sched)
 #test_schedule2 = executable('schedule2', 'sched_test2.cpp', include_directories: adevs)
 #test('schedule2', test_schedule2)
 
-#benchmark_schedule1 = executable('benchmark_schedule1', 'sched_benchmark1.cpp', include_directories: adevs)
+benchmark_schedule1 = executable('benchmark_schedule1', 'sched_benchmark1.cpp', include_directories: adevs)
 
-#benchmark_schedule2 = executable('benchmark_schedule2', 'sched_benchmark2.cpp', include_directories: adevs)
+benchmark_schedule2 = executable('benchmark_schedule2', 'sched_benchmark2.cpp', include_directories: adevs)
 
 test_sd_time = executable('sd_time', 'sd_time_test.cpp', include_directories: adevs, link_with: adevs_lib)
 test('sd_time', test_sd_time)

@@ -1,5 +1,5 @@
 #include "TankPhysics.h"
-using namespace std;
+
 using namespace adevs;
 
 // Indices for the state event array
@@ -101,9 +101,9 @@ void TankPhysicsEqns::internal_event(double* q, bool const* events) {
 }
 
 void TankPhysicsEqns::external_event(double* q, double e,
-                                     list<SimEvent> const &xb) {
+                                     std::list<SimEvent> const &xb) {
     // Set the motor voltage
-    list<SimEvent>::iterator iter = xb.begin();
+    std::list<SimEvent>::iterator iter = xb.begin();
     for (; iter != xb.end(); iter++) {
         assert((*iter).getType() == SIM_MOTOR_VOLTAGE);
         el = (*iter).simMotorVoltage().el;
@@ -112,13 +112,13 @@ void TankPhysicsEqns::external_event(double* q, double e,
 }
 
 void TankPhysicsEqns::confluent_event(double* q, bool const* events,
-                                      list<SimEvent> const &xb) {
+                                      std::list<SimEvent> const &xb) {
     internal_event(q, events);
     external_event(q, 0.0, xb);
 }
 
 void TankPhysicsEqns::output_func(double const* q, bool const* events,
-                                  list<SimEvent> &yb) {
+                                  std::list<SimEvent> &yb) {
     // Produce a position event
     SimTankPosition pos;
     pos.x = q[X];

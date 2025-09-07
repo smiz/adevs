@@ -6,7 +6,7 @@
 #include "Machine.h"
 #include "adevs/adevs.h"
 
-using namespace std;
+
 
 
 // This class implements the Factory and it machine usage policy.
@@ -17,7 +17,7 @@ class Factory : public adevs::Network<int> {
     void getComponents(set<adevs::Devs<int>*> &c);
 
     void route(int const &order, adevs::Devs<int>* src,
-               list<adevs::Event<int>> &r);
+               std::list<adevs::Event<int>> &r);
 
     bool model_transition();
 
@@ -25,13 +25,13 @@ class Factory : public adevs::Network<int> {
 
   private:
     // This is the machine set
-    std::list<shared_ptr<Machine>> machines;
+    std::list<std::shared_ptr<Machine>> machines;
 
     // Method for adding a machine to the factory
     void add_machine();
 
     // Compute time needed for a machine to finish a new job
-    double compute_service_time(shared_ptr<Machine> m);
+    double compute_service_time(std::shared_ptr<Machine> m);
 };
 
 #endif

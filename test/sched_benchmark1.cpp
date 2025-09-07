@@ -30,17 +30,17 @@ void benchmark_old() {
     Schedule<char> q;
 
     srand(200);
-    list<shared_ptr<bogus_atomic>> keep;
+    std::list<std::shared_ptr<bogus_atomic>> keep;
     // Add a bunch of models with random times
     for (int ii = 0; ii < 1000; ii++) {
-        shared_ptr<bogus_atomic> m = make_shared<bogus_atomic>();
+        std::shared_ptr<bogus_atomic> m = std::make_shared<bogus_atomic>();
         keep.push_back(m);
-        q.schedule(m, m->ta());
+        q.schedule(m.get(), m->ta());
     }
 
     // Simulate a bunch of things happening
     unsigned long iterations = 100000000;
-    cout << "Running: " << iterations << " iterations" << endl;
+    std::cout << "Running: " << iterations << " iterations" << std::endl;
 
     unsigned int percentage = 0;
     unsigned long loops_per_percent = iterations / 100;
@@ -48,14 +48,14 @@ void benchmark_old() {
     // Simulate a bunch of things happening
     for (unsigned long ii = 0; ii < iterations; ii++) {
         if (ii % loops_per_percent == 0) {
-            cout << percentage << "%\r" << flush;
+            std::cout << percentage << "%\r" << std::flush;
             percentage++;
         }
         auto m = q.getMinimum();
         m->delta_int();
         q.schedule(m, m->ta());
     }
-    cout << "100%" << "\n" << "Done!" << endl;
+    std::cout << "100%" << "\n" << "Done!" << std::endl;
 }
 
 

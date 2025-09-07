@@ -1,7 +1,7 @@
 #include <fstream>
 #include "SimEvents.h"
 #include "Tank.h"
-using namespace std;
+
 using namespace adevs;
 
 class TankListener : public EventListener<SimEvent> {
@@ -11,16 +11,16 @@ class TankListener : public EventListener<SimEvent> {
           tank(tank),
           foutc("computer.dat"),
           foutt("tank.dat") {
-        foutc << "#t el er" << endl;
-        foutc << "0 0 0" << endl;
-        foutt << "#t T v w turning theta wl wr" << endl;
-        foutt << "0 0 0 0 0 0 0 0" << endl;
+        foutc << "#t el er" << std::endl;
+        foutc << "0 0 0" << std::endl;
+        foutt << "#t T v w turning theta wl wr" << std::endl;
+        foutt << "0 0 0 0 0 0 0 0" << std::endl;
     }
     void outputEvent(Event<SimEvent> y, double t) {
         // Output from the computer
         if (y.model == tank->getComputer()) {
             SimMotorVoltage event = y.value.simMotorVoltage();
-            foutc << t << " " << event.el << " " << event.er << endl;
+            foutc << t << " " << event.el << " " << event.er << std::endl;
         }
     }
     void stateChange(Atomic<SimEvent>* model, double t) {
@@ -32,7 +32,7 @@ class TankListener : public EventListener<SimEvent> {
                   << tank->getPhysics()->isTurning() << " "
                   << tank->getPhysics()->getHeading() << " "
                   << tank->getPhysics()->leftMotorSpeed() << " "
-                  << tank->getPhysics()->rightMotorSpeed() << endl;
+                  << tank->getPhysics()->rightMotorSpeed() << std::endl;
         }
     }
     ~TankListener() {
@@ -48,7 +48,7 @@ class TankListener : public EventListener<SimEvent> {
 int main(int argc, char** argv) {
     // Get the parameters for the experiment from the command line
     if (argc != 5) {
-        cout << "freq left_throttle right_throttle tend" << endl;
+        std::cout << "freq left_throttle right_throttle tend" << std::endl;
         return 0;
     }
     // Get the frequency of the voltage signal from the first argument
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
     // Add an event listener to plot the trajectory
     sim->addEventListener(l);
     // Inject the driver command into the simulation at time 0
-    list<Event<SimEvent>> input;
+    std::list<Event<SimEvent>> input;
     SimEvent cmd(sim_command);
     Event<SimEvent> event(tank, cmd);
     input.push_back(event);

@@ -10,7 +10,7 @@
 #include "LoadControl.h"
 #include "MechPowerListener.h"
 #include "QueueBus.h"
-using namespace std;
+
 using namespace adevs;
 
 class ControlListener : public EventListener<PortValue<BasicEvent*>> {
@@ -37,7 +37,7 @@ class ControlListener : public EventListener<PortValue<BasicEvent*>> {
                 return;
             } else if (s->freqBreakerOpen()) {
                 if (offline.find(s->getBusID()) == offline.end()) {
-                    cerr << "Lost " << s->getBusID() << " @ t = " << t << endl;
+                    std::cerr << "Lost " << s->getBusID() << " @ t = " << t << std::endl;
                 }
                 offline.insert(s->getBusID());
             }
@@ -45,7 +45,7 @@ class ControlListener : public EventListener<PortValue<BasicEvent*>> {
                    y.value.port == load_control->load_change) {
             LoadAdjustEvent* e = dynamic_cast<LoadAdjustEvent*>(y.value.value);
             assert(e != NULL);
-            lout << t << " " << e->getAdjustment() << endl;
+            lout << t << " " << e->getAdjustment() << std::endl;
             cost[1] += (t - tc) * fabs(cost[0]);
             cost[0] = e->getAdjustment();
             tc = t;
@@ -89,15 +89,15 @@ class ControlListener : public EventListener<PortValue<BasicEvent*>> {
 int main(int argc, char const** argv) {
     // Get command line arguments
     if (argc <= 1) {
-        cerr << "Need a packet rate, gain, freq levels, and genr #" << endl;
+        std::cerr << "Need a packet rate, gain, freq levels, and genr #" << std::endl;
         return -1;
     }
     double packet_rate = atof(argv[1]);
     double gain = atof(argv[2]);
     int freq_levels = atoi(argv[3]);
     int genr_id = atoi(argv[4]);
-    cout << "params: " << packet_rate << " " << gain << " " << freq_levels
-         << " " << genr_id << endl;
+    std::cout << "params: " << packet_rate << " " << gain << " " << freq_levels
+         << " " << genr_id << std::endl;
     // Create the model
     IEEE118* data = new IEEE118();
     LoadControl* control = new LoadControl(data, freq_levels, gain);
@@ -136,12 +136,12 @@ int main(int argc, char const** argv) {
     ofstream vout("init_voltage.dat");
     for (unsigned i = 0; i < dynamics->getElectricalData()->getNodeCount();
          i++) {
-        vout << abs(dynamics->getVoltage(i)) << endl;
+        vout << abs(dynamics->getVoltage(i)) << std::endl;
     }
     vout.close();
     while (sim->nextEventTime() <= 10.0) {
         if ((count++) % 10000 == 0) {
-            cerr << sim->nextEventTime() << endl;
+            std::cerr << sim->nextEventTime() << std::endl;
         }
         sim->execNextEvent();
     }
@@ -149,15 +149,15 @@ int main(int argc, char const** argv) {
     vout.open("final_voltage.dat");
     for (unsigned i = 0; i < dynamics->getElectricalData()->getNodeCount();
          i++) {
-        vout << abs(dynamics->getVoltage(i)) << endl;
+        vout << abs(dynamics->getVoltage(i)) << std::endl;
     }
     vout.close();
     delete model;
     delete sim;
-    cout << "results: " << control_listener->getMaxQSize() << " "
+    std::cout << "results: " << control_listener->getMaxQSize() << " "
          << control_listener->getCost() << " "
          << control_listener->getEffectiveness() << " "
-         << control_listener->getNumOffline() << endl;
+         << control_listener->getNumOffline() << std::endl;
     delete control_listener;
     delete freq_listener;
     delete volt_listener;

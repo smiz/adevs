@@ -1,7 +1,7 @@
 #include "Clerk2.h"
 #include <iostream>
 
-using namespace std;
+
 using namespace adevs;
 
 
@@ -15,7 +15,7 @@ double const Clerk2::SMALL_ORDER = 1.0;
 double const Clerk2::PREEMPT_TIME = 5.0;
 
 
-void Clerk2::delta_ext(double e, list<EventType> const &xb) {
+void Clerk2::delta_ext(double e, std::list<EventType> const &xb) {
     /// Update the clock
     t += e;
     /// Update the time spent working on the current order
@@ -25,19 +25,19 @@ void Clerk2::delta_ext(double e, list<EventType> const &xb) {
     /// Reduce the preempt time
     preempt -= e;
     /// Place new customers into the line
-    list<EventType>::const_iterator iter = xb.begin();
+    std::list<EventType>::const_iterator iter = xb.begin();
     for (; iter != xb.end(); iter++) {
-        cout << "Clerk: A new customer arrived at t = " << t << endl;
+        std::cout << "Clerk: A new customer arrived at t = " << t << std::endl;
         /// Create a copy of the incoming customer and set the entry time
         customer_info_t c;
-        c.customer = make_shared<Customer>(*((*iter).value));
+        c.customer = std::make_shared<Customer>(*((*iter).value));
         c.t_left = c.customer->time_wait;
         /// Record the time at which the customer enters the line
         c.customer->time_enter = t;
         /// If the customer has a small order
         if (preempt <= 0.0 && c.t_left <= SMALL_ORDER) {
-            cout << "Clerk: The new customer has preempted the current one!"
-                 << endl;
+            std::cout << "Clerk: The new customer has preempted the current one!"
+                 << std::endl;
             /// We won't preempt another customer for at least this long
             preempt = PREEMPT_TIME;
             /// Put the new customer at the front of the line
@@ -45,8 +45,8 @@ void Clerk2::delta_ext(double e, list<EventType> const &xb) {
         }
         /// otherwise just put the customer at the end of the line
         else {
-            cout << "Clerk: The new customer is at the back of the line"
-                 << endl;
+            std::cout << "Clerk: The new customer is at the back of the line"
+                 << std::endl;
             line.push_back(c);
         }
     }
@@ -61,16 +61,16 @@ void Clerk2::delta_int() {
     line.pop_front();
     // Check to see if any customers are waiting.
     if (line.empty()) {
-        cout << "Clerk: The line is empty at t = " << t << endl;
+        std::cout << "Clerk: The line is empty at t = " << t << std::endl;
         return;
     }
     // If the preemption time has passed, then look for a small
     // order that can be promoted to the front of the line.
-    list<customer_info_t>::iterator i;
+    std::list<customer_info_t>::iterator i;
     for (i = line.begin(); i != line.end() && preempt <= 0.0; i++) {
         if ((*i).t_left <= SMALL_ORDER) {
-            cout << "Clerk: A queued customer has a small order at time " << t
-                 << endl;
+            std::cout << "Clerk: A queued customer has a small order at time " << t
+                 << std::endl;
             customer_info_t small_order = *i;
             line.erase(i);
             line.push_front(small_order);
@@ -80,7 +80,7 @@ void Clerk2::delta_int() {
     }
 }
 
-void Clerk2::delta_conf(list<EventType> const &xb) {
+void Clerk2::delta_conf(std::list<EventType> const &xb) {
     delta_int();
     delta_ext(0.0, xb);
 }
@@ -96,12 +96,12 @@ double Clerk2::ta() {
     }
 }
 
-void Clerk2::output_func(list<EventType> &yb) {
+void Clerk2::output_func(std::list<EventType> &yb) {
     /// Set the exit time of the departing customer
     line.front().customer->time_leave = t + ta();
     /// Place the customer at the front of the line onto the depart port.
     EventType y(depart, line.front().customer);
     yb.push_back(y);
     // Report the departure
-    cout << "Clerk: A customer departed at t = " << t + ta() << endl;
+    std::cout << "Clerk: A customer departed at t = " << t + ta() << std::endl;
 }

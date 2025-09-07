@@ -2,7 +2,7 @@
 #include "CherryBomb.h"
 #include "adevs/adevs.h"
 #include "adevs/fmi.h"
-using namespace std;
+
 using namespace adevs;
 
 /**
@@ -21,7 +21,7 @@ class CherryBombExt :
         CherryBomb::internal_event(q, state_event);
     }
     // External transition function
-    void external_event(double* q, double e, list<std::string> const &xb) {
+    void external_event(double* q, double e, std::list<std::string> const &xb) {
         // Call the method of the base class
         CherryBomb::external_event(q, e, xb);
         // Drop the ball
@@ -46,9 +46,9 @@ class Miscreant : public adevs::Atomic<std::string> {
     Miscreant() : adevs::Atomic<std::string>(), start(true), tstart(1.0) {}
     double ta() { return ((start) ? tstart : adevs_inf<double>()); }
     void delta_int() { start = false; }
-    void delta_ext(double e, list<std::string> const &xb) {}
-    void delta_conf(list<std::string> const &) {}
-    void output_func(list<std::string> &yb) {
+    void delta_ext(double e, std::list<std::string> const &xb) {}
+    void delta_conf(std::list<std::string> const &) {}
+    void output_func(std::list<std::string> &yb) {
         if (start) {
             yb.push_back("light");
         }
@@ -83,10 +83,10 @@ int main() {
     Simulator<std::string>* sim = new Simulator<std::string>(model);
     // Run the simulation for ten seconds
     while (!bomb->get_exploded()) {
-        cout << sim->nextEventTime() << " ";
+        std::cout << sim->nextEventTime() << " ";
         sim->execNextEvent();
-        cout << bomb->get_h() << " " << bomb->get_fuseTime() << " "
-             << bomb->get_exploded() << endl;
+        std::cout << bomb->get_h() << " " << bomb->get_fuseTime() << " "
+             << bomb->get_exploded() << std::endl;
     }
     // Cleanup
     delete sim;

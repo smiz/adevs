@@ -9,7 +9,7 @@ typedef adevs::Devs<SimEvent> BasicModel;
 typedef adevs::Event<SimEvent> ModelOutput;
 typedef adevs::Event<SimEvent> ModelInput;
 typedef adevs::Simulator<SimEvent> Simulator;
-typedef list<ModelInput> ModelInputBag;
+typedef std::list<ModelInput> ModelInputBag;
 
 /**
  * Class for listening to simulation events.

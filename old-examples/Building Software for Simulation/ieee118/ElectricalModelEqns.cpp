@@ -1,5 +1,5 @@
 #include "ElectricalModelEqns.h"
-using namespace std;
+
 using namespace adevs;
 
 static double const pi = 3.1415926535897931;
@@ -67,7 +67,7 @@ ElectricalModelEqns::ElectricalModelEqns(ElectricalData* data, bool no_events)
     // Allocate mechanical power set point vector
     PS = new double[data->getGenrCount()];
     // The diagonal Yt matrix contains admittance information for generators and lines
-    for (vector<unsigned>::const_iterator iter = data->getGenrs().begin();
+    for (std::vectorunsigned>::const_iterator iter = data->getGenrs().begin();
          iter != data->getGenrs().end(); iter++) {
         genr_Yt[*iter] = 1.0 / data->getGenrParams(*iter).Xd;
     }
@@ -80,7 +80,7 @@ ElectricalModelEqns::ElectricalModelEqns(ElectricalData* data, bool no_events)
     // Generator output ports
     GenrSampleOutput = new int[data->getGenrCount()];
     unsigned i;
-    vector<unsigned>::const_iterator iter;
+    std::vectorunsigned>::const_iterator iter;
     for (i = 0, iter = data->getGenrs().begin(); iter != data->getGenrs().end();
          i++, iter++) {
         // Generator number -> BusID lookup table
@@ -112,7 +112,7 @@ void ElectricalModelEqns::init(double* q) {
     q[TIME] = 0.0;
     // Get the initial state of the generators from the electrical data
     unsigned i;
-    vector<unsigned>::const_iterator iter;
+    std::vectorunsigned>::const_iterator iter;
     for (i = 0, iter = data->getGenrs().begin(); iter != data->getGenrs().end();
          i++, iter++) {
         // Get the generator parameters
@@ -133,7 +133,7 @@ void ElectricalModelEqns::init(double* q) {
 void ElectricalModelEqns::updateVoltageAndInjCurrent(double const* q) {
     // Variables for iterating over all of the generators
     unsigned i;
-    vector<unsigned>::const_iterator iter;
+    std::vectorunsigned>::const_iterator iter;
     // Find the Norton equiv. current for each machine
     for (i = 0, iter = data->getGenrs().begin(); iter != data->getGenrs().end();
          i++, iter++) {
@@ -153,7 +153,7 @@ void ElectricalModelEqns::updateVoltageAndInjCurrent(double const* q) {
 
 void ElectricalModelEqns::getBusFreqs(double const* q, double* freq) {
     unsigned i;
-    vector<unsigned>::const_iterator iter;
+    std::vectorunsigned>::const_iterator iter;
     double* dq = new double[numVars()];
     Complex* dI = new Complex[data->getNodeCount()];
     Complex* dV = new Complex[data->getNodeCount()];
@@ -194,7 +194,7 @@ void ElectricalModelEqns::der_func(double const* q, double* dq) {
     updateVoltageAndInjCurrent(q);
     // Compute the new derivative values for each generator
     unsigned i;
-    vector<unsigned>::const_iterator iter;
+    std::vectorunsigned>::const_iterator iter;
     for (i = 0, iter = data->getGenrs().begin(); iter != data->getGenrs().end();
          i++, iter++) {
         // Find the terminal current phasors
@@ -231,7 +231,7 @@ void ElectricalModelEqns::der_func(double const* q, double* dq) {
 }
 
 void ElectricalModelEqns::output_func(double const* q, bool const* state_event,
-                                      list<PortValue<BasicEvent*>> &yb) {
+                                      std::list<PortValue<BasicEvent*>> &yb) {
     // Output a sample event is any of them are primed to fire
     map<unsigned, GenrSampleEvent>::iterator siter = sample_conds.begin();
     for (siter = sample_conds.begin(); siter != sample_conds.end(); siter++) {
@@ -267,7 +267,7 @@ void ElectricalModelEqns::internal_event(double* q, bool const* z) {
     }
     // Test for event conditions on electrical variables
     unsigned i;
-    vector<unsigned>::const_iterator iter;
+    std::vectorunsigned>::const_iterator iter;
     for (i = 0, iter = data->getGenrs().begin(); iter != data->getGenrs().end();
          i++, iter++) {
         // Handle the sampling conditions
@@ -312,13 +312,13 @@ void ElectricalModelEqns::internal_event(double* q, bool const* z) {
 }
 
 void ElectricalModelEqns::external_event(
-    double* q, double e, list<PortValue<BasicEvent*>> const &xb) {
+    double* q, double e, std::list<PortValue<BasicEvent*>> const &xb) {
     // Don't do anything if event are turned off
     if (no_events) {
         return;
     }
     // Iterate through the input event list
-    for (list<PortValue<BasicEvent*>>::const_iterator iter = xb.begin();
+    for (std::list<PortValue<BasicEvent*>>::const_iterator iter = xb.begin();
          iter != xb.end(); iter++) {
         // Apply a uniform load adjustment
         if ((*iter).port == LoadAdj) {
@@ -386,7 +386,7 @@ void ElectricalModelEqns::external_event(
 }
 
 void ElectricalModelEqns::confluent_event(
-    double* q, bool const* z, list<PortValue<BasicEvent*>> const &xb) {
+    double* q, bool const* z, std::list<PortValue<BasicEvent*>> const &xb) {
     internal_event(q, z);
     external_event(q, 0, xb);
 }
@@ -398,7 +398,7 @@ void ElectricalModelEqns::state_event_func(double const* q, double* z) {
     }
     // Iteration variables for the generators
     unsigned i;
-    vector<unsigned>::const_iterator iter;
+    std::vectorunsigned>::const_iterator iter;
     // Check the freq. and voltage limit conditions
     for (i = 0, iter = data->getGenrs().begin(); iter != data->getGenrs().end();
          i++, iter++) {

@@ -6,7 +6,7 @@
 
 #include "adevs/adevs.h"
 
-using namespace std;
+
 using namespace adevs;
 
 
@@ -18,9 +18,9 @@ class PingPong : public Atomic<int, TimeType> {
     pin_t output_pin;
     PingPong(bool active = false);
     void delta_int();
-    void delta_ext(TimeType e, list<PinValue<int>> const &xb);
-    void delta_conf(list<PinValue<int>> const &xb);
-    void output_func(list<PinValue<int>> &yb);
+    void delta_ext(TimeType e, std::list<PinValue<int>> const &xb);
+    void delta_conf(std::list<PinValue<int>> const &xb);
+    void output_func(std::list<PinValue<int>> &yb);
     TimeType ta();
     int getCount() const { return count; }
 
@@ -40,12 +40,12 @@ void PingPong<TimeType>::delta_int() {
 }
 
 template <typename TimeType>
-void PingPong<TimeType>::delta_ext(TimeType, list<PinValue<int>> const &xb) {
+void PingPong<TimeType>::delta_ext(TimeType, std::list<PinValue<int>> const &xb) {
     active = xb.size() == 1;
 }
 
 template <typename TimeType>
-void PingPong<TimeType>::delta_conf(list<PinValue<int>> const &xb) {
+void PingPong<TimeType>::delta_conf(std::list<PinValue<int>> const &xb) {
     delta_int();
     delta_ext(0, xb);
 }
@@ -60,7 +60,7 @@ TimeType PingPong<TimeType>::ta() {
 }
 
 template <typename TimeType>
-void PingPong<TimeType>::output_func(list<PinValue<int>> &yb) {
+void PingPong<TimeType>::output_func(std::list<PinValue<int>> &yb) {
     PinValue y(output_pin, 1);
     yb.push_back(y);
 }
@@ -130,7 +130,7 @@ class CustomTimeType {
 
 template <>
 inline CustomTimeType adevs_inf<CustomTimeType>() {
-    return CustomTimeType(numeric_limits<int>::max());
+    return CustomTimeType(std::numeric_limits<int>::max());
 }
 
 template <>
@@ -153,8 +153,8 @@ class Model : public Graph<int, TimeType> {
   public:
     Model() : Graph<int, TimeType>() {
         pin_t pA, pB;
-        A = shared_ptr<PingPong<TimeType>>(new PingPong<TimeType>(true));
-        B = make_shared<PingPong<TimeType>>();
+        A = std::shared_ptr<PingPong<TimeType>>(new PingPong<TimeType>(true));
+        B = std::make_shared<PingPong<TimeType>>();
         this->add_atomic(A);
         this->add_atomic(B);
         this->connect(pA, A);
@@ -166,17 +166,17 @@ class Model : public Graph<int, TimeType> {
     PingPong<TimeType>* getB() { return B.get(); }
 
   private:
-    shared_ptr<PingPong<TimeType>> A;
-    shared_ptr<PingPong<TimeType>> B;
+    std::shared_ptr<PingPong<TimeType>> A;
+    std::shared_ptr<PingPong<TimeType>> B;
 };
 
 
 // ***** Tests *****
 
 void test1() {
-    auto model = make_shared<Model<int>>();
-    shared_ptr<Simulator<int, int>> sim =
-        make_shared<Simulator<int, int>>(model);
+    auto model = std::make_shared<Model<int>>();
+    std::shared_ptr<Simulator<int, int>> sim =
+        std::make_shared<Simulator<int, int>>(model);
     while (sim->nextEventTime() <= 10) {
         sim->execNextEvent();
     }
@@ -185,9 +185,9 @@ void test1() {
 }
 
 void test2() {
-    auto model = make_shared<Model<CustomTimeType>>();
-    shared_ptr<Simulator<int, CustomTimeType>> sim =
-        make_shared<Simulator<int, CustomTimeType>>(model);
+    auto model = std::make_shared<Model<CustomTimeType>>();
+    std::shared_ptr<Simulator<int, CustomTimeType>> sim =
+        std::make_shared<Simulator<int, CustomTimeType>>(model);
     while (sim->nextEventTime() <= CustomTimeType(10)) {
         sim->execNextEvent();
     }

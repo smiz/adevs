@@ -2,7 +2,7 @@
 #include <cassert>
 #include <iostream>
 #include "GL/glut.h"
-using namespace std;
+
 
 // Initial window size
 static int const WIDTH = 640;
@@ -160,7 +160,7 @@ void Display::pollEvents() {
             case SDL_KEYDOWN:
                 // Reset the timer
                 if (event.key.keysym.sym == 't') {
-                    cout << "time = " << SDL_GetTicks() - msecs << endl;
+                    std::cout << "time = " << SDL_GetTicks() - msecs << std::endl;
                     msecs = SDL_GetTicks();
                 }
                 // Reset the simulation
@@ -207,7 +207,7 @@ void Display::pollEvents() {
 }
 
 void Display::raiseEvent(DisplayEventType event) {
-    vector<DisplayEventListener*>::iterator iter;
+    std::vectorDisplayEventListener*>::iterator iter;
     for (iter = listeners.begin(); iter != listeners.end(); iter++) {
         if (event == RESET) {
             (*iter)->reset();

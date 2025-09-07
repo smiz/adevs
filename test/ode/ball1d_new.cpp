@@ -3,7 +3,7 @@
 #include "adevs/adevs.h"
 #include "check_ball1d_solution.h"
 #include "sampler.h"
-using namespace std;
+
 using namespace adevs;
 
 const pin_t ball_output;
@@ -56,18 +56,18 @@ class bouncing_ball : public ode_system<double> {
         last_event_time = q[2];
     }
     void external_event(double* q, double e,
-                        list<PinValue<double>> const &xb) {
+                        std::list<PinValue<double>> const &xb) {
         assert(fabs(q[2] - last_event_time - e) < 1E-9);
         sample = xb.size() > 0;
         last_event_time = q[2];
     }
     void confluent_event(double* q, bool const* event_flag,
-                         list<PinValue<double>> const &xb) {
+                         std::list<PinValue<double>> const &xb) {
         internal_event(q, event_flag);
         external_event(q, 0.0, xb);
     }
     void output_func(double const* q, bool const* event_flag,
-                     list<PinValue<double>> &yb) {
+                     std::list<PinValue<double>> &yb) {
         assert(event_flag[0] || event_flag[1]);
         PinValue<double> event(ball_output, q[0]);
         yb.push_back(event);
@@ -81,7 +81,7 @@ class bouncing_ball : public ode_system<double> {
 
 class SolutionChecker : public EventListener<double> {
   public:
-    SolutionChecker(shared_ptr<Hybrid<double>> ball) : ball(ball) {}
+    SolutionChecker(std::shared_ptr<Hybrid<double>> ball) : ball(ball) {}
     void stateChange(Atomic<double>& model, double t) {
         if (&model == ball.get()) {
             assert(ball1d_soln_ok(t, ball->getState(0)));
@@ -90,22 +90,22 @@ class SolutionChecker : public EventListener<double> {
     void outputEvent(Atomic<double>&, PinValue<double>&, double){}
     void inputEvent(Atomic<double>&, PinValue<double>&, double){}
   private:
-    shared_ptr<Hybrid<double>> ball;
+    std::shared_ptr<Hybrid<double>> ball;
 };
 
 void run_test(ode_system<double>* b,
               ode_solver<double>* s,
               event_locator<double>* l) {
-    cerr << "Testing " << typeid(*s).name() << " , " << typeid(*l).name()
-         << endl;
-    shared_ptr<Hybrid<double>> ball = make_shared<Hybrid<double>>(b, s, l);
-    shared_ptr<sampler> sample = make_shared<sampler>(0.01);
-    shared_ptr<Graph<double>> model = make_shared<Graph<double>>();
+    std::cerr << "Testing " << typeid(*s).name() << " , " << typeid(*l).name()
+         << std::endl;
+    std::shared_ptr<Hybrid<double>> ball = std::make_shared<Hybrid<double>>(b, s, l);
+    std::shared_ptr<sampler> sample = std::make_shared<sampler>(0.01);
+    std::shared_ptr<Graph<double>> model = std::make_shared<Graph<double>>();
     model->add_atomic(ball);
     model->add_atomic(sample);
     model->connect(sample->sample_pin, ball);
     model->connect(ball_output, sample);
-    shared_ptr<SolutionChecker> checker = make_shared<SolutionChecker>(ball);
+    std::shared_ptr<SolutionChecker> checker = std::make_shared<SolutionChecker>(ball);
     Simulator<double> sim(model);
     sim.addEventListener(checker);
     while (sim.nextEventTime() < 10.0) {

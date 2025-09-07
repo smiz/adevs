@@ -55,7 +55,7 @@ class transd : public adevs::Atomic<job> {
         t += e;
         // Save new jobs in order to compute statistics when they are
         // completed.
-        list<PortValue>::iterator iter;
+        std::list<PortValue>::iterator iter;
         for (auto iter : x) {
             if (iter.pin == ariv) {
                 job j(iter.value);

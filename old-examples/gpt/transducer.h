@@ -52,12 +52,12 @@ class Transducer : public adevs::Atomic<PortValue> {
         sigma = DBL_MAX;
     }
 
-    void delta_ext(double e, list<PortValue> const &x) {
+    void delta_ext(double e, std::list<PortValue> const &x) {
         // Keep track of the simulation time
         t += e;
         // Save new jobs in order to compute statistics when they are
         // completed.
-        list<PortValue>::iterator iter;
+        std::list<PortValue>::iterator iter;
         for (auto iter : x) {
             if (iter.port == ariv) {
                 Job j(iter.value);
@@ -88,12 +88,12 @@ class Transducer : public adevs::Atomic<PortValue> {
         sigma -= e;
     }
 
-    void delta_conf(list<PortValue> const &x) {
+    void delta_conf(std::list<PortValue> const &x) {
         delta_int();
         delta_ext(0.0, x);
     }
 
-    void output_func(list<PortValue> &y) {
+    void output_func(std::list<PortValue> &y) {
         /// Generate an output event to stop the generator
         Job j;
         PortValue pv(out, j);

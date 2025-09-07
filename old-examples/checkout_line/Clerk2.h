@@ -11,10 +11,10 @@ class Clerk2 : public adevs::Atomic<EventType> {
     Clerk2() : Atomic<EventType>(), preempt(0.0), t(0.0) {}
 
     void delta_int();
-    void delta_ext(double e, list<EventType> const &xb);
-    void delta_conf(list<EventType> const &xb);
+    void delta_ext(double e, std::list<EventType> const &xb);
+    void delta_conf(std::list<EventType> const &xb);
     double ta();
-    void output_func(list<EventType> &yb);
+    void output_func(std::list<EventType> &yb);
 
     /// Model input port.
     static int const arrive;
@@ -25,7 +25,7 @@ class Clerk2 : public adevs::Atomic<EventType> {
     /// Structure for storing information about customers in the line
     struct customer_info_t {
         // The customer
-        shared_ptr<Customer> customer;
+        std::shared_ptr<Customer> customer;
         // Time remaining to process the customer order
         double t_left;
     };

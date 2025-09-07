@@ -12,10 +12,10 @@ class LoadControl : public adevs::Atomic<adevs::PortValue<BasicEvent*>> {
 
     LoadControl(ElectricalData* data, int freq_steps, double K = 5.0);
     void delta_int();
-    void output_func(list<adevs::PortValue<BasicEvent*>> &yb);
+    void output_func(std::list<adevs::PortValue<BasicEvent*>> &yb);
     double ta();
-    void delta_ext(double, list<adevs::PortValue<BasicEvent*>> const &);
-    void delta_conf(list<adevs::PortValue<BasicEvent*>> const &);
+    void delta_ext(double, std::list<adevs::PortValue<BasicEvent*>> const &);
+    void delta_conf(std::list<adevs::PortValue<BasicEvent*>> const &);
 
 
   private:

@@ -1,7 +1,7 @@
 #include <iostream>
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
-using namespace std;
+
 
 #define epsilon 1E-6
 
@@ -18,7 +18,7 @@ void test_vars(adevs::ModelExchange<>* model) {
     bool w2 = std::any_cast<int>(model->get_variable("w2"));
     bool w3 = std::any_cast<int>(model->get_variable("w3"));
     bool w4 = std::any_cast<int>(model->get_variable("w4"));
-    cout << model->get_time() << " " << count << " " << x << " " << y << endl;
+    std::cout << model->get_time() << " " << count << " " << x << " " << y << std::endl;
     assert(fabs(x) <= 1.0 + epsilon);
     assert(fabs(y) <= 1.0 + epsilon);
     assert(count >= floor(model->get_time() * 2.0) + 1);
@@ -58,7 +58,7 @@ int main() {
         new adevs::corrected_euler<>(fmi, err_tol, 0.01);
     adevs::discontinuous_event_locator<>* solver2 =
         new adevs::discontinuous_event_locator<>(fmi, err_tol);
-    shared_ptr<adevs::Hybrid<>> model = make_shared<adevs::Hybrid<>>(fmi, solver1, solver2);
+    std::shared_ptr<adevs::Hybrid<>> model = std::make_shared<adevs::Hybrid<>>(fmi, solver1, solver2);
     adevs::Simulator<>* sim = new adevs::Simulator<>(model);
     while (sim->nextEventTime() <= 5.0) {
         sim->execNextEvent();

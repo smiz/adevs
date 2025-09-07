@@ -16,11 +16,11 @@ class Decision : public adevs::Atomic<EventType> {
     /// Internal transition function.
     void delta_int();
     /// External transition function.
-    void delta_ext(double e, list<EventType> const &x);
+    void delta_ext(double e, std::list<EventType> const &x);
     /// Confluent transition function.
-    void delta_conf(list<EventType> const &x);
+    void delta_conf(std::list<EventType> const &x);
     /// Output function.
-    void output_func(list<EventType> &y);
+    void output_func(std::list<EventType> &y);
     /// Time advance function.
     double ta();
     /// Input port that receives new customers
@@ -34,7 +34,7 @@ class Decision : public adevs::Atomic<EventType> {
     /// Lengths of the two lines
     int line_length[NUM_LINES];
     /// List of deciding customers and their decision.
-    std::list<std::pair<int, shared_ptr<Customer>>> deciding;
+    std::list<std::pair<int, std::shared_ptr<Customer>>> deciding;
     /// Delete all waiting customers and clear the list.
     void clear_deciders();
     /// Returns the arrive port associated with the shortest line

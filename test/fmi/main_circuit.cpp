@@ -1,13 +1,13 @@
 #include <iostream>
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
-using namespace std;
+
 using namespace adevs;
 
 class Circuit : public ModelExchange<double> {
   public:
     Circuit() : ModelExchange<double>("Circuit.fmu",1E-7), start_time(adevs_inf<double>()) {}
-    void external_event(double* q, double e, list<PinValue<double>> const &xb) {
+    void external_event(double* q, double e, std::list<PinValue<double>> const &xb) {
         ModelExchange<double>::external_event(q, e, xb);
         start_time = e;
         ModelExchange<double>::set_variable("Vsrc.Vref",0.0);
@@ -15,7 +15,7 @@ class Circuit : public ModelExchange<double> {
     }
     void print_state() {
         double Vsrc_T_v = std::any_cast<double>(get_variable("Vsrc.T.v"));
-        cout << get_time() << " " << Vsrc_T_v << " " << endl;
+        std::cout << get_time() << " " << Vsrc_T_v << " " << std::endl;
     }
     void test_state() {
         double Vsrc_T_v = std::any_cast<double>(get_variable("Vsrc.T.v"));
@@ -42,10 +42,10 @@ class Circuit : public ModelExchange<double> {
 
 int main() {
     Circuit* test_model = new Circuit();
-    shared_ptr<Hybrid<double>> hybrid_model = make_shared<Hybrid<double>>(
+    std::shared_ptr<Hybrid<double>> hybrid_model = std::make_shared<Hybrid<double>>(
         test_model, new corrected_euler<double>(test_model, 1E-7, 0.001),
         new discontinuous_event_locator<double>(test_model, 1E-7));
-    shared_ptr<Graph<double>> graph = make_shared<Graph<double>>();
+    std::shared_ptr<Graph<double>> graph = std::make_shared<Graph<double>>();
     graph->add_atomic(hybrid_model);
     graph->connect(test_model->input,hybrid_model);
     // Create the simulator
