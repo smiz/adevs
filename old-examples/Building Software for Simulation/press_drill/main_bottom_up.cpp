@@ -1,7 +1,7 @@
 #include <iostream>
 #include "AssemblyLine_bottom_up.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 // Listener for recording the state and output of the assembly line.
 class AssemblyLineListener : public EventListener<int> {

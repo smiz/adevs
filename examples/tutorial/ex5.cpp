@@ -2,6 +2,8 @@
 #include "adevs/adevs.h"
 #include "adevs/solvers/trap.h" // Get the ImplicitHybrid class
 
+using Atomic = adevs::Atomic<>;
+using PinValue = adevs::PinValue<>;
 
 /**
  * This example simulates an electrical circuit with a switch and
@@ -113,20 +115,20 @@ class Circuit : public adevs::ode_system<> {
     /// occurs when the Hybrid model that contains this ode_system receives
     /// input. In this model, an external event changes the state of the
     /// switch.
-    void external_event(double*, double, std::list<adevs::PinValue<>> const &xb) {
+    void external_event(double*, double, std::list<PinValue> const &xb) {
         switch_conducting = std::any_cast<bool>(xb.front().value);
     }
     /// Confluent transition function of the circuit.
-    void confluent_event(double* q, bool const* events, std::list<adevs::PinValue<>> const &xb) {
+    void confluent_event(double* q, bool const* events, std::list<PinValue> const &xb) {
         internal_event(q, events);
         external_event(q, 0.0, xb);
     }
     /// Output function of the circuit. This is called prior to an confluent
     /// or internal event. Place your output in the supplied list. This
     /// output function produces the new state of the diode at a state event.
-    void output_func(double const*, bool const* events, std::list<adevs::PinValue<>> &yb) {
+    void output_func(double const*, bool const* events, std::list<PinValue> &yb) {
         assert(events[0]);
-        yb.push_back(adevs::PinValue<>(diode,!diode_conducting));
+        yb.push_back(PinValue(diode,!diode_conducting));
     }
 
     bool getDiode() const { return diode_conducting; }
@@ -140,15 +142,15 @@ class Circuit : public adevs::ode_system<> {
 };
 
 /// A switch that opens at time t_open
-class OpenSwitch : public adevs::Atomic<> {
+class OpenSwitch : public Atomic {
   public:
-    OpenSwitch(double t_open) : adevs::Atomic<>(), t_open(t_open) {}
+    OpenSwitch(double t_open) : Atomic(), t_open(t_open) {}
     double ta() { return t_open; }
     void delta_int() { t_open = adevs_inf<double>(); }
-    void delta_ext(double, std::list<adevs::PinValue<>> const &) {}
-    void delta_conf(std::list<adevs::PinValue<>> const &) {}
-    void output_func(std::list<adevs::PinValue<>> &yb) {
-        yb.push_back(adevs::PinValue<>(open_close,false));
+    void delta_ext(double, std::list<PinValue> const &) {}
+    void delta_conf(std::list<PinValue> const &) {}
+    void output_func(std::list<PinValue> &yb) {
+        yb.push_back(PinValue(open_close,false));
     }
 
     const adevs::pin_t open_close;

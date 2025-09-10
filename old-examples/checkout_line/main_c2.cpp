@@ -5,7 +5,7 @@
 #include "Observer.h"
 
 
-using namespace adevs;
+// using namespace adevs;
 
 
 int main(int argc, char** argv) {

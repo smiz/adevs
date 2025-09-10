@@ -9,7 +9,7 @@
 #include "io.h"
 
 
-using namespace adevs;
+// using namespace adevs;
 
 /**
   * Demonstrates control of a robotic arm when sensor measurements and

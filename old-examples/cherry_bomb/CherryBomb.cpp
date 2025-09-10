@@ -1,7 +1,7 @@
 #include <iostream>
 #include "adevs/adevs.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 // Array indices for the CherryBomb state variables
 #define H 0

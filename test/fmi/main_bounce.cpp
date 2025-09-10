@@ -2,17 +2,20 @@
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
 
-using namespace adevs;
+// using namespace adevs;
+using ModelExchange = adevs::ModelExchange<double>;
+using Hybrid = adevs::Hybrid<double>;
+using Simulator = adevs::Simulator<double>;
 
 static double const epsilon = 1E-7;
 static double const err_tol = 1E-3;
 
-class bounce : public ModelExchange<double> {
+class bounce : public ModelExchange {
   public:
-    bounce() : ModelExchange<double>("bounce.fmu",err_tol), m_bounce(0), m_resetTime(0.0) {}
+    bounce() : ModelExchange("bounce.fmu",err_tol), m_bounce(0), m_resetTime(0.0) {}
     void internal_event(double* q, bool const* state_event) {
         // Apply internal event function of the super class
-        ModelExchange<double>::internal_event(q, state_event);
+        ModelExchange::internal_event(q, state_event);
         double a = std::any_cast<double>(get_variable("a"));
         double x = std::any_cast<double>(get_variable("x"));
         int a_above = std::any_cast<int>(get_variable("aAbove"));
@@ -25,7 +28,7 @@ class bounce : public ModelExchange<double> {
         set_variable("a",-a);
         m_resetTime = get_time();
         // Reapply internal event function of the super class
-        ModelExchange<double>::internal_event(q, state_event);
+        ModelExchange::internal_event(q, state_event);
         a = std::any_cast<double>(get_variable("a"));
         a = std::any_cast<double>(get_variable("a"));
         x = std::any_cast<double>(get_variable("x"));
@@ -68,11 +71,11 @@ class bounce : public ModelExchange<double> {
 
 int main() {
     bounce* test_model = new bounce();
-    std::shared_ptr<Hybrid<double>> hybrid_model = std::make_shared<Hybrid<double>>(
+    std::shared_ptr<Hybrid> hybrid_model = std::make_shared<Hybrid>(
         test_model, new corrected_euler<double>(test_model, epsilon, 0.001),
         new discontinuous_event_locator<double>(test_model, epsilon));
     // Create the simulator
-    Simulator<double>* sim = new Simulator<double>(hybrid_model);
+    Simulator* sim = new Simulator(hybrid_model);
     // Check initial values
     assert(test_model->get_time() == 0.0);
     double x = std::any_cast<double>(test_model->get_variable("x"));

@@ -1,6 +1,6 @@
 #include "Observer.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 // Assign a locally unique number to the input port
 int const Observer::departed = 0;

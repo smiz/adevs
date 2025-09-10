@@ -3,7 +3,7 @@
 #include "adevs/adevs.h"
 #include "adevs/fmi.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 /**
  * This model will sample its own continuous state and generate an output
@@ -54,7 +54,7 @@ int main() {
     // Create our model
     FMI<double>* hello = new HelloWorldExt();
     // Wrap a set of solvers around it
-    Hybrid<double>* hybrid_model = new Hybrid<double>(
+    Hybrid* hybrid_model = new Hybrid(
         hello,                                           // Model to simulate
         new corrected_euler<double>(hello, 1E-5, 0.01),  // ODE solver
         new discontinuous_event_locator<double>(hello, 1E-5)  // Event locator
@@ -62,7 +62,7 @@ int main() {
         // not generate continuous zero crossing functions
     );
     // Create the simulator
-    Simulator<double>* sim = new Simulator<double>(hybrid_model);
+    Simulator* sim = new Simulator(hybrid_model);
     // Run the simulation for ten seconds
     while (sim->nextEventTime() <= 10.0) {
         sim->execNextEvent();

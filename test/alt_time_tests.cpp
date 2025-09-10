@@ -7,20 +7,20 @@
 #include "adevs/adevs.h"
 
 
-using namespace adevs;
+// using namespace adevs;
 
 
 // ***** Basic model ******
 
 template <typename TimeType>
-class PingPong : public Atomic<int, TimeType> {
+class PingPong : public adevs::Atomic<int, TimeType> {
   public:
-    pin_t output_pin;
+	adevs::pin_t output_pin;
     PingPong(bool active = false);
     void delta_int();
-    void delta_ext(TimeType e, std::list<PinValue<int>> const &xb);
-    void delta_conf(std::list<PinValue<int>> const &xb);
-    void output_func(std::list<PinValue<int>> &yb);
+    void delta_ext(TimeType e, std::list<adevs::PinValue<int>> const &xb);
+    void delta_conf(std::list<adevs::PinValue<int>> const &xb);
+    void output_func(std::list<adevs::PinValue<int>> &yb);
     TimeType ta();
     int getCount() const { return count; }
 
@@ -31,7 +31,7 @@ class PingPong : public Atomic<int, TimeType> {
 
 template <typename TimeType>
 PingPong<TimeType>::PingPong(bool active)
-    : Atomic<int, TimeType>(), count(0), active(active) {}
+    : adevs::Atomic<int, TimeType>(), count(0), active(active) {}
 
 template <typename TimeType>
 void PingPong<TimeType>::delta_int() {
@@ -40,12 +40,12 @@ void PingPong<TimeType>::delta_int() {
 }
 
 template <typename TimeType>
-void PingPong<TimeType>::delta_ext(TimeType, std::list<PinValue<int>> const &xb) {
+void PingPong<TimeType>::delta_ext(TimeType, std::list<adevs::PinValue<int>> const &xb) {
     active = xb.size() == 1;
 }
 
 template <typename TimeType>
-void PingPong<TimeType>::delta_conf(std::list<PinValue<int>> const &xb) {
+void PingPong<TimeType>::delta_conf(std::list<adevs::PinValue<int>> const &xb) {
     delta_int();
     delta_ext(0, xb);
 }
@@ -60,8 +60,8 @@ TimeType PingPong<TimeType>::ta() {
 }
 
 template <typename TimeType>
-void PingPong<TimeType>::output_func(std::list<PinValue<int>> &yb) {
-    PinValue y(output_pin, 1);
+void PingPong<TimeType>::output_func(std::list<adevs::PinValue<int>> &yb) {
+	adevs::PinValue y(output_pin, 1);
     yb.push_back(y);
 }
 
@@ -149,10 +149,10 @@ inline CustomTimeType adevs_sentinel<CustomTimeType>() {
 }
 
 template <typename TimeType>
-class Model : public Graph<int, TimeType> {
+class Model : public adevs::Graph<int, TimeType> {
   public:
-    Model() : Graph<int, TimeType>() {
-        pin_t pA, pB;
+    Model() : adevs::Graph<int, TimeType>() {
+    	adevs::pin_t pA, pB;
         A = std::shared_ptr<PingPong<TimeType>>(new PingPong<TimeType>(true));
         B = std::make_shared<PingPong<TimeType>>();
         this->add_atomic(A);
@@ -175,8 +175,8 @@ class Model : public Graph<int, TimeType> {
 
 void test1() {
     auto model = std::make_shared<Model<int>>();
-    std::shared_ptr<Simulator<int, int>> sim =
-        std::make_shared<Simulator<int, int>>(model);
+    std::shared_ptr<adevs::Simulator<int, int>> sim =
+        std::make_shared<adevs::Simulator<int, int>>(model);
     while (sim->nextEventTime() <= 10) {
         sim->execNextEvent();
     }
@@ -186,8 +186,8 @@ void test1() {
 
 void test2() {
     auto model = std::make_shared<Model<CustomTimeType>>();
-    std::shared_ptr<Simulator<int, CustomTimeType>> sim =
-        std::make_shared<Simulator<int, CustomTimeType>>(model);
+    std::shared_ptr<adevs::Simulator<int, CustomTimeType>> sim =
+        std::make_shared<adevs::Simulator<int, CustomTimeType>>(model);
     while (sim->nextEventTime() <= CustomTimeType(10)) {
         sim->execNextEvent();
     }

@@ -3,7 +3,7 @@
 #include "adevs/adevs.h"
 #include "adevs/fmi.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 /**
  * This is an FMI + Modelica version of the bouncing bomb example

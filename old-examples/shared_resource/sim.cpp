@@ -6,7 +6,7 @@
 #include "adevs/adevs.h"
 
 
-using namespace adevs;
+// using namespace adevs;
 
 
 struct request_t {

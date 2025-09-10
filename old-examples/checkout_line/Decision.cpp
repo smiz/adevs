@@ -2,7 +2,7 @@
 #include <iostream>
 
 
-using namespace adevs;
+// using namespace adevs;
 
 
 // Assign identifiers to ports.  Assumes NUM_LINES = 2.

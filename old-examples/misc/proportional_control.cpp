@@ -28,10 +28,10 @@ class SISOPlantEqns : public adevs::ode_system<double> {
     /**
 		 * Create a plant model that is wrapped in a solver.
 		 */
-    static adevs::Hybrid<double>* makeInstance(double a, double b,
+    static adevs::Hybrid* makeInstance(double a, double b,
                                                double sampleFreq) {
         SISOPlantEqns* plant = new SISOPlantEqns(a, b, sampleFreq);
-        return new adevs::Hybrid<double>(
+        return new adevs::Hybrid(
             plant, new adevs::corrected_euler<double>(plant, 1E-8, 0.001),
             new adevs::linear_event_locator<double>(plant, 1E-8));
     }
@@ -104,14 +104,14 @@ static double const freq = 1000.0;
 static double const xref = -1.0;
 
 int main() {
-    adevs::Hybrid<double>* plant = SISOPlantEqns::makeInstance(a, b, freq);
+    adevs::Hybrid* plant = SISOPlantEqns::makeInstance(a, b, freq);
     Control* cntrl = new Control(xref);
-    adevs::SimpleDigraph<double>* model = new adevs::SimpleDigraph<double>();
+    adevs::SimpleDiGraph* model = new adevs::SimpleDiGraph();
     model->add(plant);
     model->add(cntrl);
     model->couple(plant, cntrl);
     model->couple(cntrl, plant);
-    adevs::Simulator<double>* sim = new adevs::Simulator<double>(model);
+    adevs::Simulator* sim = new adevs::Simulator(model);
     double t = 0.0;
     while (sim->nextEventTime() < 10.0) {
         double x = plant->getState(1);

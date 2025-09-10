@@ -4,7 +4,7 @@
 #include "LookLeft.h"
 #include "adevs/adevs.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 CellSpace<int>* space;
 Display* display;

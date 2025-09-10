@@ -1,5 +1,5 @@
 #include "ElectricalModel.h"
-using namespace adevs;
+// using namespace adevs;
 
 static double const ERR_TOL = 1E-6;
 static double const H_MAX = 1E-2;

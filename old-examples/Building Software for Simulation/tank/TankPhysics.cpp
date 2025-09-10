@@ -1,6 +1,6 @@
 #include "TankPhysics.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 // Get the state variable values
 double TankPhysics::leftMotorCurrent() const {

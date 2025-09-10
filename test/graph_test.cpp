@@ -2,35 +2,35 @@
 #include <cassert>
 #include <algorithm>
 #include <map>
-using namespace adevs;
+// using namespace adevs;
 
 class TestAtomic:
-    public Atomic<int,int> {
+    public adevs::Atomic<int,int> {
     public:
         TestAtomic():
             Atomic<int,int>() {
         }
         void delta_int() {
         }
-        void delta_ext(int, const std::list<PinValue<int>>&) {
+        void delta_ext(int, const std::list<adevs::PinValue<int>>&) {
         }
-        void delta_conf(const std::list<PinValue<int>>&) {
+        void delta_conf(const std::list<adevs::PinValue<int>>&) {
         }
-        void output_func(std::list<PinValue<int>>&) {
+        void output_func(std::list<adevs::PinValue<int>>&) {
         }
         int ta() { return 0; }
     };
 
 void test1() {
-    std::list<std::pair<pin_t,std::shared_ptr<Atomic<int,int>>>> models;
-    std::shared_ptr<Atomic<int,int>> a(new TestAtomic());
-    std::shared_ptr<Atomic<int,int>> b(new TestAtomic());
-    Graph<int,int> g;
+    std::list<std::pair<adevs::pin_t,std::shared_ptr<adevs::Atomic<int,int>>>> models;
+    std::shared_ptr<adevs::Atomic<int,int>> a(new TestAtomic());
+    std::shared_ptr<adevs::Atomic<int,int>> b(new TestAtomic());
+    adevs::Graph<int,int> g;
     g.add_atomic(a);
     g.add_atomic(b);
     assert(g.get_atomics().find(a) != g.get_atomics().end());
     assert(g.get_atomics().find(b) != g.get_atomics().end());
-    pin_t pin0, pin1, pin2;
+    adevs::pin_t pin0, pin1, pin2;
     assert(pin0 != pin1);
     g.connect(pin0,pin1);
     g.connect(pin1,b);
@@ -59,10 +59,10 @@ void test1() {
 }
 
 void test2() {
-    std::list<std::pair<pin_t,std::shared_ptr<Atomic<int,int>>>> models;
-    std::shared_ptr<Atomic<int,int>> a(new TestAtomic());
-    Graph<int,int> g;
-    pin_t pin0, pin1;
+    std::list<std::pair<adevs::pin_t,std::shared_ptr<adevs::Atomic<int,int>>>> models;
+    std::shared_ptr<adevs::Atomic<int,int>> a(new TestAtomic());
+    adevs::Graph<int,int> g;
+    adevs::pin_t pin0, pin1;
     g.set_provisional(true);
     g.add_atomic(a);
     assert(g.get_atomics().find(a) == g.get_atomics().end());
@@ -100,10 +100,10 @@ void test2() {
 }
 
 void test3() {
-    std::list<std::pair<pin_t,std::shared_ptr<Atomic<int,int>>>> models;
-    std::shared_ptr<Atomic<int,int>> a(new TestAtomic());
-    Graph<int,int> g;
-    pin_t pin0, pin1, pin2;
+    std::list<std::pair<adevs::pin_t,std::shared_ptr<adevs::Atomic<int,int>>>> models;
+    std::shared_ptr<adevs::Atomic<int,int>> a(new TestAtomic());
+    adevs::Graph<int,int> g;
+    adevs::pin_t pin0, pin1, pin2;
     g.add_atomic(a);
     g.connect(pin0,pin1);
     g.connect(pin1,pin2);
@@ -115,9 +115,9 @@ void test3() {
 }
 
 void test4() {
-    std::list<std::pair<pin_t,std::shared_ptr<Atomic<int,int>>>> models;
-    std::shared_ptr<Atomic<int,int>> a(new TestAtomic());
-    Graph<int,int> g;
+    std::list<std::pair<adevs::pin_t,std::shared_ptr<adevs::Atomic<int,int>>>> models;
+    std::shared_ptr<adevs::Atomic<int,int>> a(new TestAtomic());
+    adevs::Graph<int,int> g;
     g.add_atomic(a);
     g.add_atomic(a);
     g.remove_atomic(a);
@@ -127,10 +127,10 @@ void test4() {
 }
 
 void test5() {
-    std::list<std::pair<pin_t,std::shared_ptr<Atomic<int,int>>>> models;
-    std::shared_ptr<Atomic<int,int>> a(new TestAtomic());
-    Graph<int,int> g;
-    pin_t pin0, pin1;
+    std::list<std::pair<adevs::pin_t,std::shared_ptr<adevs::Atomic<int,int>>>> models;
+    std::shared_ptr<adevs::Atomic<int,int>> a(new TestAtomic());
+    adevs::Graph<int,int> g;
+    adevs::pin_t pin0, pin1;
     g.connect(pin0,pin1);
     g.connect(pin0,pin1);
     g.connect(pin1,a);
@@ -166,11 +166,11 @@ void test5() {
 }
 
 void test6() {
-    std::list<std::pair<pin_t,std::shared_ptr<Atomic<int,int>>>> models;
-    std::shared_ptr<Atomic<int,int>> a(new TestAtomic());
-    std::shared_ptr<Atomic<int,int>> b(new TestAtomic());
-    Graph<int,int> g;
-    pin_t pin0, pin1, pin2;
+    std::list<std::pair<adevs::pin_t,std::shared_ptr<adevs::Atomic<int,int>>>> models;
+    std::shared_ptr<adevs::Atomic<int,int>> a(new TestAtomic());
+    std::shared_ptr<adevs::Atomic<int,int>> b(new TestAtomic());
+    adevs::Graph<int,int> g;
+    adevs::pin_t pin0, pin1, pin2;
     g.add_atomic(a);
     g.add_atomic(b);
     g.add_atomic(b);
@@ -198,12 +198,12 @@ void test6() {
 }
 
 void test7() {
-    std::list<std::pair<pin_t,std::shared_ptr<Atomic<int,int>>>> models;
-    std::shared_ptr<Atomic<int,int>> a(new TestAtomic());
-    std::shared_ptr<Atomic<int,int>> b(new TestAtomic());
-    std::shared_ptr<Atomic<int,int>> c(new TestAtomic());
-    Graph<int,int> g;
-    pin_t pin0, pin1, pin2;
+    std::list<std::pair<adevs::pin_t,std::shared_ptr<adevs::Atomic<int,int>>>> models;
+    std::shared_ptr<adevs::Atomic<int,int>> a(new TestAtomic());
+    std::shared_ptr<adevs::Atomic<int,int>> b(new TestAtomic());
+    std::shared_ptr<adevs::Atomic<int,int>> c(new TestAtomic());
+    adevs::Graph<int,int> g;
+    adevs::pin_t pin0, pin1, pin2;
     g.add_atomic(a);
     g.add_atomic(b);
     g.connect(pin0,pin1);

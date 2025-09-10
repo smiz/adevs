@@ -4,7 +4,7 @@
 #include <set>
 
 
-using namespace adevs;
+// using namespace adevs;
 
 Tank::Tank(double freq, double x0, double y0, double theta0, double cint)
     : Network<SimEvent>(),

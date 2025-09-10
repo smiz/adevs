@@ -1,6 +1,6 @@
 #include "BusFreqListener.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 BusFreqListener::BusFreqListener(ElectricalModel* model, double cint,
                                  std::string model_name)

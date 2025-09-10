@@ -2,7 +2,7 @@
 #include "SimEvents.h"
 #include "Tank.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 class TankListener : public EventListener<SimEvent> {
   public:

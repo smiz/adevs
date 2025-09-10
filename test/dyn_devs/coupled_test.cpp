@@ -3,6 +3,10 @@
 #include <cassert>
 #include "adevs/adevs.h"
 
+using Atomic = adevs::Atomic<>;
+using PinValue = adevs::PinValue<>;
+using Coupled = adevs::Coupled<>;
+
 /**
  * This test case consists of an Atomic model and the
  * coupled model that is spawns and removes. The Atomic
@@ -20,17 +24,17 @@
  * SysML like activity diagram. It implements the
  * token flow model of execution.
  */
-class Action: public adevs::Atomic<> {
+class Action: public Atomic {
     public:
 
-    Action(unsigned inputs) : adevs::Atomic<>(), inputs(inputs), tokens(0) { population++; }
+    Action(unsigned inputs) : Atomic(), inputs(inputs), tokens(0) { population++; }
     ~Action() { population--; }
     double ta() { return (inputs == tokens) ? 1.0 : adevs_inf<double>(); }
     void delta_int() { tokens = 0; }
-    void delta_ext(double, const std::list<adevs::PinValue<>>& xb) { tokens += xb.size(); }
-    void delta_conf(const std::list<adevs::PinValue<>>& xb) { tokens = xb.size(); }
-    void output_func(std::list<adevs::PinValue<>>& yb) {
-        adevs::PinValue<> output(out,0);
+    void delta_ext(double, const std::list<PinValue>& xb) { tokens += xb.size(); }
+    void delta_conf(const std::list<PinValue>& xb) { tokens = xb.size(); }
+    void output_func(std::list<PinValue>& yb) {
+        PinValue output(out,0);
         yb.push_back(output);
     }
 
@@ -50,10 +54,10 @@ int Action::population = 0;
  * they will be of randomly selected length. The
  * length is controlled by the depth of the diagram.
  */
-class Activity: public adevs::Coupled<> {
+class Activity: public Coupled {
     public:
 
-    Activity() : adevs::Coupled<>() {
+    Activity() : Coupled() {
         // Create an action that an initial input
         // to the diagram
         auto initial = std::make_shared<Action>(1);
@@ -90,11 +94,11 @@ class Activity: public adevs::Coupled<> {
 /**
  * This atomic model creates and destroys diagrams.
  */
-class Manager: public adevs::Atomic<> {
+class Manager: public Atomic {
     public:
 
-    Manager(std::shared_ptr<adevs::Coupled<>>& parent) :
-        adevs::Atomic<>(), max_diagrams(5), finished(0),
+    Manager(std::shared_ptr<Coupled>& parent) :
+        Atomic(), max_diagrams(5), finished(0),
         time_out(5.0), num_diagrams(0), parent(parent) {
             make_new_diagram();
     }
@@ -123,16 +127,16 @@ class Manager: public adevs::Atomic<> {
             time_to_next_event = adevs_inf<double>();
         }
     }
-    void delta_ext(double, const std::list<adevs::PinValue<>>&) {
+    void delta_ext(double, const std::list<PinValue>&) {
         delta_int();
         finished++;
     }
-    void delta_conf(const std::list<adevs::PinValue<>>&) {
+    void delta_conf(const std::list<PinValue>&) {
         delta_int();
         finished++;
     }
-    void output_func(std::list<adevs::PinValue<>>& yb) {
-        adevs::PinValue<> output(start,0);
+    void output_func(std::list<PinValue>& yb) {
+        PinValue output(start,0);
         yb.push_back(output);
     }
 
@@ -157,7 +161,7 @@ class Manager: public adevs::Atomic<> {
     const double time_out;
     int num_diagrams;
     double time_to_next_event;
-    std::shared_ptr<adevs::Coupled<>> parent;
+    std::shared_ptr<Coupled> parent;
     std::shared_ptr<Activity> active;
 
 };
@@ -166,7 +170,7 @@ int main() {
     int total_finished = 0, total_created = 0;
     /// Run a bunch of trials of the test
     for (int i = 0; i < 100; i++) {
-        auto parent = std::make_shared<adevs::Coupled<>>();
+        auto parent = std::make_shared<Coupled>();
         auto manager = std::make_shared<Manager>(parent);
         parent->add_atomic(manager);
         /// Manager is always notified when it gets input on

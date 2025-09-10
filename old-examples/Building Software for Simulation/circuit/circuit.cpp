@@ -1,7 +1,7 @@
 #include <iostream>
 #include "adevs/adevs.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 /**
  * This is the circuit example from in section 5.4 of "Building Software

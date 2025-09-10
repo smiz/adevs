@@ -6,7 +6,7 @@
 #include "Cell.h"
 #include "adevs/adevs.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 // Cellspace dimensions
 #define WIDTH  200

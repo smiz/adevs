@@ -1,6 +1,6 @@
 #include "Cell.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 bool* Cell::vis;
 unsigned Cell::rule;

@@ -1,7 +1,7 @@
 #include "MultiClerk.h"
 
 
-using namespace adevs;
+// using namespace adevs;
 
 // Assign identifiers to I/O ports
 int const MultiClerk::arrive = 0;

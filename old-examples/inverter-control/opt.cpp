@@ -12,7 +12,7 @@
 #include "harmonic_compensator.h"
 #include "pwm.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 /**
   * Use genetic programming (a randomized gradient descent!)

@@ -1,6 +1,9 @@
 #include "adevs/adevs.h"
 #include <iostream>
 
+using Atomic = adevs::Atomic<>;
+using PinValue = adevs::PinValue<>;
+
 /**
  * This example shows how to simulate a simple system that
  * changes its state and produces output at a fixed rate.
@@ -27,19 +30,19 @@
   * output function, and internal transition function play are
   * important.
   */
-class Periodic : public adevs::Atomic<> {
+class Periodic : public Atomic {
 public:
     /// Our constructor calls the default constructor and sets the
     /// initial value of a counter member variable, which is the
     /// state of our model.
-    Periodic() : adevs::Atomic<>(), state(0) {}
+    Periodic() : Atomic(), state(0) {}
     /// The time advance function is used by the Simulator class
     /// to schedule our next event. We return 1.0 to tell the simulator
     /// that our events occur at times 1, 2, 3, and so forth.
     double ta() { return 1.0; }
     /// We produce our current state as the output value before changing
     /// the state in the internal transition function.
-    void output_func(std::list<adevs::PinValue<>>&) {
+    void output_func(std::list<PinValue>&) {
         std::cout << "Output: " << state << std::endl;
     }
     /// We change our state by incrementing it in our internal transition function.
@@ -49,10 +52,10 @@ public:
     }
     /// The external transition function is not used in this example.
     /// It is never called by the Simulator.
-    void delta_ext(double, std::list<adevs::PinValue<>> const&) {}
+    void delta_ext(double, std::list<PinValue> const&) {}
     /// The confluent transition function is not used in this example,
     /// It is never called by the Simulator.
-    void delta_conf(std::list<adevs::PinValue<>> const&) {}
+    void delta_conf(std::list<PinValue> const&) {}
 
 private:
     /// The state of our model is a single integer

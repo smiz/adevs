@@ -2,7 +2,7 @@
 #include <iostream>
 
 
-using namespace adevs;
+// using namespace adevs;
 
 
 // Assign locally unique identifiers to the ports

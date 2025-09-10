@@ -2,7 +2,7 @@
 #include <iostream>
 #include "Ethernet.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 static int const numApps = 3;
 static double const tend = 10.0;

@@ -1,6 +1,10 @@
 #include "adevs/adevs.h"
 #include <iostream>
 
+using Atomic = adevs::Atomic<>;
+using PinValue = adevs::PinValue<>;
+
+
 /**
  * This example shows how to connect a pair of Atomic models
  * to form a larger model. The first model produces
@@ -44,20 +48,20 @@
   * the models and (2) it places a PinValue object into the
   * output list.
   */
-class Supplier : public adevs::Atomic<> {
+class Supplier : public Atomic {
 public:
     /// Our constructor calls the default constructor and sets the
     /// initial value of a counter member variable, which is the
     /// state of our model.
-    Supplier() : adevs::Atomic<>(), state(0) {}
+    Supplier() : Atomic(), state(0) {}
     /// The time advance function is used by the Simulator class
     /// to schedule our next event. We return 1.0 to tell the simulator
     /// that our events occur at times 1, 2, 3, and so forth.
     double ta() { return 1.0; }
     /// We produce our current state as the output value before changing
     /// the state in the internal transition function.
-    void output_func(std::list<adevs::PinValue<>>& yb) {
-        yb.push_back(adevs::PinValue<>(pin, state));
+    void output_func(std::list<PinValue>& yb) {
+        yb.push_back(PinValue(pin, state));
         std::cout << "Supplier Output: " << state << std::endl;
     }
     /// We change our state by incrementing it in our internal transition function.
@@ -67,10 +71,10 @@ public:
     }
     /// The external transition function is not used in this example.
     /// It is never called by the Simulator.
-    void delta_ext(double, std::list<adevs::PinValue<>> const&) {}
+    void delta_ext(double, std::list<PinValue> const&) {}
     /// The confluent transition function is not used in this example,
     /// It is never called by the Simulator.
-    void delta_conf(std::list<adevs::PinValue<>> const&) {}
+    void delta_conf(std::list<PinValue> const&) {}
 
     /// The single pin that will connect the models
     const adevs::pin_t pin;
@@ -93,27 +97,27 @@ private:
  * confluent transition function, and output function are
  * never called by the Simulator.
  */
-class Consumer : public adevs::Atomic<> {
+class Consumer : public Atomic {
 public:
     /// Our constructor calls the default constructor.
-    Consumer() : adevs::Atomic<>() {}
+    Consumer() : Atomic() {}
     /// The time advance function returns infinity to indicate
     /// that we have no events of our own.
     double ta() { return adevs_inf<double>(); }
     /// The output function is never called by the Simulator.
-    void output_func(std::list<adevs::PinValue<>>&) {}
+    void output_func(std::list<PinValue>&) {}
     /// The internal transition function is never called by the Simulator.
     void delta_int() {}
     /// The external transition function receives input from the Supplier
     /// via the connections established by the Graph that is create in
     /// main() and passed to the Simulator.
-    void delta_ext(double, std::list<adevs::PinValue<>> const &xb) {
+    void delta_ext(double, std::list<PinValue> const &xb) {
         for (const auto &input : xb) {
             std::cout << "Consumer received input: " << std::any_cast<int>(input.value) << std::endl;
         }
     }
     /// The confluent transition function is never called by the Simulator.
-    void delta_conf(std::list<adevs::PinValue<>> const&) {}
+    void delta_conf(std::list<PinValue> const&) {}
 };
 
 /**

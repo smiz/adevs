@@ -5,20 +5,20 @@
 #include <iostream>
 #include <memory>
 
-using namespace adevs;
+// using namespace adevs;
 
 
-class bogus_atomic : public Atomic<char> {
+class bogus_atomic : public adevs::Atomic<char> {
   public:
-    bogus_atomic() : Atomic<char>() { _event = (double)rand(); }
+    bogus_atomic() : adevs::Atomic<char>() { _event = (double)rand(); }
     ~bogus_atomic() {}
     void delta_int() {
         // Something happened; pick the next time.
         _event = (double)rand();
     }
-    void delta_ext(double, std::list<PinValue<char>> const &xb) {}
-    void delta_conf(std::list<PinValue<char>> const &xb) {}
-    void output_func(std::list<PinValue<char>> &yb) {}
+    void delta_ext(double, std::list<adevs::PinValue<char>> const &xb) {}
+    void delta_conf(std::list<adevs::PinValue<char>> const &xb) {}
+    void output_func(std::list<adevs::PinValue<char>> &yb) {}
     double ta() { return (double)_event; }
 
   private:
@@ -27,7 +27,7 @@ class bogus_atomic : public Atomic<char> {
 
 
 void benchmark_old() {
-    Schedule<char> q;
+	adevs::Schedule<char> q;
 
     srand(200);
     std::list<std::shared_ptr<bogus_atomic>> keep;

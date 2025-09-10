@@ -4,7 +4,7 @@
 #include "ElectricalData.h"
 #include "events.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 int const LoadControl::load_change = 0;
 int const LoadControl::sample_setting = 1;

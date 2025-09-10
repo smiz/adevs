@@ -1,6 +1,6 @@
 #include "ElectricalModelEqns.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 static double const pi = 3.1415926535897931;
 // Macros for accessing generator state variables

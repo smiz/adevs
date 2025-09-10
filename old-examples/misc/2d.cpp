@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <iostream>
 #include "adevs/adevs.h"
-using namespace adevs;
+// using namespace adevs;
 
 
 static double const A[2][2] = {{-2.0, 1.0}, {0.0, -1.0}};

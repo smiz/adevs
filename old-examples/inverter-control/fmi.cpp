@@ -11,7 +11,7 @@ typedef std::list<IOType> IOList;
 #include "TestCircuitModelica.h"
 
 
-using namespace adevs;
+// using namespace adevs;
 
 // Output interval and maximum step size
 double const cint = 1E-4;
@@ -218,7 +218,7 @@ adevs::Devs<IOType>* make_model_with_adevs_inverters(CircuitOutput** circuit) {
         // not generate continuous zero crossing functions
     );
     // Create switches and connect everything
-    Digraph<double>* dig = new Digraph<double>();
+    DiGraph* dig = new DiGraph();
     dig->add(model);
     for (int i = 0; i < 3; i++) {
         inverter_switch[i] = new Switch(i, eqns->get_inverter_freq(i));

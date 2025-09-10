@@ -1,7 +1,7 @@
 #include "InterruptHandler.h"
 #include <iostream>
 
-using namespace adevs;
+// using namespace adevs;
 
 InterruptHandler::InterruptHandler(double freq)
     : Atomic<SimEvent>(),

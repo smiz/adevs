@@ -1,6 +1,6 @@
 #include "Ethernet.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 /**
  * Filters received packets and forwards appropriate

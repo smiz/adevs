@@ -8,7 +8,7 @@
 #include "check_ball1d_solution.h"
 #include "sampler.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 #define FALL 0
 #define CLIMB 1
@@ -17,7 +17,7 @@ using namespace adevs;
  * Simple test which simulates a bouncing ball. The output value is the height
  * of the ball. Input cause the system to produce an output sample immediately.
  */
-class bouncing_ball : public CVODE<double> {
+class bouncing_ball : public adevs::CVODE<double> {
   public:
     /** 
      * Constructor initializes the CVODE system.
@@ -25,7 +25,7 @@ class bouncing_ball : public CVODE<double> {
      * @param h_max The maximum step size that CVODE should take
      */
     bouncing_ball(double h_max):
-    CVODE<double>(),
+    	adevs::CVODE<double>(),
     phase(FALL),
     sample(false),
     t(0.0),
@@ -93,7 +93,7 @@ class bouncing_ball : public CVODE<double> {
     /**
      * Schedule an output immediately in response to an input.
      */
-    void cvode_delta_ext(double t, std::list<PinValue<double>> const &) {
+    void cvode_delta_ext(double t, std::list<adevs::PinValue<double>> const &) {
         this->t = t;
         sample = true; // tell cvode_integrate() to take a step size of zero
     }
@@ -101,15 +101,15 @@ class bouncing_ball : public CVODE<double> {
     /**
      * Schedule an output immediately in response to an input.
      */
-    void cvode_delta_conf(std::list<PinValue<double>> const &) {
+    void cvode_delta_conf(std::list<adevs::PinValue<double>> const &) {
         sample = true; // tell cvode_integrate() to take a step size of zero
     }
 
     /**
      * Send the height of the ball and an output
      */
-    void cvode_output_func(std::list<PinValue<double>> &yb) {
-        PinValue<double> event(sample_pin, NV_Ith_S(y,0));
+    void cvode_output_func(std::list<adevs::PinValue<double>> &yb) {
+    	adevs::PinValue event(sample_pin, NV_Ith_S(y,0));
         yb.push_back(event);
     }
 
@@ -160,7 +160,7 @@ class bouncing_ball : public CVODE<double> {
     static int f(double t, N_Vector y, N_Vector ydot, void*);
     static int g(double t, N_Vector y, double* gout, void* phase);
 
-    const pin_t sample_pin;
+    const adevs::pin_t sample_pin;
 
     private:
     int phase, event_flag;
@@ -193,12 +193,12 @@ int bouncing_ball::g(double, N_Vector y, double* gout, void* user_data) {
     return 0;
 }
 
-class SolutionChecker : public EventListener<double> {
+class SolutionChecker : public adevs::EventListener<double> {
   public:
-    SolutionChecker(bouncing_ball* ball, bool to_cout) : EventListener<double>(),ball(ball),to_cout(to_cout) {}
-    void outputEvent(Atomic<double>&, PinValue<double>&, double){}
-    void inputEvent(Atomic<double>&, PinValue<double>&, double){}
-    void stateChange(Atomic<double>& model, double t) {
+    SolutionChecker(bouncing_ball* ball, bool to_cout) : adevs::EventListener<double>(),ball(ball),to_cout(to_cout) {}
+    void outputEvent(adevs::Atomic<double>&, adevs::PinValue<double>&, double){}
+    void inputEvent(adevs::Atomic<double>&, adevs::PinValue<double>&, double){}
+    void stateChange(adevs::Atomic<double>& model, double t) {
         if (ball == &model) {
             assert(ball1d_soln_ok(t, ball->getHeight()));
         }
@@ -219,7 +219,7 @@ void run_solution(double h_max, bool to_cout) {
     graph->add_atomic(sample);
     graph->connect(sample->sample_pin,ball);
     auto checker = std::make_shared<SolutionChecker>(ball.get(),to_cout);
-    adevs::Simulator<double> sim(graph);
+    adevs::Simulator sim(graph);
     sim.addEventListener(checker);
     while (sim.nextEventTime() < 10.0) {
         sim.execNextEvent();

@@ -2,10 +2,11 @@
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
 
+using ModelExchange = adevs::ModelExchange<>;
 
 #define epsilon 1E-6
 
-void test_vars(adevs::ModelExchange<>* model) {
+void test_vars(ModelExchange* model) {
     double x = std::any_cast<double>(model->get_variable("x"));
     double x1 = std::any_cast<double>(model->get_variable("x1"));
     double y = std::any_cast<double>(model->get_variable("y"));
@@ -53,7 +54,7 @@ void test_vars(adevs::ModelExchange<>* model) {
 
 int main() {
     const double err_tol = 1E-8;
-    auto fmi = new adevs::ModelExchange<>("EventTests.fmu",err_tol);
+    auto fmi = new ModelExchange("EventTests.fmu",err_tol);
     adevs::corrected_euler<>* solver1 =
         new adevs::corrected_euler<>(fmi, err_tol, 0.01);
     adevs::discontinuous_event_locator<>* solver2 =

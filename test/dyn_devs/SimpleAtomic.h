@@ -3,14 +3,17 @@
 #include <cassert>
 #include "adevs/adevs.h"
 
-class SimpleAtomic : public adevs::Atomic<char> {
+using Atomic = adevs::Atomic<char>;
+using PinValue = adevs::PinValue<char>;
+
+class SimpleAtomic : public Atomic {
   public:
     SimpleAtomic();
     void delta_int();
-    void delta_ext(double, std::list<adevs::PinValue<char>> const &) { assert(false); }
-    void delta_conf(std::list<adevs::PinValue<char>> const &) { assert(false); }
+    void delta_ext(double, std::list<PinValue> const &) { assert(false); }
+    void delta_conf(std::list<PinValue> const &) { assert(false); }
     double ta() { return 1.0; }
-    void output_func(std::list<adevs::PinValue<char>> &) {}
+    void output_func(std::list<PinValue> &) {}
     ~SimpleAtomic();
 
     static int atomic_number;

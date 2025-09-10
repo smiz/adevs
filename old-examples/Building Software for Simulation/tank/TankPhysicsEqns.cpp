@@ -1,6 +1,6 @@
 #include "TankPhysics.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 // Indices for the state event array
 int const TankPhysicsEqns::TURNL = 0, TankPhysicsEqns::TURNR = 1,

@@ -10,7 +10,7 @@
 #include <iostream>
 #include "adevs/adevs.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 #define VOLTAGE 0
 #define CURRENT 1

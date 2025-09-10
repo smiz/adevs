@@ -2,6 +2,9 @@
 #include <iostream>
 #include <random>
 
+using Atomic = adevs::Atomic<>;
+using PinValue = adevs::PinValue<>;
+
 /**
  * This example is shows how a queuing system can be
  * modeled. It is our first example that exercises every
@@ -27,30 +30,30 @@
   * the output function is called to produce a PinValue
   * object that contains a job to be processed by the Server.
   */
-class ArrivalProcess : public adevs::Atomic<> {
+class ArrivalProcess : public Atomic {
 public:
     /// Our constructor calls the default constructor and creates
     /// a random number generator from which we will draw arrival
     /// times. The mean interval between arrivals is set to 1.0.
-    ArrivalProcess() : adevs::Atomic<>(), interarrival(1.0), generator(std::random_device{}()) {}
+    ArrivalProcess() : Atomic(), interarrival(1.0), generator(std::random_device{}()) {}
     /// Our time to next event is the interval of time that must pass
     /// before the next job arrives.
     double ta() { return interarrival(generator); }
     /// When the time advance expires, we produce a job by placing it
     /// into the list of output values. The value on the pin doesn't
     /// mean anything in this example.
-    void output_func(std::list<adevs::PinValue<>>& yb) {
-        yb.push_back(adevs::PinValue<>(job, 0));
+    void output_func(std::list<PinValue>& yb) {
+        yb.push_back(PinValue(job, 0));
     }
     /// The internal transition method is called but it doesn't do anything
     /// in this example
     void delta_int() {}
     /// The external transition function is not used in this example.
     /// It is never called by the Simulator.
-    void delta_ext(double, std::list<adevs::PinValue<>> const&) {}
+    void delta_ext(double, std::list<PinValue> const&) {}
     /// The confluent transition function is not used in this example,
     /// It is never called by the Simulator.
-    void delta_conf(std::list<adevs::PinValue<>> const&) {}
+    void delta_conf(std::list<PinValue> const&) {}
 
     /// The single pin on which jobs will appear
     const adevs::pin_t job;
@@ -71,12 +74,12 @@ private:
  * information to calculate how long each job spends in the
  * system, both waiting and being processed.
  */
-class Server : public adevs::Atomic<> {
+class Server : public Atomic {
 public:
     /// The time to finish is infinity at the start because we have no
     /// work to do; that is, it will be an infinite amount of time
     /// before we finish a job.
-    Server() : adevs::Atomic<>(),
+    Server() : Atomic(),
         time_since_start(0.0), time_to_finish(adevs_inf<double>()) {}
     /// The time advance function returns the time remaining to finish
     /// the current job. 
@@ -84,10 +87,10 @@ public:
     /// The output function produces the completed job, even though it
     /// won't be routed anywhere by the Simulator. The value on the
     /// pin doesn't mean anything in this example.
-    void output_func(std::list<adevs::PinValue<>>& yb) {
+    void output_func(std::list<PinValue>& yb) {
         /// Test your knowledge: why is this assertion always true?
         assert(!job_queue.empty());
-        yb.push_back(adevs::PinValue<>(finished_job, 0));
+        yb.push_back(PinValue(finished_job, 0));
     }
     /// The internal transition function is called by the Simulator
     /// when a job is complete. We pop the job off of the queue and
@@ -116,7 +119,7 @@ public:
     /// job then we set the time to complete the new job equal to 1.
     ///
     /// Second, we push the newly arrived jobs to the back of the job queue.
-    void delta_ext(double e, std::list<adevs::PinValue<>> const &xb) {
+    void delta_ext(double e, std::list<PinValue> const &xb) {
         /// Test your knowledge: why is this assertion always true?
         assert(e < time_to_finish);
         /// Update the total time elapsed since the Server came into being
@@ -135,7 +138,7 @@ public:
         }
     }
     /// The confluent transition function is never called by the Simulator.
-    void delta_conf(std::list<adevs::PinValue<>> const& xb) {
+    void delta_conf(std::list<PinValue> const& xb) {
         /// Test your knowledge: why is this assertion always true?
         assert(!job_queue.empty());
         /// Update the time since the Server can into being

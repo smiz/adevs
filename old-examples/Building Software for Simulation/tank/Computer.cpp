@@ -1,7 +1,7 @@
 #include "Computer.h"
 #include <cassert>
 #include <set>
-using namespace adevs;
+// using namespace adevs;
 
 Computer::Computer(double freq) : Network<SimEvent>(), p(), i(freq) {
     p.setParent(this);

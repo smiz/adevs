@@ -1,5 +1,5 @@
 #include "GenrFail.h"
-using namespace adevs;
+// using namespace adevs;
 
 int const GenrFail::genr_fail = 0;
 

@@ -3,6 +3,7 @@
 #include "adevs/solvers/fmi.h" // Get the ModelExchange class
 #include "adevs/solvers/trap.h" // Get the ImplicitHybrid class
 
+using PinValue = adevs::PinValue<>;
 
 /**
  * This is exactly the same as tutorial/ex5.cpp and Example #5
@@ -27,27 +28,27 @@
  */
 class Circuit : public adevs::ModelExchange<> {
   public:
-    Circuit() : adevs::ModelExchange<>("Circuit.fmu",1E-6) {}
+    Circuit() : ModelExchange("Circuit.fmu",1E-6) {}
     /// The external state transition function sets the state of
     /// the switch.
-    void external_event(double* state, double e, std::list<adevs::PinValue<>> const &xb) {
-        ModelExchange<>::external_event(state,0.0,xb);
+    void external_event(double* state, double e, std::list<PinValue> const &xb) {
+        ModelExchange::external_event(state,0.0,xb);
         set_variable("switch",1);
         /// Process the change in state of the switch
-        ModelExchange<>::external_event(state,0.0,xb);
+        ModelExchange::external_event(state,0.0,xb);
     }
     /// Confluent transition function of the circuit.
-    void confluent_event(double* state, bool const* events, std::list<adevs::PinValue<>> const &xb) {
-        ModelExchange<>::confluent_event(state,events,xb);
+    void confluent_event(double* state, bool const* events, std::list<PinValue> const &xb) {
+        ModelExchange::confluent_event(state,events,xb);
         set_variable("switch",1);
         /// Process the change in state of the switch
-        ModelExchange<>::confluent_event(state,events,xb);
+        ModelExchange::confluent_event(state,events,xb);
     }
     /// Output function of the circuit. This is called prior to an confluent
     /// or internal event. Place your output in the supplied list. This
     /// output function produces the new state of the diode at a state event.
-    void output_func(double const*, bool const*, std::list<adevs::PinValue<>> &yb) {
-        yb.push_back(adevs::PinValue<>(diode,get_variable("D.off")));
+    void output_func(double const*, bool const*, std::list<PinValue> &yb) {
+        yb.push_back(PinValue(diode,get_variable("D.off")));
     }
 
     bool getDiode() { return std::any_cast<int>(get_variable("D.off")); }
@@ -63,9 +64,9 @@ class OpenSwitch : public adevs::Atomic<> {
     double ta() { return t_open; }
     void delta_int() { t_open = adevs_inf<double>(); }
     void delta_ext(double, std::list<adevs::PinValue<>> const &) {}
-    void delta_conf(std::list<adevs::PinValue<>> const &) {}
-    void output_func(std::list<adevs::PinValue<>> &yb) {
-        yb.push_back(adevs::PinValue<>(open_close,false));
+    void delta_conf(std::list<PinValue> const &) {}
+    void output_func(std::list<PinValue> &yb) {
+        yb.push_back(PinValue(open_close,false));
     }
 
     const adevs::pin_t open_close;
