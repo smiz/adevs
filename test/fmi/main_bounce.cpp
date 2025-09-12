@@ -2,7 +2,6 @@
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
 
-// using namespace adevs;
 using ModelExchange = adevs::ModelExchange<double>;
 using Hybrid = adevs::Hybrid<double>;
 using Simulator = adevs::Simulator<double>;
@@ -12,7 +11,7 @@ static double const err_tol = 1E-3;
 
 class bounce : public ModelExchange {
   public:
-    bounce() : ModelExchange("bounce.fmu",err_tol), m_bounce(0), m_resetTime(0.0) {}
+    bounce() : ModelExchange("bounce.fmu", err_tol), m_bounce(0), m_resetTime(0.0) {}
     void internal_event(double* q, bool const* state_event) {
         // Apply internal event function of the super class
         ModelExchange::internal_event(q, state_event);
@@ -25,7 +24,7 @@ class bounce : public ModelExchange {
         std::cout << "internal @ " << get_time() << std::endl;
         // Change the direction as needed
         m_bounce++;
-        set_variable("a",-a);
+        set_variable("a", -a);
         m_resetTime = get_time();
         // Reapply internal event function of the super class
         ModelExchange::internal_event(q, state_event);
@@ -49,9 +48,8 @@ class bounce : public ModelExchange {
         int x_above = std::any_cast<int>(get_variable("xAbove"));
         int go_up = std::any_cast<int>(get_variable("goUp"));
         int go_down = std::any_cast<int>(get_variable("goDown"));
-        std::cout << get_time() << " " << x << " " << der_x << " "
-             << a << " " << go_up << " " << go_down << " "
-             << a_above << " " << x_above << " " << std::endl;
+        std::cout << get_time() << " " << x << " " << der_x << " " << a << " " << go_up << " "
+                  << go_down << " " << a_above << " " << x_above << " " << std::endl;
     }
     void test_state() {
         double x;

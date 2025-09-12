@@ -12,8 +12,7 @@ uniform_int_distribution<int> Cell::eight_dist(0, 7);
 
 int Cell::angle[SIZE][SIZE];
 
-static int neighbors[8][2] = {{0, 1}, {0, -1}, {1, 0},  {-1, 0},
-                              {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+static int neighbors[8][2] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
 static bool inside(int x, int y) {
     return x >= 0 && x < SIZE && y >= 0 && y < SIZE;
@@ -49,8 +48,7 @@ void Cell::set_time_advance() {
     h = adevs_inf<double>();
 }
 
-Cell::Cell(int x, int y)
-    : adevs::Atomic<CellEvent>(), x(x), y(y), h(adevs_inf<double>()) {
+Cell::Cell(int x, int y) : adevs::Atomic<CellEvent>(), x(x), y(y), h(adevs_inf<double>()) {
     state_changes++;
     // Record our and the neighboring states
     for (int i = 0; i < 8; i++) {

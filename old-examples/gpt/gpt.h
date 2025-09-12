@@ -11,8 +11,6 @@
 #include "transducer.h"
 
 
-
-
 struct Arguments {
     double generator_period;
     double processor_time;

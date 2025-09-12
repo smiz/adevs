@@ -32,11 +32,11 @@
 #ifndef _adevs_simulator_h_
 #define _adevs_simulator_h_
 
+#include <any>
 #include <cassert>
 #include <list>
-#include <set>
-#include <any>
 #include <memory>
+#include <set>
 #include "adevs/graph.h"
 #include "adevs/models.h"
 #include "adevs/sched.h"
@@ -72,8 +72,8 @@ class EventListener {
      * @param value The PinValue created by the model
      * @param t The time of the output event
      */
-    virtual void outputEvent(Atomic<ValueType, TimeType> &model,
-                             PinValue<ValueType> &value, TimeType t) = 0;
+    virtual void outputEvent(Atomic<ValueType, TimeType> &model, PinValue<ValueType> &value,
+                             TimeType t) = 0;
     /**
      * @brief Called when an Atomic receives an input.
      * 
@@ -84,8 +84,8 @@ class EventListener {
      * @param value The PinValue provided as input
      * @param t The time of the input event
      */
-    virtual void inputEvent(Atomic<ValueType, TimeType> &model,
-                            PinValue<ValueType> &value, TimeType t) = 0;
+    virtual void inputEvent(Atomic<ValueType, TimeType> &model, PinValue<ValueType> &value,
+                            TimeType t) = 0;
     /**
      * @brief Called after an Atomic model changes its state.
      * 
@@ -95,8 +95,7 @@ class EventListener {
      * @param model The Atomic model that changed state
      * @param t The time when the change occurred
      */
-    virtual void stateChange(Atomic<ValueType, TimeType> &model,
-                             TimeType t) = 0;
+    virtual void stateChange(Atomic<ValueType, TimeType> &model, TimeType t) = 0;
 };
 
 /**
@@ -237,9 +236,7 @@ class Simulator {
      * 
      * @param x The PinValue to inject into the simulation.
      */
-    void injectInput(PinValue<ValueType> &x) {
-        external_input.push_back(x);
-    }
+    void injectInput(PinValue<ValueType> &x) { external_input.push_back(x); }
 
     /**
      * @brief Clear the list of injected inputs.
@@ -248,9 +245,7 @@ class Simulator {
      * to the simulation via a call to computeNextOutput().
      * The inputs are cleared automatically at each call to computeNextOutput(),
      */
-    void clearInjectedInput() {
-        external_input.clear();
-    }
+    void clearInjectedInput() { external_input.clear(); }
 
     /**
      * @brief Set the next event time to something less than the
@@ -261,9 +256,7 @@ class Simulator {
      * 
      * @param t The time at which the next event will occur.
      */
-    void setNextTime(TimeType t) {
-        tNext = t;
-    }
+    void setNextTime(TimeType t) { tNext = t; }
 
     /**
      * @brief Compute the output values of models at the next event time.
@@ -296,8 +289,7 @@ class Simulator {
      * 
      * @param listener The EventListener to be added.
      */
-    void addEventListener(
-        std::shared_ptr<EventListener<ValueType, TimeType>> listener) {
+    void addEventListener(std::shared_ptr<EventListener<ValueType, TimeType>> listener) {
         listeners.push_back(listener);
     }
 
@@ -313,8 +305,7 @@ class Simulator {
 };
 
 template <typename ValueType, typename TimeType>
-Simulator<ValueType, TimeType>::Simulator(
-    std::shared_ptr<Graph<ValueType, TimeType>> model)
+Simulator<ValueType, TimeType>::Simulator(std::shared_ptr<Graph<ValueType, TimeType>> model)
     : graph(model) {
     graph->set_provisional(true);
     for (auto atomic : model->get_atomics()) {
@@ -324,8 +315,7 @@ Simulator<ValueType, TimeType>::Simulator(
 }
 
 template <typename ValueType, typename TimeType>
-Simulator<ValueType, TimeType>::Simulator(
-    std::shared_ptr<Atomic<ValueType, TimeType>> model)
+Simulator<ValueType, TimeType>::Simulator(std::shared_ptr<Atomic<ValueType, TimeType>> model)
     : graph(new Graph<ValueType, TimeType>()) {
     graph->add_atomic(model);
     graph->set_provisional(true);
@@ -334,8 +324,7 @@ Simulator<ValueType, TimeType>::Simulator(
 }
 
 template <typename ValueType, typename TimeType>
-Simulator<ValueType, TimeType>::Simulator(
-    std::shared_ptr<Coupled<ValueType, TimeType>> model)
+Simulator<ValueType, TimeType>::Simulator(std::shared_ptr<Coupled<ValueType, TimeType>> model)
     : graph(new Graph<ValueType, TimeType>()) {
     model->assign_to_graph(graph.get());
     graph->set_provisional(true);
@@ -398,7 +387,7 @@ void Simulator<ValueType, TimeType>::computeNextOutput() {
                         // Wait to calculate Mealy outputs until we have the
                         // output from all of the Moore models
                         pending_active.insert(consumer.second->isMealyAtomic());
-                    } else {    
+                    } else {
                         active.insert(consumer.second.get());
                     }
                     x.pin = consumer.first;
@@ -421,7 +410,7 @@ void Simulator<ValueType, TimeType>::computeNextOutput() {
             model->output_func(model->outputs);
         } else if (model->tN == tNext) {
             // Confluent event
-            model->confluent_output_func(model->inputs,model->outputs);
+            model->confluent_output_func(model->inputs, model->outputs);
         } else {
             // External event
             model->external_output_func(tNext - model->tL, model->inputs, model->outputs);
@@ -440,7 +429,7 @@ void Simulator<ValueType, TimeType>::computeNextOutput() {
                         throw adevs::exception("Feedback loop of Mealy models is illegal", model);
                     }
                     pending_active.insert(consumer.second->isMealyAtomic());
-                } else {    
+                } else {
                     active.insert(consumer.second.get());
                 }
                 x.pin = consumer.first;
@@ -484,12 +473,11 @@ TimeType Simulator<ValueType, TimeType>::computeNextState() {
     active.clear();
     // Effect any changes in the model structure
     graph->set_provisional(false);
-    std::list<typename Graph<ValueType,TimeType>::graph_op>& pending = graph->get_pending();
+    std::list<typename Graph<ValueType, TimeType>::graph_op> &pending = graph->get_pending();
     while (!pending.empty()) {
         auto op = pending.front();
         pending.pop_front();
-        switch(op.op)
-        {
+        switch (op.op) {
             case Graph<ValueType, TimeType>::ADD_ATOMIC:
                 graph->add_atomic(op.model);
                 schedule(op.model.get(), t);
@@ -522,8 +510,7 @@ TimeType Simulator<ValueType, TimeType>::computeNextState() {
 }
 
 template <class ValueType, class TimeType>
-void Simulator<ValueType, TimeType>::schedule(
-    Atomic<ValueType, TimeType>* model, TimeType t) {
+void Simulator<ValueType, TimeType>::schedule(Atomic<ValueType, TimeType>* model, TimeType t) {
     model->tL = t;
     TimeType dt = model->ta();
     if (dt == adevs_inf<TimeType>()) {

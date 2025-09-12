@@ -14,7 +14,7 @@ class CherryBomb : public ode_system<std::string> {
   public:
     CherryBomb()
         : ode_system<std::string>(3,  // three state variables including time
-                             1   // 1 state event condition
+                                  1   // 1 state event condition
           ) {
         phase = FUSE_LIT;  // Light the fuse!
     }
@@ -54,13 +54,11 @@ class CherryBomb : public ode_system<std::string> {
             phase = EXPLODE;
         }
     }
-    void confluent_event(double* q, bool const* state_event,
-                         std::list<std::string> const &xb) {
+    void confluent_event(double* q, bool const* state_event, std::list<std::string> const &xb) {
         internal_event(q, state_event);
         external_event(q, 0.0, xb);
     }
-    void output_func(double const* q, bool const* state_event,
-                     std::list<std::string> &yb) {
+    void output_func(double const* q, bool const* state_event, std::list<std::string> &yb) {
         if (state_event[1] && phase == FUSE_LIT) {
             yb.push_back("BOOM!");  // Explode!
         }
@@ -83,13 +81,11 @@ int main() {
     // Create the ODE solver for this model. Maximum error
     // tolerance at each step is 1E-4 and the maximum
     // size of an integration step is 0.01.
-    ode_solver<std::string>* ode_solve =
-        new corrected_euler<std::string>(bomb, 1E-4, 0.01);
+    ode_solver<std::string>* ode_solve = new corrected_euler<std::string>(bomb, 1E-4, 0.01);
     // Create the event locator for this model. Maximum
     // error tolerace for the location of an event in
     // the state space is 1E-8.
-    event_locator<std::string>* event_find =
-        new linear_event_locator<std::string>(bomb, 1E-8);
+    event_locator<std::string>* event_find = new linear_event_locator<std::string>(bomb, 1E-8);
     // Create an atomic model that puts all of these
     // together to simulate the continuous system.
     Hybrid<std::string>* model = new Hybrid<std::string>(bomb, ode_solve, event_find);

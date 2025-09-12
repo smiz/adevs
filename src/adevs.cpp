@@ -1,9 +1,12 @@
 #include "adevs/models.h"
 #include "adevs/time.h"
 
-std::atomic<int> adevs::pin_t::atom(0);
+using pin_t = adevs::pin_t;
+using double_fcmp = adevs::double_fcmp;
 
-int adevs::double_fcmp::fcmp(double x1, double x2, double epsilon) {
+std::atomic<int> pin_t::atom(0);
+
+int double_fcmp::fcmp(double x1, double x2, double epsilon) {
     int exponent;
     double delta;
     double difference;

@@ -1,9 +1,14 @@
 #include <iostream>
 #include "adevs/adevs.h"
-#include "adevs/solvers/trap.h" // Get the ImplicitHybrid class
+#include "adevs/solvers/trap.h"  // Get the ImplicitHybrid class
 
 using Atomic = adevs::Atomic<>;
 using PinValue = adevs::PinValue<>;
+using Simulator = adevs::Simulator<>;
+using Graph = adevs::Graph<>;
+using pin_t = adevs::pin_t;
+using ode_system = adevs::ode_system<>;
+using ExplicitHybrid = adevs::ExplicitHybrid<>;
 
 /**
  * This example simulates an electrical circuit with a switch and
@@ -49,23 +54,23 @@ using PinValue = adevs::PinValue<>;
  * The ode_system provides the interface that is used by the
  * Hybrid class to solve the circuit equations numerically.
  */
-class Circuit : public adevs::ode_system<> {
+class Circuit : public ode_system {
   public:
     Circuit()
         /// this model has 1 state variable and 1 state event function
-        : adevs::ode_system<>(1, 1),
-          switch_conducting(true), // The switch is conducting
+        : ode_system(1, 1),
+          switch_conducting(true),  // The switch is conducting
           diode_conducting(false),  // The diode is not conducting
-          vs(1.0), // The source voltage vs = 1 V
-          C(1E-1), // The capacitor has 100 mF
-          Rs(1.0), // The source resistor is 1 Ohm
-          Rl(10.0), // The load resistor is 10 Ohm
-          vd(0.25), // Diode threshold for conducting
+          vs(1.0),                  // The source voltage vs = 1 V
+          C(1E-1),                  // The capacitor has 100 mF
+          Rs(1.0),                  // The source resistor is 1 Ohm
+          Rl(10.0),                 // The load resistor is 10 Ohm
+          vd(0.25),                 // Diode threshold for conducting
           eps(1E-4) {}
     /// Called by the Hybrid class to get the initial values of
     /// the continuous state variables
     void init(double* q) {
-        q[0] = 0.0; // Capacitor voltage Vc = 0
+        q[0] = 0.0;  // Capacitor voltage Vc = 0
     }
     /// Called by the Hybrid class to get the values of the
     /// derivatives of the continuous state variables.
@@ -76,14 +81,14 @@ class Circuit : public adevs::ode_system<> {
             dq[0] = 0.0;
         } else if (!switch_conducting && diode_conducting) {
             /// dVc/dt = -(Vc-vd) / (C * Rl) , capacitor discharging
-            dq[0] = -(q[0]-vd) / (C * Rl);
+            dq[0] = -(q[0] - vd) / (C * Rl);
         } else if (switch_conducting && !diode_conducting) {
             /// dVc/dt = (Vs - Vc) / (C * Rs) , capacitor charging
             dq[0] = (vs - q[0]) / (C * Rs);
         } else {
             /// dVc/dt = ((Vs - Vc) / Rs - (Vc-vd) / Rl) / C
             /// Simultaneously charging an discharging
-            dq[0] = ((vs - q[0]) / Rs - (q[0]-vd) / Rl) / C;
+            dq[0] = ((vs - q[0]) / Rs - (q[0] - vd) / Rl) / C;
         }
     }
     /// Called by the Hybrid class to get the values of the
@@ -95,7 +100,7 @@ class Circuit : public adevs::ode_system<> {
         if (diode_conducting) {
             /// If the diode is conducting, it stops conducting
             /// when the voltage of the capacitor falls below Vd-eps
-            z[0] = q[0] - (vd-eps);
+            z[0] = q[0] - (vd - eps);
         } else {
             /// If the diode is not conducting, then it starts
             /// conducting when the voltage rises above Vd
@@ -128,13 +133,13 @@ class Circuit : public adevs::ode_system<> {
     /// output function produces the new state of the diode at a state event.
     void output_func(double const*, bool const* events, std::list<PinValue> &yb) {
         assert(events[0]);
-        yb.push_back(PinValue(diode,!diode_conducting));
+        yb.push_back(PinValue(diode, !diode_conducting));
     }
 
     bool getDiode() const { return diode_conducting; }
     bool getSwitch() const { return switch_conducting; }
 
-    const adevs::pin_t diode;
+    pin_t const diode;
 
   private:
     bool switch_conducting, diode_conducting;
@@ -149,11 +154,9 @@ class OpenSwitch : public Atomic {
     void delta_int() { t_open = adevs_inf<double>(); }
     void delta_ext(double, std::list<PinValue> const &) {}
     void delta_conf(std::list<PinValue> const &) {}
-    void output_func(std::list<PinValue> &yb) {
-        yb.push_back(PinValue(open_close,false));
-    }
+    void output_func(std::list<PinValue> &yb) { yb.push_back(PinValue(open_close, false)); }
 
-    const adevs::pin_t open_close;
+    pin_t const open_close;
 
   private:
     double t_open;
@@ -164,19 +167,19 @@ int main() {
     auto circuit = new Circuit();
     // The hybrid model adopts the circuit and will delete the circuit when
     // the hybrid is deleted.
-    auto hybrid_model = std::make_shared<adevs::ExplicitHybrid<>>(circuit,1E-5,0.01);
+    auto hybrid_model = std::make_shared<ExplicitHybrid>(circuit, 1E-5, 0.01);
     auto open_switch = std::make_shared<OpenSwitch>(0.5);
-    auto model = std::make_shared<adevs::Graph<>>();
+    auto model = std::make_shared<Graph>();
     model->add_atomic(hybrid_model);
     model->add_atomic(open_switch);
     model->connect(open_switch->open_close, hybrid_model);
     // Create the simulator
-    adevs::Simulator<> sim(model);
+    Simulator sim(model);
     // Simulate until the switch and diode have both experienced an event
     double tNow = 0.0;
     while (sim.nextEventTime() < 5.0) {
-        std::cout << tNow << " " << hybrid_model->getState(0) << " "
-             << circuit->getSwitch() << " " << circuit->getDiode() << std::endl;
+        std::cout << tNow << " " << hybrid_model->getState(0) << " " << circuit->getSwitch() << " "
+                  << circuit->getDiode() << std::endl;
         tNow = sim.execNextEvent();
     }
     return 0;

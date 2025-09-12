@@ -32,12 +32,12 @@
 #ifndef _adevs_fmi_h_
 #define _adevs_fmi_h_
 
-#include <filesystem>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include "adevs/solvers/hybrid.h"
 #include "fmilib.h"
@@ -69,7 +69,7 @@ class ModelExchange : public ode_system<ValueType> {
      * @param tolerance Tolerance for the algebraic loop solvers
      * inside the FMU
      */
-    ModelExchange(const char* const fmu, double tolerance);
+    ModelExchange(char const* const fmu, double tolerance);
     /// @brief Destructor
     virtual ~ModelExchange();
     /// @brief Copy the initial state of the model to q
@@ -126,8 +126,7 @@ class ModelExchange : public ode_system<ValueType> {
      * See the notes on the internal_event function for
      * derived classes.
      */
-    virtual void external_event(double* q, double e,
-                                std::list<PinValue<ValueType>> const &xb);
+    virtual void external_event(double* q, double e, std::list<PinValue<ValueType>> const &xb);
     /**
      * @brief The confluent transition function.
      * 
@@ -193,7 +192,7 @@ class ModelExchange : public ode_system<ValueType> {
         fmi2_value_reference_t ref;
         fmi2_base_type_enu_t var_type;
     };
-    std::map<std::string,variable_info_t> name_to_variable_map;
+    std::map<std::string, variable_info_t> name_to_variable_map;
 };
 
 template <typename ValueType>
@@ -202,23 +201,23 @@ std::any ModelExchange<ValueType>::get_variable(std::string name) {
     variable_info_t var_info = name_to_variable_map[name];
     if (var_info.var_type == fmi2_base_type_real) {
         fmi2_real_t val;
-        status = fmi2_import_get_real(fmu,&var_info.ref,1,&val);
+        status = fmi2_import_get_real(fmu, &var_info.ref, 1, &val);
         assert(status == fmi2_status_ok);
         return val;
     }
     if (var_info.var_type == fmi2_base_type_int) {
         fmi2_integer_t val;
-        status = fmi2_import_get_integer(fmu,&var_info.ref,1,&val);
+        status = fmi2_import_get_integer(fmu, &var_info.ref, 1, &val);
         assert(status == fmi2_status_ok);
         return val;
     }
     if (var_info.var_type == fmi2_base_type_bool) {
         fmi2_boolean_t val;
-        status = fmi2_import_get_boolean(fmu,&var_info.ref,1,&val);
+        status = fmi2_import_get_boolean(fmu, &var_info.ref, 1, &val);
         assert(status == fmi2_status_ok);
         return val;
     }
-    return 0; 
+    return 0;
 }
 
 template <typename ValueType>
@@ -227,32 +226,32 @@ void ModelExchange<ValueType>::set_variable(std::string name, std::any value) {
     variable_info_t var_info = name_to_variable_map[name];
     if (var_info.var_type == fmi2_base_type_real) {
         fmi2_real_t val = std::any_cast<fmi2_real_t>(value);
-        status = fmi2_import_set_real(fmu,&var_info.ref,1,&val);
+        status = fmi2_import_set_real(fmu, &var_info.ref, 1, &val);
         assert(status == fmi2_status_ok);
         return;
     }
     if (var_info.var_type == fmi2_base_type_int) {
         fmi2_integer_t val = std::any_cast<fmi2_integer_t>(value);
-        status = fmi2_import_set_integer(fmu,&var_info.ref,1,&val);
+        status = fmi2_import_set_integer(fmu, &var_info.ref, 1, &val);
         assert(status == fmi2_status_ok);
         return;
     }
     if (var_info.var_type == fmi2_base_type_bool) {
-        fmi2_boolean_t val= std::any_cast<fmi2_boolean_t>(value);
-        status = fmi2_import_set_boolean(fmu,&var_info.ref,1,&val);
+        fmi2_boolean_t val = std::any_cast<fmi2_boolean_t>(value);
+        status = fmi2_import_set_boolean(fmu, &var_info.ref, 1, &val);
         assert(status == fmi2_status_ok);
     }
 }
 
 template <typename ValueType>
-ModelExchange<ValueType>::ModelExchange(const char* const fmu_file, double tolerance) :
-        // One extra variable at the end for time
-        ode_system<ValueType>(),
-        next_time_event(adevs_inf<double>()),
-        t_now(0.0),
-        cont_time_mode(false),
-        jac_col(nullptr),
-        jac_v(nullptr) {
+ModelExchange<ValueType>::ModelExchange(char const* const fmu_file, double tolerance)
+    :  // One extra variable at the end for time
+      ode_system<ValueType>(),
+      next_time_event(adevs_inf<double>()),
+      t_now(0.0),
+      cont_time_mode(false),
+      jac_col(nullptr),
+      jac_v(nullptr) {
 
     jm_status_enu_t status_enum;
 
@@ -264,45 +263,47 @@ ModelExchange<ValueType>::ModelExchange(const char* const fmu_file, double toler
     callbacks.log_level = jm_log_level_fatal;
     callbacks.context = 0;
 
-    char* tmpPath = fmi_import_mk_temp_dir(&callbacks,std::filesystem::temp_directory_path().c_str(),nullptr);
+    char* tmpPath =
+        fmi_import_mk_temp_dir(&callbacks, std::filesystem::temp_directory_path().c_str(), nullptr);
     assert(tmpPath);
-  
+
     fmi_import_context_t* context = fmi_import_allocate_context(&callbacks);
     fmi_version_enu_t version = fmi_import_get_fmi_version(context, fmu_file, tmpPath);
-  
-    if(version != fmi_version_2_0_enu) {
+
+    if (version != fmi_version_2_0_enu) {
         throw adevs::exception("Only version FMI 2.0 is supported");
     }
-  
-    fmu = fmi2_import_parse_xml(context,tmpPath,0);
-  
-    if(!fmu) {
+
+    fmu = fmi2_import_parse_xml(context, tmpPath, 0);
+
+    if (!fmu) {
         throw adevs::exception("Error parsing FMI XML");
-    }    
-  
-    if(fmi2_import_get_fmu_kind(fmu) == fmi2_fmu_kind_cs) {
+    }
+
+    if (fmi2_import_get_fmu_kind(fmu) == fmi2_fmu_kind_cs) {
         throw adevs::exception("Only ME 2.0 is supported\n");
     }
 
     // Load the dll
     status_enum = fmi2_import_create_dllfmu(fmu, fmi2_fmu_kind_me, nullptr);
     assert(status_enum != jm_status_error);
-    status_enum = fmi2_import_instantiate(fmu,"adevs::ModelExchange",fmi2_model_exchange,nullptr,false);
+    status_enum =
+        fmi2_import_instantiate(fmu, "adevs::ModelExchange", fmi2_model_exchange, nullptr, false);
     assert(status_enum != jm_status_error);
 
     // Done with the context and temporary directory
     fmi_import_free_context(context);
-    fmi_import_rmdir(nullptr,tmpPath);
+    fmi_import_rmdir(nullptr, tmpPath);
     free(tmpPath);
 
-    this->set_num_state_variables(fmi2_import_get_number_of_continuous_states(fmu)+1);
+    this->set_num_state_variables(fmi2_import_get_number_of_continuous_states(fmu) + 1);
     this->set_num_event_functions(fmi2_import_get_number_of_event_indicators(fmu));
 
     /// Load the variable list
-    fmi2_import_variable_list_t* variable_list = fmi2_import_get_variable_list(fmu,0);
+    fmi2_import_variable_list_t* variable_list = fmi2_import_get_variable_list(fmu, 0);
     size_t num_variables = fmi2_import_get_variable_list_size(variable_list);
     for (size_t i = 0; i < num_variables; i++) {
-        fmi2_import_variable_t* var = fmi2_import_get_variable(variable_list,i);
+        fmi2_import_variable_t* var = fmi2_import_get_variable(variable_list, i);
         std::string name = fmi2_import_get_variable_name(var);
         variable_info_t info;
         info.ref = fmi2_import_get_variable_vr(var);
@@ -311,15 +312,15 @@ ModelExchange<ValueType>::ModelExchange(const char* const fmu_file, double toler
     }
     fmi2_import_free_variable_list(variable_list);
     /// Setup the FMU for simulation
-    fmi2_import_set_debug_logging(fmu,false,0,nullptr);
+    fmi2_import_set_debug_logging(fmu, false, 0, nullptr);
     fmi2_import_setup_experiment(fmu, true, tolerance, 0.0, false, -1.0);
     /// Prep for jacobian calculations
-    if (fmi2_import_get_capability(fmu,fmi2_me_providesDirectionalDerivatives)) {
-        jac_col = new fmi2_value_reference_t[this->numVars()-1];
-        jac_v = new double[this->numVars()-1];
+    if (fmi2_import_get_capability(fmu, fmi2_me_providesDirectionalDerivatives)) {
+        jac_col = new fmi2_value_reference_t[this->numVars() - 1];
+        jac_v = new double[this->numVars() - 1];
         // References to each of our derivative functions f_1, f_2, etc.
-        for (int i = 0; i < this->numVars()-1; i++) {
-            jac_col[i] = this->numVars()-1 + i;
+        for (int i = 0; i < this->numVars() - 1; i++) {
+            jac_col[i] = this->numVars() - 1 + i;
             jac_v[i] = 1.0;
         }
     }
@@ -329,7 +330,7 @@ template <typename ValueType>
 bool ModelExchange<ValueType>::get_jacobian(double const* q, double* J) {
     fmi2_status_t status;
     // Number of FMU variables. Does not include time.
-    unsigned const N = this->numVars()-1;
+    unsigned const N = this->numVars() - 1;
     // Do we support Jacobians?
     if (J == nullptr || jac_col == nullptr) {
         return jac_col != nullptr;
@@ -357,8 +358,8 @@ bool ModelExchange<ValueType>::get_jacobian(double const* q, double* J) {
     // reference lists under the hood. In a direct call to the FMI
     // API state_var and jac_col would be in reversed positions.
     for (fmi2_value_reference_t state_var = 0; state_var < N; state_var++) {
-        status = fmi2_import_get_directional_derivative(fmu, &state_var, 1, jac_col, N, 
-                                               jac_v, J + state_var * N);
+        status = fmi2_import_get_directional_derivative(fmu, &state_var, 1, jac_col, N, jac_v,
+                                                        J + state_var * N);
         assert(status == fmi2_status_ok);
     }
     // Partial of time is 1 and nobody else depends on it. This, of course, may
@@ -380,7 +381,7 @@ void ModelExchange<ValueType>::iterate_events() {
     eventInfo.newDiscreteStatesNeeded = false;
     eventInfo.nextEventTimeDefined = false;
     do {
-        status = fmi2_import_new_discrete_states(fmu,&eventInfo);
+        status = fmi2_import_new_discrete_states(fmu, &eventInfo);
         assert(status == fmi2_status_ok);
     } while (eventInfo.newDiscreteStatesNeeded);
     if (eventInfo.nextEventTimeDefined) {
@@ -406,12 +407,12 @@ void ModelExchange<ValueType>::init(double* q) {
     status = fmi2_import_enter_continuous_time_mode(fmu);
     assert(status == fmi2_status_ok);
     // Set initial value for time
-    status = fmi2_import_set_time(fmu,t_now);
+    status = fmi2_import_set_time(fmu, t_now);
     assert(status == fmi2_status_ok);
     // Get starting state variable values
-    status = fmi2_import_get_continuous_states(fmu,q,this->numVars()-1);
+    status = fmi2_import_get_continuous_states(fmu, q, this->numVars() - 1);
     assert(status == fmi2_status_ok);
-    q[this->numVars()-1] = t_now;
+    q[this->numVars() - 1] = t_now;
     cont_time_mode = true;
 }
 
@@ -423,37 +424,39 @@ void ModelExchange<ValueType>::der_func(double const* q, double* dq) {
         assert(status == fmi2_status_ok);
         cont_time_mode = true;
     }
-    status = fmi2_import_set_time(fmu,q[this->numVars()-1]);
+    status = fmi2_import_set_time(fmu, q[this->numVars() - 1]);
     assert(status == fmi2_status_ok);
-    status = fmi2_import_set_continuous_states(fmu,q,this->numVars()-1);
+    status = fmi2_import_set_continuous_states(fmu, q, this->numVars() - 1);
     assert(status == fmi2_status_ok);
-    status = fmi2_import_get_derivatives(fmu,dq,this->numVars()-1);
+    status = fmi2_import_get_derivatives(fmu, dq, this->numVars() - 1);
     assert(status == fmi2_status_ok);
-    dq[this->numVars()-1] = 1.0;
+    dq[this->numVars() - 1] = 1.0;
 }
 
 template <typename ValueType>
 void ModelExchange<ValueType>::state_event_func(double const* q, double* z) {
     fmi2_status_t status;
     // Don't do anything if we don't have any state events
-    if (this->numEvents() == 0) return;
+    if (this->numEvents() == 0) {
+        return;
+    }
     if (!cont_time_mode) {
         status = fmi2_import_enter_continuous_time_mode(fmu);
         assert(status == fmi2_status_ok);
         cont_time_mode = true;
     }
-    status = fmi2_import_set_time(fmu,q[this->numVars()-1]);
+    status = fmi2_import_set_time(fmu, q[this->numVars() - 1]);
     assert(status == fmi2_status_ok);
-    status = fmi2_import_set_continuous_states(fmu,q,this->numVars()-1);
+    status = fmi2_import_set_continuous_states(fmu, q, this->numVars() - 1);
     assert(status == fmi2_status_ok);
-    status = fmi2_import_get_event_indicators(fmu,z,this->numEvents());
+    status = fmi2_import_get_event_indicators(fmu, z, this->numEvents());
     assert(status == fmi2_status_ok);
 }
 
 template <typename ValueType>
 double ModelExchange<ValueType>::time_event_func(double const* q) {
     if (next_time_event < adevs_inf<double>()) {
-        return next_time_event - q[this->numVars()-1];
+        return next_time_event - q[this->numVars() - 1];
     }
     return adevs_inf<double>();
 }
@@ -463,7 +466,7 @@ void ModelExchange<ValueType>::postStep(double* q) {
     assert(cont_time_mode);
     // Don't advance the FMU state by zero units of time
     // when in continuous mode
-    if (q[this->numVars()-1] <= t_now) {
+    if (q[this->numVars() - 1] <= t_now) {
         return;
     }
     // Try to complete the integration step
@@ -471,12 +474,12 @@ void ModelExchange<ValueType>::postStep(double* q) {
     fmi2_boolean_t enterEventMode;
     fmi2_boolean_t terminateSimulation;
     t_now = q[this->numVars() - 1];
-    status = fmi2_import_set_time(fmu,t_now);
+    status = fmi2_import_set_time(fmu, t_now);
     assert(status == fmi2_status_ok);
-    status = fmi2_import_set_continuous_states(fmu,q,this->numVars()-1);
+    status = fmi2_import_set_continuous_states(fmu, q, this->numVars() - 1);
     assert(status == fmi2_status_ok);
-    status = fmi2_import_completed_integrator_step(
-        fmu,true, &enterEventMode,&terminateSimulation);
+    status =
+        fmi2_import_completed_integrator_step(fmu, true, &enterEventMode, &terminateSimulation);
     assert(status == fmi2_status_ok);
     // Force an event if one is indicated
     if (enterEventMode) {
@@ -489,9 +492,9 @@ void ModelExchange<ValueType>::postTrialStep(double* q) {
     assert(cont_time_mode);
     // Restore values changed by der_func and state_event_func
     fmi2_status_t status;
-    status = fmi2_import_set_time(fmu,q[this->numVars()-1]);
+    status = fmi2_import_set_time(fmu, q[this->numVars() - 1]);
     assert(status == fmi2_status_ok);
-    status = fmi2_import_set_continuous_states(fmu,q,this->numVars()-1);
+    status = fmi2_import_set_continuous_states(fmu, q, this->numVars() - 1);
     assert(status == fmi2_status_ok);
 }
 
@@ -508,13 +511,13 @@ void ModelExchange<ValueType>::internal_event(double* q, bool const* state_event
     // Process events
     iterate_events();
     // Update the state variable array
-    status = fmi2_import_get_continuous_states(fmu,q,this->numVars()-1);
+    status = fmi2_import_get_continuous_states(fmu, q, this->numVars() - 1);
     assert(status == fmi2_status_ok);
 }
 
 template <typename ValueType>
 void ModelExchange<ValueType>::external_event(double* q, double e,
-                                     std::list<PinValue<ValueType>> const &xb) {
+                                              std::list<PinValue<ValueType>> const &xb) {
     fmi2_status_t status;
     // Go to event mode if we have not yet done so
     if (cont_time_mode) {
@@ -524,13 +527,13 @@ void ModelExchange<ValueType>::external_event(double* q, double e,
     }
     // process any events that need processing
     iterate_events();
-    status = fmi2_import_get_continuous_states(fmu,q,this->numVars()-1);
+    status = fmi2_import_get_continuous_states(fmu, q, this->numVars() - 1);
     assert(status == fmi2_status_ok);
 }
 
 template <typename ValueType>
 void ModelExchange<ValueType>::confluent_event(double* q, bool const* state_event,
-                                      std::list<PinValue<ValueType>> const &xb) {
+                                               std::list<PinValue<ValueType>> const &xb) {
     fmi2_status_t status;
     // postStep will have updated the continuous variables, so
     // we just process discrete events here.
@@ -540,13 +543,13 @@ void ModelExchange<ValueType>::confluent_event(double* q, bool const* state_even
         cont_time_mode = false;
     }
     iterate_events();
-    status = fmi2_import_get_continuous_states(fmu,q,this->numVars()-1);
+    status = fmi2_import_get_continuous_states(fmu, q, this->numVars() - 1);
     assert(status == fmi2_status_ok);
 }
 
 template <typename ValueType>
 void ModelExchange<ValueType>::output_func(double const* q, bool const* state_event,
-                                  std::list<PinValue<ValueType>> &yb) {}
+                                           std::list<PinValue<ValueType>> &yb) {}
 
 template <typename ValueType>
 ModelExchange<ValueType>::~ModelExchange() {
@@ -555,8 +558,8 @@ ModelExchange<ValueType>::~ModelExchange() {
     fmi2_import_destroy_dllfmu(fmu);
     fmi2_import_free(fmu);
     if (jac_col != nullptr) {
-        delete [] jac_col;
-        delete [] jac_v;
+        delete[] jac_col;
+        delete[] jac_v;
     }
 }
 

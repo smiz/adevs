@@ -94,8 +94,7 @@ void opt() {
         Listener* l = new Listener(num_samples);
         // Create the model
         HarmonicCircuit* circuit = new HarmonicCircuit(local.C, local.Linv);
-        HarmonicCompensator* control =
-            new HarmonicCompensator(local.G, local.H);
+        HarmonicCompensator* control = new HarmonicCompensator(local.G, local.H);
         PWM* pwm = new PWM(33000.0);
         SimpleDigraph<event_t>* model = new SimpleDigraph<event_t>();
         model->add(circuit);
@@ -115,8 +114,7 @@ void opt() {
 // Get the fft and calculate the objective function
 #pragma omp critical
         plan = fftw_plan_dft_r2c_1d(num_samples, l->get_samples(),
-                                    reinterpret_cast<fftw_complex*>(out),
-                                    FFTW_ESTIMATE);
+                                    reinterpret_cast<fftw_complex*>(out), FFTW_ESTIMATE);
         fftw_execute(plan);
         // Find components of interest
         double df = circuit->sample_freq() / (double)num_samples;

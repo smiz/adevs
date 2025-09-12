@@ -32,13 +32,13 @@
 
 #ifndef _adevs_cvode_h_
 #define _adevs_cvode_h_
-#include <any>
 #include <cvode/cvode.h>
+#include <any>
 #include "adevs/adevs.h"
 
 namespace adevs {
 
- /**
+/**
   * \page cvode.cpp
   * \include cvode.cpp
   */
@@ -56,9 +56,9 @@ namespace adevs {
  */
 
 template <typename ValueType = std::any>
-class CVODE: public Atomic<ValueType> {
+class CVODE : public Atomic<ValueType> {
   public:
-  /**
+    /**
    * @brief Constructor
    * 
    * The constructor should be used to initialize CVode for your model
@@ -108,8 +108,9 @@ class CVODE: public Atomic<ValueType> {
      * schedule time events.
      */
     double ta();
+
   protected:
-  /**
+    /**
    * @brief Override this method to implement your internal transition function.
    * 
    * This is called when the simulation clock reaches the time returned in the
@@ -168,7 +169,7 @@ class CVODE: public Atomic<ValueType> {
      * @param tf The time at which the current state is valid.
      * @param event Set to true if an internal event should occur at this time.
      */
-    virtual void cvode_integrate(double& tf, bool& event) = 0;
+    virtual void cvode_integrate(double &tf, bool &event) = 0;
     /**
      * @brief Override this method to advance the continuous state of the model
      * up to the next state event or exactly the limit prescribed by the caller.
@@ -179,7 +180,7 @@ class CVODE: public Atomic<ValueType> {
      * @param tf The time to which the state must be advanced.
      * @param event Set to true if an internal event should occur at this time.
      */
-    virtual void cvode_integrate_until(double tf, bool& event) = 0;
+    virtual void cvode_integrate_until(double tf, bool &event) = 0;
     /**
      * @brief This is called when the model needs to be reinitialized following
      * a state event.
@@ -191,6 +192,7 @@ class CVODE: public Atomic<ValueType> {
      * @param t The time at which this state is valid.
      */
     virtual void cvode_reinit(N_Vector y, double t) = 0;
+
   private:
     N_Vector y_checkpoint;
     bool has_event;
@@ -198,9 +200,8 @@ class CVODE: public Atomic<ValueType> {
 };
 
 template <typename ValueType>
-CVODE<ValueType>::CVODE():
-Atomic<ValueType,double>(),
-y_checkpoint(nullptr),has_event(false),t(0.0){}
+CVODE<ValueType>::CVODE()
+    : Atomic<ValueType, double>(), y_checkpoint(nullptr), has_event(false), t(0.0) {}
 
 template <typename ValueType>
 CVODE<ValueType>::~CVODE() {
@@ -213,9 +214,9 @@ template <typename ValueType>
 double CVODE<ValueType>::ta() {
     if (y_checkpoint == nullptr) {
         y_checkpoint = N_VClone(this->cvode_get_state());
-        N_VAddConst(this->cvode_get_state(),0.0,y_checkpoint);
+        N_VAddConst(this->cvode_get_state(), 0.0, y_checkpoint);
     }
-    this->cvode_integrate(t_projected,has_event);
+    this->cvode_integrate(t_projected, has_event);
     return t_projected - t;
 }
 
@@ -226,38 +227,38 @@ void CVODE<ValueType>::delta_int() {
         this->cvode_delta_int();
     }
     t = t_projected;
-    N_VAddConst(this->cvode_get_state(),0.0,y_checkpoint);
+    N_VAddConst(this->cvode_get_state(), 0.0, y_checkpoint);
 }
 
 template <typename ValueType>
 void CVODE<ValueType>::delta_conf(std::list<PinValue<ValueType>> const &xb) {
     if (has_event) {
         this->cvode_delta_conf(xb);
-    } else  {
-        this->cvode_delta_ext(t_projected,xb);
+    } else {
+        this->cvode_delta_ext(t_projected, xb);
     }
     t = t_projected;
-    N_VAddConst(this->cvode_get_state(),0.0,y_checkpoint);
+    N_VAddConst(this->cvode_get_state(), 0.0, y_checkpoint);
 }
 
 template <typename ValueType>
 void CVODE<ValueType>::delta_ext(double e, std::list<PinValue<ValueType>> const &xb) {
-    this->cvode_reinit(y_checkpoint,t);
+    this->cvode_reinit(y_checkpoint, t);
     t += e;
-    this->cvode_integrate_until(t,has_event);
+    this->cvode_integrate_until(t, has_event);
     if (has_event) {
         this->cvode_delta_conf(xb);
     } else {
-        this->cvode_delta_ext(t,xb);
+        this->cvode_delta_ext(t, xb);
     }
-    N_VAddConst(this->cvode_get_state(),0.0,y_checkpoint);
+    N_VAddConst(this->cvode_get_state(), 0.0, y_checkpoint);
 }
 
 template <typename ValueType>
 void CVODE<ValueType>::output_func(std::list<PinValue<ValueType>> &yb) {
     if (has_event) {
         this->cvode_output_func(yb);
-    } 
+    }
 }
 
 }  // namespace adevs

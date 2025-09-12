@@ -1,6 +1,10 @@
 #include <iostream>
 #include "adevs/adevs.h"
 
+using ode_system = adevs::ode_system<double>;
+using Atomic = adevs::Atomic<double>;
+using corrected_euler = adevs::corrected_euler<double>;
+using linear_event_locator = adevs::linear_event_locator<double>;
 
 typedef std::list<double> IO_List;
 
@@ -13,27 +17,21 @@ typedef std::list<double> IO_List;
  * with x(0) = 1 and u(0) = 1
  *
  */
-class SISOPlantEqns : public adevs::ode_system<double> {
+class SISOPlantEqns : public ode_system {
   public:
     /**
 		 * Create a plant with the specified inertia coefficient,
 		 * control gain, and sampling rate in Hertz.
 		 */
     SISOPlantEqns(double a, double b, double sampleFreq)
-        : adevs::ode_system<double>(2, 0),
-          a(a),
-          b(b),
-          u(0),
-          sampleInterval(1.0 / sampleFreq) {}
+        : ode_system(2, 0), a(a), b(b), u(0), sampleInterval(1.0 / sampleFreq) {}
     /**
 		 * Create a plant model that is wrapped in a solver.
 		 */
-    static adevs::Hybrid* makeInstance(double a, double b,
-                                               double sampleFreq) {
+    static adevs::Hybrid* makeInstance(double a, double b, double sampleFreq) {
         SISOPlantEqns* plant = new SISOPlantEqns(a, b, sampleFreq);
-        return new adevs::Hybrid(
-            plant, new adevs::corrected_euler<double>(plant, 1E-8, 0.001),
-            new adevs::linear_event_locator<double>(plant, 1E-8));
+        return new adevs::Hybrid(plant, new corrected_euler(plant, 1E-8, 0.001),
+                                 new linear_event_locator(plant, 1E-8));
     }
     void init(double* q) {
         q[0] = 0.0;  // Sample clock
@@ -46,17 +44,12 @@ class SISOPlantEqns : public adevs::ode_system<double> {
     void state_event_func(double const*, double*) {}
     double time_event_func(double const* q) { return q[0]; }
     void internal_event(double* q, bool const*) { q[0] = sampleInterval; }
-    void external_event(double*, double, IO_List const &xb) {
-        u = *(xb.begin());
-    }
-    void confluent_event(double* q, bool const* state_event,
-                         IO_List const &xb) {
+    void external_event(double*, double, IO_List const &xb) { u = *(xb.begin()); }
+    void confluent_event(double* q, bool const* state_event, IO_List const &xb) {
         internal_event(q, state_event);
         external_event(q, 0.0, xb);
     }
-    void output_func(double const* q, bool const*, IO_List &y) {
-        y.push_back(q[1]);
-    }
+    void output_func(double const* q, bool const*, IO_List &y) { y.push_back(q[1]); }
 
 
   private:
@@ -68,13 +61,12 @@ class SISOPlantEqns : public adevs::ode_system<double> {
 /**
  * Discrete proportional control.
  */
-class Control : public adevs::Atomic<double> {
+class Control : public Atomic {
   public:
     /**
 		 * Execute control to maintain state at xRef.
 		 */
-    Control(double xRef)
-        : adevs::Atomic<double>(), xRef(xRef), u(0.0), active(false) {}
+    Control(double xRef) : Atomic(), xRef(xRef), u(0.0), active(false) {}
     void delta_int() { active = !active; }
     void delta_ext(double, IO_List const &xb) {
         active = true;

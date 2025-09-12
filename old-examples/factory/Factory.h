@@ -7,8 +7,6 @@
 #include "adevs/adevs.h"
 
 
-
-
 // This class implements the Factory and it machine usage policy.
 class Factory : public adevs::Network<int> {
   public:
@@ -16,8 +14,7 @@ class Factory : public adevs::Network<int> {
 
     void getComponents(set<adevs::Devs<int>*> &c);
 
-    void route(int const &order, adevs::Devs<int>* src,
-               std::list<adevs::Event<int>> &r);
+    void route(int const &order, adevs::Devs<int>* src, std::list<adevs::Event<int>> &r);
 
     bool model_transition();
 

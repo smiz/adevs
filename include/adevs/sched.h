@@ -103,7 +103,7 @@ class Schedule {
 };
 
 template <class ValueType, class TimeType>
-void Schedule<ValueType, TimeType>::visit(Atomic<ValueType, TimeType> *model) {
+void Schedule<ValueType, TimeType>::visit(Atomic<ValueType, TimeType>* model) {
     assert(model->outputs.empty());
     activated.push_back(model);
 }
@@ -141,13 +141,13 @@ void Schedule<ValueType, TimeType>::removeMinimum() {
         unsigned int i = percolate_down(1, heap[size + 1].priority);
         heap[i] = heap[size + 1];
         heap[i].item->q_index = i;
-        heap[size+1].item = nullptr;
+        heap[size + 1].item = nullptr;
     }
 }
 
 template <class ValueType, class TimeType>
 void Schedule<ValueType, TimeType>::schedule(Atomic<ValueType, TimeType>* model,
-                                              TimeType priority) {
+                                             TimeType priority) {
     // If the model is in the schedule
     if (model->q_index != 0) {
         // Remove the model if the next event time is infinite

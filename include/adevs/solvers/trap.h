@@ -42,8 +42,8 @@
 #include <cfloat>
 #include <cmath>
 #include <cstring>
-#include "adevs/solvers/hybrid.h"
 #include "adevs/solvers/event_locators.h"
+#include "adevs/solvers/hybrid.h"
 
 namespace adevs {
 
@@ -76,15 +76,14 @@ class trap : public ode_solver<ValueType> {
      * @param silent If set to true, the KINSOL error and info messages are suppressed.
      * The default value is false.
      */
-    trap(ode_system<ValueType>* sys, double err_tol, double h_max,
-         bool silent = false);
+    trap(ode_system<ValueType>* sys, double err_tol, double h_max, bool silent = false);
     /**
      * @brief Destructor
      * 
      * Leaves the supplied ode_system intact.
      */
     ~trap();
-     /**
+    /**
      * @brief Integrate up to h_lim.
      * 
      * Used by a Hybrid object to simulate the system.advance
@@ -95,7 +94,7 @@ class trap : public ode_solver<ValueType> {
      * @return The step actually taken.
      */
     double integrate(double* q, double h_lim);
-     /**
+    /**
      * @brief Integrate to exactly the step h
      * 
      * As with integrate() but advance the step by exactly the
@@ -108,7 +107,6 @@ class trap : public ode_solver<ValueType> {
     void advance(double* q, double h);
 
   private:
-
     SUNContext sunctx;
     double* k;   // Fixed term in newton iteration
     double* dq;  // Derivatives at guess
@@ -140,24 +138,23 @@ class trap : public ode_solver<ValueType> {
     void prep_kinsol(bool silent);
 
     static int func(N_Vector y, N_Vector f, void* user_data);
-    static int jac(N_Vector y, N_Vector f, SUNMatrix J, void* user_data,
-                   N_Vector tmp1, N_Vector tmp2);
+    static int jac(N_Vector y, N_Vector f, SUNMatrix J, void* user_data, N_Vector tmp1,
+                   N_Vector tmp2);
     static int check_retval(void* retvalvalue, char const* funcname, int opt);
 
 #if SUNDIALS_VERSION_MAJOR < 7
     static void silent_error_handler(int, char const*, char const*, char*, void*) {}
     static void silent_info_handler(char const*, char const*, char*, void*) {}
-#else //SUNDIALS_VERSION_MAJOR >= 7
-    static void silent_error_handler(int , const char *, const char *, const char *, SUNErrCode , void *, SUNContext){}
+#else  //SUNDIALS_VERSION_MAJOR >= 7
+    static void silent_error_handler(int, const char*, const char*, const char*, SUNErrCode, void*,
+                                     SUNContext) {}
     // There is no  silent_info_handler equivalent?
     static void silent_info_handler(char const*, char const*, char*, void*) {}
 #endif
-
 };
 
 template <typename ValueType>
-int trap<ValueType>::check_retval(void* retvalvalue, char const* ,
-                                  int opt) {
+int trap<ValueType>::check_retval(void* retvalvalue, char const*, int opt) {
     int* errretval;
     /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
     if (opt == 0 && retvalvalue == NULL) {
@@ -190,8 +187,7 @@ int trap<ValueType>::func(N_Vector y, N_Vector f, void* user_data) {
 }
 
 template <typename ValueType>
-int trap<ValueType>::jac(N_Vector y, N_Vector , SUNMatrix J, void* user_data,
-                         N_Vector , N_Vector ) {
+int trap<ValueType>::jac(N_Vector y, N_Vector, SUNMatrix J, void* user_data, N_Vector, N_Vector) {
     auto yd = N_VGetArrayPointer(y);
     auto Jd = SUNDenseMatrix_Data(J);
     kinsol_data_t* data = static_cast<kinsol_data_t*>(user_data);
@@ -214,8 +210,8 @@ void trap<ValueType>::prep_kinsol(bool silent) {
 
     /* Create a context */
 #if SUNDIALS_VERSION_MAJOR < 7
-    retval = SUNContext_Create(nullptr,&sunctx);
-#else // SUNDIALS_VERSION_MAJOR >= 7
+    retval = SUNContext_Create(nullptr, &sunctx);
+#else  // SUNDIALS_VERSION_MAJOR >= 7
     retval = SUNContext_Create(0, &sunctx);
 #endif
 
@@ -223,7 +219,7 @@ void trap<ValueType>::prep_kinsol(bool silent) {
         throw adevs::exception("SUNContext_Create failed");
     }
     /* Create vectors for solution, scales, and jacobian */
-    y = N_VNew_Serial(this->sys->numVars(),sunctx);
+    y = N_VNew_Serial(this->sys->numVars(), sunctx);
     if (check_retval((void*)y, "N_VNew_Serial", 0)) {
         throw adevs::exception("N_VNew_Serial failed");
     }
@@ -234,7 +230,7 @@ void trap<ValueType>::prep_kinsol(bool silent) {
     // No scaling
 #if SUNDIALS_VERSION_MAJOR < 7
     N_VConst(RCONST(1.0), scale);
-#else //SUNDIALS_VERSION_MAJOR >= 7
+#else  //SUNDIALS_VERSION_MAJOR >= 7
     N_VConst(SUN_RCONST(1.0), scale);
 #endif
 
@@ -278,7 +274,7 @@ void trap<ValueType>::prep_kinsol(bool silent) {
 #if SUNDIALS_VERSION_MAJOR < 7
         KINSetErrHandlerFn(kmem, silent_error_handler, NULL);
         KINSetInfoHandlerFn(kmem, silent_info_handler, NULL);
-#else //SUNDIALS_VERSION_MAJOR >= 7
+#else  //SUNDIALS_VERSION_MAJOR >= 7
         SUNContext_PushErrHandler(sunctx, silent_error_handler, NULL);
         // There is no  silent_info_handler equivalent?
         // KINSetInfoHandlerFn(kmem, silent_info_handler, NULL);
@@ -287,8 +283,7 @@ void trap<ValueType>::prep_kinsol(bool silent) {
 }
 
 template <typename ValueType>
-trap<ValueType>::trap(ode_system<ValueType>* sys, double err_tol, double h_max,
-                      bool silent)
+trap<ValueType>::trap(ode_system<ValueType>* sys, double err_tol, double h_max, bool silent)
     : ode_solver<ValueType>(sys), err_tol(err_tol), h_max(h_max), h_cur(h_max) {
     guess = new double[sys->numVars()];
     dq = new double[sys->numVars()];
@@ -329,11 +324,11 @@ bool trap<ValueType>::step(double* q, double h, double const* dq0) {
         guess[i] = yd[i] = q[i] + h * dq0[i];
     }
     kinsol_data.h = h;
-    int retval = KINSol(kmem, /* KINSol memory block */
-                        y,    /* initial guess on input; solution vector */
+    int retval = KINSol(kmem,           /* KINSol memory block */
+                        y,              /* initial guess on input; solution vector */
                         KIN_LINESEARCH, /* global strategy choice */
-                        scale,  /* scaling vector, for the variable cc */
-                        scale); /* scaling vector for function values fval */
+                        scale,          /* scaling vector, for the variable cc */
+                        scale);         /* scaling vector for function values fval */
     if (retval < 0) {
         return false;
     }
@@ -393,8 +388,8 @@ double trap<ValueType>::integrate(double* q, double h_lim) {
  */
 template <typename ValueType = std::any>
 class ImplicitHybrid : public Hybrid<ValueType> {
-    public:
-     /**
+  public:
+    /**
      * @brief Create and initialize solvers for the ode_system.
      * 
      * The ode_sytems is adopted by the ExplicitHybrid object and
@@ -404,9 +399,9 @@ class ImplicitHybrid : public Hybrid<ValueType> {
      * @param tol The error tolerance for the solvers
      * @param h_max The step size limit for the solvers
      */
-    ImplicitHybrid(ode_system<ValueType>* sys, double tol, double h_max):
-        Hybrid<ValueType>(sys,new trap<ValueType>(sys,tol,h_max),new discontinuous_event_locator<ValueType>(sys,tol)) {
-    }
+    ImplicitHybrid(ode_system<ValueType>* sys, double tol, double h_max)
+        : Hybrid<ValueType>(sys, new trap<ValueType>(sys, tol, h_max),
+                            new discontinuous_event_locator<ValueType>(sys, tol)) {}
 };
 
 }  // namespace adevs

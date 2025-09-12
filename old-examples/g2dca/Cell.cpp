@@ -28,11 +28,7 @@ void Cell::init_space(int w, int h, uint8_t const* rule) {
 }
 
 Cell::Cell(int x, int y, Phase phase, Phase* vis_phase)
-    : adevs::Atomic<CellEvent, int>(),
-      x(x),
-      y(y),
-      phase(phase),
-      vis_phase(vis_phase) {
+    : adevs::Atomic<CellEvent, int>(), x(x), y(y), phase(phase), vis_phase(vis_phase) {
     // Set the initial visualization value
     if (vis_phase != NULL) {
         *vis_phase = phase;

@@ -43,11 +43,7 @@ namespace adevs {
 class spline {
   public:
     spline(int const N)
-        : N(N),
-          a(new double[N]),
-          b(new double[N]),
-          c(new double[N]),
-          d(new double[N]) {}
+        : N(N), a(new double[N]), b(new double[N]), c(new double[N]), d(new double[N]) {}
 
     /*
      * Create a spline that interpolates over the interval h from q0
@@ -59,13 +55,12 @@ class spline {
      * @param h The interval over which to interpolate
      * @param N The number of equations to interpolate
      */
-    void init(double const* q0, double const* dq0, double const* qh,
-              double const* dqh, double const h) {
+    void init(double const* q0, double const* dq0, double const* qh, double const* dqh,
+              double const h) {
         for (int i = 0; i < N; i++) {
             d[i] = q0[i];
             c[i] = dq0[i];
-            a[i] = (2.0 / (h * h * h)) *
-                   ((h / 2.0) * (dqh[i] - c[i]) - qh[i] + c[i] * h + d[i]);
+            a[i] = (2.0 / (h * h * h)) * ((h / 2.0) * (dqh[i] - c[i]) - qh[i] + c[i] * h + d[i]);
             b[i] = (1.0 / (2.0 * h)) * (dqh[i] - c[i] - 3.0 * a[i] * h * h);
         }
     }

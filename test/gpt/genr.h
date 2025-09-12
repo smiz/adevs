@@ -3,17 +3,19 @@
 #include "adevs/adevs.h"
 #include "job.h"
 
+using pin_t = adevs::pin_t;
+using Atomic = adevs::Atomic<job>;
+
 /*
 The genr class produces jobs periodically.  The genr starts
 producing jobs when it receives an input on its start port.
 It stops producing jobs when it receives an input on its
 stop port.  Jobs appear on the out port.
 */
-class genr : public adevs::Atomic<job> {
+class genr : public Atomic {
   public:
     /// Constructor.  The generator period is provided here.
-    genr(double period)
-        : adevs::Atomic<job>(), period(period), sigma(period), count(0) {}
+    genr(double period) : Atomic(), period(period), sigma(period), count(0) {}
     /// Internal transition function
     void delta_int() {
         /*
@@ -64,9 +66,9 @@ class genr : public adevs::Atomic<job> {
     /// Output doesn't require heap allocation, so don't do anything
 
     /// Model input ports
-    const adevs::pin_t start, stop;
+    pin_t const start, stop;
     /// Model output port
-    const adevs::pin_t out;
+    pin_t const out;
 
   private:
     /// Model state variables

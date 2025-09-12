@@ -4,7 +4,6 @@
 #include "SimpleAtomic.h"
 #include "adevs/adevs.h"
 
-// using namespace adevs;
 using Simulator = adevs::Simulator<char>;
 using Atomic = adevs::Atomic<char>;
 using PinValue = adevs::PinValue<char>;
@@ -12,7 +11,7 @@ using Graph = adevs::Graph<char>;
 
 class SimpleNetwork : public Atomic {
   public:
-    SimpleNetwork(std::shared_ptr<Graph>& graph) : Atomic(),graph(graph) {
+    SimpleNetwork(std::shared_ptr<Graph> &graph) : Atomic(), graph(graph) {
         for (int i = 0; i < 10; i++) {
             std::shared_ptr<SimpleAtomic> model = std::make_shared<SimpleAtomic>();
             graph->add_atomic(model);
@@ -22,7 +21,7 @@ class SimpleNetwork : public Atomic {
     void delta_int() {
         graph->remove_atomic(models.back());
         models.pop_back();
-    }   
+    }
     void delta_ext(double, std::list<PinValue> const &) { assert(false); }
     void delta_conf(std::list<PinValue> const &) { assert(false); }
     void output_func(std::list<PinValue> &) {}

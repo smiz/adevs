@@ -74,7 +74,7 @@
  * class in our previous example. It differs in placing an adevs::PinValue object
  * into the list supplied to the output function. The second component receives
  * this adevs::PinValue object as an input via its external transition function.
- * Let us call the first Atomic model 'A', the second 'B', and the adevs::pin_t that links
+ * Let us call the first Atomic model 'A', the second 'B', and the pin_t that links
  * 'A' to 'B' we will call 'p'. The adevs::Graph class is used to form the connections shown
  * below:
  * 
@@ -112,7 +112,7 @@
  * models. It also demonstrates the use of an adevs::MealyAtomic to create a model that
  * produces output in direct response to an input. The components of a model with
  * a single processor are shown in the diagram below. The adevs::Atomic models are displayed in boxes.
- * The adevs::pin_t objects are displayed without an outline. Comparing the graph that
+ * The pin_t objects are displayed without an outline. Comparing the graph that
  * is displayed with the code in the example, you will see that the Coupled::create_coupling() method
  * of the adevs::Coupled class acts as the Graph::connect() method of the adevs::Graph class.
  *
@@ -162,12 +162,12 @@
  * <a href="https://github.com/modelon-community/fmi-library">FMI library</a> to build and run this example.
  */
 
- /**
+/**
   * \page game_of_life Game of Life
   * \include game_of_life.cpp
   */
 
- /**
+/**
  * \page ex1 Example #1
  * \include ex1.cpp
  */
@@ -181,7 +181,7 @@
  * \page ex3 Example #3
  * \include ex3.cpp
  */
- 
+
 /**
  * \page ex4diagram Example #4 diagram
  * \dot
@@ -262,8 +262,8 @@
 #include "adevs/exception.h"
 #include "adevs/models.h"
 #include "adevs/simulator.h"
-#include "adevs/solvers/event_locators.h"
 #include "adevs/solvers/corrected_euler.h"
+#include "adevs/solvers/event_locators.h"
 #include "adevs/solvers/hybrid.h"
 #include "adevs/solvers/rk_45.h"
 #endif

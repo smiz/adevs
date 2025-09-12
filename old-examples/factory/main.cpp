@@ -8,7 +8,6 @@
 // using namespace adevs;
 
 
-
 /**
  * The observer will keep track of individual order service times.
  */
@@ -84,7 +83,7 @@ int main(int argc, char** argv) {
 
     // Run the simulation and output active machine count at each iteration
     while (sim->nextEventTime() <= 365.0) {
-    	std::cout << sim->nextEventTime() << " ";
+        std::cout << sim->nextEventTime() << " ";
         sim->execNextEvent();
         std::cout << factory->get_machine_count() << std::endl;
     }

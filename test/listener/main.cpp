@@ -1,23 +1,27 @@
 #include "relay.h"
 
-// using namespace adevs;
+
+using Simulator = adevs::Simulator<int>;
+using EventListener = adevs::EventListener<int>;
+using Graph = adevs::Graph<int>;
+using PinValue = adevs::PinValue<int>;
 
 std::shared_ptr<Relay> r = nullptr;
-std::vector<adevs::PinValue<int>> output;
-std::vector<adevs::PinValue<int>> input;
+std::vector<PinValue> output;
+std::vector<PinValue> input;
 
-class Listener : public adevs::EventListener<int> {
+class Listener : public EventListener {
   public:
-    Listener() : adevs::EventListener<int>() {}
+    Listener() : EventListener() {}
 
-    void inputEvent(adevs::Atomic<int>& model, adevs::PinValue<int>& x, double t) {
+    void inputEvent(Atomic &model, PinValue &x, double t) {
         // First input should occur at time zero
         assert(&model == r.get());
         assert(input.size() == 0 || t == 0.0);
         input.push_back(x);
     }
 
-    void outputEvent(adevs::Atomic<int>& model, adevs::PinValue<int>& x, double t) {
+    void outputEvent(Atomic &model, PinValue &x, double t) {
         // Output should occur only at the relay time
         assert(t == 1.0);
         assert(&model == r.get());
@@ -25,7 +29,7 @@ class Listener : public adevs::EventListener<int> {
         output.push_back(x);
     }
 
-    void stateChange(adevs::Atomic<int>& model, double t) {
+    void stateChange(Atomic &model, double t) {
         assert(&model == r.get());
         // First input should set the relay value to something positive
         if (t == 0.0) {
@@ -43,18 +47,18 @@ class Listener : public adevs::EventListener<int> {
 };
 
 int main() {
-    std::shared_ptr<adevs::Graph<int>> d = std::make_shared<adevs::Graph<int>>();
+    std::shared_ptr<Graph> d = std::make_shared<Graph>();
     r = std::make_shared<Relay>();
     d->add_atomic(r);
     d->connect(r->in, r);
     // Create the simulator and add the listener
     std::shared_ptr<Listener> listener = std::make_shared<Listener>();
 
-    std::shared_ptr<adevs::Simulator<int>> sim = std::make_shared<adevs::Simulator<int>>(d);
+    std::shared_ptr<Simulator> sim = std::make_shared<Simulator>(d);
     sim->addEventListener(listener);
 
     // This input should cause two outputEvent() calls at time 1
-    adevs::PinValue<int> b(r->in,1);
+    PinValue b(r->in, 1);
 
     // Inject it at time 0
     sim->injectInput(b);

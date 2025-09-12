@@ -36,8 +36,7 @@ void Clerk2::delta_ext(double e, std::list<EventType> const &xb) {
         c.customer->time_enter = t;
         /// If the customer has a small order
         if (preempt <= 0.0 && c.t_left <= SMALL_ORDER) {
-            std::cout << "Clerk: The new customer has preempted the current one!"
-                 << std::endl;
+            std::cout << "Clerk: The new customer has preempted the current one!" << std::endl;
             /// We won't preempt another customer for at least this long
             preempt = PREEMPT_TIME;
             /// Put the new customer at the front of the line
@@ -45,8 +44,7 @@ void Clerk2::delta_ext(double e, std::list<EventType> const &xb) {
         }
         /// otherwise just put the customer at the end of the line
         else {
-            std::cout << "Clerk: The new customer is at the back of the line"
-                 << std::endl;
+            std::cout << "Clerk: The new customer is at the back of the line" << std::endl;
             line.push_back(c);
         }
     }
@@ -69,8 +67,7 @@ void Clerk2::delta_int() {
     std::list<customer_info_t>::iterator i;
     for (i = line.begin(); i != line.end() && preempt <= 0.0; i++) {
         if ((*i).t_left <= SMALL_ORDER) {
-            std::cout << "Clerk: A queued customer has a small order at time " << t
-                 << std::endl;
+            std::cout << "Clerk: A queued customer has a small order at time " << t << std::endl;
             customer_info_t small_order = *i;
             line.erase(i);
             line.push_front(small_order);

@@ -9,7 +9,7 @@
 #include "adevs/adevs.h"
 
 // using namespace adevs;
-using Atomic = adevs::Atomic<int>;
+using Atomic = Atomic;
 using SimpleDigraph = adevs::SimpleDigraph<int>;
 
 
@@ -48,8 +48,8 @@ double run() {
     std::shared_ptr<Simulator> sim = std::make_shared<Simulator>(world);
 
     if (verbose) {
-        std::cout << 0 << " " << ((double)(Agent::getPop()) / (double)(num_agents))
-             << " " << exp(-a * 0.0) << std::endl;
+        std::cout << 0 << " " << ((double)(Agent::getPop()) / (double)(num_agents)) << " "
+                  << exp(-a * 0.0) << std::endl;
     }
 
     while (sim->nextEventTime() < adevs_inf<double>()) {

@@ -32,8 +32,8 @@
 #ifndef _adevs_hybrid_h_
 #define _adevs_hybrid_h_
 
-#include <any>
 #include <algorithm>
+#include <any>
 #include <cmath>
 #include "adevs/models.h"
 
@@ -84,7 +84,7 @@ class ode_system {
      * initial state of the model to q.
      *
      * @param q The array into which you must write the initial state
-     */ 
+     */
     virtual void init(double* q) = 0;
 
     /**
@@ -262,6 +262,7 @@ class ode_system {
         assert(this->M == -1);
         this->M = M;
     }
+
   private:
     int N, M;
 };
@@ -507,8 +508,7 @@ class Hybrid : public Atomic<ValueType, TimeType> {
                 q_trial[i] = q[i];
             }
             solver->advance(q_trial, e);
-            state_event_exists =
-                event_finder->find_events(event, q, q_trial, solver, e);
+            state_event_exists = event_finder->find_events(event, q, q_trial, solver, e);
             // We missed an event
             if (state_event_exists) {
                 output_func(missedOutput);
@@ -599,11 +599,10 @@ class Hybrid : public Atomic<ValueType, TimeType> {
     event_locator<ValueType>* event_finder;  // Event locator
     double sigma;                            // Time to the next internal event
     double *q, *q_trial;                     // Current and tentative states
-    bool* event;        // Flags indicating the encountered event surfaces
-    bool event_exists;  // True if there is at least one event
-    bool
-        event_happened;  // True if a discrete event in the ode_system took place
-    double e_accum;      // Accumulated time between discrete events
+    bool* event;                             // Flags indicating the encountered event surfaces
+    bool event_exists;                       // True if there is at least one event
+    bool event_happened;  // True if a discrete event in the ode_system took place
+    double e_accum;       // Accumulated time between discrete events
     std::list<adevs::PinValue<ValueType>> missedOutput;  // Output missed at an external event
     // Execute a tentative step and calculate the time advance function
     void tentative_step() {
@@ -612,8 +611,7 @@ class Hybrid : public Atomic<ValueType, TimeType> {
         // Integrate up to that time at most
         double step_size = solver->integrate(q_trial, time_event);
         // Look for state events inside of the interval [0,step_size]
-        bool state_event_exists =
-            event_finder->find_events(event, q, q_trial, solver, step_size);
+        bool state_event_exists = event_finder->find_events(event, q, q_trial, solver, step_size);
         // Find the time advance and set the time event flag
         sigma = std::min<double>(step_size, time_event);
         event[sys->numEvents()] = time_event <= sigma;

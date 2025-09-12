@@ -36,8 +36,7 @@ class Resource : public Atomic<IO_Type> {
     }
     // External event can be a grab request or a release
     void delta_ext(double e, IO_List const &xb) {
-        for (IO_List::const_iterator iter = xb.begin(); iter != xb.end();
-             iter++) {
+        for (IO_List::const_iterator iter = xb.begin(); iter != xb.end(); iter++) {
             // Is this message for me?
             if ((*iter).value.resID == ID) {
                 // Release the resource
@@ -105,8 +104,7 @@ class User : public Atomic<IO_Type> {
     // Input to get the resource
     static int const grant;
 
-    User(int ID, int howMany)
-        : Atomic<IO_Type>(), ID(ID), howMany(howMany), stage(REQUEST) {
+    User(int ID, int howMany) : Atomic<IO_Type>(), ID(ID), howMany(howMany), stage(REQUEST) {
         // This user wants everything
         for (int i = 0; i < howMany; i++) {
             wants.insert(i);
@@ -135,8 +133,7 @@ class User : public Atomic<IO_Type> {
     }
     // External event can be a grab request or a release
     void delta_ext(double e, IO_List const &xb) {
-        for (IO_List::const_iterator iter = xb.begin(); iter != xb.end();
-             iter++) {
+        for (IO_List::const_iterator iter = xb.begin(); iter != xb.end(); iter++) {
             // Is this for me?
             if ((*iter).value.userID == ID) {
                 // Got the resource

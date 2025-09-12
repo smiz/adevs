@@ -31,8 +31,7 @@ class HelloWorldExt : public HelloWorld {
         return tnext - get_time();
     }
     // Print state at each output event
-    void output_func(double const* q, bool const* state_event,
-                     std::list<double> &yb) {
+    void output_func(double const* q, bool const* state_event, std::list<double> &yb) {
         HelloWorld::output_func(q, state_event, yb);
         // Get the model state. This is real variable 0 according to modelDescription.xml
         double x = get_x();
@@ -54,13 +53,13 @@ int main() {
     // Create our model
     FMI<double>* hello = new HelloWorldExt();
     // Wrap a set of solvers around it
-    Hybrid* hybrid_model = new Hybrid(
-        hello,                                           // Model to simulate
-        new corrected_euler<double>(hello, 1E-5, 0.01),  // ODE solver
-        new discontinuous_event_locator<double>(hello, 1E-5)  // Event locator
-        // You must use this event locator for OpenModelica because it does
-        // not generate continuous zero crossing functions
-    );
+    Hybrid* hybrid_model =
+        new Hybrid(hello,                                                // Model to simulate
+                   new corrected_euler<double>(hello, 1E-5, 0.01),       // ODE solver
+                   new discontinuous_event_locator<double>(hello, 1E-5)  // Event locator
+                   // You must use this event locator for OpenModelica because it does
+                   // not generate continuous zero crossing functions
+        );
     // Create the simulator
     Simulator* sim = new Simulator(hybrid_model);
     // Run the simulation for ten seconds

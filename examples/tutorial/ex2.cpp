@@ -1,8 +1,11 @@
-#include "adevs/adevs.h"
 #include <iostream>
+#include "adevs/adevs.h"
 
 using Atomic = adevs::Atomic<>;
 using PinValue = adevs::PinValue<>;
+using Simulator = adevs::Simulator<>;
+using Graph = adevs::Graph<>;
+using pin_t = adevs::pin_t;
 
 
 /**
@@ -40,7 +43,7 @@ using PinValue = adevs::PinValue<>;
  * of the second model. 
  */
 
- /**
+/**
   * Our Supplier is derived from the Atomic class and it
   * is essentially identical to the Periodic model of
   * Example #1. The only differences are that (1) it
@@ -49,7 +52,7 @@ using PinValue = adevs::PinValue<>;
   * output list.
   */
 class Supplier : public Atomic {
-public:
+  public:
     /// Our constructor calls the default constructor and sets the
     /// initial value of a counter member variable, which is the
     /// state of our model.
@@ -60,7 +63,7 @@ public:
     double ta() { return 1.0; }
     /// We produce our current state as the output value before changing
     /// the state in the internal transition function.
-    void output_func(std::list<PinValue>& yb) {
+    void output_func(std::list<PinValue> &yb) {
         yb.push_back(PinValue(pin, state));
         std::cout << "Supplier Output: " << state << std::endl;
     }
@@ -71,15 +74,15 @@ public:
     }
     /// The external transition function is not used in this example.
     /// It is never called by the Simulator.
-    void delta_ext(double, std::list<PinValue> const&) {}
+    void delta_ext(double, std::list<PinValue> const &) {}
     /// The confluent transition function is not used in this example,
     /// It is never called by the Simulator.
-    void delta_conf(std::list<PinValue> const&) {}
+    void delta_conf(std::list<PinValue> const &) {}
 
     /// The single pin that will connect the models
-    const adevs::pin_t pin;
+    pin_t const pin;
 
-private:
+  private:
     /// The state of our model is a single integer
     int state;
 };
@@ -98,26 +101,27 @@ private:
  * never called by the Simulator.
  */
 class Consumer : public Atomic {
-public:
+  public:
     /// Our constructor calls the default constructor.
     Consumer() : Atomic() {}
     /// The time advance function returns infinity to indicate
     /// that we have no events of our own.
     double ta() { return adevs_inf<double>(); }
     /// The output function is never called by the Simulator.
-    void output_func(std::list<PinValue>&) {}
+    void output_func(std::list<PinValue> &) {}
     /// The internal transition function is never called by the Simulator.
     void delta_int() {}
     /// The external transition function receives input from the Supplier
     /// via the connections established by the Graph that is create in
     /// main() and passed to the Simulator.
     void delta_ext(double, std::list<PinValue> const &xb) {
-        for (const auto &input : xb) {
-            std::cout << "Consumer received input: " << std::any_cast<int>(input.value) << std::endl;
+        for (auto const &input : xb) {
+            std::cout << "Consumer received input: " << std::any_cast<int>(input.value)
+                      << std::endl;
         }
     }
     /// The confluent transition function is never called by the Simulator.
-    void delta_conf(std::list<PinValue> const&) {}
+    void delta_conf(std::list<PinValue> const &) {}
 };
 
 /**
@@ -130,7 +134,7 @@ int main() {
     /// Create an instance of the Consumer model in a shared pointer
     auto B = std::make_shared<Consumer>();
     /// Create a Graph to connect the two models
-    auto graph = std::make_shared<adevs::Graph<>>();
+    auto graph = std::make_shared<Graph>();
     /// Add the Atomic components to the Graph
     graph->add_atomic(A);
     graph->add_atomic(B);
@@ -138,7 +142,7 @@ int main() {
     /// their pin member will be supplied as input to B
     graph->connect(A->pin, B);
     /// Create a Simulator for the Graph
-    adevs::Simulator<> simulator(graph);
+    Simulator simulator(graph);
     /// Run the simulator for 2 units of time
     while (simulator.nextEventTime() <= 2.0) {
         /// Report when the next event will occur

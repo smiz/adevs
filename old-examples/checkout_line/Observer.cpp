@@ -5,8 +5,7 @@
 // Assign a locally unique number to the input port
 int const Observer::departed = 0;
 
-Observer::Observer(char const* output_file)
-    : Atomic<EventType>(), output(output_file) {
+Observer::Observer(char const* output_file) : Atomic<EventType>(), output(output_file) {
     // Write a header describing the data fields
     output << "# Col 1: Time customer enters the line" << std::endl;
     output << "# Col 2: Time required for customer checkout" << std::endl;
@@ -29,10 +28,9 @@ void Observer::delta_ext(double e, std::list<EventType> const &xb) {
     for (auto event : xb) {
         std::shared_ptr<Customer> customer = event.value;
         // Compute the time spent waiting in line and dump stats to the output
-        double waiting_time =
-            (customer->time_leave - customer->time_enter) - customer->time_wait;
-        output << customer->time_enter << " " << customer->time_wait << " "
-               << customer->time_leave << " " << waiting_time << std::endl;
+        double waiting_time = (customer->time_leave - customer->time_enter) - customer->time_wait;
+        output << customer->time_enter << " " << customer->time_wait << " " << customer->time_leave
+               << " " << waiting_time << std::endl;
     }
 }
 

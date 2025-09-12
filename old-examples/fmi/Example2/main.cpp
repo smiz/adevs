@@ -30,9 +30,7 @@ class App : public AtomicModel {
     static int const data_out;
 
     App(double frequency, int bytes)
-        : AtomicModel(),
-          bytes(bytes),
-          random(std ::exponential_distribution<>(1.0 / frequency)) {}
+        : AtomicModel(), bytes(bytes), random(std ::exponential_distribution<>(1.0 / frequency)) {}
 
     /// Calculate the time to next packet
     double ta() { return random(generator); }
@@ -48,8 +46,7 @@ class App : public AtomicModel {
     void output_func(std::list<IO_Type> &yb) {
         IO_Type y;
         y.port = data_out;
-        y.value =
-            new NetworkData(NetworkData::APP_DATA, 999, bytes, new SimObject());
+        y.value = new NetworkData(NetworkData::APP_DATA, 999, bytes, new SimObject());
         yb.push_back(y);
     }
 
@@ -98,8 +95,7 @@ class ControlExt : public Control {
         process_input_data(e, xb);
         Control::external_event(q, e, xb);
     }
-    void confluent_event(double* q, bool const* state_event,
-                         std::list<IO_Type> const &xb) {
+    void confluent_event(double* q, bool const* state_event, std::list<IO_Type> const &xb) {
         double h = time_event_func(q);
         // We generate commands in response to new data
         Control::confluent_event(q, state_event, xb);
@@ -110,8 +106,7 @@ class ControlExt : public Control {
         process_input_data(h, xb);
         Control::confluent_event(q, state_event, xb);
     }
-    void output_func(double const* q, bool const* state_event,
-                     std::list<IO_Type> &yb) {
+    void output_func(double const* q, bool const* state_event, std::list<IO_Type> &yb) {
         Control::output_func(q, state_event, yb);
         CommandSig* sig = new CommandSig(T[0], T[1]);
         IO_Type msg;
@@ -124,8 +119,7 @@ class ControlExt : public Control {
     bool doCmd;
     double err[2], ierr[2], T[2];
     void process_input_data(double h, std::list<IO_Type> const &xb) {
-        for (std::list<IO_Type>::const_iterator iter = xb.begin(); iter != xb.end();
-             iter++) {
+        for (std::list<IO_Type>::const_iterator iter = xb.begin(); iter != xb.end(); iter++) {
             NetworkData* pkt = dynamic_cast<NetworkData*>((*iter).value);
             SampleSig* sig = dynamic_cast<SampleSig*>(pkt->getPayload());
             process_info(sig->getQ1(), sig->getQ2(), h);
@@ -183,21 +177,18 @@ class RobotExt : public Robot {
         process_input_data(xb);
         Robot::external_event(q, e, xb);
     }
-    void confluent_event(double* q, bool const* state_event,
-                         std::list<IO_Type> const &xb) {
+    void confluent_event(double* q, bool const* state_event, std::list<IO_Type> const &xb) {
         Robot::confluent_event(q, state_event, xb);
         test_for_sample();
         process_input_data(xb);
         Robot::confluent_event(q, state_event, xb);
     }
-    void output_func(double const* q, bool const* state_event,
-                     std::list<IO_Type> &yb) {
+    void output_func(double const* q, bool const* state_event, std::list<IO_Type> &yb) {
         if (doSample) {
             SampleSig* sig = new SampleSig(get_q1(), get_q2());
             IO_Type msg;
             msg.port = sample;
-            msg.value =
-                new NetworkData(NetworkData::APP_DATA, controlAddr, 100, sig);
+            msg.value = new NetworkData(NetworkData::APP_DATA, controlAddr, 100, sig);
             yb.push_back(msg);
         }
     }
@@ -207,8 +198,7 @@ class RobotExt : public Robot {
     bool doSample;
 
     void process_input_data(std::list<IO_Type> const &xb) {
-        for (std::list<IO_Type>::const_iterator iter = xb.begin(); iter != xb.end();
-             iter++) {
+        for (std::list<IO_Type>::const_iterator iter = xb.begin(); iter != xb.end(); iter++) {
             assert((*iter).port == command);
             assert((*iter).value != NULL);
             NetworkData* pkt = dynamic_cast<NetworkData*>((*iter).value);
@@ -221,8 +211,7 @@ class RobotExt : public Robot {
         set_T_2_(T2);
     }
     void test_for_sample() {
-        doSample = (q1_sample_value != get_q1_sample() ||
-                    q2_sample_value != get_q2_sample());
+        doSample = (q1_sample_value != get_q1_sample() || q2_sample_value != get_q2_sample());
         if (doSample) {
             q1_sample_value = get_q1_sample();
             q2_sample_value = get_q2_sample();
@@ -236,10 +225,8 @@ int const RobotExt::command = 2;
 // Connect control and robot directly by using this function
 void makeDirectNetwork(Digraph<SimObject*>* model, Devs<IO_Type>* hybrid_ctrl,
                        Devs<IO_Type>* hybrid_arm) {
-    model->couple(hybrid_arm, RobotExt::sample, hybrid_ctrl,
-                  ControlExt::sample);
-    model->couple(hybrid_ctrl, ControlExt::command, hybrid_arm,
-                  RobotExt::command);
+    model->couple(hybrid_arm, RobotExt::sample, hybrid_ctrl, ControlExt::sample);
+    model->couple(hybrid_ctrl, ControlExt::command, hybrid_arm, RobotExt::command);
 }
 
 // Or connect them through a shared network with this function
@@ -273,13 +260,13 @@ int main(int argc, char** argv) {
         numApps = atoi(argv[1]);
     }
     RobotExt* arm = new RobotExt();
-    Hybrid<IO_Type>* hybrid_arm = new Hybrid<IO_Type>(
-        arm, new rk_45<IO_Type>(arm, 1E-5, 0.001),
-        new discontinuous_event_locator<IO_Type>(arm, 1E-5));
+    Hybrid<IO_Type>* hybrid_arm =
+        new Hybrid<IO_Type>(arm, new rk_45<IO_Type>(arm, 1E-5, 0.001),
+                            new discontinuous_event_locator<IO_Type>(arm, 1E-5));
     ControlExt* ctrl = new ControlExt();
-    Hybrid<IO_Type>* hybrid_ctrl = new Hybrid<IO_Type>(
-        ctrl, new rk_45<IO_Type>(ctrl, 1E-5, 0.001),
-        new discontinuous_event_locator<IO_Type>(ctrl, 1E-5));
+    Hybrid<IO_Type>* hybrid_ctrl =
+        new Hybrid<IO_Type>(ctrl, new rk_45<IO_Type>(ctrl, 1E-5, 0.001),
+                            new discontinuous_event_locator<IO_Type>(ctrl, 1E-5));
     Digraph<SimObject*>* model = new Digraph<SimObject*>();
     model->add(hybrid_ctrl);
     model->add(hybrid_arm);
@@ -299,9 +286,8 @@ int main(int argc, char** argv) {
         if (t != tReport) {
             tReport = t;
             std::cout << tReport << " " << arm->get_x() << " " << arm->get_z() << " "
-                 << ctrl->get_xd() << " " << ctrl->get_zd() << " "
-                 << arm->get_q1() << " " << arm->get_q2() << " "
-                 << arm->get_error() << " " << maxError << std::endl;
+                      << ctrl->get_xd() << " " << ctrl->get_zd() << " " << arm->get_q1() << " "
+                      << arm->get_q2() << " " << arm->get_error() << " " << maxError << std::endl;
         }
     }
     if (maxError < arm->get_error()) {

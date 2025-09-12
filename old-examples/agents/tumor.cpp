@@ -37,8 +37,7 @@ class Agent : public Atomic<io_type, adevs::sd_time<>> {
     void delta_int() {}
     void delta_ext(adevs::sd_time<> e, std::list<io_type> const &xb) {
         for (auto xx : xb) {
-            if (xx.xtgt == x && xx.ytgt == y && c == Healthy &&
-                output[xx.xsrc][xx.ysrc] == Tumor) {
+            if (xx.xtgt == x && xx.ytgt == y && c == Healthy && output[xx.xsrc][xx.ysrc] == Tumor) {
                 c = Tumor;
             }
         }
@@ -197,8 +196,7 @@ class Grid : public Network<io_type, adevs::sd_time<>> {
 
 int main() {
     Grid* world = new Grid();
-    Simulator<io_type, adevs::sd_time<>>* sim =
-        new Simulator<io_type, adevs::sd_time<>>(world);
+    Simulator<io_type, adevs::sd_time<>>* sim = new Simulator<io_type, adevs::sd_time<>>(world);
     world->print(adevs_zero<adevs::sd_time<>>());
     while (sim->nextEventTime() < adevs_inf<adevs::sd_time<>>()) {
         adevs::sd_time<> tL = sim->nextEventTime();

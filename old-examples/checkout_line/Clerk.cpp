@@ -11,8 +11,7 @@ int const Clerk::depart = 1;
 
 void Clerk::delta_ext(double e, std::list<EventType> const &xb) {
     // Print a notice of the external transition
-    std::cout << "Clerk: Computed the external transition function at t = " << t + e
-         << std::endl;
+    std::cout << "Clerk: Computed the external transition function at t = " << t + e << std::endl;
     // Update the clock
     t += e;
 
@@ -25,22 +24,20 @@ void Clerk::delta_ext(double e, std::list<EventType> const &xb) {
     std::list<EventType>::const_iterator i = xb.begin();
     for (auto; i != xb.end(); i++) {
         // Copy the incoming Customer and place it at the back of the line.
-        std::shared_ptr<Customer> new_customer =
-            std::make_shared<Customer>(*((*i).value));
+        std::shared_ptr<Customer> new_customer = std::make_shared<Customer>(*((*i).value));
         line.push_back(new_customer);
         // Record the time at which the customer entered the line.
         line.back()->time_enter = t;
     }
     // Summarize the model state
     std::cout << "Clerk: There are " << line.size() << " customers waiting." << std::endl;
-    std::cout << "Clerk: The next customer will leave at t = " << t + ta() << "."
-         << std::endl;
+    std::cout << "Clerk: The next customer will leave at t = " << t + ta() << "." << std::endl;
 }
 
 void Clerk::delta_int() {
     // Print a notice of the internal transition
-    std::cout << "Clerk: Computed the internal transition function at t = "
-         << t + ta() << std::endl;
+    std::cout << "Clerk: Computed the internal transition function at t = " << t + ta()
+              << std::endl;
     // Update the clock
     t += ta();
     // Reset the spent time
@@ -49,8 +46,7 @@ void Clerk::delta_int() {
     line.pop_front();
     // Summarize the model state
     std::cout << "Clerk: There are " << line.size() << " customers waiting." << std::endl;
-    std::cout << "Clerk: The next customer will leave at t = " << t + ta() << "."
-         << std::endl;
+    std::cout << "Clerk: The next customer will leave at t = " << t + ta() << "." << std::endl;
 }
 
 void Clerk::delta_conf(std::list<EventType> const &xb) {

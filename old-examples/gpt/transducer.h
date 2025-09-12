@@ -62,8 +62,7 @@ class Transducer : public adevs::Atomic<PortValue> {
             if (iter.port == ariv) {
                 Job j(iter.value);
                 j.t = t;
-                std::cout << "Start job " << j.id << " @ t = " << t
-                          << std::endl;
+                std::cout << "Start job " << j.id << " @ t = " << t << std::endl;
                 jobs_arrived.push_back(j);
             }
         }
@@ -75,8 +74,7 @@ class Transducer : public adevs::Atomic<PortValue> {
                 for (; i != jobs_arrived.end(); i++) {
                     if ((*i).id == j.id) {
                         total_ta += t - (*i).t;
-                        std::cout << "Finish job " << j.id << " @ t = " << t
-                                  << std::endl;
+                        std::cout << "Finish job " << j.id << " @ t = " << t << std::endl;
                         break;
                     }
                 }

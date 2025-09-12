@@ -1,8 +1,9 @@
-#include "adevs/adevs.h"
 #include <iostream>
+#include "adevs/adevs.h"
 
 using Atomic = adevs::Atomic<>;
 using PinValue = adevs::PinValue<>;
+using Simulator = adevs::Simulator<>;
 
 /**
  * This example shows how to simulate a simple system that
@@ -23,7 +24,7 @@ using PinValue = adevs::PinValue<>;
  * is called followed by the internal transition function.
  */
 
- /**
+/**
   * Our Periodic model is created by deriving it from the Atomic
   * class and providing implementation of each virtual method.
   * In this simple example, only the time advance function, 
@@ -31,7 +32,7 @@ using PinValue = adevs::PinValue<>;
   * important.
   */
 class Periodic : public Atomic {
-public:
+  public:
     /// Our constructor calls the default constructor and sets the
     /// initial value of a counter member variable, which is the
     /// state of our model.
@@ -42,9 +43,7 @@ public:
     double ta() { return 1.0; }
     /// We produce our current state as the output value before changing
     /// the state in the internal transition function.
-    void output_func(std::list<PinValue>&) {
-        std::cout << "Output: " << state << std::endl;
-    }
+    void output_func(std::list<PinValue> &) { std::cout << "Output: " << state << std::endl; }
     /// We change our state by incrementing it in our internal transition function.
     void delta_int() {
         state++;
@@ -52,12 +51,12 @@ public:
     }
     /// The external transition function is not used in this example.
     /// It is never called by the Simulator.
-    void delta_ext(double, std::list<PinValue> const&) {}
+    void delta_ext(double, std::list<PinValue> const &) {}
     /// The confluent transition function is not used in this example,
     /// It is never called by the Simulator.
-    void delta_conf(std::list<PinValue> const&) {}
+    void delta_conf(std::list<PinValue> const &) {}
 
-private:
+  private:
     /// The state of our model is a single integer
     int state;
 };
@@ -70,7 +69,7 @@ int main() {
     /// Create an instance of our Periodic model in a shared pointer
     auto model = std::make_shared<Periodic>();
     /// Create a simulator for our Periodic model
-    adevs::Simulator<> simulator(model);
+    Simulator simulator(model);
     /// Run the simulator for 2 units of time
     while (simulator.nextEventTime() <= 2.0) {
         /// Report when the next event will occur

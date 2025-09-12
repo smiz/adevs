@@ -1,9 +1,15 @@
 #include <iostream>
 #include "adevs/adevs.h"
-#include "adevs/solvers/fmi.h" // Get the ModelExchange class
-#include "adevs/solvers/trap.h" // Get the ImplicitHybrid class
+#include "adevs/solvers/fmi.h"   // Get the ModelExchange class
+#include "adevs/solvers/trap.h"  // Get the ImplicitHybrid class
 
 using PinValue = adevs::PinValue<>;
+using ModelExchange = adevs::ModelExchange<>;
+using Atomic = adevs::Atomic<>;
+using ImplicitHybrid = adevs::ImplicitHybrid<>;
+using Simulator = adevs::Simulator<>;
+using Graph = adevs::Graph<>;
+using pin_t = adevs::pin_t;
 
 /**
  * This is exactly the same as tutorial/ex5.cpp and Example #5
@@ -26,50 +32,48 @@ using PinValue = adevs::PinValue<>;
  * of the ode_system class by calling on the FMI functions provided
  * by the fmu bundle that we pass to the constructor.
  */
-class Circuit : public adevs::ModelExchange<> {
+class Circuit : public ModelExchange {
   public:
-    Circuit() : ModelExchange("Circuit.fmu",1E-6) {}
+    Circuit() : ModelExchange("Circuit.fmu", 1E-6) {}
     /// The external state transition function sets the state of
     /// the switch.
     void external_event(double* state, double e, std::list<PinValue> const &xb) {
-        ModelExchange::external_event(state,0.0,xb);
-        set_variable("switch",1);
+        ModelExchange::external_event(state, 0.0, xb);
+        set_variable("switch", 1);
         /// Process the change in state of the switch
-        ModelExchange::external_event(state,0.0,xb);
+        ModelExchange::external_event(state, 0.0, xb);
     }
     /// Confluent transition function of the circuit.
     void confluent_event(double* state, bool const* events, std::list<PinValue> const &xb) {
-        ModelExchange::confluent_event(state,events,xb);
-        set_variable("switch",1);
+        ModelExchange::confluent_event(state, events, xb);
+        set_variable("switch", 1);
         /// Process the change in state of the switch
-        ModelExchange::confluent_event(state,events,xb);
+        ModelExchange::confluent_event(state, events, xb);
     }
     /// Output function of the circuit. This is called prior to an confluent
     /// or internal event. Place your output in the supplied list. This
     /// output function produces the new state of the diode at a state event.
     void output_func(double const*, bool const*, std::list<PinValue> &yb) {
-        yb.push_back(PinValue(diode,get_variable("D.off")));
+        yb.push_back(PinValue(diode, get_variable("D.off")));
     }
 
     bool getDiode() { return std::any_cast<int>(get_variable("D.off")); }
     bool getSwitch() { return std::any_cast<int>(get_variable("switch")); }
 
-    const adevs::pin_t diode;
+    pin_t const diode;
 };
 
 /// A switch that opens at time t_open
-class OpenSwitch : public adevs::Atomic<> {
+class OpenSwitch : public Atomic {
   public:
-    OpenSwitch(double t_open) : adevs::Atomic<>(), t_open(t_open) {}
+    OpenSwitch(double t_open) : Atomic(), t_open(t_open) {}
     double ta() { return t_open; }
     void delta_int() { t_open = adevs_inf<double>(); }
-    void delta_ext(double, std::list<adevs::PinValue<>> const &) {}
+    void delta_ext(double, std::list<PinValue> const &) {}
     void delta_conf(std::list<PinValue> const &) {}
-    void output_func(std::list<PinValue> &yb) {
-        yb.push_back(PinValue(open_close,false));
-    }
+    void output_func(std::list<PinValue> &yb) { yb.push_back(PinValue(open_close, false)); }
 
-    const adevs::pin_t open_close;
+    pin_t const open_close;
 
   private:
     double t_open;
@@ -81,19 +85,19 @@ int main() {
     // The hybrid model adopts the circuit and will delete the circuit when
     // the hybrid is deleted. We use the implicit solver here because the
     // Modelica model includes some parasitic capacitances that are very small
-    auto hybrid_model = std::make_shared<adevs::ImplicitHybrid<>>(circuit,1E-5,0.01);
+    auto hybrid_model = std::make_shared<ImplicitHybrid>(circuit, 1E-5, 0.01);
     auto open_switch = std::make_shared<OpenSwitch>(0.5);
-    auto model = std::make_shared<adevs::Graph<>>();
+    auto model = std::make_shared<Graph>();
     model->add_atomic(hybrid_model);
     model->add_atomic(open_switch);
     model->connect(open_switch->open_close, hybrid_model);
     // Create the simulator
-    adevs::Simulator<> sim(model);
+    Simulator sim(model);
     // Simulate until the switch and diode have both experienced an event
     double tNow = 0.0;
     while (sim.nextEventTime() < 5.0) {
-        std::cout << tNow << " " << hybrid_model->getState(0) << " "
-             << circuit->getSwitch() << " " << circuit->getDiode() << std::endl;
+        std::cout << tNow << " " << hybrid_model->getState(0) << " " << circuit->getSwitch() << " "
+                  << circuit->getDiode() << std::endl;
         tNow = sim.execNextEvent();
     }
     return 0;

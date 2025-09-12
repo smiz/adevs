@@ -3,6 +3,10 @@
 #include "adevs/solvers/fmi.h"
 
 using ModelExchange = adevs::ModelExchange<>;
+using Simulator = adevs::Simulator<>;
+using corrected_euler = adevs::corrected_euler<>;
+using discontinuous_event_locator = adevs::discontinuous_event_locator<>;
+using Hybrid = adevs::Hybrid;
 
 #define epsilon 1E-6
 
@@ -53,14 +57,12 @@ void test_vars(ModelExchange* model) {
 }
 
 int main() {
-    const double err_tol = 1E-8;
-    auto fmi = new ModelExchange("EventTests.fmu",err_tol);
-    adevs::corrected_euler<>* solver1 =
-        new adevs::corrected_euler<>(fmi, err_tol, 0.01);
-    adevs::discontinuous_event_locator<>* solver2 =
-        new adevs::discontinuous_event_locator<>(fmi, err_tol);
-    std::shared_ptr<adevs::Hybrid<>> model = std::make_shared<adevs::Hybrid<>>(fmi, solver1, solver2);
-    adevs::Simulator<>* sim = new adevs::Simulator<>(model);
+    double const err_tol = 1E-8;
+    auto fmi = new ModelExchange("EventTests.fmu", err_tol);
+    corrected_euler* solver1 = new corrected_euler(fmi, err_tol, 0.01);
+    discontinuous_event_locator* solver2 = new discontinuous_event_locator(fmi, err_tol);
+    std::shared_ptr<Hybrid> model = std::make_shared<Hybrid>(fmi, solver1, solver2);
+    Simulator* sim = new Simulator(model);
     while (sim->nextEventTime() <= 5.0) {
         sim->execNextEvent();
         test_vars(fmi);

@@ -14,10 +14,7 @@
 class Processor : public adevs::Atomic<PortValue> {
   public:
     Processor(double proc_time)
-        : adevs::Atomic<PortValue>(),
-          processing_time(proc_time),
-          sigma(DBL_MAX),
-          val(NULL) {
+        : adevs::Atomic<PortValue>(), processing_time(proc_time), sigma(DBL_MAX), val(NULL) {
         t = 0.0;
     }
 

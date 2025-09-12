@@ -4,7 +4,7 @@
 class Machine : public Partition {
   public:
     Machine(std::string name) : Partition(), name(name) {}
-    void exec(std::vectorstd::shared_ptr<Event>> &imminent) {
+    void exec(std::vectorstd::shared_ptr < Event >> &imminent) {
         for (auto ii : imminent) {
             ii->exec();
         }
@@ -46,8 +46,7 @@ class Arrive : public Event {
         _machine->jobsReceived++;
         _machine->jobsPending++;
         if (_machine->jobsPending == 1) {
-            _machine->schedule(
-                std::make_shared<Leave>(_machine, _machine->now() + 1));
+            _machine->schedule(std::make_shared<Leave>(_machine, _machine->now() + 1));
         }
         _machine->schedule(std::make_shared<Arrive>(_machine, _machine->now() + 1));
     }
@@ -63,11 +62,9 @@ class Transfer : public Event {
         : Event(m2), _machine1(m1), _machine2(m2) {}
     bool prep() { return (_machine2->jobsReceived < _machine1->jobsFinished); }
     void exec() {
-        std::cout << "Transfer " << _machine2->name << " @ " << _machine2->now()
-             << std::endl;
+        std::cout << "Transfer " << _machine2->name << " @ " << _machine2->now() << std::endl;
         if (_machine2->jobsPending == 0) {
-            _machine2->schedule(
-                std::make_shared<Leave>(_machine2, _machine2->now() + 1));
+            _machine2->schedule(std::make_shared<Leave>(_machine2, _machine2->now() + 1));
         }
         _machine2->jobsPending++;
         _machine2->jobsReceived++;
@@ -95,10 +92,10 @@ int main() {
     sim->execUntil(10);
 
     std::cout << "Machine\tR\tP\tF" << std::endl;
-    std::cout << "M1\t" << machine1->jobsReceived << "\t" << machine1->jobsPending
-         << "\t" << machine1->jobsFinished << std::endl;
-    std::cout << "M2\t" << machine2->jobsReceived << "\t" << machine2->jobsPending
-         << "\t" << machine2->jobsFinished << std::endl;
+    std::cout << "M1\t" << machine1->jobsReceived << "\t" << machine1->jobsPending << "\t"
+              << machine1->jobsFinished << std::endl;
+    std::cout << "M2\t" << machine2->jobsReceived << "\t" << machine2->jobsPending << "\t"
+              << machine2->jobsFinished << std::endl;
 
     return 0;
 }

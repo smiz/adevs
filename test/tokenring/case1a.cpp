@@ -4,8 +4,6 @@
 #include "node.h"
 
 
-
-
 /**
   * This is the token ring case 1 test but it initializes the
   * simulator using a list of atomic components instead of

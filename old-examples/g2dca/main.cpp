@@ -78,15 +78,13 @@ void simulateSpace() {
         cell_space = new adevs::CellSpace<Phase, int>(WIDTH, HEIGHT);
         for (int i = 0; i < RULE_ARRAY_LEN; i++) {
             rule[i] = rand() % 256;
-            sin << std::hex << std::setfill('0') << std::setw(2)
-                << uint16_t(rule[i]);
+            sin << std::hex << std::setfill('0') << std::setw(2) << uint16_t(rule[i]);
         }
         name = sin.str();
         Cell::init_space(WIDTH, HEIGHT, rule);
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
-                cell_space->add(new Cell(x, y, phase[x][y], &(phase[x][y])), x,
-                                y);
+                cell_space->add(new Cell(x, y, phase[x][y], &(phase[x][y])), x, y);
             }
         }
         // Create a simulator for the model

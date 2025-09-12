@@ -22,8 +22,7 @@ int tend;
 unsigned long state_changes = 0;
 
 // Index into neighborhood coordinates
-int neighbor[8][2] = {{1, 0},  {0, 1},  {-1, 0},  {0, -1},
-                      {1, -1}, {-1, 1}, {-1, -1}, {1, 1}};
+int neighbor[8][2] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}, {1, -1}, {-1, 1}, {-1, -1}, {1, 1}};
 
 // Is a coordinate inside the cell space?
 bool inside(int x, int y) {
@@ -87,7 +86,7 @@ void simulateSpace() {
     // Report end time, clock ticks needed, and state changes calculated
     trun = clock() - trun;
     std::cout << tend << " " << trun << " " << state_changes << " "
-         << (double)trun / (double)state_changes << std::endl;
+              << (double)trun / (double)state_changes << std::endl;
     // Record the outcome to a png file
     k = 0;
     for (int i = 0; i < SIZE; i++) {

@@ -9,18 +9,17 @@
 /*
  * The Generator models factory demand. It creates new orders every 0.5 to 2 days.
  */
-class Generator : public adevs::Atomic<int> {
+class Generator : public Atomic {
   public:
     /*
      * The generator requires a seed for the random number that determines
      * the time between new orders.
      */
     Generator(unsigned long seed, float min = 0.5, float max = 2.0)
-        : adevs::Atomic<int>(),
+        : Atomic(),
           next(1),
           generator(std::make_unique<std::mt19937>(seed)),
-          distribution(
-              std::make_unique<std::uniform_real_distribution<>>(min, max)) {
+          distribution(std::make_unique<std::uniform_real_distribution<>>(min, max)) {
         set_time_to_order();
     }
 

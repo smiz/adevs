@@ -31,8 +31,7 @@ void Decision::delta_ext(double e, std::list<EventType> const &x) {
     for (; iter != x.end(); iter++) {
         if ((*iter).port == decide) {
             int line_choice = find_shortest_line();
-            std::shared_ptr<Customer> customer =
-                std::make_shared<Customer>(*((*iter).value));
+            std::shared_ptr<Customer> customer = std::make_shared<Customer>(*((*iter).value));
             pair<int, std::shared_ptr<Customer>> p(line_choice, customer);
             deciding.push_back(p);
             line_length[p.first]++;

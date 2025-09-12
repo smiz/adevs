@@ -4,6 +4,7 @@
 #include "adevs/fmi.h"
 
 // using namespace adevs;
+using Atomic = adevs::Atomic<std::string>;
 
 /**
  * This is an FMI + Modelica version of the bouncing bomb example
@@ -41,9 +42,9 @@ class CherryBombExt :
 /**
  * A miscreant drops the ball and reports the explosion.
  */
-class Miscreant : public adevs::Atomic<std::string> {
+class Miscreant : public Atomic {
   public:
-    Miscreant() : adevs::Atomic<std::string>(), start(true), tstart(1.0) {}
+    Miscreant() : Atomic(), start(true), tstart(1.0) {}
     double ta() { return ((start) ? tstart : adevs_inf<double>()); }
     void delta_int() { start = false; }
     void delta_ext(double e, std::list<std::string> const &xb) {}
@@ -64,14 +65,14 @@ int main() {
     // Create our model of the bomb
     CherryBombExt* bomb = new CherryBombExt();
     // Wrap a set of solvers around it
-    Hybrid<std::string>* hybrid_model = new Hybrid<std::string>(
-        bomb,  // Model to simulate
-        new corrected_euler<std::string>(bomb, 1E-5, 0.01),  // ODE solver
-        new discontinuous_event_locator<std::string>(bomb,
-                                                     1E-5)  // Event locator
-        // You must use this event locator for OpenModelica because it does
-        // not generate continuous zero crossing functions
-    );
+    Hybrid<std::string>* hybrid_model =
+        new Hybrid<std::string>(bomb,  // Model to simulate
+                                new corrected_euler<std::string>(bomb, 1E-5, 0.01),  // ODE solver
+                                new discontinuous_event_locator<std::string>(bomb,
+                                                                             1E-5)  // Event locator
+                                // You must use this event locator for OpenModelica because it does
+                                // not generate continuous zero crossing functions
+        );
     // Couple the miscreant and the bomb
     SimpleDigraph<std::string>* model = new SimpleDigraph<std::string>();
     Miscreant* miscreant = new Miscreant();
@@ -85,8 +86,8 @@ int main() {
     while (!bomb->get_exploded()) {
         std::cout << sim->nextEventTime() << " ";
         sim->execNextEvent();
-        std::cout << bomb->get_h() << " " << bomb->get_fuseTime() << " "
-             << bomb->get_exploded() << std::endl;
+        std::cout << bomb->get_h() << " " << bomb->get_fuseTime() << " " << bomb->get_exploded()
+                  << std::endl;
     }
     // Cleanup
     delete sim;

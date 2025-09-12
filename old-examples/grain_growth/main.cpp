@@ -22,8 +22,7 @@ void simulateSpace() {
         }
     }
     // Create a simulator
-    adevs::CellSpace<event_t>* cell_space =
-        new adevs::CellSpace<event_t>(SIZE, SIZE);
+    adevs::CellSpace<event_t>* cell_space = new adevs::CellSpace<event_t>(SIZE, SIZE);
     // Create a cell to go into each point of the cellspace
     for (int x = 0; x < SIZE; x++) {
         for (int y = 0; y < SIZE; y++) {
@@ -32,18 +31,16 @@ void simulateSpace() {
         }
     }
     // Create a simulator for the model
-    adevs::Simulator<CellEvent>* sim =
-        new adevs::Simulator<CellEvent>(cell_space);
+    adevs::Simulator<CellEvent>* sim = new adevs::Simulator<CellEvent>(cell_space);
     // Run the simulation
     double tL = 0.0;
-    while (sim->nextEventTime() < adevs_inf<double>() &&
-           sim->nextEventTime() < tend) {
+    while (sim->nextEventTime() < adevs_inf<double>() && sim->nextEventTime() < tend) {
         tL = sim->nextEventTime();
         sim->execNextEvent();
     }
     trun = clock() - trun;
     std::cout << tL << " " << trun << " " << Cell::state_changes << " "
-         << (double)trun / (double)Cell::state_changes << std::endl;
+              << (double)trun / (double)Cell::state_changes << std::endl;
     // Record the outcome
     k = 0;
     for (int i = 0; i < SIZE; i++) {

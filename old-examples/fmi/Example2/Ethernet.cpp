@@ -20,8 +20,7 @@ void Rx::delta_ext(double e, std::list<IO_Type> const &xb) {
     std::list<IO_Type>::const_iterator iter;
     for (iter = xb.begin(); iter != xb.end(); iter++) {
         NetworkData* pckt = dynamic_cast<NetworkData*>((*iter).value);
-        if (pckt->getAddr() == addr &&
-            pckt->getType() == NetworkData::TX_CMPLT) {
+        if (pckt->getAddr() == addr && pckt->getType() == NetworkData::TX_CMPLT) {
             assert(data == NULL);
             data = dynamic_cast<NetworkData*>(pckt->clone());
             data->setType(NetworkData::APP_DATA);
@@ -119,8 +118,7 @@ void Tx::delta_ext(double e, std::list<IO_Type> const &xb) {
             cmpltMsgs += (msg->getType() == NetworkData::TX_FAIL);
             startMsgs += (msg->getType() == NetworkData::TX_START);
         } else if ((*iter).port == from_app) {
-            NetworkData* msg =
-                dynamic_cast<NetworkData*>((*iter).value->clone());
+            NetworkData* msg = dynamic_cast<NetworkData*>((*iter).value->clone());
             assert(msg->getType() == NetworkData::APP_DATA);
             if (q.empty()) {
                 mode = START;

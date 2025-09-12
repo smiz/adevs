@@ -2,8 +2,6 @@
 #include <iostream>
 
 
-
-
 int main(int argc, char** argv) {
 
     ifstream fin(argv[1]);

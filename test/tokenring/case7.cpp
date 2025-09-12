@@ -3,7 +3,6 @@
 #include "node.h"
 
 
-
 using Simulator = adevs::Simulator<std::shared_ptr<token_t>>;
 using Graph = adevs::Graph<std::shared_ptr<token_t>>;
 
@@ -15,8 +14,8 @@ int main() {
 
     model->add_atomic(n1);
     model->add_atomic(n2);
-    model->connect(n1->in,n1);
-    model->connect(n2->in,n2);
+    model->connect(n1->in, n1);
+    model->connect(n2->in, n2);
     model->connect(n1->out, n2->in);
     model->connect(n2->out, n1->in);
 

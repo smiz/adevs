@@ -1,16 +1,16 @@
 #include <list>
 #include <memory>
-#include "adevs/adevs.h"
 #include "SimpleAtomic.h"
+#include "adevs/adevs.h"
 
 using Simulator = adevs::Simulator<char>;
 using Atomic = adevs::Atomic<char>;
 using PinValue = adevs::PinValue<char>;
 using Graph = adevs::Graph<char>;
 
-class Structure : public adevs::Atomic<char> {
+class Structure : public Atomic {
   public:
-    Structure(std::shared_ptr<Graph>& graph) : Atomic(),graph(graph) {
+    Structure(std::shared_ptr<Graph> &graph) : Atomic(), graph(graph) {
         std::shared_ptr<SimpleAtomic> model = std::make_shared<SimpleAtomic>();
         graph->add_atomic(model);
     }
@@ -23,8 +23,8 @@ class Structure : public adevs::Atomic<char> {
     void output_func(std::list<PinValue> &) {}
     double ta() { return 1.0; }
 
-    private:
-        std::shared_ptr<Graph> graph;
+  private:
+    std::shared_ptr<Graph> graph;
 };
 
 int main() {

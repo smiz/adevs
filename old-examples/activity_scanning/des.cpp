@@ -2,8 +2,6 @@
 #include <list>
 
 
-
-
 void Partition::schedule(std::shared_ptr<Event> event) {
     // If this is not ours it must go to its owner
     if (event->partition().get() != this) {
@@ -77,8 +75,7 @@ void Partition::output_func(std::list<std::shared_ptr<Event>> &yb) {
             future_events.front()->prep();
             imminent_events.push_back(future_events.front());
             future_events.pop_front();
-        } while (!future_events.empty() &&
-                 future_events.front()->timestamp() == time_now);
+        } while (!future_events.empty() && future_events.front()->timestamp() == time_now);
     } else if (mode == Mode::CONDITIONAL) {
         std::list<std::shared_ptr<Event>>::iterator iter = conditional_events.begin();
         while (iter != conditional_events.end()) {

@@ -130,7 +130,7 @@ class Schedule {
     }
 
     void check_imminent(size_t index, size_t maximum, TimeType minimum,
-						std::list<std::shared_ptr<Model>> &activated) {
+                        std::list<std::shared_ptr<Model>> &activated) {
         if (index > maximum) {
             return;
         }
@@ -157,7 +157,7 @@ class Schedule {
 
     /// Gets a list of all imminent models
     std::list<std::shared_ptr<Model>> get_imminent() {
-    	std::list<std::shared_ptr<Model>> activated;
+        std::list<std::shared_ptr<Model>> activated;
         check_imminent(0, model_heap.size() - 1, get_minimum(), activated);
         return activated;
     }
@@ -238,7 +238,7 @@ class Schedule {
 
         while (child != 0 && model_heap[child].time_advance < model_heap[parent].time_advance) {
             // Swap the models since the child's time advance is less than the parent's
-        	std::swap(model_heap[child], model_heap[parent]);
+            std::swap(model_heap[child], model_heap[parent]);
 
             // Update the index locations of the new swapped models
             model_index[model_heap[parent].model] = parent;
@@ -270,7 +270,7 @@ class Schedule {
             // Sawp the models if the child's time_advance is less than the current
             if (model_heap[child].time_advance < model_heap[current].time_advance) {
                 // Swap the models since the child's time advance is less than the parent's
-            	std::swap(model_heap[current], model_heap[child]);
+                std::swap(model_heap[current], model_heap[child]);
 
                 // Update the index locations of the new swapped models
                 model_index[model_heap[current].model] = current;

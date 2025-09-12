@@ -1,9 +1,12 @@
-#include "adevs/adevs.h"
 #include <iostream>
 #include <random>
+#include "adevs/adevs.h"
 
 using Atomic = adevs::Atomic<>;
 using PinValue = adevs::PinValue<>;
+using Simulator = adevs::Simulator<>;
+using Graph = adevs::Graph<>;
+using pin_t = adevs::pin_t;
 
 /**
  * This example is shows how a queuing system can be
@@ -22,7 +25,7 @@ using PinValue = adevs::PinValue<>;
  * time each job spends waiting in the Server.
  */
 
- /**
+/**
   * Our ArrivalProcess produces output at intervals drawn
   * from an exponentially distributed random number. This
   * random number is returned by the time advance function.
@@ -31,34 +34,32 @@ using PinValue = adevs::PinValue<>;
   * object that contains a job to be processed by the Server.
   */
 class ArrivalProcess : public Atomic {
-public:
+  public:
     /// Our constructor calls the default constructor and creates
     /// a random number generator from which we will draw arrival
     /// times. The mean interval between arrivals is set to 1.0.
-    ArrivalProcess() : Atomic(), interarrival(1.0), generator(std::random_device{}()) {}
+    ArrivalProcess() : Atomic(), interarrival(1.0), generator(std::random_device {}()) {}
     /// Our time to next event is the interval of time that must pass
     /// before the next job arrives.
     double ta() { return interarrival(generator); }
     /// When the time advance expires, we produce a job by placing it
     /// into the list of output values. The value on the pin doesn't
     /// mean anything in this example.
-    void output_func(std::list<PinValue>& yb) {
-        yb.push_back(PinValue(job, 0));
-    }
+    void output_func(std::list<PinValue> &yb) { yb.push_back(PinValue(job, 0)); }
     /// The internal transition method is called but it doesn't do anything
     /// in this example
     void delta_int() {}
     /// The external transition function is not used in this example.
     /// It is never called by the Simulator.
-    void delta_ext(double, std::list<PinValue> const&) {}
+    void delta_ext(double, std::list<PinValue> const &) {}
     /// The confluent transition function is not used in this example,
     /// It is never called by the Simulator.
-    void delta_conf(std::list<PinValue> const&) {}
+    void delta_conf(std::list<PinValue> const &) {}
 
     /// The single pin on which jobs will appear
-    const adevs::pin_t job;
+    pin_t const job;
 
-private:
+  private:
     std::exponential_distribution<> interarrival;
     std::default_random_engine generator;
 };
@@ -75,19 +76,18 @@ private:
  * system, both waiting and being processed.
  */
 class Server : public Atomic {
-public:
+  public:
     /// The time to finish is infinity at the start because we have no
     /// work to do; that is, it will be an infinite amount of time
     /// before we finish a job.
-    Server() : Atomic(),
-        time_since_start(0.0), time_to_finish(adevs_inf<double>()) {}
+    Server() : Atomic(), time_since_start(0.0), time_to_finish(adevs_inf<double>()) {}
     /// The time advance function returns the time remaining to finish
-    /// the current job. 
+    /// the current job.
     double ta() { return time_to_finish; }
     /// The output function produces the completed job, even though it
     /// won't be routed anywhere by the Simulator. The value on the
     /// pin doesn't mean anything in this example.
-    void output_func(std::list<PinValue>& yb) {
+    void output_func(std::list<PinValue> &yb) {
         /// Test your knowledge: why is this assertion always true?
         assert(!job_queue.empty());
         yb.push_back(PinValue(finished_job, 0));
@@ -133,12 +133,12 @@ public:
             time_to_finish -= e;
         }
         /// Put the new jobs into the back of the queue
-        for (const auto &input : xb) {
+        for (auto const &input : xb) {
             job_queue.push_back(time_since_start);
         }
     }
     /// The confluent transition function is never called by the Simulator.
-    void delta_conf(std::list<PinValue> const& xb) {
+    void delta_conf(std::list<PinValue> const &xb) {
         /// Test your knowledge: why is this assertion always true?
         assert(!job_queue.empty());
         /// Update the time since the Server can into being
@@ -148,7 +148,7 @@ public:
         /// Remove the job from the queue
         job_queue.pop_front();
         /// Add new jobs to the back of the queue
-        for (const auto &input : xb) {
+        for (auto const &input : xb) {
             job_queue.push_back(time_since_start);
         }
         /// We are always starting a new job when the confluent transition
@@ -157,9 +157,9 @@ public:
     }
 
     /// Finished jobs are produced on this pin.
-    const adevs::pin_t finished_job;
+    pin_t const finished_job;
 
-private:
+  private:
     /// The since the beginning of the simulation
     double time_since_start;
     /// The time remaining to finish the current job.
@@ -179,7 +179,7 @@ int main() {
     /// Create an instance of the Consumer model in a shared pointer
     auto server = std::make_shared<Server>();
     /// Create a Graph to connect the two models
-    auto graph = std::make_shared<adevs::Graph<>>();
+    auto graph = std::make_shared<Graph>();
     /// Add the Atomic components to the Graph
     graph->add_atomic(arrivals);
     graph->add_atomic(server);
@@ -187,7 +187,7 @@ int main() {
     /// their pin member will be supplied as input to the Server
     graph->connect(arrivals->job, server);
     /// Create a Simulator for the Graph
-    adevs::Simulator<> simulator(graph);
+    Simulator simulator(graph);
     /// Run the simulator for 2 units of time
     while (simulator.nextEventTime() <= 10.0) {
         simulator.execNextEvent();

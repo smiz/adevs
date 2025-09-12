@@ -6,11 +6,10 @@
 class CherryBomb : public adevs::FMI<std::string> {
   public:
     CherryBomb()
-        : adevs::FMI<std::string>(
-              "CherryBomb", "{596c9dd4-1bc5-41de-9388-6a5be2ec421d}",
-              "file:///home/rotten/Code/adevs-code/examples/fmi/Example3/"
-              "CherryBomb/resources",
-              3, 3, "CherryBomb/binaries/linux64/CherryBomb.so") {}
+        : adevs::FMI<std::string>("CherryBomb", "{596c9dd4-1bc5-41de-9388-6a5be2ec421d}",
+                                  "file:///home/rotten/Code/adevs-code/examples/fmi/Example3/"
+                                  "CherryBomb/resources",
+                                  3, 3, "CherryBomb/binaries/linux64/CherryBomb.so") {}
     double get_fuseTime() { return get_real(0); }
     void set_fuseTime(double val) { set_real(0, val); }
     double get_h() { return get_real(1); }

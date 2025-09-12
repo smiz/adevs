@@ -25,12 +25,7 @@ static double sign(double x) {
 class qss : public Atomic<double> {
   public:
     qss(int species)
-        : Atomic<double>(),
-          species(species),
-          count(0),
-          ql(y[species]),
-          q(y[species]),
-          dqdx(0.0) {}
+        : Atomic<double>(), species(species), count(0), ql(y[species]), q(y[species]), dqdx(0.0) {}
     void init() { dqdx = der(species); }
     void delta_int() {
         count++;
