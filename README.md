@@ -26,12 +26,14 @@ make clean
 
 If you want to run the tests you will need to install meson.
 You will also need the [SUNDIALS](https://computing.llnl.gov/projects/sundials)
-and [fmi-library](https://github.com/modelon-community/fmi-library)development libraries.
+and [fmi-library](https://github.com/modelon-community/fmi-library) development libraries.
 To build and run the tests use
 
 meson setup builddir\
 meson compile -C builddir\
 meson test -C builddir
+
+For more instructions see the meson.build file in the top directory.
 
 
 
