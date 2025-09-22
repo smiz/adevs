@@ -6,21 +6,22 @@
 
 #include "adevs/adevs.h"
 
-
-using namespace adevs;
-
+using pin_t = adevs::pin_t;
+using PinValue = adevs::PinValue<int>;
 
 // ***** Basic model ******
 
 template <typename TimeType>
-class PingPong : public Atomic<int, TimeType> {
+class PingPong
+    : public adevs::Atomic<
+          int, TimeType> {  // C++ does not allow "using" with unknown template parameters
   public:
     pin_t output_pin;
     PingPong(bool active = false);
     void delta_int();
-    void delta_ext(TimeType e, std::list<PinValue<int>> const &xb);
-    void delta_conf(std::list<PinValue<int>> const &xb);
-    void output_func(std::list<PinValue<int>> &yb);
+    void delta_ext(TimeType e, std::list<PinValue> const &xb);
+    void delta_conf(std::list<PinValue> const &xb);
+    void output_func(std::list<PinValue> &yb);
     TimeType ta();
     int getCount() const { return count; }
 
@@ -31,7 +32,7 @@ class PingPong : public Atomic<int, TimeType> {
 
 template <typename TimeType>
 PingPong<TimeType>::PingPong(bool active)
-    : Atomic<int, TimeType>(), count(0), active(active) {}
+    : adevs::Atomic<int, TimeType>(), count(0), active(active) {}
 
 template <typename TimeType>
 void PingPong<TimeType>::delta_int() {
@@ -40,12 +41,12 @@ void PingPong<TimeType>::delta_int() {
 }
 
 template <typename TimeType>
-void PingPong<TimeType>::delta_ext(TimeType, std::list<PinValue<int>> const &xb) {
+void PingPong<TimeType>::delta_ext(TimeType, std::list<PinValue> const &xb) {
     active = xb.size() == 1;
 }
 
 template <typename TimeType>
-void PingPong<TimeType>::delta_conf(std::list<PinValue<int>> const &xb) {
+void PingPong<TimeType>::delta_conf(std::list<PinValue> const &xb) {
     delta_int();
     delta_ext(0, xb);
 }
@@ -60,8 +61,8 @@ TimeType PingPong<TimeType>::ta() {
 }
 
 template <typename TimeType>
-void PingPong<TimeType>::output_func(std::list<PinValue<int>> &yb) {
-    PinValue y(output_pin, 1);
+void PingPong<TimeType>::output_func(std::list<PinValue> &yb) {
+    adevs::PinValue y(output_pin, 1);
     yb.push_back(y);
 }
 
@@ -96,25 +97,17 @@ class CustomTimeType {
 
     // *** Comparison Operators ***
 
-    bool operator<(CustomTimeType const &other) const {
-        return time < other.time;
-    }
+    bool operator<(CustomTimeType const &other) const { return time < other.time; }
 
-    bool operator==(CustomTimeType const &other) const {
-        return time == other.time;
-    }
+    bool operator==(CustomTimeType const &other) const { return time == other.time; }
 
     bool operator<=(CustomTimeType const &other) const {
         return time == other.time || time < other.time;
     }
 
-    bool operator>(CustomTimeType const &other) const {
-        return time > other.time;
-    }
+    bool operator>(CustomTimeType const &other) const { return time > other.time; }
 
-    bool operator>=(CustomTimeType const &other) const {
-        return time >= other.time;
-    }
+    bool operator>=(CustomTimeType const &other) const { return time >= other.time; }
     CustomTimeType(int init) : time(init) {}
 
   private:
@@ -149,9 +142,10 @@ inline CustomTimeType adevs_sentinel<CustomTimeType>() {
 }
 
 template <typename TimeType>
-class Model : public Graph<int, TimeType> {
+class Model : public adevs::Graph<
+                  int, TimeType> {  // C++ does not allow "using" with unknown template parameters
   public:
-    Model() : Graph<int, TimeType>() {
+    Model() : adevs::Graph<int, TimeType>() {
         pin_t pA, pB;
         A = std::shared_ptr<PingPong<TimeType>>(new PingPong<TimeType>(true));
         B = std::make_shared<PingPong<TimeType>>();
@@ -174,9 +168,11 @@ class Model : public Graph<int, TimeType> {
 // ***** Tests *****
 
 void test1() {
+    // There are 2 different Simuators in this example so we cannot have a file global "using Simulator..."
+    using Simulator = adevs::Simulator<int, int>;
+
     auto model = std::make_shared<Model<int>>();
-    std::shared_ptr<Simulator<int, int>> sim =
-        std::make_shared<Simulator<int, int>>(model);
+    std::shared_ptr<Simulator> sim = std::make_shared<Simulator>(model);
     while (sim->nextEventTime() <= 10) {
         sim->execNextEvent();
     }
@@ -185,9 +181,11 @@ void test1() {
 }
 
 void test2() {
+    // There are 2 different Simuators in this example so we cannot have a file global "using Simulator..."
+    using Simulator = adevs::Simulator<int, CustomTimeType>;
+
     auto model = std::make_shared<Model<CustomTimeType>>();
-    std::shared_ptr<Simulator<int, CustomTimeType>> sim =
-        std::make_shared<Simulator<int, CustomTimeType>>(model);
+    std::shared_ptr<Simulator> sim = std::make_shared<Simulator>(model);
     while (sim->nextEventTime() <= CustomTimeType(10)) {
         sim->execNextEvent();
     }

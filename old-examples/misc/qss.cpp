@@ -9,7 +9,7 @@
  */
 #include <iostream>
 #include "adevs/adevs.h"
-using namespace adevs;
+// using namespace adevs;
 
 
 static double sign(double x) {
@@ -25,12 +25,7 @@ static double sign(double x) {
 class qss : public Atomic<double> {
   public:
     qss(int species)
-        : Atomic<double>(),
-          species(species),
-          count(0),
-          ql(y[species]),
-          q(y[species]),
-          dqdx(0.0) {}
+        : Atomic<double>(), species(species), count(0), ql(y[species]), q(y[species]), dqdx(0.0) {}
     void init() { dqdx = der(species); }
     void delta_int() {
         count++;
@@ -89,7 +84,7 @@ double const qss::Q = 0.01;
 double qss::y[3] = {1.0, 1.0, 0.0};
 
 int main() {
-    SimpleDigraph<double>* mixture = new SimpleDigraph<double>();
+    SimpleDiGraph* mixture = new SimpleDiGraph();
     qss** p = new qss*[3];
     for (int i = 0; i < 3; i++) {
         p[i] = new qss(i);
@@ -105,7 +100,7 @@ int main() {
     mixture->couple(p[0], p[2]);  // A->C
     mixture->couple(p[1], p[2]);  // B->C
     double tL = 0.0;
-    Simulator<double>* sim = new Simulator<double>(mixture);
+    Simulator* sim = new Simulator(mixture);
     while (tL < 1000.0) {
         std::cout << tL << " ";
         for (int i = 0; i < 3; i++) {

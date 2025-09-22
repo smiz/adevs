@@ -4,13 +4,14 @@
 #include "SimpleAtomic.h"
 #include "adevs/adevs.h"
 
-using namespace adevs;
+using Simulator = adevs::Simulator<char>;
+using Atomic = adevs::Atomic<char>;
+using PinValue = adevs::PinValue<char>;
+using Graph = adevs::Graph<char>;
 
-
-
-class SimpleNetwork : public Atomic<char> {
+class SimpleNetwork : public Atomic {
   public:
-    SimpleNetwork(std::shared_ptr<Graph<char>>& graph) : Atomic<char>(),graph(graph) {
+    SimpleNetwork(std::shared_ptr<Graph> &graph) : Atomic(), graph(graph) {
         for (int i = 0; i < 10; i++) {
             std::shared_ptr<SimpleAtomic> model = std::make_shared<SimpleAtomic>();
             graph->add_atomic(model);
@@ -20,22 +21,22 @@ class SimpleNetwork : public Atomic<char> {
     void delta_int() {
         graph->remove_atomic(models.back());
         models.pop_back();
-    }   
-    void delta_ext(double, std::list<PinValue<char>> const &) { assert(false); }
-    void delta_conf(std::list<PinValue<char>> const &) { assert(false); }
-    void output_func(std::list<PinValue<char>> &) {}
+    }
+    void delta_ext(double, std::list<PinValue> const &) { assert(false); }
+    void delta_conf(std::list<PinValue> const &) { assert(false); }
+    void output_func(std::list<PinValue> &) {}
     double ta() { return 1.0; }
 
   private:
-    std::shared_ptr<Graph<char>> graph;
-    std::list<std::shared_ptr<Atomic<char>>> models;
+    std::shared_ptr<Graph> graph;
+    std::list<std::shared_ptr<Atomic>> models;
 };
 
 int main() {
-    std::shared_ptr<Graph<char>> graph = std::make_shared<Graph<char>>();
+    std::shared_ptr<Graph> graph = std::make_shared<Graph>();
     std::shared_ptr<SimpleNetwork> model = std::make_shared<SimpleNetwork>(graph);
     graph->add_atomic(model);
-    std::shared_ptr<Simulator<char>> sim = std::make_shared<Simulator<char>>(graph);
+    std::shared_ptr<Simulator> sim = std::make_shared<Simulator>(graph);
 
     while (sim->nextEventTime() < adevs_inf<double>() && SimpleAtomic::atomic_number != 0) {
         sim->execNextEvent();

@@ -2,16 +2,20 @@
 #include "adevs/adevs.h"
 #include "adevs/solvers/fmi.h"
 
-using namespace adevs;
+using ModelExchange = adevs::ModelExchange<double>;
+using Hybrid = adevs::Hybrid<double>;
+using Simulator = adevs::Simulator<double>;
+using Graph = adevs::Graph<double>;
+using PinValue = adevs::PinValue<double>;
 
-class Circuit : public ModelExchange<double> {
+class Circuit : public ModelExchange {
   public:
-    Circuit() : ModelExchange<double>("Circuit.fmu",1E-7), start_time(adevs_inf<double>()) {}
-    void external_event(double* q, double e, std::list<PinValue<double>> const &xb) {
-        ModelExchange<double>::external_event(q, e, xb);
+    Circuit() : ModelExchange("Circuit.fmu", 1E-7), start_time(adevs_inf<double>()) {}
+    void external_event(double* q, double e, std::list<PinValue> const &xb) {
+        ModelExchange::external_event(q, e, xb);
         start_time = e;
-        ModelExchange<double>::set_variable("Vsrc.Vref",0.0);
-        ModelExchange<double>::external_event(q, e, xb);
+        ModelExchange::set_variable("Vsrc.Vref", 0.0);
+        ModelExchange::external_event(q, e, xb);
     }
     void print_state() {
         double Vsrc_T_v = std::any_cast<double>(get_variable("Vsrc.T.v"));
@@ -34,7 +38,7 @@ class Circuit : public ModelExchange<double> {
         assert(fabs(Rbridge_T1_i) < 1E-6);
     }
 
-    const pin_t input;
+    pin_t const input;
 
   private:
     double start_time;
@@ -42,14 +46,14 @@ class Circuit : public ModelExchange<double> {
 
 int main() {
     Circuit* test_model = new Circuit();
-    std::shared_ptr<Hybrid<double>> hybrid_model = std::make_shared<Hybrid<double>>(
-        test_model, new corrected_euler<double>(test_model, 1E-7, 0.001),
-        new discontinuous_event_locator<double>(test_model, 1E-7));
-    std::shared_ptr<Graph<double>> graph = std::make_shared<Graph<double>>();
+    std::shared_ptr<Hybrid> hybrid_model =
+        std::make_shared<Hybrid>(test_model, new corrected_euler<double>(test_model, 1E-7, 0.001),
+                                 new discontinuous_event_locator<double>(test_model, 1E-7));
+    std::shared_ptr<Graph> graph = std::make_shared<Graph>();
     graph->add_atomic(hybrid_model);
-    graph->connect(test_model->input,hybrid_model);
+    graph->connect(test_model->input, hybrid_model);
     // Create the simulator
-    Simulator<double>* sim = new Simulator<double>(graph);
+    Simulator* sim = new Simulator(graph);
     // Check initial values
     test_model->print_state();
     // Run the simulation, testing the solution as we go
@@ -58,7 +62,7 @@ int main() {
         test_model->print_state();
         test_model->test_state();
     }
-    PinValue<double> inject(test_model->input,0.0);
+    PinValue inject(test_model->input, 0.0);
     sim->setNextTime(1.0);
     sim->injectInput(inject);
     while (sim->nextEventTime() <= 5.0) {

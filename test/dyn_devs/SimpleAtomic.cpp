@@ -1,10 +1,10 @@
 #include "SimpleAtomic.h"
-using namespace adevs;
+
 
 int SimpleAtomic::atomic_number = 0;
 int SimpleAtomic::internal_execs = 0;
 
-SimpleAtomic::SimpleAtomic() : Atomic<char>() {
+SimpleAtomic::SimpleAtomic() : Atomic() {
     number = atomic_number++;
 }
 

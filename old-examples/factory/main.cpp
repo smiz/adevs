@@ -5,8 +5,7 @@
 #include "Factory.h"
 #include "Genr.h"
 
-using namespace adevs;
-
+// using namespace adevs;
 
 
 /**
@@ -84,7 +83,7 @@ int main(int argc, char** argv) {
 
     // Run the simulation and output active machine count at each iteration
     while (sim->nextEventTime() <= 365.0) {
-    	std::cout << sim->nextEventTime() << " ";
+        std::cout << sim->nextEventTime() << " ";
         sim->execNextEvent();
         std::cout << factory->get_machine_count() << std::endl;
     }

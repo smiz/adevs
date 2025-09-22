@@ -3,13 +3,18 @@
 #include "adevs/adevs.h"
 
 
-using namespace adevs;
+using pin_t = adevs::pin_t;
+using Graph = adevs::Graph<std::string>;
+using Atomic = adevs::Atomic<std::string>;
+using PinValue = adevs::PinValue<std::string>;
+using EventListener = adevs::EventListener<std::string>;
+using Simulator = adevs::Simulator<std::string>;
 
-class Parrot : public Atomic<std::string> {
+class Parrot : public Atomic {
   public:
     pin_t in, out;
 
-    Parrot() : Atomic<std::string>() {
+    Parrot() : Atomic() {
         k = 0;
         q = "";
     }
@@ -19,13 +24,13 @@ class Parrot : public Atomic<std::string> {
         q = "";
     }
 
-    void delta_ext(double, std::list<PinValue<std::string>> const &xb) {
+    void delta_ext(double, std::list<PinValue> const &xb) {
         for (auto iter : xb) {
             q += iter.value;
         }
     }
 
-    void delta_conf(std::list<PinValue<std::string>> const &xb) {
+    void delta_conf(std::list<PinValue> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
@@ -41,8 +46,8 @@ class Parrot : public Atomic<std::string> {
         return 1.0;
     }
 
-    void output_func(std::list<PinValue<std::string>> &yb) {
-        PinValue<std::string> event(out, q);
+    void output_func(std::list<PinValue> &yb) {
+        PinValue event(out, q);
         yb.push_back(event);
     }
 
@@ -53,11 +58,11 @@ class Parrot : public Atomic<std::string> {
 
 std::shared_ptr<Parrot> p1;
 
-class Listener : public EventListener<std::string> {
+class Listener : public EventListener {
   public:
-    void stateChange(Atomic<std::string>&, double) {}
-    void inputEvent(Atomic<std::string>&, PinValue<std::string>&, double) {}
-    void outputEvent(Atomic<std::string>&, PinValue<std::string>& x, double t) {
+    void stateChange(Atomic &, double) {}
+    void inputEvent(Atomic &, PinValue &, double) {}
+    void outputEvent(Atomic &, PinValue &x, double t) {
         if (x.pin == p1->out) {
             std::cout << t << " " << x.value << std::endl;
         }
@@ -65,19 +70,19 @@ class Listener : public EventListener<std::string> {
 };
 
 int main() {
-    auto model = std::make_shared<Graph<std::string>>();
+    auto model = std::make_shared<Graph>();
     p1 = std::make_shared<Parrot>();
     std::shared_ptr<Parrot> p2 = std::make_shared<Parrot>();
     model->add_atomic(p1);
     model->add_atomic(p2);
-    model->connect(p1->in,p1);
-    model->connect(p2->in,p2);
-    model->connect(p1->out,p2->in);
-    model->connect(p2->out,p1->in);
-    adevs::PinValue<std::string> start;
+    model->connect(p1->in, p1);
+    model->connect(p2->in, p2);
+    model->connect(p1->out, p2->in);
+    model->connect(p2->out, p1->in);
+    PinValue start;
     start.pin = p1->in;
     start.value = "a";
-    Simulator<std::string> sim(model);
+    Simulator sim(model);
     std::shared_ptr<Listener> listener = std::make_shared<Listener>();
     sim.addEventListener(listener);
     sim.setNextTime(0.0);

@@ -128,8 +128,8 @@ void simulateSpace() {
         if (iterations > 10) {
             exit(0);
         }
-        cell_space = std::make_shared<adevs::CellSpace<int>>(config->get_width(),
-                                                        config->get_height());
+        cell_space =
+            std::make_shared<adevs::CellSpace<int>>(config->get_width(), config->get_height());
         // Create a model to go into each point of the cellspace
         for (int x = 0; x < config->get_width(); x++) {
             for (int y = 0; y < config->get_height(); y++) {

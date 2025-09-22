@@ -2,14 +2,20 @@
 #include <iostream>
 #include "adevs/adevs.h"
 
-using namespace adevs;
+
+using PinValue = adevs::PinValue<char>;
+using pin_t = adevs::pin_t;
+using double_fcmp = adevs::double_fcmp;
+using Atomic = adevs::Atomic<char, double_fcmp>;
+using Simulator = adevs::Simulator<char, double_fcmp>;
+using EventListener = adevs::EventListener<char, double_fcmp>;
+using Graph = adevs::Graph<char, double_fcmp>;
 
 double double_fcmp::epsilon = DBL_EPSILON;
 
-class genr : public Atomic<char, double_fcmp> {
+class genr : public Atomic {
   public:
-    genr(double period, int ticks)
-        : Atomic<char, double_fcmp>(), ticks(ticks), count(0), sigma(period) {}
+    genr(double period, int ticks) : Atomic(), ticks(ticks), count(0), sigma(period) {}
     double_fcmp ta() { return sigma; }
     void delta_int() {
         count++;
@@ -18,16 +24,17 @@ class genr : public Atomic<char, double_fcmp> {
             sigma = adevs_inf<double_fcmp>();
         }
     }
-    void delta_ext(double_fcmp, std::list<PinValue<char>> const &) { sigma = DBL_MAX; }
-    void delta_conf(std::list<PinValue<char>> const &) { sigma = DBL_MAX; }
-    void output_func(std::list<PinValue<char>> &y) {
-        PinValue<char> output(output_pin,'a');
+    void delta_ext(double_fcmp, std::list<PinValue> const &) { sigma = DBL_MAX; }
+    void delta_conf(std::list<PinValue> const &) { sigma = DBL_MAX; }
+    void output_func(std::list<PinValue> &y) {
+        PinValue output(output_pin, 'a');
         y.push_back(output);
     }
     int getTickCount() { return count; }
 
-    const pin_t output_pin;
-    const pin_t input_pin;
+    pin_t const output_pin;
+    pin_t const input_pin;
+
   private:
     int ticks;
     int count;
@@ -36,7 +43,7 @@ class genr : public Atomic<char, double_fcmp> {
 
 void test1() {
     std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
-    Simulator<char, double_fcmp> sim(g);
+    Simulator sim(g);
     while (sim.nextEventTime() < DBL_MAX) {
         sim.execNextEvent();
     }
@@ -45,7 +52,7 @@ void test1() {
 
 void test2() {
     std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
-    Simulator<char, double_fcmp> sim(g);
+    Simulator sim(g);
     while (sim.nextEventTime() < DBL_MAX) {
         sim.computeNextOutput();
         sim.computeNextState();
@@ -53,18 +60,18 @@ void test2() {
     assert(g->getTickCount() == 10);
 }
 
-class MyEventListener : public EventListener<char, double_fcmp> {
+class MyEventListener : public EventListener {
   public:
     MyEventListener() {
         count = 0;
         t_last = 0.0;
     }
-    void inputEvent(Atomic<char,double_fcmp>&, PinValue<char>&, double_fcmp) {}
-    void outputEvent(Atomic<char,double_fcmp>&, PinValue<char>&, double_fcmp t) {
+    void inputEvent(Atomic &, PinValue &, double_fcmp) {}
+    void outputEvent(Atomic &, PinValue &, double_fcmp t) {
         count++;
         t_last = t;
     }
-    void stateChange(Atomic<char,double_fcmp>&, double_fcmp) {}
+    void stateChange(Atomic &, double_fcmp) {}
 
     int count;
     double_fcmp t_last;
@@ -72,7 +79,7 @@ class MyEventListener : public EventListener<char, double_fcmp> {
 
 void test3() {
     std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
-    Simulator<char, double_fcmp> sim(g);
+    Simulator sim(g);
     std::shared_ptr<MyEventListener> listener = std::make_shared<MyEventListener>();
     sim.addEventListener(listener);
     while (sim.nextEventTime() < DBL_MAX) {
@@ -86,7 +93,7 @@ void test3() {
 
 void test4() {
     std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
-    Simulator<char, double_fcmp> sim(g);
+    Simulator sim(g);
     sim.setNextTime(5.0);
     sim.execNextEvent();
     assert(sim.nextEventTime() == 10.0);
@@ -112,11 +119,11 @@ void test4() {
 
 void test5() {
     std::shared_ptr<genr> g = std::make_shared<genr>(10.0, 10);
-    auto graph = std::make_shared<Graph<char,double_fcmp>>();
-    PinValue<char> input(g->input_pin,'a');
+    auto graph = std::make_shared<Graph>();
+    PinValue input(g->input_pin, 'a');
     graph->add_atomic(g);
-    graph->connect(g->input_pin,g);
-    Simulator<char, double_fcmp> sim(graph);
+    graph->connect(g->input_pin, g);
+    Simulator sim(graph);
     sim.injectInput(input);
     sim.setNextTime(5.0);
     sim.execNextEvent();

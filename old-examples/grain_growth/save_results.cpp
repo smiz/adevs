@@ -15,8 +15,7 @@ void save_results(int* grains, int w, int h, char const* file) {
     int k = 0;
     map<int, rgb_t> colors;
     FILE* fp = fopen(file, "wb");
-    png_structp png =
-        png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     png_infop info = png_create_info_struct(png);
     png_init_io(png, fp);
     png_set_IHDR(png, info, w, h, 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,

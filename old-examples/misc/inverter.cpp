@@ -10,7 +10,7 @@
 #include <iostream>
 #include "adevs/adevs.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 #define VOLTAGE 0
 #define CURRENT 1
@@ -61,8 +61,7 @@ class inverter : public ode_system<IO_Type> {
         // dv/dt
         dq[VOLTAGE] = q[CURRENT] / C;
         // di/dt
-        dq[CURRENT] =
-            qc * (Vdc / L) - ((R / L) * q[CURRENT]) - ((1.0 / L) * q[VOLTAGE]);
+        dq[CURRENT] = qc * (Vdc / L) - ((R / L) * q[CURRENT]) - ((1.0 / L) * q[VOLTAGE]);
     }
     // Calculate the zero crossing functions to detect events
     void state_event_func(double const* q, double* z) {
@@ -93,9 +92,7 @@ class inverter : public ode_system<IO_Type> {
     // Get the desired frequency in Hz
     double getFreq() const { return w / (2.0 * pi); }
     // Get the tracking error
-    double V(double v, double i) const {
-        return ((i / a) * (i / a) + (v / b) * (v / b));
-    }
+    double V(double v, double i) const { return ((i / a) * (i / a) + (v / b) * (v / b)); }
 
   protected:
     double const R, L, C, Vdc, c, ci, co, w, a, b, eps;
@@ -118,13 +115,11 @@ class inverter_with_control : public inverter {
     int control(double v, double i, int q) {
         double Vz = V(v, i);
         // Rule (i)
-        if (Vz >= co && ((i > eps && v < 0.0) || (i >= 0.0 && v >= 0.0)) &&
-            q == 1) {
+        if (Vz >= co && ((i > eps && v < 0.0) || (i >= 0.0 && v >= 0.0)) && q == 1) {
             return -1;
         }
         // Rule (ii)
-        else if (Vz >= co &&
-                 ((i < -eps && v > 0.0) || (i <= 0.0 && v <= 0.0)) && q == -1) {
+        else if (Vz >= co && ((i < -eps && v > 0.0) || (i <= 0.0 && v <= 0.0)) && q == -1) {
             return 1;
         }
         // Rule (iii)
@@ -164,25 +159,23 @@ int main(int argc, char** argv) {
     // Calculate the ending time for the simulation
     double const end_time = double(sim_cycles) / model->getFreq();
     // Attach a numerical solver to the model
-    Hybrid<IO_Type>* solver = new Hybrid<IO_Type>(
-        model, new corrected_euler<IO_Type>(model, 1E-5, 1E-5),
-        new linear_event_locator<IO_Type>(model, 1E-8));
+    Hybrid<IO_Type>* solver =
+        new Hybrid<IO_Type>(model, new corrected_euler<IO_Type>(model, 1E-5, 1E-5),
+                            new linear_event_locator<IO_Type>(model, 1E-8));
     // Create the simulator
     Simulator<IO_Type>* sim = new Simulator<IO_Type>(solver);
     // Print the initial state
     std::cout << 0.0 << " ";
     std::cout << solver->getState(VOLTAGE) << " " << solver->getState(CURRENT) << " "
-         << model->getControl() << " "
-         << model->V(solver->getState(VOLTAGE), solver->getState(CURRENT))
-         << std::endl;
+              << model->getControl() << " "
+              << model->V(solver->getState(VOLTAGE), solver->getState(CURRENT)) << std::endl;
     // Run the simulation, printing the time and state at each event
     while (sim->nextEventTime() < end_time) {
         std::cout << sim->nextEventTime() << " ";
         sim->execNextEvent();
-        std::cout << solver->getState(VOLTAGE) << " " << solver->getState(CURRENT)
-             << " " << model->getControl() << " "
-             << model->V(solver->getState(VOLTAGE), solver->getState(CURRENT))
-             << std::endl;
+        std::cout << solver->getState(VOLTAGE) << " " << solver->getState(CURRENT) << " "
+                  << model->getControl() << " "
+                  << model->V(solver->getState(VOLTAGE), solver->getState(CURRENT)) << std::endl;
     }
     // Cleanup and exit
     delete sim;

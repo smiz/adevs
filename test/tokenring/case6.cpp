@@ -3,7 +3,6 @@
 #include "node.h"
 
 
-
 using Simulator = adevs::Simulator<std::shared_ptr<token_t>>;
 using Graph = adevs::Graph<std::shared_ptr<token_t>>;
 

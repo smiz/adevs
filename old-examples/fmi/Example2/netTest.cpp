@@ -2,7 +2,7 @@
 #include <iostream>
 #include "Ethernet.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 static int const numApps = 3;
 static double const tend = 10.0;
@@ -46,8 +46,8 @@ class App : public AtomicModel {
     void output_func(std::list<IO_Type> &yb) {
         IO_Type y;
         y.port = data_out;
-        y.value = new NetworkData(NetworkData::APP_DATA, (addr + 1) % numApps,
-                                  100000, new SimObject());
+        y.value =
+            new NetworkData(NetworkData::APP_DATA, (addr + 1) % numApps, 100000, new SimObject());
         yb.push_back(y);
     }
     int getSent() const { return send; }
@@ -87,8 +87,8 @@ int main() {
         sim->execNextEvent();
     }
     for (int i = 0; i < numApps; i++) {
-        std::cout << i << "," << nic[i]->getCollisions() << "," << app[i]->getSent()
-             << "," << app[i]->getRecv() << std::endl;
+        std::cout << i << "," << nic[i]->getCollisions() << "," << app[i]->getSent() << ","
+                  << app[i]->getRecv() << std::endl;
     }
     delete sim;
     delete net;

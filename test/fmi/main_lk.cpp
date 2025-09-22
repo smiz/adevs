@@ -5,10 +5,14 @@
 #include "adevs/solvers/fmi.h"
 #include "adevs/solvers/trap.h"
 
-using namespace adevs;
 
-void test(ode_system<double>* sys, adevs::ode_solver<double>* solver,
-          std::vector<std::pair<double, double>> &traj) {
+using ode_system = adevs::ode_system<double>;
+using ode_solver = adevs::ode_solver<double>;
+using trap = adevs::trap<double>;
+using rk_45 = adevs::rk_45<double>;
+using ModelExchange = adevs::ModelExchange;
+
+void test(ode_system* sys, ode_solver* solver, std::vector<std::pair<double, double>> &traj) {
     double* q = new double[sys->numVars()];
     double const h = 0.01;
     sys->init(q);
@@ -28,13 +32,11 @@ void test(ode_system<double>* sys, adevs::ode_solver<double>* solver,
 
 int main() {
     std::vector<std::pair<double, double>> t1, t2;
-    auto model = new adevs::ModelExchange<double>("lk.fmu",1E-6);
-    adevs::trap<double>* trap_solver =
-        new adevs::trap<double>(model, 1E-4, 0.01);
+    auto model = new ModelExchange("lk.fmu", 1E-6);
+    trap* trap_solver = new trap(model, 1E-4, 0.01);
     test(model, trap_solver, t1);
-    model = new adevs::ModelExchange<double>("lk.fmu",1E-6);
-    adevs::rk_45<double>* rk_solver =
-        new adevs::rk_45<double>(model, 1E-8, 0.01);
+    model = new ModelExchange("lk.fmu", 1E-6);
+    rk_45* rk_solver = new rk_45(model, 1E-8, 0.01);
     test(model, rk_solver, t2);
     assert(t1.size() == t2.size());
     for (unsigned i = 0; i < t1.size(); i++) {

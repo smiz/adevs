@@ -13,25 +13,23 @@
 #include <iostream>
 #include "adevs/adevs.h"
 
-
+using Location = std::pair<int, int>;
+using Atomic = adevs::Atomic<Location, int>;
+using Graph = adevs::Graph<Location, int>;
+using Simulator = adevs::Simulator<Location, int>;
+using PinValue = adevs::PinValue<Location>;
+using Bag = std::list<PinValue>;
+using pin_t = adevs::pin_t;
 
 // Cellspace dimensions
 #define WIDTH  100
 #define HEIGHT 100
-
-// Shortcuts for important types
-using Location = std::pair<int,int>;
-using Atomic = adevs::Atomic<Location,int>;
-using Graph = adevs::Graph<Location,int>;
-using Simulator = adevs::Simulator<Location,int>;
-using Bag = std::list<adevs::PinValue<Location>>;
 
 /**
  * This is a cell in the game of life.
  */
 class Cell : public Atomic {
   public:
-
     /**
      * The cell space to visualize. This is also
      * loaded with the initial state of the cell
@@ -41,25 +39,37 @@ class Cell : public Atomic {
 
     /// Utility for getting location of a neighbor
     Location neighbor(int dx, int dy) const {
-        int nx = x+dx;
-        int ny = y+dy;
-        if (nx < 0) nx = WIDTH-1;
-        if (ny < 0) ny = HEIGHT-1;
-        if (nx >= WIDTH) nx = 0;
-        if (ny >= HEIGHT) ny = 0;
-        return Location(nx,ny);
+        int nx = x + dx;
+        int ny = y + dy;
+        if (nx < 0) {
+            nx = WIDTH - 1;
+        }
+        if (ny < 0) {
+            ny = HEIGHT - 1;
+        }
+        if (nx >= WIDTH) {
+            nx = 0;
+        }
+        if (ny >= HEIGHT) {
+            ny = 0;
+        }
+        return Location(nx, ny);
     }
     /**
      * For the given location in the space. The value in the
      * alive array gives the initial state for the cell.
      */
-    Cell(int x, int y) : Atomic(),x(x),y(y),nalive(0) {
+    Cell(int x, int y) : Atomic(), x(x), y(y), nalive(0) {
         // Get the initial number of living neighbors
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
-                if (i == 0 && j == 0) continue;
-                Location n(neighbor(i,j));
-                if (alive[n.first][n.second]) nalive++;
+                if (i == 0 && j == 0) {
+                    continue;
+                }
+                Location n(neighbor(i, j));
+                if (alive[n.first][n.second]) {
+                    nalive++;
+                }
             }
         }
     }
@@ -77,52 +87,49 @@ class Cell : public Atomic {
 
     void delta_ext(int, Bag const &xb) {
         // A neighbor changed state. Update the count of living neighbors
-        for (auto update: xb) {
-            if (alive[update.value.first][update.value.second]) nalive++;
-            else nalive--;
+        for (auto update : xb) {
+            if (alive[update.value.first][update.value.second]) {
+                nalive++;
+            } else {
+                nalive--;
+            }
             // We have eight neighbors
             assert(nalive >= 0 && nalive <= 8);
         }
     }
 
-    void delta_conf(Bag const &xb) {
-        delta_ext(0,xb);
-    }
+    void delta_conf(Bag const &xb) { delta_ext(0, xb); }
 
     void output_func(Bag &yb) {
         // Get our location as a pair that we can send to our neighbors
-        Location location(x,y);
+        Location location(x, y);
         // Update our appearance on the board
         alive[x][y] = (check_born_rule()) ? true : false;
         // Send an event to let our neighbors know we have changed state
-        yb.push_back(adevs::PinValue<Location>(output,location));
+        yb.push_back(PinValue(output, location));
     }
 
     // Pin for broadcasting changes of state
-    const adevs::pin_t output;
+    pin_t const output;
 
   private:
     // location of the cell in the 2D space.
-    const int x, y;
+    int const x, y;
     // number of living neighbors.
     int nalive;
 
     /// Returns true if the cell will be born
-    bool check_born_rule() const {
-        return (!alive[x][y] && nalive == 3);
-    }
+    bool check_born_rule() const { return (!alive[x][y] && nalive == 3); }
     /// Return true if the cell will die
-    bool check_death_rule() const {
-        return (alive[x][y] && (nalive < 2 || nalive > 3));
-    }
+    bool check_death_rule() const { return (alive[x][y] && (nalive < 2 || nalive > 3)); }
 };
 
 bool Cell::alive[WIDTH][HEIGHT];
 
 // Window and cell dimensions for visualization
-const int CELL_SIZE = 6;
-const GLint win_width = WIDTH * CELL_SIZE;
-const GLint win_height = HEIGHT * CELL_SIZE;
+int const CELL_SIZE = 6;
+GLint const win_width = WIDTH * CELL_SIZE;
+GLint const win_height = HEIGHT * CELL_SIZE;
 
 /**
  * Function to render the cell space to the display using
@@ -166,14 +173,14 @@ void simulateSpace() {
         // Create the initial state of the cell space
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
-               Cell::alive[x][y] = (rand() % 8) == 0;
+                Cell::alive[x][y] = (rand() % 8) == 0;
             }
         }
         // Create the simulation model
         auto graph = std::make_shared<Graph>();
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
-                cells[x][y] = std::make_shared<Cell>(x,y);
+                cells[x][y] = std::make_shared<Cell>(x, y);
                 graph->add_atomic(cells[x][y]);
             }
         }
@@ -182,9 +189,11 @@ void simulateSpace() {
             for (int y = 0; y < HEIGHT; y++) {
                 for (int i = -1; i <= 1; i++) {
                     for (int j = -1; j <= 1; j++) {
-                        if (i == 0 && j == 0) continue;
-                        Location n(cells[x][y]->neighbor(i,j));
-                        graph->connect(cells[x][y]->output,cells[n.first][n.second]);
+                        if (i == 0 && j == 0) {
+                            continue;
+                        }
+                        Location n(cells[x][y]->neighbor(i, j));
+                        graph->connect(cells[x][y]->output, cells[n.first][n.second]);
                     }
                 }
             }

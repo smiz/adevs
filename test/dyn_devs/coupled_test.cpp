@@ -1,7 +1,13 @@
+#include <cassert>
 #include <iostream>
 #include <list>
-#include <cassert>
 #include "adevs/adevs.h"
+
+using Atomic = adevs::Atomic<>;
+using PinValue = adevs::PinValue<>;
+using Coupled = adevs::Coupled<>;
+using Simulator = adevs::Simulator<>;
+using pin_t = adevs::pin_t;
 
 /**
  * This test case consists of an Atomic model and the
@@ -20,25 +26,23 @@
  * SysML like activity diagram. It implements the
  * token flow model of execution.
  */
-class Action: public adevs::Atomic<> {
-    public:
-
-    Action(unsigned inputs) : adevs::Atomic<>(), inputs(inputs), tokens(0) { population++; }
+class Action : public Atomic {
+  public:
+    Action(unsigned inputs) : Atomic(), inputs(inputs), tokens(0) { population++; }
     ~Action() { population--; }
     double ta() { return (inputs == tokens) ? 1.0 : adevs_inf<double>(); }
     void delta_int() { tokens = 0; }
-    void delta_ext(double, const std::list<adevs::PinValue<>>& xb) { tokens += xb.size(); }
-    void delta_conf(const std::list<adevs::PinValue<>>& xb) { tokens = xb.size(); }
-    void output_func(std::list<adevs::PinValue<>>& yb) {
-        adevs::PinValue<> output(out,0);
+    void delta_ext(double, std::list<PinValue> const &xb) { tokens += xb.size(); }
+    void delta_conf(std::list<PinValue> const &xb) { tokens = xb.size(); }
+    void output_func(std::list<PinValue> &yb) {
+        PinValue output(out, 0);
         yb.push_back(output);
     }
 
-    const adevs::pin_t in, out;
+    pin_t const in, out;
     static int population;
 
-    private:
-
+  private:
     unsigned inputs, tokens;
 };
 
@@ -50,53 +54,50 @@ int Action::population = 0;
  * they will be of randomly selected length. The
  * length is controlled by the depth of the diagram.
  */
-class Activity: public adevs::Coupled<> {
-    public:
-
-    Activity() : adevs::Coupled<>() {
+class Activity : public Coupled {
+  public:
+    Activity() : Coupled() {
         // Create an action that an initial input
         // to the diagram
         auto initial = std::make_shared<Action>(1);
         add_atomic(initial);
-        create_coupling(in,initial->in);
-        create_coupling(initial->in,initial);
+        create_coupling(in, initial->in);
+        create_coupling(initial->in, initial);
         // Create a terminal action that needs two input
         // and produces an output from the diagram
         auto terminal = std::make_shared<Action>(2);
         add_atomic(terminal);
-        create_coupling(terminal->out,out);
-        create_coupling(initial->out,terminal->in);
-        create_coupling(terminal->in,terminal);
+        create_coupling(terminal->out, out);
+        create_coupling(initial->out, terminal->in);
+        create_coupling(terminal->in, terminal);
         // Create an intermediate action and hook everything up
-        if (rand()%2 == 0) {
+        if (rand() % 2 == 0) {
             // Deepen the diagram by adding an Activity to
             // this Activity
             auto intermediate = std::make_shared<Activity>();
             add_coupled_model(intermediate);
-            create_coupling(initial->out,intermediate->in);
-            create_coupling(intermediate->out,terminal->in);
+            create_coupling(initial->out, intermediate->in);
+            create_coupling(intermediate->out, terminal->in);
         } else {
             // Otherwise create an atomic action
             auto intermediate = std::make_shared<Action>(1);
             add_atomic(intermediate);
-            create_coupling(initial->out,intermediate->in);
-            create_coupling(intermediate->out,terminal->in);
-            create_coupling(intermediate->in,intermediate);
+            create_coupling(initial->out, intermediate->in);
+            create_coupling(intermediate->out, terminal->in);
+            create_coupling(intermediate->in, intermediate);
         }
     }
-    adevs::pin_t in, out;
+    pin_t in, out;
 };
 
 /**
  * This atomic model creates and destroys diagrams.
  */
-class Manager: public adevs::Atomic<> {
-    public:
-
-    Manager(std::shared_ptr<adevs::Coupled<>>& parent) :
-        adevs::Atomic<>(), max_diagrams(5), finished(0),
-        time_out(5.0), num_diagrams(0), parent(parent) {
-            make_new_diagram();
+class Manager : public Atomic {
+  public:
+    Manager(std::shared_ptr<Coupled> &parent)
+        : Atomic(), max_diagrams(5), finished(0), time_out(5.0), num_diagrams(0), parent(parent) {
+        make_new_diagram();
     }
     double ta() { return time_to_next_event; }
     void delta_int() {
@@ -123,56 +124,54 @@ class Manager: public adevs::Atomic<> {
             time_to_next_event = adevs_inf<double>();
         }
     }
-    void delta_ext(double, const std::list<adevs::PinValue<>>&) {
+    void delta_ext(double, std::list<PinValue> const &) {
         delta_int();
         finished++;
     }
-    void delta_conf(const std::list<adevs::PinValue<>>&) {
+    void delta_conf(std::list<PinValue> const &) {
         delta_int();
         finished++;
     }
-    void output_func(std::list<adevs::PinValue<>>& yb) {
-        adevs::PinValue<> output(start,0);
+    void output_func(std::list<PinValue> &yb) {
+        PinValue output(start, 0);
         yb.push_back(output);
     }
 
-    adevs::pin_t start, finish;
-    const int max_diagrams;
+    pin_t start, finish;
+    int const max_diagrams;
     int finished;
 
-    private:
-
+  private:
     void make_new_diagram() {
         /// Add the new diagram to our parent and
         /// hook it up to our start and finish pins
         active = std::make_shared<Activity>();
         parent->add_coupled_model(active);
-        parent->create_coupling(start,active->in);
-        parent->create_coupling(active->out,finish);
+        parent->create_coupling(start, active->in);
+        parent->create_coupling(active->out, finish);
         /// Set the time advance to zero so that we
         /// can generate an output on our start pin
         time_to_next_event = 0.0;
     }
 
-    const double time_out;
+    double const time_out;
     int num_diagrams;
     double time_to_next_event;
-    std::shared_ptr<adevs::Coupled<>> parent;
+    std::shared_ptr<Coupled> parent;
     std::shared_ptr<Activity> active;
-
 };
 
 int main() {
     int total_finished = 0, total_created = 0;
     /// Run a bunch of trials of the test
     for (int i = 0; i < 100; i++) {
-        auto parent = std::make_shared<adevs::Coupled<>>();
+        auto parent = std::make_shared<Coupled>();
         auto manager = std::make_shared<Manager>(parent);
         parent->add_atomic(manager);
         /// Manager is always notified when it gets input on
         /// its finish pin.
-        parent->create_coupling(manager->finish,manager);
-        auto sim = std::make_shared<adevs::Simulator<>>(parent);
+        parent->create_coupling(manager->finish, manager);
+        auto sim = std::make_shared<Simulator>(parent);
         while (sim->nextEventTime() < adevs_inf<double>()) {
             sim->execNextEvent();
         }

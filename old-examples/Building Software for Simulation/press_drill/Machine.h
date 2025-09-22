@@ -2,9 +2,11 @@
 #define _Machine_h_
 #include "adevs/adevs.h"
 
-class Machine : public adevs::Atomic<int> {
+using Atomic = adevs::Atomic<int>;
+
+class Machine : public Atomic {
   public:
-    Machine(double tm) : adevs::Atomic<int>(), tm(tm), p(0), sigma(tm) {}
+    Machine(double tm) : Atomic(), tm(tm), p(0), sigma(tm) {}
     void delta_int() {
         p--;
         sigma = tm;

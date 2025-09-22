@@ -2,21 +2,25 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
-using namespace adevs;
 
-class bogus_atomic : public Atomic<char> {
+
+using Atomic = adevs::Atomic<char>;
+using PinValue = adevs::PinValue<char>;
+using Schedule = adevs::Schedule<char>;
+
+class bogus_atomic : public Atomic {
   public:
-    bogus_atomic() : Atomic<char>() {}
+    bogus_atomic() : Atomic() {}
     void delta_int() {}
-    void delta_ext(double, std::list<PinValue<char>> const &) {}
-    void delta_conf(std::list<PinValue<char>> const &) {}
-    void output_func(std::list<PinValue<char>> &) {}
+    void delta_ext(double, std::list<PinValue> const &) {}
+    void delta_conf(std::list<PinValue> const &) {}
+    void output_func(std::list<PinValue> &) {}
     double ta() { return 0.0; }
 };
 
 void testa() {
-    Schedule<char> q;
-    Atomic<char>* m = new bogus_atomic;
+    Schedule q;
+    Atomic* m = new bogus_atomic;
     q.schedule(m, 0.0);
     q.removeMinimum();
     q.schedule(m, 0.0);
@@ -27,8 +31,8 @@ void testa() {
 
 void test1() {
     int i;
-    Atomic<char>* m[10];
-    Schedule<char> q;
+    Atomic* m[10];
+    Schedule q;
     for (i = 0; i < 10; i++) {
         m[i] = new bogus_atomic;
         q.schedule(m[i], (double)i);
@@ -46,11 +50,11 @@ void test1() {
 }
 
 void test2() {
-    Atomic<char>* m[5];
+    Atomic* m[5];
     for (int i = 0; i < 5; i++) {
         m[i] = new bogus_atomic;
     }
-    Schedule<char> q;
+    Schedule q;
     q.schedule(m[0], 1.0);
     q.schedule(m[1], 10.0);
     q.schedule(m[2], 5.0);
@@ -73,11 +77,11 @@ void test2() {
 }
 
 void test3() {
-    Atomic<char>* m[3];
+    Atomic* m[3];
     for (int i = 0; i < 3; i++) {
         m[i] = new bogus_atomic;
     }
-    Schedule<char> q;
+    Schedule q;
     q.schedule(m[0], 5.0);
     q.schedule(m[1], 10.0);
     q.schedule(m[2], 1.0);
@@ -91,10 +95,10 @@ void test3() {
 }
 
 void test4() {
-    Schedule<char> q;
+    Schedule q;
     assert(q.minPriority() == adevs_inf<double>());
     assert(q.getMinimum() == nullptr);
-    Atomic<char>* m[200];
+    Atomic* m[200];
     for (int i = 0; i < 200; i++) {
         m[i] = new bogus_atomic;
     }
@@ -119,11 +123,11 @@ void test4() {
 }
 
 void test5() {
-    Atomic<char>* m[2];
+    Atomic* m[2];
     for (int i = 0; i < 2; i++) {
         m[i] = new bogus_atomic;
     }
-    Schedule<char> q;
+    Schedule q;
     q.schedule(m[0], 2.0);
     q.schedule(m[1], 3.0);
     q.schedule(m[1], DBL_MAX);
@@ -135,11 +139,11 @@ void test5() {
 }
 
 void test6() {
-    Atomic<char>* m[2];
+    Atomic* m[2];
     for (int i = 0; i < 2; i++) {
         m[i] = new bogus_atomic;
     }
-    Schedule<char> q;
+    Schedule q;
     q.schedule(m[0], 1.0);
     q.schedule(m[1], 1.0);
     q.schedule(m[0], adevs_inf<double>());
@@ -151,11 +155,11 @@ void test6() {
 }
 
 void test7() {
-    Atomic<char>* m[2];
+    Atomic* m[2];
     for (int i = 0; i < 2; i++) {
         m[i] = new bogus_atomic;
     }
-    Schedule<char> q;
+    Schedule q;
     q.schedule(m[0], 2.0);
     q.schedule(m[1], 3.0);
     q.schedule(m[0], 4.0);
@@ -171,8 +175,8 @@ void test7() {
 }
 
 void test8() {
-    Atomic<char>* m[2000];
-    Schedule<char> q;
+    Atomic* m[2000];
+    Schedule q;
     for (int i = 0; i < 2000; i++) {
         m[i] = new bogus_atomic;
         q.schedule(m[i], (double)i);
@@ -189,8 +193,8 @@ void test8() {
 
 void test9() {
     int i;
-    Atomic<char>* m[20];
-    Schedule<char> q;
+    Atomic* m[20];
+    Schedule q;
     for (i = 0; i < 10; i++) {
         m[i] = new bogus_atomic;
         q.schedule(m[i], 1.0);
@@ -207,10 +211,10 @@ void test9() {
 }
 
 void test10() {
-    Atomic<char>* m0 = new bogus_atomic;
-    Atomic<char>* m1 = new bogus_atomic;
-    Atomic<char>* m2 = new bogus_atomic;
-    Schedule<char> q;
+    Atomic* m0 = new bogus_atomic;
+    Atomic* m1 = new bogus_atomic;
+    Atomic* m2 = new bogus_atomic;
+    Schedule q;
     q.schedule(m0, 1.0);
     q.schedule(m1, 1.0);
     q.schedule(m2, 2.0);

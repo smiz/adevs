@@ -4,20 +4,22 @@
 #include <iostream>
 #include <memory>
 
-using namespace adevs;
 
+using Atomic = adevs::Atomic<char>;
+using PinValue = adevs::PinValue<char>;
+using Schedule = adevs::Schedule<char>;
 
-class bogus_atomic : public Atomic<char> {
+class bogus_atomic : public Atomic {
   public:
-    bogus_atomic() : Atomic<char>() { _event = (double)rand(); }
+    bogus_atomic() : Atomic() { _event = (double)rand(); }
     ~bogus_atomic() {}
     void delta_int() {
         // Something happened; pick the next time.
         _event = (double)rand();
     }
-    void delta_ext(double, std::list<PinValue<char>> const &xb) {}
-    void delta_conf(std::list<PinValue<char>> const &xb) {}
-    void output_func(std::list<PinValue<char>> &yb) {}
+    void delta_ext(double, std::list<PinValue> const &xb) {}
+    void delta_conf(std::list<PinValue> const &xb) {}
+    void output_func(std::list<PinValue> &yb) {}
     double ta() { return (double)_event; }
 
   private:
@@ -26,7 +28,7 @@ class bogus_atomic : public Atomic<char> {
 
 
 void benchmark_new() {
-    Schedule<char> q;
+    Schedule q;
 
     srand(200);
     // Add a bunch of models with random times

@@ -11,7 +11,7 @@ typedef std::list<IOType> IOList;
 #include "TestCircuitModelica.h"
 
 
-using namespace adevs;
+// using namespace adevs;
 
 // Output interval and maximum step size
 double const cint = 1E-4;
@@ -36,8 +36,7 @@ class CircuitOutput {
 };
 
 /// Circuit with modelica inverters.
-class TestCircuitModelicaExt : public TestCircuitModelica,
-                               public CircuitOutput {
+class TestCircuitModelicaExt : public TestCircuitModelica, public CircuitOutput {
   public:
     TestCircuitModelicaExt() : TestCircuitModelica(), CircuitOutput() {}
     double get_i_load_phase_a() { return get_circuit_a_i_load(); }
@@ -58,18 +57,17 @@ class TestCircuitModelicaExt : public TestCircuitModelica,
 /**
   * Create the modelica circuit model for a simulation.
   */
-adevs::Devs<IOType>* make_model_with_modelica_inverters(
-    CircuitOutput** circuit) {
+adevs::Devs<IOType>* make_model_with_modelica_inverters(CircuitOutput** circuit) {
     // Create our model
     TestCircuitModelicaExt* eqns = new TestCircuitModelicaExt();
     // Wrap a set of solvers around it
-    Hybrid<IOType>* model = new Hybrid<IOType>(
-        eqns,                                            // Model to simulate
-        new trap<IOType>(eqns, tol, cint),               // ODE solver
-        new fast_event_locator<IOType>(eqns, event_tol)  // Event locator
-        // You must use this event locator for OpenModelica because it does
-        // not generate continuous zero crossing functions
-    );
+    Hybrid<IOType>* model =
+        new Hybrid<IOType>(eqns,                                            // Model to simulate
+                           new trap<IOType>(eqns, tol, cint),               // ODE solver
+                           new fast_event_locator<IOType>(eqns, event_tol)  // Event locator
+                           // You must use this event locator for OpenModelica because it does
+                           // not generate continuous zero crossing functions
+        );
     *circuit = eqns;
     return model;
 }
@@ -210,15 +208,15 @@ adevs::Devs<IOType>* make_model_with_adevs_inverters(CircuitOutput** circuit) {
     TestCircuitAdevsExt* eqns = new TestCircuitAdevsExt();
     // Wrap a set of solvers around it. This also initializes the FMI
     // so that we can get its variables.
-    Hybrid<IOType>* model = new Hybrid<IOType>(
-        eqns,                                     // Model to simulate
-        new trap<IOType>(eqns, tol, cint, true),  // ODE solver
-        new fast_event_locator<IOType>(eqns, event_tol, true)  // Event locator
-        // You must use this event locator for OpenModelica because it does
-        // not generate continuous zero crossing functions
-    );
+    Hybrid<IOType>* model =
+        new Hybrid<IOType>(eqns,                                     // Model to simulate
+                           new trap<IOType>(eqns, tol, cint, true),  // ODE solver
+                           new fast_event_locator<IOType>(eqns, event_tol, true)  // Event locator
+                           // You must use this event locator for OpenModelica because it does
+                           // not generate continuous zero crossing functions
+        );
     // Create switches and connect everything
-    Digraph<double>* dig = new Digraph<double>();
+    DiGraph* dig = new DiGraph();
     dig->add(model);
     for (int i = 0; i < 3; i++) {
         inverter_switch[i] = new Switch(i, eqns->get_inverter_freq(i));

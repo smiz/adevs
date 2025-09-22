@@ -66,7 +66,8 @@ class event_locator_impl : public event_locator<ValueType> {
         /// function
         BISECTION,
         /// Use bisection assuming a discontinuous state event function
-        DISCONTINUOUS };
+        DISCONTINUOUS
+    };
     /**
      * @brief Create an event locator that will act on the supplied ode_system.
      * 
@@ -112,8 +113,8 @@ class event_locator_impl : public event_locator<ValueType> {
 };
 
 template <typename ValueType>
-event_locator_impl<ValueType>::event_locator_impl(ode_system<ValueType>* sys,
-                                                   double err_tol, Mode mode)
+event_locator_impl<ValueType>::event_locator_impl(ode_system<ValueType>* sys, double err_tol,
+                                                  Mode mode)
     : event_locator<ValueType>(sys), err_tol(err_tol), mode(mode) {
     z[0] = new double[sys->numEvents()];
     z[1] = new double[sys->numEvents()];
@@ -126,11 +127,8 @@ event_locator_impl<ValueType>::~event_locator_impl() {
 }
 
 template <typename ValueType>
-bool event_locator_impl<ValueType>::find_events(bool* events,
-                                                 double const* qstart,
-                                                 double* qend,
-                                                 ode_solver<ValueType>* solver,
-                                                 double &h) {
+bool event_locator_impl<ValueType>::find_events(bool* events, double const* qstart, double* qend,
+                                                ode_solver<ValueType>* solver, double &h) {
     // Calculate the state event functions at the start
     // of the interval
     this->sys->state_event_func(qstart, z[0]);
@@ -202,10 +200,9 @@ class bisection_event_locator : public event_locator_impl<ValueType> {
      * z values
      * @param err_tol Sets how close to zero must a z function be before it triggers
      * a state event
-     */ 
+     */
     bisection_event_locator(ode_system<ValueType>* sys, double err_tol)
-        : event_locator_impl<ValueType>(
-              sys, err_tol, event_locator_impl<ValueType>::BISECTION) {}
+        : event_locator_impl<ValueType>(sys, err_tol, event_locator_impl<ValueType>::BISECTION) {}
 };
 
 /**
@@ -227,8 +224,7 @@ class linear_event_locator : public event_locator_impl<ValueType> {
      * a state event
      */
     linear_event_locator(ode_system<ValueType>* sys, double err_tol)
-        : event_locator_impl<ValueType>(
-              sys, err_tol, event_locator_impl<ValueType>::INTERPOLATE) {}
+        : event_locator_impl<ValueType>(sys, err_tol, event_locator_impl<ValueType>::INTERPOLATE) {}
 };
 
 /**
@@ -249,8 +245,8 @@ class discontinuous_event_locator : public event_locator_impl<ValueType> {
      * a state event
      */
     discontinuous_event_locator(ode_system<ValueType>* sys, double err_tol)
-        : event_locator_impl<ValueType>(
-              sys, err_tol, event_locator_impl<ValueType>::DISCONTINUOUS) {}
+        : event_locator_impl<ValueType>(sys, err_tol,
+                                        event_locator_impl<ValueType>::DISCONTINUOUS) {}
 };
 
 /**
@@ -268,8 +264,7 @@ class null_event_locator : public event_locator<ValueType> {
     ~null_event_locator() {}
     /// @brief Always returns false without invoking any methods of the
     /// supplied ode_solver
-    bool find_events(bool*, double const*, double*, ode_solver<ValueType>*,
-                     double &) {
+    bool find_events(bool*, double const*, double*, ode_solver<ValueType>*, double &) {
         return false;
     }
 };
@@ -305,8 +300,7 @@ class fast_event_locator : public event_locator<ValueType> {
      * @param interpolate Interpolate using a spline instead of solving
      * directly using the solver while performing the event localization.
      */
-    fast_event_locator(ode_system<ValueType>* sys, double err_tol,
-                       bool interpolate = false);
+    fast_event_locator(ode_system<ValueType>* sys, double err_tol, bool interpolate = false);
     bool find_events(bool* events, double const* qstart, double* qend,
                      ode_solver<ValueType>* solver, double &h);
     ~fast_event_locator();
@@ -321,9 +315,8 @@ class fast_event_locator : public event_locator<ValueType> {
 };
 
 template <typename ValueType>
-fast_event_locator<ValueType>::fast_event_locator(ode_system<ValueType>* sys,
-                                                   double err_tol,
-                                                   bool interpolate)
+fast_event_locator<ValueType>::fast_event_locator(ode_system<ValueType>* sys, double err_tol,
+                                                  bool interpolate)
     : event_locator<ValueType>(sys),
       err_tol(err_tol),
       z0(new double[sys->numEvents()]),
@@ -360,11 +353,8 @@ bool fast_event_locator<ValueType>::is_sign_change() const {
 }
 
 template <typename ValueType>
-bool fast_event_locator<ValueType>::find_events(bool* events,
-                                                 double const* qstart,
-                                                 double* qend,
-                                                 ode_solver<ValueType>* solver,
-                                                 double &h) {
+bool fast_event_locator<ValueType>::find_events(bool* events, double const* qstart, double* qend,
+                                                ode_solver<ValueType>* solver, double &h) {
     int const N = this->sys->numEvents();
     bool sign_change;
     double hl = 0.0, hh = h, hg = hh;

@@ -8,7 +8,7 @@
 #include <vector>
 #include "adevs/adevs.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 #define XSIZE 10
 #define YSIZE 10
@@ -28,17 +28,16 @@ struct io_type {
     int xsrc, ysrc, xtgt, ytgt;
 };
 
-class Agent : public Atomic<io_type, sd_time<>> {
+class Agent : public Atomic<io_type, adevs::sd_time<>> {
   public:
     Agent(int c0, int p, int x, int y)
-        : Atomic<io_type, sd_time<>>(), c(c0), p(p), x(x), y(y) {
+        : Atomic<io_type, adevs::sd_time<>>(), c(c0), p(p), x(x), y(y) {
         output[x][y] = c0;
     }
     void delta_int() {}
-    void delta_ext(sd_time<> e, std::list<io_type> const &xb) {
+    void delta_ext(adevs::sd_time<> e, std::list<io_type> const &xb) {
         for (auto xx : xb) {
-            if (xx.xtgt == x && xx.ytgt == y && c == Healthy &&
-                output[xx.xsrc][xx.ysrc] == Tumor) {
+            if (xx.xtgt == x && xx.ytgt == y && c == Healthy && output[xx.xsrc][xx.ysrc] == Tumor) {
                 c = Tumor;
             }
         }
@@ -46,7 +45,7 @@ class Agent : public Atomic<io_type, sd_time<>> {
     }
     void delta_conf(std::list<io_type> const &xb) {
         delta_int();
-        delta_ext(adevs_zero<sd_time<>>(), xb);
+        delta_ext(adevs_zero<adevs::sd_time<>>(), xb);
     }
     void output_func(std::list<io_type> &yb) {
         io_type yy;
@@ -78,13 +77,13 @@ class Agent : public Atomic<io_type, sd_time<>> {
         output[x][y] = c;
     }
 
-    sd_time<> ta() {
+    adevs::sd_time<> ta() {
         if (output[x][y] != c) {
-            return sd_time<>(0.0, 0);
+            return adevs::sd_time<>(0.0, 0);
         } else if (c == Tumor) {
-            return sd_time<>(r, p);
+            return adevs::sd_time<>(r, p);
         } else {
-            return adevs_inf<sd_time<>>();
+            return adevs_inf<adevs::sd_time<>>();
         }
     }
 
@@ -122,9 +121,9 @@ class Agent : public Atomic<io_type, sd_time<>> {
     }
 };
 
-class Grid : public Network<io_type, sd_time<>> {
+class Grid : public Network<io_type, adevs::sd_time<>> {
   public:
-    Grid() : Network<io_type, sd_time<>>() {
+    Grid() : Network<io_type, adevs::sd_time<>>() {
         int count = 0;
         for (int i = 0; i < XSIZE; i++) {
             for (int j = 0; j < YSIZE; j++) {
@@ -137,16 +136,16 @@ class Grid : public Network<io_type, sd_time<>> {
             }
         }
     }
-    void getComponents(set<Devs<io_type, sd_time<>>*> &c) {
+    void getComponents(set<Devs<io_type, adevs::sd_time<>>*> &c) {
         for (int i = 0; i < XSIZE; i++) {
             for (int j = 0; j < YSIZE; j++) {
                 c.insert(grid[i][j]);
             }
         }
     }
-    void route(io_type const &value, Devs<io_type, sd_time<>>* model,
-               std::list<Event<io_type, sd_time<>>> &r) {
-        Event<io_type, sd_time<>> xx;
+    void route(io_type const &value, Devs<io_type, adevs::sd_time<>>* model,
+               std::list<Event<io_type, adevs::sd_time<>>> &r) {
+        Event<io_type, adevs::sd_time<>> xx;
         xx.value = value;
         if (value.xsrc - 1 >= 0) {
             xx.model = grid[value.xsrc - 1][value.ysrc];
@@ -180,7 +179,7 @@ class Grid : public Network<io_type, sd_time<>> {
             }
         }
     }
-    void print(sd_time<> tL) {
+    void print(adevs::sd_time<> tL) {
         std::cout << tL << std::endl;
         for (int i = 0; i < XSIZE; i++) {
             for (int j = 0; j < YSIZE; j++) {
@@ -197,11 +196,10 @@ class Grid : public Network<io_type, sd_time<>> {
 
 int main() {
     Grid* world = new Grid();
-    Simulator<io_type, sd_time<>>* sim =
-        new Simulator<io_type, sd_time<>>(world);
-    world->print(adevs_zero<sd_time<>>());
-    while (sim->nextEventTime() < adevs_inf<sd_time<>>()) {
-        sd_time<> tL = sim->nextEventTime();
+    Simulator<io_type, adevs::sd_time<>>* sim = new Simulator<io_type, adevs::sd_time<>>(world);
+    world->print(adevs_zero<adevs::sd_time<>>());
+    while (sim->nextEventTime() < adevs_inf<adevs::sd_time<>>()) {
+        adevs::sd_time<> tL = sim->nextEventTime();
         sim->execNextEvent();
         world->print(tL);
     }

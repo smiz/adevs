@@ -8,8 +8,6 @@
 #include "adevs/adevs.h"
 
 
-
-
 enum class Mode {
     FUTURE = 0,
     CONDITIONAL = 1,
@@ -29,8 +27,7 @@ class Event {
      * Create an event to act on a partition. The timestamp
      * must be inf for a conditional event.
      */
-    Event(std::shared_ptr<Partition> p, double t = adevs_inf<double>())
-        : _partition(p), _time(t) {}
+    Event(std::shared_ptr<Partition> p, double t = adevs_inf<double>()) : _partition(p), _time(t) {}
     virtual ~Event() {}
     /**
      * Gather the data that is needed to execute
@@ -66,10 +63,7 @@ class Event {
  */
 class Partition : public adevs::Atomic<std::shared_ptr<Event>> {
   public:
-    Partition()
-        : adevs::Atomic<std::shared_ptr<Event>>(),
-          time_now(0.0),
-          mode(Mode::FUTURE) {}
+    Partition() : adevs::Atomic<std::shared_ptr<Event>>(), time_now(0.0), mode(Mode::FUTURE) {}
 
     /**
      * <p>Execute the events that are imminent for this partition.

@@ -6,25 +6,21 @@
 #include "adevs/adevs.h"
 #include "object.h"
 
-class genr : public adevs::Atomic<ObjectPtr> {
+using pin_t = adevs::pin_t;
+using Atomic = adevs::Atomic<ObjectPtr>;
+
+class genr : public Atomic {
   public:
-    adevs::pin_t stop;
-    adevs::pin_t start;
-    adevs::pin_t signal;
+    pin_t stop;
+    pin_t start;
+    pin_t signal;
 
     genr(std::vector<double> const &pattern, int iterations, bool active = true)
-        : adevs::Atomic<ObjectPtr>(),
-          pattern(pattern),
-          active(active),
-          init_state(active),
-          iterations(iterations) {
+        : Atomic(), pattern(pattern), active(active), init_state(active), iterations(iterations) {
         init();
     }
     genr(double period, int iterations, bool active = true)
-        : adevs::Atomic<ObjectPtr>(),
-          active(active),
-          init_state(active),
-          iterations(iterations) {
+        : Atomic(), active(active), init_state(active), iterations(iterations) {
         pattern.push_back(period);
         init();
     }
@@ -46,10 +42,10 @@ class genr : public adevs::Atomic<ObjectPtr> {
             sigma = pattern[count++ % pattern.size()];
         }
     }
-    void delta_ext(double, std::list<adevs::PinValue<ObjectPtr>> const &x) {
+    void delta_ext(double, std::list<PinValue> const &x) {
         sigma = adevs_inf<double>();
         active = false;
-        std::list<adevs::PinValue<ObjectPtr>>::const_iterator i;
+        std::list<PinValue>::const_iterator i;
         for (i = x.begin(); i != x.end(); i++) {
             if ((*i).pin == start) {
                 if (active == false) {
@@ -63,9 +59,9 @@ class genr : public adevs::Atomic<ObjectPtr> {
         }
         printf("Got genr.stop\n");
     }
-    void delta_conf(std::list<adevs::PinValue<ObjectPtr>> const &x) { delta_ext(ta(), x); }
-    void output_func(std::list<adevs::PinValue<ObjectPtr>> &y) {
-        adevs::PinValue<ObjectPtr> pv;
+    void delta_conf(std::list<PinValue> const &x) { delta_ext(ta(), x); }
+    void output_func(std::list<PinValue> &y) {
+        PinValue pv;
         pv.pin = signal;
         pv.value = std::make_shared<object>();
         y.push_back(pv);

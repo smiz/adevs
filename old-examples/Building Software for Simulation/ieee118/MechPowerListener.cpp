@@ -1,6 +1,6 @@
 #include "MechPowerListener.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 MechPowerListener::MechPowerListener(ElectricalModel* model, double cint,
                                      std::string model_name)

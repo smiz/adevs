@@ -3,19 +3,19 @@
 #include <cstdlib>
 #include "adevs/adevs.h"
 #include "job.h"
+
+using pin_t = adevs::pin_t;
+
 /*
 A processor requires a fixed period of time to service a job.
 The processor can serve only one job at a time.  It the processor
 is busy, it simply discards incoming jobs.
 */
-class proc : public adevs::Atomic<job> {
+class proc : public Atomic {
   public:
     /// Constructor.  The processing time is provided as an argument.
     proc(double proc_time)
-        : adevs::Atomic<job>(),
-          processing_time(proc_time),
-          sigma(adevs_inf<double>()),
-          val(nullptr) {
+        : Atomic(), processing_time(proc_time), sigma(adevs_inf<double>()), val(nullptr) {
         t = 0.0;
     }
     /// Internal transition function
@@ -70,9 +70,9 @@ class proc : public adevs::Atomic<job> {
     }
 
     /// Model input port
-    const adevs::pin_t in;
+    pin_t const in;
     /// Model output port
-    const adevs::pin_t out;
+    pin_t const out;
 
   private:
     /// Model state variables

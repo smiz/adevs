@@ -2,10 +2,12 @@
 #include "adevs/adevs.h"
 #include "gcd.h"
 
+using Coupled = adevs::Coupled<ObjectPtr>;
+using Simulator = adevs::Simulator<ObjectPtr>;
 
 int main() {
     std::cout << "Test 2" << std::endl;
-    auto model = std::make_shared<adevs::Coupled<ObjectPtr>>();
+    auto model = std::make_shared<Coupled>();
     std::vector<double> pat;
     pat.push_back(0);
     pat.push_back(0);
@@ -14,7 +16,7 @@ int main() {
     model->add_atomic(g);
     model->add_coupled_model(c);
     model->create_coupling(g->signal, c->in);
-    adevs::Simulator<ObjectPtr> sim(model);
+    Simulator sim(model);
     while (sim.nextEventTime() < adevs_inf<double>()) {
         sim.execNextEvent();
     }

@@ -4,6 +4,7 @@
 #include <deque>
 #include "adevs/adevs.h"
 
+using Atomic = adevs::Atomic<int>;
 
 /**
  * This class models a machine as a fifo queue and server with fixed service time.
@@ -11,9 +12,9 @@
  * method, to add and remove machines as needed to satisfy a 6 day turnaround time
  * for orders.
  */
-class Machine : public adevs::Atomic<int> {
+class Machine : public Atomic {
   public:
-    Machine() : adevs::Atomic<int>(), time_remaining(DBL_MAX) {}
+    Machine() : Atomic(), time_remaining(DBL_MAX) {}
 
     void delta_int() {
         q.pop_front();  // Remove the completed job

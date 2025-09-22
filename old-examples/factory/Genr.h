@@ -3,18 +3,18 @@
 #include <random>
 #include "adevs/adevs.h"
 
+using Atomic = adevs::Atomic<int>;
+
 /**
  * The Genr models factory demand. It creates new orders every 0.5 to 2 days.
  */
-class Genr : public adevs::Atomic<int> {
+class Genr : public Atomic {
   public:
     /**
      * The generator requires a seed for the random number that determines
      * the time between new orders.
      */
-    Genr(unsigned long seed) : adevs::Atomic<int>(), next(1) {
-        set_time_to_order();
-    }
+    Genr(unsigned long seed) : Atomic(), next(1) { set_time_to_order(); }
 
     // Internal transition updates the order counter and determines the next arrival time
     void delta_int() {

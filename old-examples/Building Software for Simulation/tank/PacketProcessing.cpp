@@ -1,7 +1,7 @@
 #include "PacketProcessing.h"
 #include <cmath>
 
-using namespace adevs;
+// using namespace adevs;
 
 PacketProcessing::PacketProcessing()
     : Atomic<SimEvent>(),

@@ -1,6 +1,6 @@
 #include "BusVoltsListener.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 BusVoltsListener::BusVoltsListener(ElectricalModel* model, double cint,
                                    std::string model_name)

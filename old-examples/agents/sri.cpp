@@ -10,7 +10,9 @@
 #include "adevs/adevs.h"
 
 
-using namespace adevs;
+// using namespace adevs;
+using Atomic = adevs::Atomic<int>;
+using Network = adevs::Network<int>;
 
 // Total number of agents in the population
 static int num_agents = 1000;
@@ -119,10 +121,9 @@ class Agent : public Atomic<int> {
   * SIR equations. This is the "exact" solution for a
   * sufficiently large population of agents.
   */
-class SIR : public Atomic<int> {
+class SIR : public Atomic {
   public:
-    SIR()
-        : Atomic<int>(), ss(1.0 - init_sick), ii(init_sick), rr(0.0), h(0.01) {}
+    SIR() : Atomic(), ss(1.0 - init_sick), ii(init_sick), rr(0.0), h(0.01) {}
     double ta() { return h; }
     void delta_int() { update(h); }
     void delta_ext(double e, std::list<int> const &) { update(e); }
@@ -148,9 +149,9 @@ class SIR : public Atomic<int> {
     }
 };
 
-class RandomNetwork : public Network<int> {
+class RandomNetwork : public Network {
   public:
-    RandomNetwork() : Network<int>() {
+    RandomNetwork() : Network() {
         // Create our population
         for (int i = 0; i < num_agents; i++) {
             if (i < init_sick * num_agents) {
@@ -191,7 +192,7 @@ class RandomNetwork : public Network<int> {
     }
 
   private:
-    std::vectorAgent*> pop;
+    std::vectorAgent* > pop;
     SIR* sir;
 };
 
@@ -202,12 +203,10 @@ void print(double t, RandomNetwork* world) {
         next_day = (int)t;
         std::cout << next_day << " " <<
             // Agent model as fraction of population
-            ((double)pop[S] / (double)num_agents) << " "
-             << ((double)pop[I] / (double)num_agents) << " "
-             << ((double)pop[R] / (double)num_agents) << " " <<
+            ((double)pop[S] / (double)num_agents) << " " << ((double)pop[I] / (double)num_agents)
+                  << " " << ((double)pop[R] / (double)num_agents) << " " <<
             // ODE model as fraction of population
-            world->get_s() << " " << world->get_i() << " " << world->get_r()
-             << " " << std::endl;
+            world->get_s() << " " << world->get_i() << " " << world->get_r() << " " << std::endl;
         next_day++;
     }
 }

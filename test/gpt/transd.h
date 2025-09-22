@@ -5,6 +5,9 @@
 #include <vector>
 #include "adevs/adevs.h"
 #include "job.h"
+
+using pin_t = adevs::pin_t;
+
 /*
 The transducer computes various statistics about the
 performance of the queuing system.  It receives new jobs
@@ -12,15 +15,11 @@ on its ariv port, finished jobs on its solved port,
 and generates and output on its out port when the observation
 interval has elapsed.
 */
-class transd : public adevs::Atomic<job> {
+class transd : public Atomic {
   public:
     /// Constructor
     transd(double observ_time)
-        : adevs::Atomic<job>(),
-          observation_time(observ_time),
-          sigma(observation_time),
-          total_ta(0.0),
-          t(0.0) {}
+        : Atomic(), observation_time(observ_time), sigma(observation_time), total_ta(0.0), t(0.0) {}
     /// Internal transition function
     void delta_int() {
         // Keep track of the simulation time
@@ -60,8 +59,7 @@ class transd : public adevs::Atomic<job> {
             if (iter.pin == ariv) {
                 job j(iter.value);
                 j.t = t;
-                std::cout << "Start job " << j.id << " @ t = " << t
-                          << std::endl;
+                std::cout << "Start job " << j.id << " @ t = " << t << std::endl;
                 jobs_arrived.push_back(j);
             }
         }
@@ -73,8 +71,7 @@ class transd : public adevs::Atomic<job> {
                 for (; i != jobs_arrived.end(); i++) {
                     if ((*i).id == j.id) {
                         total_ta += t - (*i).t;
-                        std::cout << "Finish job " << j.id << " @ t = " << t
-                                  << std::endl;
+                        std::cout << "Finish job " << j.id << " @ t = " << t << std::endl;
                         break;
                     }
                 }
@@ -105,9 +102,9 @@ class transd : public adevs::Atomic<job> {
         jobs_solved.clear();
     }
     /// Model input port
-    const adevs::pin_t ariv, solved;
+    pin_t const ariv, solved;
     /// Model output port
-    const adevs::pin_t out;
+    pin_t const out;
 
   private:
     /// Model state variables

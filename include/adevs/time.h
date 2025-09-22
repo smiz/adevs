@@ -96,19 +96,13 @@ class sd_time {
         return *this;
     }
     /// @brief Equivalence
-    bool operator==(sd_time const &t2) const {
-        return (t == t2.t && k == t2.k);
-    }
+    bool operator==(sd_time const &t2) const { return (t == t2.t && k == t2.k); }
     /// @brief Not equal
     bool operator!=(sd_time const &t2) const { return !(*this == t2); }
     /// @brief Order by t then by k
-    bool operator<(sd_time const &t2) const {
-        return (t < t2.t || (t == t2.t && k < t2.k));
-    }
+    bool operator<(sd_time const &t2) const { return (t < t2.t || (t == t2.t && k < t2.k)); }
     /// @brief Less than or equal
-    bool operator<=(sd_time const &t2) const {
-        return (*this == t2 || *this < t2);
-    }
+    bool operator<=(sd_time const &t2) const { return (*this == t2 || *this < t2); }
     /// @brief Greater than
     bool operator>(sd_time const &t2) const { return !(*this <= t2); }
     /// @brief Greater than or equal
@@ -209,40 +203,26 @@ class double_fcmp {
     /// @brief Less than
     bool operator<(double rhs) const { return (fcmp(d, rhs, epsilon) < 0); }
     /// @brief Less than
-    bool operator<(double_fcmp const &rhs) const {
-        return (fcmp(d, rhs.d, epsilon) < 0);
-    }
+    bool operator<(double_fcmp const &rhs) const { return (fcmp(d, rhs.d, epsilon) < 0); }
     /// @brief Less than or equal to
-    bool operator<=(double_fcmp const &rhs) const {
-        return (fcmp(d, rhs.d, epsilon) <= 0);
-    }
+    bool operator<=(double_fcmp const &rhs) const { return (fcmp(d, rhs.d, epsilon) <= 0); }
     /// @brief Greater than
-    bool operator>(double_fcmp const &rhs) const {
-        return (fcmp(d, rhs.d, epsilon) > 0);
-    }
+    bool operator>(double_fcmp const &rhs) const { return (fcmp(d, rhs.d, epsilon) > 0); }
     /// @brief Greater than or equal to
-    bool operator>=(double_fcmp const &rhs) const {
-        return (fcmp(d, rhs.d, epsilon) >= 0);
-    }
+    bool operator>=(double_fcmp const &rhs) const { return (fcmp(d, rhs.d, epsilon) >= 0); }
     /// @brief Equality
     bool operator==(double rhs) const { return (fcmp(d, rhs, epsilon) == 0); }
     /// @brief Equality
-    bool operator==(double_fcmp const &rhs) const {
-        return (fcmp(d, rhs.d, epsilon) == 0);
-    }
+    bool operator==(double_fcmp const &rhs) const { return (fcmp(d, rhs.d, epsilon) == 0); }
     /// @brief Advance this value by a step size t2
-    double_fcmp operator+(double_fcmp const &t2) const {
-        return double_fcmp(d+t2.d);
-    }
+    double_fcmp operator+(double_fcmp const &t2) const { return double_fcmp(d + t2.d); }
     /// @brief Advance this value by a step size t2
     double_fcmp const &operator+=(double_fcmp const &t2) {
         d += t2.d;
         return *this;
     }
     /// @brief Length of the interval from now to t2
-    double_fcmp operator-(double_fcmp const &t2) const {
-        return double_fcmp(d-t2.d);
-    }
+    double_fcmp operator-(double_fcmp const &t2) const { return double_fcmp(d - t2.d); }
     /// @brief Assign length of the interval from now to t2
     double_fcmp const &operator-=(double_fcmp const &t2) {
         d -= t2.d;
@@ -304,13 +284,11 @@ inline adevs::sd_time<double> adevs_inf() {
 }
 template <>
 inline adevs::sd_time<long> adevs_inf() {
-    return adevs::sd_time<long>(std::numeric_limits<long>::max(),
-                                std::numeric_limits<int>::max());
+    return adevs::sd_time<long>(std::numeric_limits<long>::max(), std::numeric_limits<int>::max());
 }
 template <>
 inline adevs::sd_time<int> adevs_inf() {
-    return adevs::sd_time<int>(std::numeric_limits<int>::max(),
-                               std::numeric_limits<int>::max());
+    return adevs::sd_time<int>(std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
 }
 
 template <>

@@ -4,16 +4,17 @@
 #include <iostream>
 #include <memory>
 
-using namespace adevs;
 
+using Schedule = adevs::Schedule<char>;
+using Atomic = adevs::Atomic;
 
-class bogus_atomic : public Atomic<char> {
+class bogus_atomic : public Atomic {
   public:
-    bogus_atomic(double event) : Atomic<char>(), _event(event) {}
+    bogus_atomic(double event) : Atomic(), _event(event) {}
     void delta_int() {}
-    void delta_ext(double, std::list<PinValue<char>> const &) {}
-    void delta_conf(std::list<PinValue<char>> const &) {}
-    void output_func(std::list<PinValue<char>> &) {}
+    void delta_ext(double, std::list<PinValue> const &) {}
+    void delta_conf(std::list<PinValue> const &) {}
+    void output_func(std::list<PinValue> &) {}
     double ta() { return (double)_event; }
     void set(double event) { _event = event; }
 
@@ -41,7 +42,7 @@ void test1() {
         m[ii] = std::make_shared<bogus_atomic>(ii);
     }
 
-    Schedule<char> q;
+    Schedule q;
     for (ii = 0; ii < 10; ii++) {
         q.add(m[ii]);
         assert(q.get_minimum() == 0.0);
@@ -61,7 +62,7 @@ void test2() {
     std::shared_ptr<bogus_atomic> m3 = std::make_shared<bogus_atomic>(3.0);
     std::shared_ptr<bogus_atomic> m4 = std::make_shared<bogus_atomic>(4.0);
 
-    Schedule<char> q;
+    Schedule q;
     q.add(m0);
     q.add(m1);
     q.add(m2);
@@ -85,7 +86,7 @@ void test3() {
     std::shared_ptr<bogus_atomic> m1 = std::make_shared<bogus_atomic>(10.0);
     std::shared_ptr<bogus_atomic> m2 = std::make_shared<bogus_atomic>(1.0);
 
-    Schedule<char> q;
+    Schedule q;
     q.add(m0);
     q.add(m1);
     q.add(m2);
@@ -99,7 +100,7 @@ void test3() {
 }
 
 void test4() {
-    Schedule<char> q;
+    Schedule q;
     assert(q.get_minimum() == DBL_MAX);
     assert(q.get_next() == NULL);
 
@@ -126,7 +127,7 @@ void test4() {
 void test5() {
     std::shared_ptr<bogus_atomic> m0 = std::make_shared<bogus_atomic>(2.0);
     std::shared_ptr<bogus_atomic> m1 = std::make_shared<bogus_atomic>(3.0);
-    Schedule<char> q;
+    Schedule q;
 
     q.add(m0);
     q.add(m1);
@@ -139,7 +140,7 @@ void test5() {
 void test6() {
     std::shared_ptr<bogus_atomic> m0 = std::make_shared<bogus_atomic>(1.0);
     std::shared_ptr<bogus_atomic> m1 = std::make_shared<bogus_atomic>(1.0);
-    Schedule<char> q;
+    Schedule q;
 
     q.add(m0);
     q.add(m1);
@@ -152,7 +153,7 @@ void test6() {
 void test7() {
     std::shared_ptr<bogus_atomic> m0 = std::make_shared<bogus_atomic>(2.0);
     std::shared_ptr<bogus_atomic> m1 = std::make_shared<bogus_atomic>(3.0);
-    Schedule<char> q;
+    Schedule q;
 
     q.add(m0);
     q.add(m1);
@@ -169,7 +170,7 @@ void test7() {
 
 void test8() {
     std::shared_ptr<bogus_atomic> m[2000];
-    Schedule<char> q;
+    Schedule q;
 
     for (int ii = 0; ii < 2000; ii++) {
         m[ii] = std::make_shared<bogus_atomic>(ii);
@@ -186,7 +187,7 @@ void test8() {
 void test9() {
     int ii;
     std::shared_ptr<bogus_atomic> m[20];
-    Schedule<char> q;
+    Schedule q;
 
     for (ii = 0; ii < 10; ii++) {
         m[ii] = std::make_shared<bogus_atomic>(1.0);

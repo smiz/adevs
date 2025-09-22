@@ -1,15 +1,18 @@
 #include <iostream>
 #include "adevs/adevs.h"
 #include "adevs/solvers/trap.h"
-using namespace adevs;
 
+
+using PinValue = adevs::PinValue<int>;
+using ode_system = adevs::ode_system<int>;
+using trap = adevs::trap<int>;
 
 /**
  * A simple ODE to test numerical integration methods.
  */
-class simple_system : public ode_system<int> {
+class simple_system : public ode_system {
   public:
-    simple_system() : ode_system<int>(2, 0) {}
+    simple_system() : ode_system(2, 0) {}
     void init(double* q) {
         q[0] = 1.0;
         q[1] = 0.0;
@@ -21,9 +24,9 @@ class simple_system : public ode_system<int> {
     void state_event_func(double const*, double*) {}
     double time_event_func(double const*) { return adevs_inf<double>(); }
     void internal_event(double*, bool const*) {}
-    void external_event(double*, double, std::list<PinValue<int>> const &) {}
-    void confluent_event(double*, bool const*, std::list<PinValue<int>> const&){}
-    void output_func(double const*, bool const*, std::list<PinValue<int>> &) {}
+    void external_event(double*, double, std::list<PinValue> const &) {}
+    void confluent_event(double*, bool const*, std::list<PinValue> const &) {}
+    void output_func(double const*, bool const*, std::list<PinValue> &) {}
 
     bool get_jacobian(double const*, double* J) {
         if (J == nullptr) {
@@ -40,12 +43,12 @@ class simple_system : public ode_system<int> {
 /**
  * Non linear lotke-voltair to to test numerical integration methods.
  */
-class lk_system : public ode_system<int> {
+class lk_system : public ode_system {
   private:
     double const a, b, c, d;
 
   public:
-    lk_system() : ode_system<int>(2, 0), a(0.1), b(0.002), c(0.2), d(0.0025) {}
+    lk_system() : ode_system(2, 0), a(0.1), b(0.002), c(0.2), d(0.0025) {}
     void init(double* q) {
         q[0] = 80.0;
         q[1] = 20.0;
@@ -57,9 +60,9 @@ class lk_system : public ode_system<int> {
     void state_event_func(double const*, double*) {}
     double time_event_func(double const*) { return adevs_inf<double>(); }
     void internal_event(double*, bool const*) {}
-    void external_event(double*, double, std::list<PinValue<int>> const &) {}
-    void confluent_event(double*, bool const*,std::list<PinValue<int>> const &) {}
-    void output_func(double const*, bool const*, std::list<PinValue<int>> &) {}
+    void external_event(double*, double, std::list<PinValue> const &) {}
+    void confluent_event(double*, bool const*, std::list<PinValue> const &) {}
+    void output_func(double const*, bool const*, std::list<PinValue> &) {}
 
     bool get_jacobian(double const* q, double* J) {
         if (J == NULL) {
@@ -74,12 +77,12 @@ class lk_system : public ode_system<int> {
 };
 
 
-void test(ode_system<int>* sys, double tend) {
+void test(ode_system* sys, double tend) {
     double* q_trap = new double[sys->numVars()];
     double* q_rk = new double[sys->numVars()];
     double const h = 0.01;
-    adevs::trap<int>* trap_solver = new adevs::trap<int>(sys, 1E-4, 0.01);
-    adevs::rk_45<int>* rk_solver = new adevs::rk_45<int>(sys, 1E-8, 0.01);
+    trap* trap_solver = new trap(sys, 1E-4, 0.01);
+    trap* rk_solver = new trap(sys, 1E-8, 0.01);
     sys->init(q_trap);
     sys->init(q_rk);
     for (double t = h; t < tend; t += h) {
@@ -87,8 +90,7 @@ void test(ode_system<int>* sys, double tend) {
         rk_solver->advance(q_rk, h);
         std::cout << t;
         for (int i = 0; i < sys->numVars(); i++) {
-            std::cout << " " << q_trap[i] << " " << q_rk[i] << " "
-                 << (q_trap[i] - q_rk[i]);
+            std::cout << " " << q_trap[i] << " " << q_rk[i] << " " << (q_trap[i] - q_rk[i]);
             // Solutions should be very close.
             assert(fabs(q_trap[i] - q_rk[i]) < 1E-3);
         }

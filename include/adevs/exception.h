@@ -54,11 +54,9 @@ class exception : public std::exception {
      * @param msg The error message.
      * @param model A pointer to the model that created the error (optional).
      */
-    exception(char const* msg, void* model = nullptr)
-        : std::exception(), msg(msg), model(model) {}
+    exception(char const* msg, void* model = nullptr) : std::exception(), msg(msg), model(model) {}
     /// Copy constructor.
-    exception(adevs::exception const &src)
-        : std::exception(src), msg(src.msg), model(src.model) {}
+    exception(adevs::exception const &src) : std::exception(src), msg(src.msg), model(src.model) {}
     /// Get the error message.
     char const* what() const throw() { return msg.c_str(); }
     /// Get a pointer to the model that created the error.

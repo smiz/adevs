@@ -3,12 +3,10 @@
 #include "des.h"
 
 
-
-
 class Machine : public Partition {
   public:
     Machine() : Partition() {}
-    void exec(std::vectorstd::shared_ptr<Event>> &imminent) {
+    void exec(std::vectorstd::shared_ptr < Event >> &imminent) {
         for (auto ii : imminent) {
             ii->exec();
         }
@@ -47,8 +45,7 @@ class Arrive : public Event {
         _machine->jobsReceived++;
         _machine->jobsPending++;
         if (_machine->jobsPending == 1) {
-            _machine->schedule(
-                std::make_shared<Leave>(_machine, _machine->now() + 1));
+            _machine->schedule(std::make_shared<Leave>(_machine, _machine->now() + 1));
         }
         _machine->schedule(std::make_shared<Arrive>(_machine, _machine->now() + 1));
     }
@@ -69,8 +66,8 @@ int main() {
     sim->execUntil(5);
 
     std::cout << "Machine\tR\tP\tF" << std::endl;
-    std::cout << "M\t" << machine->jobsReceived << "\t" << machine->jobsPending
-         << "\t" << machine->jobsFinished << std::endl;
+    std::cout << "M\t" << machine->jobsReceived << "\t" << machine->jobsPending << "\t"
+              << machine->jobsFinished << std::endl;
 
     return 0;
 }

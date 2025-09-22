@@ -6,8 +6,7 @@
 class Control : public adevs::FMI<IO_Type> {
   public:
     Control()
-        : adevs::FMI<IO_Type>("Control",
-                              "{e2ca3e6c-14a5-469e-9d07-3cd8dfe05d5c}",
+        : adevs::FMI<IO_Type>("Control", "{e2ca3e6c-14a5-469e-9d07-3cd8dfe05d5c}",
                               "file:///home/rotten/Code/adevs-code/examples/"
                               "fmi/Example2/Control/resources",
                               0, 0, "Control/binaries/linux64/Control.so") {}

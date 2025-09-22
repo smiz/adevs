@@ -6,7 +6,7 @@
 #include "Cell.h"
 #include "adevs/adevs.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 // Cellspace dimensions
 #define WIDTH  200
@@ -70,8 +70,7 @@ void simulateSpace() {
         // Create the cellspace model
         cell_space = new adevs::CellSpace<value_t>(WIDTH);
         for (int x = 0; x < WIDTH; x++) {
-            cell_space->add(
-                new Cell(x, state[HEIGHT], steps[rand() % numSteps]), x);
+            cell_space->add(new Cell(x, state[HEIGHT], steps[rand() % numSteps]), x);
         }
         delete[] steps;
         // Create a simulator for the model
@@ -88,8 +87,8 @@ void simulateSpace() {
 int main(int argc, char** argv) {
     if (argc < 4) {
         std::cout << "Need a seed, rule number (0-255), and number of steps to "
-                "simulate"
-             << std::endl;
+                     "simulate"
+                  << std::endl;
         return 0;
     }
     int seed = atoi(argv[1]);

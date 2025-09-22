@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <iostream>
 #include "adevs/adevs.h"
-using namespace adevs;
+// using namespace adevs;
 
 
 static double const A[2][2] = {{-2.0, 1.0}, {0.0, -1.0}};
@@ -135,16 +135,14 @@ class report : public Atomic<event_t> {
         x[0] = x0[0];
         x[1] = x0[1];
         err[0] = err[1] = 0.0;
-        std::cout << t << " " << x[0] << " " << x[1] << " 0 0 " << x[0] << " "
-             << x[1] << std::endl;
+        std::cout << t << " " << x[0] << " " << x[1] << " 0 0 " << x[0] << " " << x[1] << std::endl;
     }
     void delta_int() { t += ta(); }
     void delta_ext(double e, std::list<event_t> const &xb) {
         // Calculate solution
         t += e;
         double x1 = x0[0] * exp(A[0][0] * t) +
-                    x0[1] * A[0][1] * (exp(A[0][0] * t) - exp(A[1][1] * t)) /
-                        (A[0][0] - A[1][1]);
+                    x0[1] * A[0][1] * (exp(A[0][0] * t) - exp(A[1][1] * t)) / (A[0][0] - A[1][1]);
         double x2 = exp(A[1][1] * t) * x0[1];
         for (size_t i = 0; i < xb.size(); i++) {
             int k = xb[i].k;
@@ -155,8 +153,8 @@ class report : public Atomic<event_t> {
                 err[1] = fabs(x[k] - x2);
             }
         }
-        std::cout << t << " " << x[0] << " " << x[1] << " " << err[0] << " "
-             << err[1] << " " << x1 << " " << x2 << std::endl;
+        std::cout << t << " " << x[0] << " " << x[1] << " " << err[0] << " " << err[1] << " " << x1
+                  << " " << x2 << std::endl;
     }
     void delta_conf(std::list<event_t> const &xb) { delta_ext(ta(), xb); }
     void output_func(std::list<event_t> &) {}

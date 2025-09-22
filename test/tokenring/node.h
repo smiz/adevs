@@ -13,14 +13,17 @@ struct token_t {
 };
 
 using Bag = std::list<adevs::PinValue<std::shared_ptr<token_t>>>;
+using Atomic = adevs::Atomic<std::shared_ptr<token_t>>;
+using PinValue = adevs::PinValue<std::shared_ptr<token_t>>;
+using pin_t = adevs::pin_t;
 
-class Node : public adevs::Atomic<std::shared_ptr<token_t>> {
+class Node : public Atomic {
   public:
-    const adevs::pin_t in;
-    const adevs::pin_t out;
+    pin_t const in;
+    pin_t const out;
 
     Node(int ID, int holdtime, std::shared_ptr<token_t> token)
-        : adevs::Atomic<std::shared_ptr<token_t>>(),
+        : Atomic(),
           ID(ID),
           token(token),
           out_token(token),
@@ -63,7 +66,7 @@ class Node : public adevs::Atomic<std::shared_ptr<token_t>> {
     }
 
     void output_func(Bag &y) {
-        adevs::PinValue<std::shared_ptr<token_t>> pv(out, out_token);
+        PinValue pv(out, out_token);
         y.push_back(pv);
     }
 

@@ -32,11 +32,11 @@
 #ifndef _adevs_models_h_
 #define _adevs_models_h_
 
+#include <any>
+#include <atomic>
 #include <list>
 #include <memory>
 #include <set>
-#include <atomic>
-#include <any>
 #include "adevs/exception.h"
 #include "adevs/time.h"
 
@@ -93,7 +93,7 @@ class pin_t {
     /// @brief Create a pin.
     ///
     /// Each pin is unique and its identity is preserved
-    /// across copies and assignments of the pin. 
+    /// across copies and assignments of the pin.
     pin_t() : id(atom++) {}
     /// @brief  Copy constructor.
     /// @param src  The pin whose identity is copied.
@@ -128,6 +128,7 @@ class pin_t {
     /// @param src  The pin to compare against.
     /// @return True if this pin has a larger identity, false otherwise.
     bool operator>(pin_t const &src) const { return (id > src.id); }
+
   private:
     static std::atomic<int> atom;
     int id;
@@ -170,7 +171,7 @@ class PinValue {
     /// The source object's pin and value are assigned using their
     /// assignment operators.
     ///
-    /// @param src  The PinValue object to assign. 
+    /// @param src  The PinValue object to assign.
     PinValue<ValueType> const &operator=(PinValue const &src) {
         pin = src.pin;
         value = src.value;
@@ -237,9 +238,7 @@ template <typename ValueType = std::any, typename TimeType = double>
 class Atomic {
   public:
     /// @brief The constructor should place the model into its initial state.
-    Atomic()
-        : tL(adevs_zero<TimeType>()),
-          q_index(0) {}  // The Schedule requires this to be zero
+    Atomic() : tL(adevs_zero<TimeType>()), q_index(0) {}  // The Schedule requires this to be zero
     virtual ~Atomic() {}
     /**
      * @brief The internal transition function.
@@ -258,8 +257,7 @@ class Atomic {
      * @param e Time elapsed since the previous change of state.
      * @param xb A list of input for the model.
      */
-    virtual void delta_ext(TimeType e,
-                           std::list<PinValue<ValueType>> const &xb) = 0;
+    virtual void delta_ext(TimeType e, std::list<PinValue<ValueType>> const &xb) = 0;
     /***
      * @brief The confluent transition function.
      * 
@@ -304,7 +302,6 @@ class Atomic {
     std::list<PinValue<ValueType>> outputs;
 
     virtual MealyAtomic<ValueType, TimeType>* isMealyAtomic() { return nullptr; }
-
 };
 
 
@@ -342,7 +339,7 @@ class MealyAtomic : public Atomic<ValueType, TimeType> {
      * @param yb The output values produced by the model.
      */
     virtual void external_output_func(TimeType e, std::list<PinValue<ValueType>> const &xb,
-                             std::list<PinValue<ValueType>> &yb) = 0;
+                                      std::list<PinValue<ValueType>> &yb) = 0;
     /**
      * @brief Produce output at a confluent transition.
      * 
@@ -354,7 +351,7 @@ class MealyAtomic : public Atomic<ValueType, TimeType> {
      * @param yb The output values produced by the model.
      */
     virtual void confluent_output_func(std::list<PinValue<ValueType>> const &xb,
-                             std::list<PinValue<ValueType>> &yb) = 0;
+                                       std::list<PinValue<ValueType>> &yb) = 0;
     /// @brief Destructor
     virtual ~MealyAtomic() {}
 
@@ -362,7 +359,6 @@ class MealyAtomic : public Atomic<ValueType, TimeType> {
     friend class Simulator<ValueType, TimeType>;
 
     MealyAtomic<ValueType, TimeType>* isMealyAtomic() { return this; }
-
 };
 
 #ifdef __clang__
@@ -403,8 +399,8 @@ class Coupled {
      * The destructor does not remove the coupled models components
      * and couplings from the underlying Graph. If you want to do this
      * it must be done explicitly before destroying the Coupled model.
-     */ 
-    virtual ~Coupled(){}
+     */
+    virtual ~Coupled() {}
 
     /**
      * @ brief Add an Atomic model to the Coupled model.
@@ -484,23 +480,23 @@ class Coupled {
     void remove_coupling(pin_t src, pin_t dst);
 
   private:
-
     friend class Simulator<ValueType, TimeType>;
 
     Graph<ValueType, TimeType>* g;
     std::set<std::shared_ptr<Atomic<ValueType, TimeType>>> atomic_components;
     std::set<std::shared_ptr<Coupled<ValueType, TimeType>>> coupled_components;
-    /// Pins that provide input to the Atomic models 
-    std::set<std::pair<pin_t,std::shared_ptr<Atomic<ValueType, TimeType>>>> pin_to_atomic;
+    /// Pins that provide input to the Atomic models
+    std::set<std::pair<pin_t, std::shared_ptr<Atomic<ValueType, TimeType>>>> pin_to_atomic;
     /// Pin to pin connections
-    std::set<std::pair<pin_t,pin_t>> pin_to_pin;
+    std::set<std::pair<pin_t, pin_t>> pin_to_pin;
 
     void assign_to_graph(Graph<ValueType, TimeType>* graph);
     void remove_from_graph();
 };
 
 template <typename ValueType, typename TimeType>
-void Coupled<ValueType, TimeType>::create_coupling(pin_t pin, std::shared_ptr<Atomic<ValueType, TimeType>> model) {
+void Coupled<ValueType, TimeType>::create_coupling(
+    pin_t pin, std::shared_ptr<Atomic<ValueType, TimeType>> model) {
     pin_to_atomic.insert(std::make_pair(pin, model));
     if (g != nullptr) {
         g->connect(pin, model);
@@ -508,7 +504,8 @@ void Coupled<ValueType, TimeType>::create_coupling(pin_t pin, std::shared_ptr<At
 }
 
 template <typename ValueType, typename TimeType>
-void Coupled<ValueType, TimeType>::remove_coupling(pin_t pin, std::shared_ptr<Atomic<ValueType, TimeType>> model) {
+void Coupled<ValueType, TimeType>::remove_coupling(
+    pin_t pin, std::shared_ptr<Atomic<ValueType, TimeType>> model) {
     pin_to_atomic.erase(std::make_pair(pin, model));
     if (g != nullptr) {
         g->disconnect(pin, model);
@@ -537,10 +534,10 @@ void Coupled<ValueType, TimeType>::assign_to_graph(Graph<ValueType, TimeType>* g
     for (auto atomic : atomic_components) {
         g->add_atomic(atomic);
     }
-    for (auto coupling: pin_to_atomic) {
+    for (auto coupling : pin_to_atomic) {
         g->connect(coupling.first, coupling.second);
     }
-    for (auto coupling: pin_to_pin) {
+    for (auto coupling : pin_to_pin) {
         g->connect(coupling.first, coupling.second);
     }
     for (auto coupled : coupled_components) {
@@ -553,10 +550,10 @@ void Coupled<ValueType, TimeType>::remove_from_graph() {
     for (auto atomic : atomic_components) {
         g->remove_atomic(atomic);
     }
-    for (auto coupling: pin_to_atomic) {
+    for (auto coupling : pin_to_atomic) {
         g->disconnect(coupling.first, coupling.second);
     }
-    for (auto coupling: pin_to_pin) {
+    for (auto coupling : pin_to_pin) {
         g->connect(coupling.first, coupling.second);
     }
     for (auto coupled : coupled_components) {
@@ -573,7 +570,8 @@ void Coupled<ValueType, TimeType>::add_atomic(std::shared_ptr<Atomic<ValueType, 
 }
 
 template <typename ValueType, typename TimeType>
-void Coupled<ValueType, TimeType>::remove_atomic(std::shared_ptr<Atomic<ValueType, TimeType>> model) {
+void Coupled<ValueType, TimeType>::remove_atomic(
+    std::shared_ptr<Atomic<ValueType, TimeType>> model) {
     atomic_components.erase(model);
     if (g != nullptr) {
         g->remove_atomic(model);
@@ -581,7 +579,8 @@ void Coupled<ValueType, TimeType>::remove_atomic(std::shared_ptr<Atomic<ValueTyp
 }
 
 template <typename ValueType, typename TimeType>
-void Coupled<ValueType, TimeType>::add_coupled_model(std::shared_ptr<Coupled<ValueType, TimeType>> model) {
+void Coupled<ValueType, TimeType>::add_coupled_model(
+    std::shared_ptr<Coupled<ValueType, TimeType>> model) {
     coupled_components.insert(model);
     if (g != nullptr) {
         model->assign_to_graph(g);
@@ -589,7 +588,8 @@ void Coupled<ValueType, TimeType>::add_coupled_model(std::shared_ptr<Coupled<Val
 }
 
 template <typename ValueType, typename TimeType>
-void Coupled<ValueType, TimeType>::remove_coupled_model(std::shared_ptr<Coupled<ValueType, TimeType>> model) {
+void Coupled<ValueType, TimeType>::remove_coupled_model(
+    std::shared_ptr<Coupled<ValueType, TimeType>> model) {
     coupled_components.erase(model);
     if (g != nullptr) {
         model->remove_from_graph();

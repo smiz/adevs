@@ -1,6 +1,6 @@
 #include "GenrFreqListener.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 GenrFreqListener::GenrFreqListener(ElectricalModel* model, double cint,
                                    std::string model_name)

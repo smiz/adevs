@@ -3,16 +3,19 @@
 #include "adevs/adevs.h"
 #include "gcd.h"
 
+using Atomic = adevs::Atomic<ObjectPtr>;
+using Simulator = adevs::Simulator<ObjectPtr>;
+using EventListener = adevs::EventListener<ObjectPtr>;
 
-class generatorEventListener : public adevs::EventListener<ObjectPtr> {
+class generatorEventListener : public EventListener {
   public:
-    void stateChange(adevs::Atomic<ObjectPtr>&, double) {}
-    void inputEvent(adevs::Atomic<ObjectPtr>&, adevs::PinValue<ObjectPtr>&, double) {}
-    void outputEvent(adevs::Atomic<ObjectPtr>& model, adevs::PinValue<ObjectPtr>& x, double) {
-        auto event = std::pair<adevs::Atomic<ObjectPtr>&,adevs::PinValue<ObjectPtr>>(model, x);
+    void stateChange(Atomic &, double) {}
+    void inputEvent(Atomic &, PinValue &, double) {}
+    void outputEvent(Atomic &model, PinValue &x, double) {
+        auto event = std::pair<Atomic &, PinValue>(model, x);
         output.push_back(event);
     }
-    std::vector<std::pair<adevs::Atomic<ObjectPtr>&,adevs::PinValue<ObjectPtr>>> output;
+    std::vector<std::pair<Atomic &, PinValue>> output;
 };
 
 int main() {
@@ -20,10 +23,11 @@ int main() {
     auto c = std::make_shared<gcd>(10.0, 2.0, 1, false);
     auto g = std::make_shared<genr>(10.0, 1, true);
     auto listener = std::make_shared<generatorEventListener>();
-    adevs::Simulator<ObjectPtr> sim_c(c);
-    adevs::Simulator<ObjectPtr> sim_g(g);
+    Simulator sim_c(c);
+    Simulator sim_g(g);
     sim_g.addEventListener(listener);
-    while (sim_c.nextEventTime() < adevs_inf<double>() || sim_g.nextEventTime() < adevs_inf<double>()) {
+    while (sim_c.nextEventTime() < adevs_inf<double>() ||
+           sim_g.nextEventTime() < adevs_inf<double>()) {
         double tN = std::min(sim_c.nextEventTime(), sim_g.nextEventTime());
         sim_c.setNextTime(tN);
         sim_g.setNextTime(tN);
@@ -32,7 +36,7 @@ int main() {
         for (; iter != listener->output.end(); iter++) {
             assert(&((*iter).first) == g.get());
             if ((*iter).second.pin == g->signal) {
-                adevs::PinValue<ObjectPtr> event;
+                PinValue event;
                 event.pin = c->in;
                 event.value = (*iter).second.value;
                 sim_c.injectInput(event);

@@ -8,8 +8,9 @@
 #include <memory>
 #include "adevs/adevs.h"
 
-
-using namespace adevs;
+// using namespace adevs;
+using Atomic = Atomic;
+using SimpleDigraph = adevs::SimpleDigraph<int>;
 
 
 bool const verbose = false;
@@ -38,17 +39,17 @@ double run() {
 
     double max_error = 0.0;
 
-    std::shared_ptr<SimpleDigraph<int>> world = std::make_shared<SimpleDigraph<int>>();
+    std::shared_ptr<SimpleDigraph> world = std::make_shared<SimpleDigraph>();
 
     for (int i = 0; i < num_agents; i++) {
         world->add(std::make_shared<Agent>());
     }
 
-    std::shared_ptr<Simulator<int>> sim = std::make_shared<Simulator<int>>(world);
+    std::shared_ptr<Simulator> sim = std::make_shared<Simulator>(world);
 
     if (verbose) {
-        std::cout << 0 << " " << ((double)(Agent::getPop()) / (double)(num_agents))
-             << " " << exp(-a * 0.0) << std::endl;
+        std::cout << 0 << " " << ((double)(Agent::getPop()) / (double)(num_agents)) << " "
+                  << exp(-a * 0.0) << std::endl;
     }
 
     while (sim->nextEventTime() < adevs_inf<double>()) {

@@ -33,8 +33,8 @@
 #define _adevs_corrected_euler_h_
 
 #include <algorithm>
-#include <cmath>
 #include <any>
+#include <cmath>
 #include "adevs/solvers/hybrid.h"
 
 
@@ -105,8 +105,8 @@ class corrected_euler : public ode_solver<ValueType> {
 };
 
 template <typename ValueType>
-corrected_euler<ValueType>::corrected_euler(ode_system<ValueType>* sys,
-                                            double err_tol, double h_max)
+corrected_euler<ValueType>::corrected_euler(ode_system<ValueType>* sys, double err_tol,
+                                            double h_max)
     : ode_solver<ValueType>(sys), err_tol(err_tol), h_max(h_max), h_cur(h_max) {
     for (int i = 0; i < 2; i++) {
         k[i] = new double[sys->numVars()];
@@ -137,8 +137,7 @@ void corrected_euler<ValueType>::advance(double* q, double h) {
 template <typename ValueType>
 double corrected_euler<ValueType>::integrate(double* q, double h_lim) {
     // Initial error estimate and step size
-    double err = DBL_MAX,
-           h = std::min<double>(h_cur * 1.1, std::min<double>(h_max, h_lim));
+    double err = DBL_MAX, h = std::min<double>(h_cur * 1.1, std::min<double>(h_max, h_lim));
     for (;;) {
         // Copy q to the trial vector
         for (int i = 0; i < this->sys->numVars(); i++) {

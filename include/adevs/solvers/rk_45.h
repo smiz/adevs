@@ -34,8 +34,8 @@
 
 #include <any>
 #include <cmath>
-#include "adevs/solvers/hybrid.h"
 #include "adevs/solvers/event_locators.h"
+#include "adevs/solvers/hybrid.h"
 
 namespace adevs {
 
@@ -71,7 +71,7 @@ class rk_45 : public ode_solver<ValueType> {
      * Leaves the supplied ode_system intact
      */
     ~rk_45();
-     /**
+    /**
      * @brief Integrate up to h_lim.
      * 
      * Used by a Hybrid object to simulate the system.advance
@@ -82,7 +82,7 @@ class rk_45 : public ode_solver<ValueType> {
      * @return The step actually taken.
      */
     double integrate(double* q, double h_lim);
-     /**
+    /**
      * @brief Integrate to exactly the step h
      * 
      * As with integrate() but advance the step by exactly the
@@ -107,8 +107,7 @@ class rk_45 : public ode_solver<ValueType> {
 };
 
 template <typename ValueType>
-rk_45<ValueType>::rk_45(ode_system<ValueType>* sys, double err_tol,
-                        double h_max)
+rk_45<ValueType>::rk_45(ode_system<ValueType>* sys, double err_tol, double h_max)
     : ode_solver<ValueType>(sys), err_tol(err_tol), h_max(h_max), h_cur(h_max) {
     for (int i = 0; i < 6; i++) {
         k[i] = new double[sys->numVars()];
@@ -138,8 +137,7 @@ void rk_45<ValueType>::advance(double* q, double h) {
 template <typename ValueType>
 double rk_45<ValueType>::integrate(double* q, double h_lim) {
     // Initial error estimate and step size
-    double err = DBL_MAX,
-           h = std::min<double>(h_cur * 1.1, std::min<double>(h_max, h_lim));
+    double err = DBL_MAX, h = std::min<double>(h_cur * 1.1, std::min<double>(h_max, h_lim));
     for (;;) {
         // Copy q to the trial vector
         for (int i = 0; i < this->sys->numVars(); i++) {
@@ -204,8 +202,7 @@ double rk_45<ValueType>::trial_step(double step) {
     }
     // Compute k5
     for (int j = 0; j < this->sys->numVars(); j++) {
-        t[j] = qq[j] + (7.0 / 27.0) * k[0][j] + (10.0 / 27.0) * k[1][j] +
-               (1.0 / 27.0) * k[3][j];
+        t[j] = qq[j] + (7.0 / 27.0) * k[0][j] + (10.0 / 27.0) * k[1][j] + (1.0 / 27.0) * k[3][j];
     }
     this->sys->der_func(t, dq);
     for (int j = 0; j < this->sys->numVars(); j++) {
@@ -213,9 +210,8 @@ double rk_45<ValueType>::trial_step(double step) {
     }
     // Compute k6
     for (int j = 0; j < this->sys->numVars(); j++) {
-        t[j] = qq[j] + (28.0 / 625.0) * k[0][j] - 0.2 * k[1][j] +
-               (546.0 / 625.0) * k[2][j] + (54.0 / 625.0) * k[3][j] -
-               (378.0 / 625.0) * k[4][j];
+        t[j] = qq[j] + (28.0 / 625.0) * k[0][j] - 0.2 * k[1][j] + (546.0 / 625.0) * k[2][j] +
+               (54.0 / 625.0) * k[3][j] - (378.0 / 625.0) * k[4][j];
     }
     this->sys->der_func(t, dq);
     for (int j = 0; j < this->sys->numVars(); j++) {
@@ -225,12 +221,11 @@ double rk_45<ValueType>::trial_step(double step) {
     double err = 0.0;
     for (int j = 0; j < this->sys->numVars(); j++) {
         // Next state
-        qq[j] += (1.0 / 24.0) * k[0][j] + (5.0 / 48.0) * k[3][j] +
-                 (27.0 / 56.0) * k[4][j] + (125.0 / 336.0) * k[5][j];
+        qq[j] += (1.0 / 24.0) * k[0][j] + (5.0 / 48.0) * k[3][j] + (27.0 / 56.0) * k[4][j] +
+                 (125.0 / 336.0) * k[5][j];
         // Component wise maximum of the approximate error
-        err = std::max(
-            err, fabs(k[0][j] / 8.0 + 2.0 * k[2][j] / 3.0 + k[3][j] / 16.0 -
-                      27.0 * k[4][j] / 56.0 - 125.0 * k[5][j] / 336.0));
+        err = std::max(err, fabs(k[0][j] / 8.0 + 2.0 * k[2][j] / 3.0 + k[3][j] / 16.0 -
+                                 27.0 * k[4][j] / 56.0 - 125.0 * k[5][j] / 336.0));
     }
     // Return the error
     return err;
@@ -245,8 +240,8 @@ double rk_45<ValueType>::trial_step(double step) {
  */
 template <typename ValueType = std::any>
 class ExplicitHybrid : public Hybrid<ValueType> {
-    public:
-     /**
+  public:
+    /**
      * @brief Create and initialize solvers for the ode_system.
      * 
      * The ode_sytems is adopted by the ExplicitHybrid object and
@@ -256,9 +251,9 @@ class ExplicitHybrid : public Hybrid<ValueType> {
      * @param tol The error tolerance for the solvers
      * @param h_max The step size limit for the solvers
      */
-    ExplicitHybrid(ode_system<ValueType>* sys, double tol, double h_max):
-        Hybrid<ValueType>(sys,new rk_45<ValueType>(sys,tol,h_max),new discontinuous_event_locator<ValueType>(sys,tol)) {
-    }
+    ExplicitHybrid(ode_system<ValueType>* sys, double tol, double h_max)
+        : Hybrid<ValueType>(sys, new rk_45<ValueType>(sys, tol, h_max),
+                            new discontinuous_event_locator<ValueType>(sys, tol)) {}
 };
 
 }  // namespace adevs

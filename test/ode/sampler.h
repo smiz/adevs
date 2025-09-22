@@ -3,47 +3,47 @@
 #include <iostream>
 #include "adevs/adevs.h"
 
+using Atomic = adevs::Atomic<double>;
+using PinValue = adevs::PinValue<double>;
+using pin_t = adevs::pin_t;
+
 /**
 Sampling function for continuous system simulator testing.
 All input and output is through the sample pin.
 */
-class sampler : public adevs::Atomic<double> {
+class sampler : public Atomic {
   public:
-    sampler(double dt)
-        : adevs::Atomic<double>(),
-          dt(dt),
-          sigma(dt),
-          t(0.0) {}
+    sampler(double dt) : Atomic(), dt(dt), sigma(dt), t(0.0) {}
 
     void delta_int() {
         t += sigma;
         sigma = dt;
     }
 
-    void delta_ext(double e, std::list<adevs::PinValue<double>> const &xb) {
+    void delta_ext(double e, std::list<PinValue> const &xb) {
         sigma -= e;
         t += e;
         std::cout << t << " ";
-        std::list<adevs::PinValue<double>>::const_iterator iter;
+        std::list<PinValue>::const_iterator iter;
         for (iter = xb.begin(); iter != xb.end(); iter++) {
             std::cout << (*iter).value << " ";
         }
         std::cout << std::endl;
     }
 
-    void delta_conf(std::list<adevs::PinValue<double>> const &xb) {
+    void delta_conf(std::list<PinValue> const &xb) {
         delta_int();
         delta_ext(0.0, xb);
     }
 
     double ta() { return sigma; }
 
-    void output_func(std::list<adevs::PinValue<double>> &yb) {
-        adevs::PinValue<double> event(sample_pin, 0.0);
+    void output_func(std::list<PinValue> &yb) {
+        PinValue event(sample_pin, 0.0);
         yb.push_back(event);
     }
 
-    const adevs::pin_t sample_pin;
+    pin_t const sample_pin;
 
   private:
     double const dt;

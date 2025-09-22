@@ -41,8 +41,7 @@ class SampleSig : public SimObject {
 class NetworkData : public SimObject {
   public:
     enum net_data_t { APP_DATA = 0, TX_CMPLT = 1, TX_FAIL = 2, TX_START = 3 };
-    NetworkData(net_data_t type, int addr = 0, int bytes = 64,
-                SimObject* payload = NULL)
+    NetworkData(net_data_t type, int addr = 0, int bytes = 64, SimObject* payload = NULL)
         : type(type), addr(addr), bytes(bytes), payload(payload) {}
     SimObject* getPayload() { return payload; }
     net_data_t getType() const { return type; }

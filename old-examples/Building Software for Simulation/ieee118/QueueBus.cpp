@@ -1,7 +1,7 @@
 #include "QueueBus.h"
 #include <cstdlib>
 #include <iostream>
-using namespace adevs;
+// using namespace adevs;
 
 
 int const QueueBus::load = 1;

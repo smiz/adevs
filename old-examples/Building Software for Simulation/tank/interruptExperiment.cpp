@@ -2,7 +2,7 @@
 #include "InterruptHandler.h"
 #include "adevs/adevs.h"
 
-using namespace adevs;
+// using namespace adevs;
 
 // Listener for recording the state and output of the interrupt handler
 class InterruptListener : public EventListener<SimEvent> {

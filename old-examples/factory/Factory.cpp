@@ -2,8 +2,7 @@
 #include <memory>
 #include <set>
 
-using namespace adevs;
-
+// using namespace adevs;
 
 
 Factory::Factory() : Network<int>() {
@@ -26,7 +25,7 @@ void Factory::route(int const &order, Devs<int>* src, std::list<Event<int>> &r) 
 
     // Otherwise, look for the machine that has the shortest time to fill the order
     std::shared_ptr<Machine> pick = nullptr;  // No machine
-    double pick_time = DBL_MAX;          // Infinite time for service
+    double pick_time = DBL_MAX;               // Infinite time for service
 
     for (auto iter : machines) {
         // If the machine is available
