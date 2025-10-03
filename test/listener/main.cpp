@@ -1,73 +1,86 @@
-#include "Relay.h"
-#include <vector>
-using namespace std;
-using namespace adevs;
+#include "relay.h"
 
-Relay* r;
-vector<Event<IO_Type> > output;
-vector<Event<IO_Type> > input;
 
-class Listener:
-	public EventListener<IO_Type>
-{
-	public:
-		Listener():EventListener<IO_Type>(){}
-		void inputEvent(Event<IO_Type> x, double t)
-		{
-			// First input should occur at time zero
-			assert(input.size() == 0 || t == 0.0);
-			input.push_back(x);
-		}
-		void outputEvent(Event<IO_Type> x, double t)
-		{
-			// Output should occur only at the relay time
-			assert(t == 1.0);
-			// Save to check its validity
-			output.push_back(x);
-		}
-		void stateChange(Atomic<IO_Type>* model, double t)
-		{
-			assert(model == r);
-			// First input should set the relay value to something positive
-			if (t == 0.0) assert(r->getRelayValue() > 0);
-			// Second event should clear the relay value
-			else if (t == 1.0) assert(r->getRelayValue() < 0);
-			// Anything else is an error
-			else assert(false);
-		}
+using Simulator = adevs::Simulator<int>;
+using EventListener = adevs::EventListener<int>;
+using Graph = adevs::Graph<int>;
+using PinValue = adevs::PinValue<int>;
+
+std::shared_ptr<Relay> r = nullptr;
+std::vector<PinValue> output;
+std::vector<PinValue> input;
+
+class Listener : public EventListener {
+  public:
+    Listener() : EventListener() {}
+
+    void inputEvent(Atomic &model, PinValue &x, double t) {
+        // First input should occur at time zero
+        assert(&model == r.get());
+        assert(input.size() == 0 || t == 0.0);
+        input.push_back(x);
+    }
+
+    void outputEvent(Atomic &model, PinValue &x, double t) {
+        // Output should occur only at the relay time
+        assert(t == 1.0);
+        assert(&model == r.get());
+        // Save to check its validity
+        output.push_back(x);
+    }
+
+    void stateChange(Atomic &model, double t) {
+        assert(&model == r.get());
+        // First input should set the relay value to something positive
+        if (t == 0.0) {
+            assert(r->getRelayValue() > 0);
+        }
+        // Second event should clear the relay value
+        else if (t == 1.0) {
+            assert(r->getRelayValue() < 0);
+        }
+        // Anything else is an error
+        else {
+            assert(false);
+        }
+    }
 };
 
-int main()
-{
-	Digraph<int>* d = new Digraph<int>();
-	r = new Relay();
-	d->add(r);
-	d->couple(d,0,r,0);
-	d->couple(r,1,d,1);
-	// Create the simulator and add the listener
-	Simulator<IO_Type>* sim = new Simulator<IO_Type>(d);
-	sim->addEventListener(new Listener());
-	// This input should cause two outputEvent() calls at time 1
-	Bag<Event<IO_Type> > b;
-	b.insert(Event<IO_Type>(d,IO_Type(0,1)));
-	// Inject it at time 0
-	sim->computeNextState(b,0.0);
-	// Next event at time 1?
-	assert(sim->nextEventTime() == 1.0);
-	// No output events!
-	assert(output.size() == 0);
-	// Execute the next event
-	sim->execNextEvent();
-	// Should be two outputs and one input
-	assert(output.size() == 2);
-	assert(input.size() == 1);
-	// Check the output sources
-	assert(output[0].model == d || output[1].model == d);
-	assert(output[0].model == r || output[1].model == r);
-	// Done
-	return 0;
+int main() {
+    std::shared_ptr<Graph> d = std::make_shared<Graph>();
+    r = std::make_shared<Relay>();
+    d->add_atomic(r);
+    d->connect(r->in, r);
+    // Create the simulator and add the listener
+    std::shared_ptr<Listener> listener = std::make_shared<Listener>();
+
+    std::shared_ptr<Simulator> sim = std::make_shared<Simulator>(d);
+    sim->addEventListener(listener);
+
+    // This input should cause two outputEvent() calls at time 1
+    PinValue b(r->in, 1);
+
+    // Inject it at time 0
+    sim->injectInput(b);
+    sim->setNextTime(0.0);
+    sim->execNextEvent();
+
+    // Next event at time 1?
+    assert(sim->nextEventTime() == 1.0);
+
+    // No output events!
+    assert(output.size() == 0);
+
+    // Execute the next event
+    sim->execNextEvent();
+
+    // Should be one output and one input
+    assert(output.size() == 1);
+    assert(input.size() == 1);
+
+    // Check the output sources
+    assert(output[0].pin == r->out);
+    assert(input[0].pin == r->in);
+    // Done
+    return 0;
 }
-
-
-
-

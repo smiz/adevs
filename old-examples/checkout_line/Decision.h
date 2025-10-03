@@ -1,0 +1,44 @@
+#ifndef _decision_h_
+#define _decision_h_
+
+#include <list>
+#include "Customer.h"
+#include "adevs/adevs.h"
+
+// Number of lines to consider.
+#define NUM_LINES 2
+
+
+class Decision : public adevs::Atomic<EventType> {
+  public:
+    /// Constructor.
+    Decision();
+    /// Internal transition function.
+    void delta_int();
+    /// External transition function.
+    void delta_ext(double e, std::list<EventType> const &x);
+    /// Confluent transition function.
+    void delta_conf(std::list<EventType> const &x);
+    /// Output function.
+    void output_func(std::list<EventType> &y);
+    /// Time advance function.
+    double ta();
+    /// Input port that receives new customers
+    static int const decide;
+    /// Input ports that receive customers leaving the two lines
+    static int const departures[NUM_LINES];
+    /// Output ports that produce customers for the two lines
+    static int const arrive[NUM_LINES];
+
+  private:
+    /// Lengths of the two lines
+    int line_length[NUM_LINES];
+    /// List of deciding customers and their decision.
+    std::list<std::pair<int, std::shared_ptr<Customer>>> deciding;
+    /// Delete all waiting customers and clear the list.
+    void clear_deciders();
+    /// Returns the arrive port associated with the shortest line
+    int find_shortest_line();
+};
+
+#endif

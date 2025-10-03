@@ -1,58 +1,52 @@
-#include <iostream>
 #include <algorithm>
-#include "adevs.h"
+#include <iostream>
+#include "adevs/adevs.h"
 #include "gcd.h"
-using namespace std;
 
-class generatorEventListener: public adevs::EventListener<PortValue>
-{
-	public:
-		void outputEvent(adevs::Event<PortValue> x, double)
-		{
-			output.push_back(x);	
-		}
-		vector<adevs::Event<PortValue> > output;
+using Atomic = adevs::Atomic<ObjectPtr>;
+using Simulator = adevs::Simulator<ObjectPtr>;
+using EventListener = adevs::EventListener<ObjectPtr>;
+
+class generatorEventListener : public EventListener {
+  public:
+    void stateChange(Atomic &, double) {}
+    void inputEvent(Atomic &, PinValue &, double) {}
+    void outputEvent(Atomic &model, PinValue &x, double) {
+        auto event = std::pair<Atomic &, PinValue>(model, x);
+        output.push_back(event);
+    }
+    std::vector<std::pair<Atomic &, PinValue>> output;
 };
 
-int main() 
-{
-	cout << "Test 2x" << endl;
-	gcd* c = new gcd(10.0,2.0,1,false);
-	genr* g = new genr(10.0,1,true);
-	generatorEventListener listener;
-	adevs::Simulator<PortValue> sim_c(c);
-	adevs::Simulator<PortValue> sim_g(g);
-	sim_g.addEventListener(&listener);
-	while (sim_c.nextEventTime() < DBL_MAX || sim_g.nextEventTime() < DBL_MAX)
-	{
-		double tN = min(sim_c.nextEventTime(),sim_g.nextEventTime());
-		if (sim_g.nextEventTime() == tN)
-		{
-			sim_g.computeNextOutput();
-		}
-		if (sim_c.nextEventTime() == tN)
-		{
-			sim_c.computeNextOutput();
-		}
-		adevs::Bag<adevs::Event<PortValue> > y;
-		vector<adevs::Event<PortValue> >::iterator iter = listener.output.begin();
-		for (; iter != listener.output.end(); iter++)
-		{
-			assert((*iter).model == g);
-			if ((*iter).value.port == g->signal)
-			{
-				adevs::Event<PortValue> event;
-				event.model = c;
-				event.value.port = c->in;
-				event.value.value = (*iter).value.value;
-				y.insert(event);
-			}
-		}
-		listener.output.clear();
-		assert(sim_c.computeNextState(y,tN) == tN+adevs_epsilon<double>());
-		y.clear();
-		assert(sim_g.computeNextState(y,tN) == tN+adevs_epsilon<double>());
-	}
-	cout << "Test done" << endl;
-	return 0;
+int main() {
+    std::cout << "Test 2x" << std::endl;
+    auto c = std::make_shared<gcd>(10.0, 2.0, 1, false);
+    auto g = std::make_shared<genr>(10.0, 1, true);
+    auto listener = std::make_shared<generatorEventListener>();
+    Simulator sim_c(c);
+    Simulator sim_g(g);
+    sim_g.addEventListener(listener);
+    while (sim_c.nextEventTime() < adevs_inf<double>() ||
+           sim_g.nextEventTime() < adevs_inf<double>()) {
+        double tN = std::min(sim_c.nextEventTime(), sim_g.nextEventTime());
+        sim_c.setNextTime(tN);
+        sim_g.setNextTime(tN);
+        sim_g.computeNextOutput();
+        auto iter = listener->output.begin();
+        for (; iter != listener->output.end(); iter++) {
+            assert(&((*iter).first) == g.get());
+            if ((*iter).second.pin == g->signal) {
+                PinValue event;
+                event.pin = c->in;
+                event.value = (*iter).second.value;
+                sim_c.injectInput(event);
+            }
+        }
+        listener->output.clear();
+        sim_c.computeNextOutput();
+        assert(sim_c.computeNextState() == tN + adevs_epsilon<double>());
+        assert(sim_g.computeNextState() == tN + adevs_epsilon<double>());
+    }
+    std::cout << "Test done" << std::endl;
+    return 0;
 }

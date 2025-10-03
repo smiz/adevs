@@ -1,31 +1,24 @@
-#include "adevs.h"
-#include "adevs_fmi.h"
-#include "stairs/modelDescription.h"
 #include <iostream>
-using namespace std;
-using namespace adevs;
+#include "adevs/adevs.h"
+#include "adevs/solvers/fmi.h"
 
-static const double epsilon = 1E-7;
-static const double err_tol = 1E-3;
+using ModelExchange = adevs::ModelExchange<>;
+using ExplicitHybrid = adevs::ExplicitHybrid<>;
+using Simulator = adevs::Simulator<>;
 
-int main()
-{
-	stairs* fmi = new stairs();
-	Hybrid<double>* hybrid_model =
-		new Hybrid<double>(
-		fmi,
-		new corrected_euler<double>(fmi,epsilon,0.001),
-		new discontinuous_event_locator<double>(fmi,epsilon));
-      // Create the simulator
-      Simulator<double>* sim =
-			new Simulator<double>(hybrid_model);
-		// Run the simulation, testing the solution as we go
-        while (sim->nextEventTime() <= 20.5)
-		{
-			sim->execNextEvent();
-			assert(floor(fmi->get_x()) == fmi->get_step());	
-		}
-      delete sim;
-		delete hybrid_model;
-      return 0;
+static double const err_tol = 1E-6;
+
+int main() {
+    auto fmu = new ModelExchange("stairs.fmu", err_tol);
+    auto model = std::make_shared<ExplicitHybrid>(fmu, err_tol, 0.01);
+    // Create the simulator
+    Simulator sim(model);
+    // Run the simulation, testing the solution as we go
+    while (sim.nextEventTime() <= 20.5) {
+        sim.execNextEvent();
+        double x = std::any_cast<double>(fmu->get_variable("x"));
+        double step = std::any_cast<double>(fmu->get_variable("step"));
+        assert(floor(x) == step);
+    }
+    return 0;
 }

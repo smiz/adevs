@@ -1,63 +1,38 @@
-#include "adevs.h"
-#include "adevs_fmi.h"
-#include "eventIter/modelDescription.h"
-#include <iostream>
 #include <cassert>
-using namespace std;
-using namespace adevs;
+#include <iostream>
+#include "adevs/adevs.h"
+#include "adevs/solvers/fmi.h"
 
-static const double epsilon = 1E-3;
 
-class TestModel:
-	public eventIter
-{
-	public:
-		TestModel():
-			eventIter()
-		{
-		}
-};
+using ModelExchange = adevs::ModelExchange<>;
+using Simulator = adevs::Simulator<>;
+using ExplicitHybrid = ExplicitHybrid<>;
 
-void print(TestModel* model)
-{
-	double cfloor = model->get_c()-floor(model->get_c());
-	cout << model->get_time() << " "
-		<< model->get_c() << " "
-		<< model->get_floorc() << " "
-		<< model->get_high() <<
-		endl;
-	assert(cfloor <= 0.5+epsilon);
-	assert(cfloor <= 0.25+epsilon || model->get_high()==1);
-	assert(cfloor >= 0.25-epsilon || model->get_high()==0);
-	assert(model->get_floorc() == cfloor);
+static double const epsilon = 1E-3;
+
+void print(ModelExchange* model) {
+    double c = std::any_cast<double>(model->get_variable("c"));
+    int high = std::any_cast<int>(model->get_variable("high"));
+    double floor_c = std::any_cast<double>(model->get_variable("floorc"));
+    double cfloor = c - floor(c);
+    std::cout << model->get_time() << " " << c << " " << floor_c << " " << high << std::endl;
+    assert(cfloor <= 0.5 + epsilon);
+    assert(cfloor <= 0.25 + epsilon || high == 1);
+    assert(cfloor >= 0.25 - epsilon || high == 0);
+    assert(floor_c == cfloor);
 }
 
-void test(bool interpolate)
-{
-	TestModel* test_model = new TestModel();
-	Hybrid<double>* hybrid_model =
-		new Hybrid<double>(
-		test_model,
-		new corrected_euler<double>(test_model,1E-5,0.001),
-		new fast_event_locator<double>(test_model,1E-6,interpolate));
-        // Create the simulator
-        Simulator<double>* sim =
-			new Simulator<double>(hybrid_model);
-		// Check initial values
-		print(test_model);
-		// Run the simulation, testing the solution as we go
-        while (sim->nextEventTime() <= 5.0)
-		{
-			sim->execNextEvent();
-			print(test_model);
-		}
-        delete sim;
-		delete hybrid_model;
-}
-
-int main()
-{
-	test(false);
-	test(true);
-	return 0;
+int main() {
+    double const err_tol = 1E-6;
+    auto test_model = new ModelExchange("eventIter.fmu", err_tol);
+    auto model = std::make_shared<ExplicitHybrid>(test_model, err_tol, 0.001);
+    // Create the simulator
+    Simulator sim(model);
+    // Check initial values
+    print(test_model);
+    // Run the simulation, testing the solution as we go
+    while (sim.nextEventTime() <= 5.0) {
+        sim.execNextEvent();
+        print(test_model);
+    }
 }

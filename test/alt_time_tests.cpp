@@ -1,205 +1,199 @@
-#include "adevs.h"
-using namespace std;
-using namespace adevs;
-
 /**
  * Test cases for alternate types of time.
  */
-template <typename T> class PingPong:
-	public Atomic<int,T>
-{
-	public:
-		PingPong(bool active = false);
-		void delta_int();
-		void delta_ext(T e, const Bag<int>& xb);
-		void delta_conf(const Bag<int>& xb);
-		void output_func(Bag<int>& yb);
-		void gc_output(Bag<int>&){}
-		T ta();
-		int getCount() const { return count; }
-	private:
-		int count;
-		bool active;
+
+#include <memory>
+
+#include "adevs/adevs.h"
+
+using pin_t = adevs::pin_t;
+using PinValue = adevs::PinValue<int>;
+
+// ***** Basic model ******
+
+template <typename TimeType>
+class PingPong
+    : public adevs::Atomic<
+          int, TimeType> {  // C++ does not allow "using" with unknown template parameters
+  public:
+    pin_t output_pin;
+    PingPong(bool active = false);
+    void delta_int();
+    void delta_ext(TimeType e, std::list<PinValue> const &xb);
+    void delta_conf(std::list<PinValue> const &xb);
+    void output_func(std::list<PinValue> &yb);
+    TimeType ta();
+    int getCount() const { return count; }
+
+  private:
+    int count;
+    bool active;
 };
 
-template <typename T>
-PingPong<T>::PingPong(bool active):
-	Atomic<int,T>(),
-	count(0),
-	active(active)
-{
+template <typename TimeType>
+PingPong<TimeType>::PingPong(bool active)
+    : adevs::Atomic<int, TimeType>(), count(0), active(active) {}
+
+template <typename TimeType>
+void PingPong<TimeType>::delta_int() {
+    count++;
+    active = false;
 }
 
-template <typename T>
-void PingPong<T>::delta_int()
-{
-	count++;
-	active = false;
+template <typename TimeType>
+void PingPong<TimeType>::delta_ext(TimeType, std::list<PinValue> const &xb) {
+    active = xb.size() == 1;
 }
 
-template <typename T>
-void PingPong<T>::delta_ext(T e, const Bag<int>& xb)
-{
-	active = xb.size() == 1;
+template <typename TimeType>
+void PingPong<TimeType>::delta_conf(std::list<PinValue> const &xb) {
+    delta_int();
+    delta_ext(0, xb);
 }
 
-template <typename T>
-void PingPong<T>::delta_conf(const Bag<int>& xb)
-{
-	delta_int();
-	delta_ext(0,xb);
+template <typename TimeType>
+TimeType PingPong<TimeType>::ta() {
+    if (active) {
+        return 1;
+    } else {
+        return adevs_inf<TimeType>();
+    }
 }
 
-template <typename T>
-T PingPong<T>::ta()
-{
-	if (active) return 1;
-	else return adevs_inf<T>();
+template <typename TimeType>
+void PingPong<TimeType>::output_func(std::list<PinValue> &yb) {
+    adevs::PinValue y(output_pin, 1);
+    yb.push_back(y);
 }
 
-template <typename T>
-void PingPong<T>::output_func(Bag<int>& yb)
-{
-	yb.insert(1);
-}
 
-template <typename T> class Model:
-	public SimpleDigraph<int,T>
-{
-	public:
-		Model();
-		PingPong<T>* getA() { return a; }
-		PingPong<T>* getB() { return b; }
-	private:
-		PingPong<T> *a, *b;
-};
+// ***** Custom Time Datatype *****
 
-template <typename T>
-Model<T>::Model():
-	SimpleDigraph<int,T>(),
-	a(new PingPong<T>(true)),
-	b(new PingPong<T>())
-{
-	this->add(a);
-	this->add(b);
-	this->couple(a,b);
-	this->couple(b,a);
-}
 // Non-standard type for time
-class TimeType
-{
-	public:
-		TimeType():t(0){}
-		TimeType(const TimeType& src):t(src.t){}
-		TimeType& operator=(const TimeType& src)
-		{
-			t = src.t;
-			return *this;
-		}
-		TimeType operator+(const TimeType& b) const
-		{
-			return TimeType(t+b.t);
-		}
-		TimeType operator-(const TimeType& b) const
-		{
-			return TimeType(t-b.t);
-		}
-		TimeType& operator+=(const TimeType& b) 
-		{
-			t += b.t;
-			return *this;
-		}
-		bool operator<(const TimeType& b) const
-		{
-			return t < b.t;
-		}
-		bool operator==(const TimeType& b) const
-		{
-			return t == b.t;
-		}
-		bool operator<=(const TimeType& b) const
-		{
-			return t == b.t || t < b.t;
-		}
-		bool operator>(const TimeType& b) const
-		{
-			return t > b.t;
-		}
-		bool operator>=(const TimeType& b) const
-		{
-			return t >= b.t;
-		}
-	private:
-		int t;
-		TimeType(int init):t(init){}
+class CustomTimeType {
+  public:
+    CustomTimeType() : time(0) {}
 
-		friend TimeType adevs_inf<TimeType>();
-		friend TimeType adevs_zero<TimeType>();
-		friend TimeType adevs_sentinel<TimeType>();
-		friend TimeType adevs_epsilon<TimeType>();
-		friend class PingPong<TimeType>;
-		friend void test3();
+    CustomTimeType(CustomTimeType const &src) : time(src.time) {}
+
+    // *** Modification Operators ***
+    CustomTimeType &operator=(CustomTimeType const &src) {
+        time = src.time;
+        return *this;
+    }
+
+    CustomTimeType operator+(CustomTimeType const &other) const {
+        return CustomTimeType(time + other.time);
+    }
+
+    CustomTimeType operator-(CustomTimeType const &other) const {
+        return CustomTimeType(time - other.time);
+    }
+
+    CustomTimeType &operator+=(CustomTimeType const &other) {
+        time += other.time;
+        return *this;
+    }
+
+    // *** Comparison Operators ***
+
+    bool operator<(CustomTimeType const &other) const { return time < other.time; }
+
+    bool operator==(CustomTimeType const &other) const { return time == other.time; }
+
+    bool operator<=(CustomTimeType const &other) const {
+        return time == other.time || time < other.time;
+    }
+
+    bool operator>(CustomTimeType const &other) const { return time > other.time; }
+
+    bool operator>=(CustomTimeType const &other) const { return time >= other.time; }
+    CustomTimeType(int init) : time(init) {}
+
+  private:
+    int time;
+
+    friend CustomTimeType adevs_inf<CustomTimeType>();
+    friend CustomTimeType adevs_zero<CustomTimeType>();
+    friend CustomTimeType adevs_sentinel<CustomTimeType>();
+    friend CustomTimeType adevs_epsilon<CustomTimeType>();
+    friend class PingPong<CustomTimeType>;
+    friend void test3();
 };
 
-template <> inline TimeType adevs_inf<TimeType>()
-{
-	return TimeType(numeric_limits<int>::max());
+template <>
+inline CustomTimeType adevs_inf<CustomTimeType>() {
+    return CustomTimeType(std::numeric_limits<int>::max());
 }
 
-template <> inline TimeType adevs_zero<TimeType>()
-{
-	return TimeType(0);
+template <>
+inline CustomTimeType adevs_zero<CustomTimeType>() {
+    return CustomTimeType(0);
 }
 
-template <> inline TimeType adevs_epsilon<TimeType>()
-{
-	return TimeType(0);
+template <>
+inline CustomTimeType adevs_epsilon<CustomTimeType>() {
+    return CustomTimeType(0);
 }
 
-template <> inline TimeType adevs_sentinel<TimeType>()
-{
-	return TimeType(-1);
+template <>
+inline CustomTimeType adevs_sentinel<CustomTimeType>() {
+    return CustomTimeType(-1);
 }
 
-void test1()
-{
-	Model<double>* model = new Model<double>();
-	Simulator<int,double>* sim =
-		new Simulator<int,double>(model);
-	while (sim->nextEventTime() <= 10)
-		sim->execNextEvent();
-	assert(model->getA()->getCount() == 5);
-	assert(model->getB()->getCount() == 5);
-	delete sim;
+template <typename TimeType>
+class Model : public adevs::Graph<
+                  int, TimeType> {  // C++ does not allow "using" with unknown template parameters
+  public:
+    Model() : adevs::Graph<int, TimeType>() {
+        pin_t pA, pB;
+        A = std::shared_ptr<PingPong<TimeType>>(new PingPong<TimeType>(true));
+        B = std::make_shared<PingPong<TimeType>>();
+        this->add_atomic(A);
+        this->add_atomic(B);
+        this->connect(pA, A);
+        this->connect(pB, B);
+        A->output_pin = pB;
+        B->output_pin = pA;
+    }
+    PingPong<TimeType>* getA() { return A.get(); }
+    PingPong<TimeType>* getB() { return B.get(); }
+
+  private:
+    std::shared_ptr<PingPong<TimeType>> A;
+    std::shared_ptr<PingPong<TimeType>> B;
+};
+
+
+// ***** Tests *****
+
+void test1() {
+    // There are 2 different Simuators in this example so we cannot have a file global "using Simulator..."
+    using Simulator = adevs::Simulator<int, int>;
+
+    auto model = std::make_shared<Model<int>>();
+    std::shared_ptr<Simulator> sim = std::make_shared<Simulator>(model);
+    while (sim->nextEventTime() <= 10) {
+        sim->execNextEvent();
+    }
+    assert(model->getA()->getCount() == 5);
+    assert(model->getB()->getCount() == 5);
 }
 
-void test2()
-{
-	Model<int>* model = new Model<int>();
-	Simulator<int,int>* sim =
-		new Simulator<int,int>(model);
-	while (sim->nextEventTime() <= 10)
-		sim->execNextEvent();
-	assert(model->getA()->getCount() == 5);
-	assert(model->getB()->getCount() == 5);
-	delete sim;
+void test2() {
+    // There are 2 different Simuators in this example so we cannot have a file global "using Simulator..."
+    using Simulator = adevs::Simulator<int, CustomTimeType>;
+
+    auto model = std::make_shared<Model<CustomTimeType>>();
+    std::shared_ptr<Simulator> sim = std::make_shared<Simulator>(model);
+    while (sim->nextEventTime() <= CustomTimeType(10)) {
+        sim->execNextEvent();
+    }
+    assert(model->getA()->getCount() == 5);
+    assert(model->getB()->getCount() == 5);
 }
 
-void test3()
-{
-	Model<TimeType>* model = new Model<TimeType>();
-	Simulator<int,TimeType>* sim =
-		new Simulator<int,TimeType>(model);
-	while (sim->nextEventTime().t <= 10)
-		sim->execNextEvent();
-	assert(model->getA()->getCount() == 5);
-	assert(model->getB()->getCount() == 5);
-	delete sim;
-}
-
-int main()
-{
-	test1();
-	test2();
-	test3();
+int main() {
+    test1();
+    test2();
 }

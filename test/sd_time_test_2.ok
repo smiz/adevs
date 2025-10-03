@@ -1,128 +1,128 @@
 TEST 1
 model t = (1,0) , y = 0
-model t = (1,1) , state changed 
+model t = (1,0) , state changed 
 model t = (1,1) , y = 1
-model t = (1,2) , state changed 
+model t = (1,1) , state changed 
 model t = (2,0) , y = 2
-model t = (2,1) , state changed 
+model t = (2,0) , state changed 
 model t = (2,1) , y = 3
-model t = (2,2) , state changed 
+model t = (2,1) , state changed 
 model t = (3,0) , y = 4
-model t = (3,1) , state changed 
+model t = (3,0) , state changed 
 model t = (3,1) , y = 5
-model t = (3,2) , state changed 
+model t = (3,1) , state changed 
 model t = (4,0) , y = 6
-model t = (4,1) , state changed 
+model t = (4,0) , state changed 
 model t = (4,1) , y = 7
-model t = (4,2) , state changed 
+model t = (4,1) , state changed 
 model t = (5,0) , y = 8
-model t = (5,1) , state changed 
+model t = (5,0) , state changed 
 model t = (5,1) , y = 9
-model t = (5,2) , state changed 
+model t = (5,1) , state changed 
 model t = (6,0) , y = 10
-model t = (6,1) , state changed 
+model t = (6,0) , state changed 
 model t = (6,1) , y = 11
-model t = (6,2) , state changed 
+model t = (6,1) , state changed 
 model t = (7,0) , y = 12
-model t = (7,1) , state changed 
+model t = (7,0) , state changed 
 model t = (7,1) , y = 13
-model t = (7,2) , state changed 
+model t = (7,1) , state changed 
 model t = (8,0) , y = 14
-model t = (8,1) , state changed 
+model t = (8,0) , state changed 
 model t = (8,1) , y = 15
-model t = (8,2) , state changed 
+model t = (8,1) , state changed 
 model t = (9,0) , y = 16
-model t = (9,1) , state changed 
+model t = (9,0) , state changed 
 model t = (9,1) , y = 17
-model t = (9,2) , state changed 
+model t = (9,1) , state changed 
 TEST 2
 A t = (1,0) , y = 0
 B t = (1,0) , x = 0
-A t = (1,1) , state changed 
+A t = (1,0) , state changed 
 B (1,0)
-B t = (1,1) , state changed 
+B t = (1,0) , state changed 
 A t = (1,1) , y = 1
 B t = (1,1) , x = 1
-A t = (1,2) , state changed 
+A t = (1,1) , state changed 
 B (0,0)
-B t = (1,2) , state changed 
+B t = (1,1) , state changed 
 A t = (2,0) , y = 2
 B t = (2,0) , x = 2
-A t = (2,1) , state changed 
+A t = (2,0) , state changed 
 B (1,0)
-B t = (2,1) , state changed 
+B t = (2,0) , state changed 
 A t = (2,1) , y = 3
 B t = (2,1) , x = 3
-A t = (2,2) , state changed 
+A t = (2,1) , state changed 
 B (0,0)
-B t = (2,2) , state changed 
+B t = (2,1) , state changed 
 A t = (3,0) , y = 4
 B t = (3,0) , x = 4
-A t = (3,1) , state changed 
+A t = (3,0) , state changed 
 B (1,0)
-B t = (3,1) , state changed 
+B t = (3,0) , state changed 
 A t = (3,1) , y = 5
 B t = (3,1) , x = 5
-A t = (3,2) , state changed 
+A t = (3,1) , state changed 
 B (0,0)
-B t = (3,2) , state changed 
+B t = (3,1) , state changed 
 A t = (4,0) , y = 6
 B t = (4,0) , x = 6
-A t = (4,1) , state changed 
+A t = (4,0) , state changed 
 B (1,0)
-B t = (4,1) , state changed 
+B t = (4,0) , state changed 
 A t = (4,1) , y = 7
 B t = (4,1) , x = 7
-A t = (4,2) , state changed 
+A t = (4,1) , state changed 
 B (0,0)
-B t = (4,2) , state changed 
+B t = (4,1) , state changed 
 A t = (5,0) , y = 8
 B t = (5,0) , x = 8
-A t = (5,1) , state changed 
+A t = (5,0) , state changed 
 B (1,0)
-B t = (5,1) , state changed 
+B t = (5,0) , state changed 
 A t = (5,1) , y = 9
 B t = (5,1) , x = 9
-A t = (5,2) , state changed 
+A t = (5,1) , state changed 
 B (0,0)
-B t = (5,2) , state changed 
+B t = (5,1) , state changed 
 A t = (6,0) , y = 10
 B t = (6,0) , x = 10
-A t = (6,1) , state changed 
+A t = (6,0) , state changed 
 B (1,0)
-B t = (6,1) , state changed 
+B t = (6,0) , state changed 
 A t = (6,1) , y = 11
 B t = (6,1) , x = 11
-A t = (6,2) , state changed 
+A t = (6,1) , state changed 
 B (0,0)
-B t = (6,2) , state changed 
+B t = (6,1) , state changed 
 A t = (7,0) , y = 12
 B t = (7,0) , x = 12
-A t = (7,1) , state changed 
+A t = (7,0) , state changed 
 B (1,0)
-B t = (7,1) , state changed 
+B t = (7,0) , state changed 
 A t = (7,1) , y = 13
 B t = (7,1) , x = 13
-A t = (7,2) , state changed 
+A t = (7,1) , state changed 
 B (0,0)
-B t = (7,2) , state changed 
+B t = (7,1) , state changed 
 A t = (8,0) , y = 14
 B t = (8,0) , x = 14
-A t = (8,1) , state changed 
+A t = (8,0) , state changed 
 B (1,0)
-B t = (8,1) , state changed 
+B t = (8,0) , state changed 
 A t = (8,1) , y = 15
 B t = (8,1) , x = 15
-A t = (8,2) , state changed 
+A t = (8,1) , state changed 
 B (0,0)
-B t = (8,2) , state changed 
+B t = (8,1) , state changed 
 A t = (9,0) , y = 16
 B t = (9,0) , x = 16
-A t = (9,1) , state changed 
+A t = (9,0) , state changed 
 B (1,0)
-B t = (9,1) , state changed 
+B t = (9,0) , state changed 
 A t = (9,1) , y = 17
 B t = (9,1) , x = 17
-A t = (9,2) , state changed 
+A t = (9,1) , state changed 
 B (0,0)
-B t = (9,2) , state changed 
+B t = (9,1) , state changed 

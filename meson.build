@@ -1,0 +1,117 @@
+project(
+  'adevs',
+  'cpp',
+  version: '3.4',
+  default_options: [
+    'warning_level=3',
+    'cpp_std=c++17',
+  ],
+)
+
+project_description = '''
+    Adevs (A Discrete EVent System simulator) is a C++ library based on the Parallel DEVS formalism.
+    It is suitable for building simulations of discrete event systems, cyber-physical systems, and
+    agent based models.
+'''
+
+adevs = include_directories('include')
+# Imports used other places
+fs = import('fs')
+
+# Dependencies for Sundials
+
+# If Sundials is not installed as a "system library" the Meson build system must be told where to find
+# the library. In that case one should set the CMAKE_PREFIX_PATH environmental variable
+# before running "meson setup build_dir" or call "meson setup" with 
+# "CMAKE_PREFIX_PATH=/path/to/sundials/installation meson setup build_dir"
+
+dep_check = dependency('SUNDIALS', method: 'cmake', modules: ['SUNDIALS::cvode'], required: true)
+message('Found SUNDIALS version: ' + dep_check.version())
+
+if dep_check.version().version_compare('>=7')
+  sundials_dep = dependency('SUNDIALS', method: 'cmake', modules: ['SUNDIALS::core', 'SUNDIALS::cvode', 'SUNDIALS::kinsol'])
+  message('SUNDIALS >= 7: using modules: core, cvode, kinsol')
+else
+  sundials_dep = dependency('SUNDIALS', method: 'cmake', modules: ['SUNDIALS::cvode', 'SUNDIALS::kinsol'])
+  message('SUNDIALS < 7; using modules: cvode, kinsol')
+endif
+
+# Dependencies for FMI: 
+#
+# By default the Meson build system tries to find the FMI library as a "system library", i.e. it expects that  the headers
+# and library can be found by the compiler/linker in their default search paths.
+#   
+# If the library FMI is not installed as a "system library" the Meson build system must be told where to find
+# the library. In that case you should copy the "meson_native.ini.example" file to "meson_native.ini", edit the paths
+# in that file as appropriate (see the file) and call "meson setup" with
+# "meson setup build_dir --native-file=meson_native.ini"
+#
+# Also see examples.fmi/meson.build for more information
+
+# If *both* Sundials and FMI are not installed as "system libraries, call "meson setup" with
+# "CMAKE_PREFIX_PATH=/path/to/sundials/installation meson setup build_dir --native-file=meson_native.ini"
+
+# Scripts/helpers for tests
+compare = find_program('utilities/compare.sh')
+run_and_compare = find_program('utilities/run_and_compare.sh')
+run_and_compare_output = find_program('utilities/run_and_compare_output.sh')
+
+# Add all the subdirectoriess
+subdir('src')
+subdir('test')
+subdir('examples')
+
+# Additional targets for clang-tidy and Doxygen
+
+# clang-tidy: usage "meson compile -C build tidy"
+# Output is to stdout. To redirect ot file: meson compile -C build tidy > /path/clang-tidy-output.txt
+# If no path is given the output file is in the directory from which the command is given.
+clang_tidy = find_program('clang-tidy', required: false)
+
+# Try both common helper names
+run_clang_tidy = find_program('run-clang-tidy', required: false)
+if not run_clang_tidy.found()
+  run_clang_tidy = find_program('run-clang-tidy.py', required: false)
+endif
+
+if clang_tidy.found()
+  # Choose the command using a normal if/else (Meson has no ternary)
+  tidy_cmd = []
+  if run_clang_tidy.found()
+    message('Running run-clang-tidy')
+    tidy_cmd = [run_clang_tidy, '-p', meson.current_build_dir()]
+  else
+    message('Running clang-tidy')
+    tidy_cmd = [clang_tidy, '-p', meson.current_build_dir(), '--quiet'] + srcs
+  endif
+
+  run_target(
+    'tidy',                 # run with: meson compile -C build tidy
+    command : tidy_cmd
+  )
+endif
+
+# doxygen: usage meson compile -C build docs
+# The output is in the build/docs/html directory
+doxygen = find_program('doxygen', required: false)
+
+if doxygen.found()
+  doxy_outdir = join_paths(meson.current_build_dir(), 'docs')
+
+  doxyfile = configure_file(
+    input  : 'Doxyfile.in',
+    output : 'Doxyfile',
+    configuration : {
+      'PROJECT_NAME'   : meson.project_name(),
+      'PROJECT_NUMBER' : meson.project_version(),
+      'DOXY_SRC'       : meson.project_source_root(),
+      'DOXY_OUT'       : doxy_outdir,
+    }
+  )
+
+  # Build docs with: meson compile -C build docs
+  run_target(
+    'docs',
+    command : [doxygen, doxyfile]
+  )
+endif

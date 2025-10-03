@@ -1,23 +1,23 @@
 #include <iostream>
-#include "adevs.h"
+#include "adevs/adevs.h"
 #include "gcd.h"
-using namespace std;
 
-int main () 
-{
-	cout << "Test 7" << endl;
-	gcd* c = new gcd(10,2,1,false);
-	gcd* g = new gcd(50,2,1000,true);
-	adevs::Digraph<object*> model;
-	model.add(c);
-	model.add(g);
-	model.couple(g,g->signal,c,c->in);
-	model.couple(c,c->out,g,g->stop);
-	adevs::Simulator<PortValue> sim(&model);
-	while (sim.nextEventTime() < DBL_MAX)
-	{
-		sim.execNextEvent();
-	}
-	cout << "Test done" << endl;
-	return 0;
+using Coupled = adevs::Coupled<ObjectPtr>;
+using Simulator = adevs::Simulator<ObjectPtr>;
+
+int main() {
+    std::cout << "Test 7" << std::endl;
+    auto model = std::make_shared<Coupled>();
+    auto c = std::make_shared<gcd>(10, 2, 1, false);
+    auto g = std::make_shared<gcd>(50, 2, 1000, true);
+    model->add_coupled_model(c);
+    model->add_coupled_model(g);
+    model->create_coupling(g->signal, c->in);
+    model->create_coupling(c->out, g->stop);
+    Simulator sim(model);
+    while (sim.nextEventTime() < adevs_inf<double>()) {
+        sim.execNextEvent();
+    }
+    std::cout << "Test done" << std::endl;
+    return 0;
 }

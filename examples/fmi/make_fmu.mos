@@ -1,0 +1,4 @@
+loadFile("circuit.mo");
+setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives"); getErrorString();
+buildModelFMU(Circuit,"2.0");
+getErrorString();

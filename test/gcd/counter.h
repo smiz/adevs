@@ -1,58 +1,33 @@
-#ifndef __counter_h_
-#define __counter_h_
-#include "adevs.h"
-#include "object.h"
-#include <cstdio>
+#ifndef _counter_h_
+#define _counter_h_
 #include <cassert>
+#include <cstdio>
+#include "adevs/adevs.h"
+#include "object.h"
 
-class counter: public adevs::Atomic<PortValue>
-{
-	public:
+using pin_t = adevs::pin_t;
+using Atomic = adevs::Atomic<ObjectPtr>;
+using PinValue = adevs::PinValue<ObjectPtr>;
 
-		static const int in;
+class counter : public Atomic {
+  public:
+    pin_t in;
 
-		counter():
-		adevs::Atomic<PortValue>(),
-		count(0),
-		sigma(DBL_MAX),
-		t(0.0)
-		{
-		}
-		void delta_int() 
-		{
-			assert(false);
-		}
-		void delta_ext(double e, const adevs::Bag<PortValue>& x) 
-		{
-			t += e;
-			count += x.size();
-			printf("Count is %d @ %d\n",count,(int)t);
-			sigma = DBL_MAX; 
-		} 
-		void delta_conf(const adevs::Bag<PortValue>&)
-		{
-			assert(false);
-		}
-		void output_func(adevs::Bag<PortValue>&)
-		{
-			assert(false);
-		}
-		double ta()
-		{
-			return sigma;
-		}
-		void gc_output(adevs::Bag<PortValue>& g)
-		{
-			assert(g.size() == 0);
-		}
-		~counter()
-		{
-		}
-	private:	
-		int count;
-		double sigma, t;
+    counter() : Atomic(), count(0), sigma(adevs_inf<double>()), t(0.0) {}
+    void delta_int() { assert(false); }
+    void delta_ext(double e, std::list<PinValue> const &x) {
+        t += e;
+        count += x.size();
+        printf("Count is %d @ %d\n", count, (int)t);
+        sigma = adevs_inf<double>();
+    }
+    void delta_conf(std::list<PinValue> const &) { assert(false); }
+    void output_func(std::list<PinValue> &) { assert(false); }
+    double ta() { return sigma; }
+
+  private:
+    int count;
+    double sigma, t;
 };
-
-const int counter::in = 0;
 
 #endif

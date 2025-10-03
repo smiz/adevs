@@ -1,23 +1,35 @@
 #include <iostream>
+#include <memory>
 #include "node.h"
-using namespace std;
 
-int main() 
-{
-	adevs::Digraph<token_t*> model;
-	node* n1 = new node(0,1,new token_t());
-	node* n2 = new node(1,1,new token_t(1));
-	model.add(n1);
-	model.add(n2);
-	model.couple(n1,n1->out,n2,n2->in);
-	model.couple(n2,n2->out,n1,n1->in);  
-	adevs::Simulator<PortValue> sim(&model);
-	for (int i = 0; i < 10 && sim.nextEventTime() < DBL_MAX; i++)
-	{
-		cout << endl;
-		sim.execNextEvent();
-	}
-	cout << endl;
-	cout << "End of run!" << endl;
-	return 0;
+
+using Simulator = adevs::Simulator<std::shared_ptr<token_t>>;
+using Graph = adevs::Graph<std::shared_ptr<token_t>>;
+
+int main() {
+    std::shared_ptr<Graph> model = std::make_shared<Graph>();
+    std::shared_ptr<token_t> token0 = std::make_shared<token_t>();
+    std::shared_ptr<token_t> token1 = std::make_shared<token_t>(1);
+
+    std::shared_ptr<Node> n1 = std::make_shared<Node>(0, 1, token0);
+    std::shared_ptr<Node> n2 = std::make_shared<Node>(1, 1, token1);
+
+    model->add_atomic(n1);
+    model->add_atomic(n2);
+    model->connect(n1->in, n1);
+    model->connect(n2->in, n2);
+    model->connect(n1->out, n2->in);
+    model->connect(n2->out, n1->in);
+
+    std::shared_ptr<Simulator> sim = std::make_shared<Simulator>(model);
+
+    for (int i = 0; i < 10 && sim->nextEventTime() < adevs_inf<double>(); i++) {
+        std::cout << std::endl;
+        sim->execNextEvent();
+    }
+
+    std::cout << std::endl;
+    std::cout << "End of run!" << std::endl;
+
+    return 0;
 }

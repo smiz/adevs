@@ -1,244 +1,243 @@
-#include "adevs_sched.h"
-#include <iostream>
+#include "adevs/sched.h"
+#include <algorithm>
 #include <cassert>
-using namespace adevs;
+#include <iostream>
 
-class bogus_atomic: public Atomic<char>
-{
-	public:
-		bogus_atomic():
-		Atomic<char>(){}
-		void delta_int(){}
-		void delta_ext(double, const Bag<char>&){}
-		void delta_conf(const Bag<char>&){}
-		void output_func(Bag<char>&){}
-		void gc_output(Bag<char>&){}
-		double ta() { return 0.0; }
-};
-	
-void testa()
-{
-	Schedule<char> q;
-	bogus_atomic m;
-	q.schedule(&m,0.0);
-	q.removeMinimum();
-	q.schedule(&m,0.0);
-	q.schedule(&m,1.0);
-	assert(q.minPriority() == 1.0);
-}
 
-void test1()
-{
-	int i;
-	bogus_atomic m[10];
-	Schedule<char> q;
-	for (i = 0; i < 10; i++)
-	{
-		q.schedule(&(m[i]),(double)i);
-		assert(q.minPriority() == 0.0);
-		assert(q.getMinimum() == &(m[0]));
-	}
-	for (i = 0; i < 10; i++)
-	{
-		assert(q.minPriority() == (double)i);
-		assert(q.getMinimum() == &(m[i]));
-		q.removeMinimum();
-	}
-}
+using Atomic = adevs::Atomic<char>;
+using PinValue = adevs::PinValue<char>;
+using Schedule = adevs::Schedule<char>;
 
-void test2()
-{
-	bogus_atomic m[5];
-	Schedule<char> q;
-	q.schedule(&(m[0]),1.0);
-	q.schedule(&(m[1]),10.0);
-	q.schedule(&(m[2]),5.0);
-	assert(q.minPriority() == 1.0);
-	q.removeMinimum();
-	assert(q.minPriority() == 5.0);
-	q.schedule(&(m[3]),3.0);
-	q.schedule(&(m[4]),4.0);
-	assert(q.minPriority() == 3.0);
-	q.removeMinimum();
-	assert(q.minPriority() == 4.0);
-	q.removeMinimum();
-	assert(q.minPriority() == 5.0);
-	q.removeMinimum();
-	assert(q.minPriority() == 10.0);
-	q.removeMinimum();
-}
-
-void test3()
-{
-	bogus_atomic m[3];
-	Schedule<char> q;
-	q.schedule(&(m[0]),5.0);
-	q.schedule(&(m[1]),10.0);
-	q.schedule(&(m[2]),1.0);
-	q.schedule(&(m[0]),DBL_MAX);
-	assert(q.minPriority() == 1.0);
-	q.schedule(&(m[2]),DBL_MAX);
-	assert(q.minPriority() == 10.0);
-}
-
-void test4()
-{
-	Schedule<char> q;
-	assert(q.minPriority() == DBL_MAX);
-	assert(q.getMinimum() == NULL);
-	bogus_atomic m[200];
-	srand(200);
-	for (int i = 0; i < 300; i++)
-	{
-		q.schedule(&(m[rand()%200]),(double)rand());
-	}
-	double tL = q.minPriority();
-	while (!q.empty())
-	{
-		assert(q.getMinimum() != NULL);
-		q.removeMinimum();
-		if (!q.empty())
-		{
-			assert(tL <= q.minPriority());
-			tL = q.minPriority();
-		}
-	}
-	assert(q.getMinimum() == NULL);
-	assert(q.minPriority() == DBL_MAX);
-}
-
-void test5()
-{
-	bogus_atomic m[2];
-	Schedule<char> q;
-	q.schedule(&(m[0]),2.0);
-	q.schedule(&(m[1]),3.0);
-	q.schedule(&(m[1]),DBL_MAX);
-	assert(q.minPriority() == 2.0);
-	assert(q.getMinimum() == &(m[0]));
-}
-
-void test6()
-{
-	bogus_atomic m[2];
-	Schedule<char> q;
-	q.schedule(&(m[0]),1.0);
-	q.schedule(&(m[1]),1.0);
-	q.schedule(&(m[0]),DBL_MAX);
-	assert(q.getMinimum() == &(m[1]));
-	assert(q.minPriority() == 1.0);
-}
-
-void test7()
-{
-	bogus_atomic m[2];
-	Schedule<char> q;
-	q.schedule(&(m[0]),2.0);
-	q.schedule(&(m[1]),3.0);
-	q.schedule(&(m[0]),4.0);
-	q.schedule(&(m[0]),4.0);
-	assert(q.getMinimum() == &(m[1]));
-	q.removeMinimum();
-	assert(q.getMinimum() == &(m[0]));
-	q.schedule(&(m[1]),1.0);
-	assert(q.getMinimum() == &(m[1]));
-}
-
-void test8()
-{
-	bogus_atomic m[2000];
-	Schedule<char> q;
-	for (int i = 0; i < 2000; i++)
-	{
-		q.schedule(&(m[i]),(double)i);
-		assert(q.getMinimum() == &(m[i]));
-		q.schedule(&(m[i]),(double)i);
-		assert(q.getMinimum() == &(m[i]));
-		q.schedule(&(m[i]),DBL_MAX);
-		assert(q.empty());
-	}
-}
-
-void test9()
-{
-	int i;
-	bogus_atomic m[20];
-	Schedule<char> q;
-	for (i = 0; i < 10; i++)
-	{
-		q.schedule(&(m[i]),1.0);
-	}
-	assert(q.minPriority() == 1.0);
-	for (i = 10; i < 20; i++)
-	{
-		q.schedule(&(m[i]),2.0);
-	}
-	assert(q.minPriority() == 1.0);
-}
-
-class test10visitor:
-	public Schedule<char>::ImminentVisitor
-{
-	public:
-		test10visitor(Bag<Atomic<char>*>& imm):imm(imm){}
-		void visit(Atomic<char>* model)
-		{
-			imm.insert(model);
-		}
-	private:
-		Bag<Atomic<char>*>& imm;
+class bogus_atomic : public Atomic {
+  public:
+    bogus_atomic() : Atomic() {}
+    void delta_int() {}
+    void delta_ext(double, std::list<PinValue> const &) {}
+    void delta_conf(std::list<PinValue> const &) {}
+    void output_func(std::list<PinValue> &) {}
+    double ta() { return 0.0; }
 };
 
-void test10()
-{
-	int i;
-	bogus_atomic m[20];
-	Schedule<char> q;
-	Bag<Atomic<char>*> imm;
-	test10visitor* visitor = new test10visitor(imm);
-	q.visitImminent(visitor);
-	delete visitor;
-	assert(imm.empty());
-	for (i = 0; i < 10; i++)
-	{
-		q.schedule(&(m[i]),1.0);
-	}
-	assert(q.minPriority() == 1.0);
-	visitor = new test10visitor(imm);
-	q.visitImminent(visitor);
-	delete visitor;
-	assert(imm.size() == 10);
-	for (i = 0; i < 10; i++)
-	{
-		assert(imm.find(&m[i]) != imm.end());
-	}
-	imm.clear();
-	for (i = 10; i < 20; i++)
-	{
-		q.schedule(&(m[i]),2.0);
-	}
-	visitor = new test10visitor(imm);
-	q.visitImminent(visitor);
-	delete visitor;
-	assert(imm.size() == 10);
-	for (i = 0; i < 10; i++)
-	{
-		assert(imm.find(&m[i]) != imm.end());
-	}
+void testa() {
+    Schedule q;
+    Atomic* m = new bogus_atomic;
+    q.schedule(m, 0.0);
+    q.removeMinimum();
+    q.schedule(m, 0.0);
+    q.schedule(m, 1.0);
+    assert(q.minPriority() == 1.0);
+    delete m;
 }
 
-int main () 
-{
-	testa();
-	test1();
-	test2();
-	test3();
-	test4();
-	test5();
-	test6();
-	test7();
-	test8();
-	test9();
-	test10();
-	return 0;
+void test1() {
+    int i;
+    Atomic* m[10];
+    Schedule q;
+    for (i = 0; i < 10; i++) {
+        m[i] = new bogus_atomic;
+        q.schedule(m[i], (double)i);
+        assert(q.minPriority() == 0.0);
+        assert(q.getMinimum() == m[0]);
+    }
+    for (i = 0; i < 10; i++) {
+        assert(q.minPriority() == (double)i);
+        assert(q.getMinimum() == m[i]);
+        q.removeMinimum();
+    }
+    for (i = 0; i < 10; i++) {
+        delete m[i];
+    }
+}
+
+void test2() {
+    Atomic* m[5];
+    for (int i = 0; i < 5; i++) {
+        m[i] = new bogus_atomic;
+    }
+    Schedule q;
+    q.schedule(m[0], 1.0);
+    q.schedule(m[1], 10.0);
+    q.schedule(m[2], 5.0);
+    assert(q.minPriority() == 1.0);
+    q.removeMinimum();
+    assert(q.minPriority() == 5.0);
+    q.schedule(m[3], 3.0);
+    q.schedule(m[4], 4.0);
+    assert(q.minPriority() == 3.0);
+    q.removeMinimum();
+    assert(q.minPriority() == 4.0);
+    q.removeMinimum();
+    assert(q.minPriority() == 5.0);
+    q.removeMinimum();
+    assert(q.minPriority() == 10.0);
+    q.removeMinimum();
+    for (int i = 0; i < 5; i++) {
+        delete m[i];
+    }
+}
+
+void test3() {
+    Atomic* m[3];
+    for (int i = 0; i < 3; i++) {
+        m[i] = new bogus_atomic;
+    }
+    Schedule q;
+    q.schedule(m[0], 5.0);
+    q.schedule(m[1], 10.0);
+    q.schedule(m[2], 1.0);
+    q.schedule(m[0], adevs_inf<double>());
+    assert(q.minPriority() == 1.0);
+    q.schedule(m[2], adevs_inf<double>());
+    assert(q.minPriority() == 10.0);
+    for (int i = 0; i < 3; i++) {
+        delete m[i];
+    }
+}
+
+void test4() {
+    Schedule q;
+    assert(q.minPriority() == adevs_inf<double>());
+    assert(q.getMinimum() == nullptr);
+    Atomic* m[200];
+    for (int i = 0; i < 200; i++) {
+        m[i] = new bogus_atomic;
+    }
+    srand(200);
+    for (int i = 0; i < 300; i++) {
+        q.schedule(m[rand() % 200], (double)rand());
+    }
+    double tL = q.minPriority();
+    while (!q.empty()) {
+        assert(q.getMinimum() != nullptr);
+        q.removeMinimum();
+        if (!q.empty()) {
+            assert(tL <= q.minPriority());
+            tL = q.minPriority();
+        }
+    }
+    assert(q.getMinimum() == nullptr);
+    assert(q.minPriority() == adevs_inf<double>());
+    for (int i = 0; i < 200; i++) {
+        delete m[i];
+    }
+}
+
+void test5() {
+    Atomic* m[2];
+    for (int i = 0; i < 2; i++) {
+        m[i] = new bogus_atomic;
+    }
+    Schedule q;
+    q.schedule(m[0], 2.0);
+    q.schedule(m[1], 3.0);
+    q.schedule(m[1], DBL_MAX);
+    assert(q.minPriority() == 2.0);
+    assert(q.getMinimum() == m[0]);
+    for (int i = 0; i < 2; i++) {
+        delete m[i];
+    }
+}
+
+void test6() {
+    Atomic* m[2];
+    for (int i = 0; i < 2; i++) {
+        m[i] = new bogus_atomic;
+    }
+    Schedule q;
+    q.schedule(m[0], 1.0);
+    q.schedule(m[1], 1.0);
+    q.schedule(m[0], adevs_inf<double>());
+    assert(q.getMinimum() == m[1]);
+    assert(q.minPriority() == 1.0);
+    for (int i = 0; i < 2; i++) {
+        delete m[i];
+    }
+}
+
+void test7() {
+    Atomic* m[2];
+    for (int i = 0; i < 2; i++) {
+        m[i] = new bogus_atomic;
+    }
+    Schedule q;
+    q.schedule(m[0], 2.0);
+    q.schedule(m[1], 3.0);
+    q.schedule(m[0], 4.0);
+    q.schedule(m[0], 4.0);
+    assert(q.getMinimum() == m[1]);
+    q.removeMinimum();
+    assert(q.getMinimum() == m[0]);
+    q.schedule(m[1], 1.0);
+    assert(q.getMinimum() == m[1]);
+    for (int i = 0; i < 2; i++) {
+        delete m[i];
+    }
+}
+
+void test8() {
+    Atomic* m[2000];
+    Schedule q;
+    for (int i = 0; i < 2000; i++) {
+        m[i] = new bogus_atomic;
+        q.schedule(m[i], (double)i);
+        assert(q.getMinimum() == m[i]);
+        q.schedule(m[i], (double)i);
+        assert(q.getMinimum() == m[i]);
+        q.schedule(m[i], adevs_inf<double>());
+        assert(q.empty());
+    }
+    for (int i = 0; i < 2000; i++) {
+        delete m[i];
+    }
+}
+
+void test9() {
+    int i;
+    Atomic* m[20];
+    Schedule q;
+    for (i = 0; i < 10; i++) {
+        m[i] = new bogus_atomic;
+        q.schedule(m[i], 1.0);
+    }
+    assert(q.minPriority() == 1.0);
+    for (i = 10; i < 20; i++) {
+        m[i] = new bogus_atomic;
+        q.schedule(m[i], 2.0);
+    }
+    assert(q.minPriority() == 1.0);
+    for (i = 0; i < 20; i++) {
+        delete m[i];
+    }
+}
+
+void test10() {
+    Atomic* m0 = new bogus_atomic;
+    Atomic* m1 = new bogus_atomic;
+    Atomic* m2 = new bogus_atomic;
+    Schedule q;
+    q.schedule(m0, 1.0);
+    q.schedule(m1, 1.0);
+    q.schedule(m2, 2.0);
+    auto imm = q.visitImminent();
+    assert(std::find(imm.begin(), imm.end(), m0) != imm.end());
+    assert(std::find(imm.begin(), imm.end(), m1) != imm.end());
+    assert(std::find(imm.begin(), imm.end(), m2) == imm.end());
+    delete m0;
+    delete m1;
+    delete m2;
+}
+
+int main() {
+    testa();
+    test1();
+    test2();
+    test3();
+    test4();
+    test5();
+    test6();
+    test7();
+    test8();
+    test9();
+    test10();
+    return 0;
 }
