@@ -1,7 +1,7 @@
 project(
   'adevs',
   'cpp',
-  version: '4.0-dev',
+  version: '3.4',
   default_options: [
     'warning_level=3',
     'cpp_std=c++17',
@@ -9,13 +9,9 @@ project(
 )
 
 project_description = '''
-    Adevs (A Discrete EVent System simulator) is a C++ library for constructing discrete event
-    simulations based on the Parallel DEVS and Dynamic DEVS (dynDEVS) formalisms. DEVS has been
-    applied to the study of social systems, ecological systems, computer networks and computer
-    architecture, military systems at the tactical and theater levels, and in many other areas.
-    Recent advances in quantized approximations of continuous systems suggest promising
-    computational techniques for high performance scientific computing (e.g. in the field of
-    computational fluid dynamics).
+    Adevs (A Discrete EVent System simulator) is a C++ library based on the Parallel DEVS formalism.
+    It is suitable for building simulations of discrete event systems, cyber-physical systems, and
+    agent based models.
 '''
 
 adevs = include_directories('include')
