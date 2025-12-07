@@ -53,6 +53,8 @@ template <typename ValueType, typename TimeType>
 class MealyAtomic;
 template <typename ValueType, typename TimeType>
 class Graph;
+template <typename ValueType, typename TimeType>
+class ParallelSimulator;
 /// \endcond
 
 /**
@@ -289,13 +291,45 @@ class Atomic {
      */
     virtual TimeType ta() = 0;
 
+    /**
+     * @brief Create and return a checkpoint of the model state
+     * 
+     * This is used by the ParallelSimulator to support speculative
+     * execution of the model's state transitions. If the method
+     * returns nullptr then the model does not support speculative
+     * execution.
+     * 
+     * @return A checkpoint of the model state
+     */
+    virtual void* make_checkpoint() { return nullptr; }
+
+    /**
+     * @brief Destroy a checkpoint
+     * 
+     * This is use by the ParallelSimulator to destroy checkpoints
+     * created with make_checkpoint()
+     * 
+     * @param checkpoint The checkpoint to destroy
+     */
+    virtual void destroy_checkpoint(void* checkpoint) {}
+
+    /**
+     * @brief Restore the model state to a checkpoint
+     * 
+     * Restore the model to a state created with make_checkpoint()
+     * 
+     * @param checkpoint The checkpoint to use when recovering the state
+     */
+    virtual void restore_checkpoint(void* checkpoint) {}
+
   private:
     friend class Simulator<ValueType, TimeType>;
+    friend class ParallelSimulator<ValueType, TimeType>;
     friend class Schedule<ValueType, TimeType>;
 
     // Time of last event
     TimeType tL, tN;
-    // Index in the priority queue
+    // Index in the priority queue or index in the logical process list
     unsigned int q_index;
 
     std::list<PinValue<ValueType>> inputs;
