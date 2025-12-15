@@ -1,4 +1,5 @@
 #include <random>
+#include <omp.h>
 #include "adevs/adevs.h"
 #include "adevs/parallel.h"
 
@@ -60,36 +61,77 @@ class Model: public adevs::Atomic<unsigned,Time> {
     state_t q;
 };
 
-void test1() {
+void test1(unsigned seed[4]) {
     // Sequential simulation
-    auto a = std::make_shared<Model>(0);
-    auto b = std::make_shared<Model>(1);
+    auto a = std::make_shared<Model>(seed[0]);
+    auto b = std::make_shared<Model>(seed[1]);
+    auto c = std::make_shared<Model>(seed[2]);
+    auto d = std::make_shared<Model>(seed[3]);
     auto graph = std::make_shared<adevs::Graph<unsigned,Time>>();
     graph->add_atomic(a);
     graph->add_atomic(b);
+    graph->add_atomic(c);
+    graph->add_atomic(d);
+    graph->connect(c->output,a);
     graph->connect(a->output,b);
     graph->connect(b->output,a);
+    graph->connect(b->output,d);
     adevs::Simulator<unsigned,Time> sim(graph);
     while (sim.nextEventTime() < Time(100,0)) {
         sim.execNextEvent();
     }
     // Parallel simulation
-    auto pa = std::make_shared<Model>(0);
-    auto pb = std::make_shared<Model>(1);
+    auto pa = std::make_shared<Model>(seed[0]);
+    auto pb = std::make_shared<Model>(seed[1]);
+    auto pc = std::make_shared<Model>(seed[2]);
+    auto pd = std::make_shared<Model>(seed[3]);
     auto pgraph = std::make_shared<adevs::Graph<unsigned,Time>>();
     pgraph->add_atomic(pa);
     pgraph->add_atomic(pb);
+    pgraph->add_atomic(pc);
+    pgraph->add_atomic(pd);
+    pgraph->connect(pc->output,pa);
     pgraph->connect(pa->output,pb);
     pgraph->connect(pb->output,pa);
+    pgraph->connect(pb->output,pd);
     adevs::ParallelSimulator<unsigned,Time> psim(pgraph);
     psim.exec_until(Time(100,0));
 
     std::cout << a->get_count() << " = " << pa->get_count() << std::endl;
     std::cout << a->get_largest() << " = " << pa->get_largest() << std::endl;
     std::cout << a->get_remaining() << " = " << pa->get_remaining() << std::endl;
+    std::cout << b->get_count() << " = " << pb->get_count() << std::endl;
+    std::cout << b->get_largest() << " = " << pb->get_largest() << std::endl;
+    std::cout << b->get_remaining() << " = " << pb->get_remaining() << std::endl;
+    std::cout << c->get_count() << " = " << pc->get_count() << std::endl;
+    std::cout << c->get_largest() << " = " << pc->get_largest() << std::endl;
+    std::cout << c->get_remaining() << " = " << pc->get_remaining() << std::endl;
+    std::cout << d->get_count() << " = " << pd->get_count() << std::endl;
+    std::cout << d->get_largest() << " = " << pd->get_largest() << std::endl;
+    std::cout << d->get_remaining() << " = " << pd->get_remaining() << std::endl;
+
+    assert(a->get_count() == pa->get_count());
+    assert(b->get_count() == pb->get_count());
+    assert(c->get_count() == pc->get_count());
+    assert(d->get_count() == pd->get_count());
+    assert(a->get_largest() == pa->get_largest());
+    assert(b->get_largest() == pb->get_largest());
+    assert(c->get_largest() == pc->get_largest());
+    assert(d->get_largest() == pd->get_largest());
+    assert(a->get_remaining() == pa->get_remaining());
+    assert(b->get_remaining() == pb->get_remaining());
+    assert(c->get_remaining() == pc->get_remaining());
+    assert(d->get_remaining() == pd->get_remaining());
 }
 
 int main() {
-    test1();
+    unsigned seed[4];
+    for (unsigned i = 0; i < 1000; i++) {
+        for (unsigned j = 0; j < 4; j++) {
+            seed[j] = rand();
+        }
+        test1(seed);
+    }
+    std::cout << "Finished with " << omp_get_max_threads() << " threads" << std::endl;
     return 0;
 }
