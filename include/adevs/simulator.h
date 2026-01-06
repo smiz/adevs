@@ -294,14 +294,19 @@ class Simulator {
     }
 
   private:
+
     std::shared_ptr<Graph<ValueType, TimeType>> graph;
     std::list<std::shared_ptr<EventListener<ValueType, TimeType>>> listeners;
     std::list<PinValue<ValueType>> external_input;
     std::set<Atomic<ValueType, TimeType>*> active;
+    std::set<MealyAtomic<ValueType, TimeType>*> orphaned;
     Schedule<ValueType, TimeType> sched;
     TimeType tNext;
 
     void schedule(Atomic<ValueType, TimeType>* model, TimeType t);
+    void calculate_mealy_output(
+        std::set<MealyAtomic<ValueType,TimeType>*>& path, MealyAtomic<ValueType,TimeType>* root);
+    void retract_mealy_output(MealyAtomic<ValueType,TimeType>* root);
 };
 
 template <typename ValueType, typename TimeType>
@@ -324,6 +329,96 @@ Simulator<ValueType, TimeType>::Simulator(std::shared_ptr<Atomic<ValueType, Time
 }
 
 template <typename ValueType, typename TimeType>
+void Simulator<ValueType, TimeType>::retract_mealy_output(
+    MealyAtomic<ValueType,TimeType>* root) {
+
+    auto iter = root->receivers.begin();
+    while (iter != root->receivers.end()) {
+        auto iter2 = (*iter)->revisable_inputs.begin();
+        while (iter2 != (*iter)->revisable_inputs.end()) {
+            if ((*iter2).first == root) {
+                iter2 = (*iter)->revisable_inputs.erase(iter2);
+            } else {
+                iter2++;
+            }
+        }
+        if ((*iter)->isMealyAtomic() != nullptr) {
+            orphaned.insert((*iter)->isMealyAtomic());
+            retract_mealy_output((*iter)->isMealyAtomic());
+        }
+        iter = root->receivers.erase(iter);
+    }
+}
+
+template <typename ValueType, typename TimeType>
+void Simulator<ValueType, TimeType>::calculate_mealy_output(
+    std::set<MealyAtomic<ValueType,TimeType>*>& path,
+    MealyAtomic<ValueType,TimeType>* root) {
+
+    PinValue<ValueType> x;
+    std::set<Atomic<ValueType, TimeType>*> retracted;
+    std::set<MealyAtomic<ValueType, TimeType>*> activated;
+    std::list<std::pair<pin_t, std::shared_ptr<Atomic<ValueType, TimeType>>>> input;
+    path.insert(root);
+    active.insert(root);
+    orphaned.erase(root);
+    // Retract our previous output
+    retract_mealy_output(root);
+    // Clear the output list
+    root->outputs.clear();
+    // Gather the revisable input to this Mealy model
+    for (auto revisable_input: root->revisable_inputs) {
+        root->inputs.push_back(revisable_input.second);
+    }
+    if (root->inputs.empty()) {
+        if (root->tN == tNext) {
+            // Internal event
+            root->output_func(root->outputs);
+        } else {
+            // No input and not imminent so nothing to do
+            return;
+        }
+    } else if (root->tN == tNext) {
+        // Confluent event
+        root->confluent_output_func(root->inputs, root->outputs);
+    } else {
+        // External event
+        root->external_output_func(tNext - root->tL, root->inputs, root->outputs);
+    }
+    // Find all of the Mealy components that we touch
+    // and assign revisable output to receivers.
+    for (auto y : root->outputs) {
+        x.value = y.value;
+        graph->route(y.pin, input);
+        for (auto consumer : input) {
+            if (consumer.second->isMealyAtomic() != nullptr) {
+                activated.insert(consumer.second->isMealyAtomic());
+                if (path.find(consumer.second->isMealyAtomic()) != path.end()) {
+                    throw adevs::exception("Cycles of Mealy models are illegal", root);
+                }
+            } else {
+                active.insert(consumer.second.get());
+            }
+            // There are no cycles and so input from the root will
+            // not be retracted in the output retraction step.
+            x.pin = consumer.first;
+            consumer.second->revisable_inputs.push_back(
+                std::pair<Atomic<ValueType,TimeType>*,PinValue<ValueType>>(
+                    root,x));
+            root->receivers.insert(consumer.second.get());
+        }
+        input.clear();
+    }
+    // Clear the input list
+    root->inputs.clear();
+    // Descend into the output tree
+    for (auto model: activated) {
+        calculate_mealy_output(path,model);
+    }
+    path.erase(root);
+}
+
+template <typename ValueType, typename TimeType>
 Simulator<ValueType, TimeType>::Simulator(std::shared_ptr<Coupled<ValueType, TimeType>> model)
     : graph(new Graph<ValueType, TimeType>()) {
     model->assign_to_graph(graph.get());
@@ -338,39 +433,43 @@ template <class ValueType, class TimeType>
 void Simulator<ValueType, TimeType>::computeNextOutput() {
     PinValue<ValueType> x;
     std::list<std::pair<pin_t, std::shared_ptr<Atomic<ValueType, TimeType>>>> input;
-    std::set<MealyAtomic<ValueType, TimeType>*> pending_active;
+    std::set<MealyAtomic<ValueType, TimeType>*> path;
     // Undo prior output calculation
     for (auto model : active) {
         model->outputs.clear();
         model->inputs.clear();
     }
     active.clear();
-    // Route externally supplied inputs
+    // Route externally supplied inputs. This will not be revised.
     for (auto y : external_input) {
         x.value = y.value;
         graph->route(y.pin, input);
         for (auto consumer : input) {
+            x.pin = consumer.first;
             if (consumer.second->isMealyAtomic() != nullptr) {
                 // Mealy models outputs are calculated after Moore models
                 // because the Mealy output may depend on the Moore output
-                pending_active.insert(consumer.second->isMealyAtomic());
+                orphaned.insert(consumer.second->isMealyAtomic());
+                consumer.second->revisable_inputs.push_back(
+                    std::pair<Atomic<ValueType,TimeType>*,PinValue<ValueType>>(
+                        nullptr,x));
             } else {
                 active.insert(consumer.second.get());
+                consumer.second->inputs.push_back(x);
             }
-            x.pin = consumer.first;
-            consumer.second->inputs.push_back(x);
         }
         input.clear();
     }
     external_input.clear();
-    // Route the output from the Moore type imminent models
+    // Route output from the Moore type imminent models. This output
+    // will not be revised.
     if (sched.minPriority() == tNext) {
         std::list<Atomic<ValueType, TimeType>*> imm(sched.visitImminent());
         for (auto model : imm) {
             if (model->isMealyAtomic() != nullptr) {
                 // Wait to calculate Mealy outputs until we have the
                 // output from all of the Moore models
-                pending_active.insert(model->isMealyAtomic());
+                orphaned.insert(model->isMealyAtomic());
                 continue;
             } else {
                 active.insert(model);
@@ -383,60 +482,44 @@ void Simulator<ValueType, TimeType>::computeNextOutput() {
                 x.value = y.value;
                 graph->route(y.pin, input);
                 for (auto consumer : input) {
+                    x.pin = consumer.first;
                     if (consumer.second->isMealyAtomic() != nullptr) {
                         // Wait to calculate Mealy outputs until we have the
                         // output from all of the Moore models
-                        pending_active.insert(consumer.second->isMealyAtomic());
+                        orphaned.insert(consumer.second->isMealyAtomic());
+                        consumer.second->revisable_inputs.push_back(
+                            std::pair<Atomic<ValueType,TimeType>*,PinValue<ValueType>>(
+                                model,x));
                     } else {
                         active.insert(consumer.second.get());
+                        consumer.second->inputs.push_back(x);
                     }
-                    x.pin = consumer.first;
-                    consumer.second->inputs.push_back(x);
                 }
                 input.clear();
             }
         }
     }
     // Calculate output from Mealy type models
-    while (!pending_active.empty()) {
-        auto model = *(pending_active.begin());
-        pending_active.erase(model);
-        // This Mealy model must not receive input once its
-        // output is calculated. The fact that we have calculated
-        // its output is signified by putting it into the active set
-        active.insert(model);
-        if (model->inputs.empty() && model->tN == tNext) {
-            // Internal event
-            model->output_func(model->outputs);
-        } else if (model->tN == tNext) {
-            // Confluent event
-            model->confluent_output_func(model->inputs, model->outputs);
-        } else {
-            // External event
-            model->external_output_func(tNext - model->tL, model->inputs, model->outputs);
+    while (!orphaned.empty()) {
+        auto model = *(orphaned.begin());
+        calculate_mealy_output(path,model);
+    }
+    // Gather input produced by Mealy models
+    for (auto model: active) {
+        while (!model->revisable_inputs.empty()) {
+            model->inputs.push_back(model->revisable_inputs.front().second);
+            model->revisable_inputs.pop_front();
         }
-        for (auto y : model->outputs) {
-            for (auto listener : listeners) {
-                listener->outputEvent(*model, y, tNext);
-            }
-            x.value = y.value;
-            graph->route(y.pin, input);
-            for (auto consumer : input) {
-                if (consumer.second->isMealyAtomic() != nullptr) {
-                    // If this Mealy model is already active then we have
-                    // a feedback loop of Mealy models which is illegal
-                    if (active.find(consumer.second.get()) != active.end()) {
-                        throw adevs::exception("Feedback loop of Mealy models is illegal", model);
-                    }
-                    pending_active.insert(consumer.second->isMealyAtomic());
-                } else {
-                    active.insert(consumer.second.get());
+        if (model->isMealyAtomic()) {
+            for (auto y : model->outputs) {
+                for (auto listener : listeners) {
+                    listener->outputEvent(*model, y, tNext);
                 }
-                x.pin = consumer.first;
-                consumer.second->inputs.push_back(x);
             }
-            input.clear();
+            model->isMealyAtomic()->receivers.clear();
         }
+        // Done with the output
+        model->outputs.clear();
     }
 }
 
@@ -466,7 +549,6 @@ TimeType Simulator<ValueType, TimeType>::computeNextState() {
         for (auto listener : listeners) {
             listener->stateChange(*model, tNext);
         }
-        model->outputs.clear();
         // Adjust position in the schedule
         schedule(model, t);
     }

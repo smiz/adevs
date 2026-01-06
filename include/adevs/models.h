@@ -300,6 +300,9 @@ class Atomic {
 
     std::list<PinValue<ValueType>> inputs;
     std::list<PinValue<ValueType>> outputs;
+    // Revisable input. This is used to calculate input originating
+    // from Mealy models.
+    std::list<std::pair<Atomic<ValueType, TimeType>*,PinValue<ValueType>>> revisable_inputs;
 
     virtual MealyAtomic<ValueType, TimeType>* isMealyAtomic() { return nullptr; }
 };
@@ -357,6 +360,9 @@ class MealyAtomic : public Atomic<ValueType, TimeType> {
 
   private:
     friend class Simulator<ValueType, TimeType>;
+
+    // Set of models that have received revisable input from this model
+    std::set<Atomic<ValueType, TimeType>*> receivers;
 
     MealyAtomic<ValueType, TimeType>* isMealyAtomic() { return this; }
 };

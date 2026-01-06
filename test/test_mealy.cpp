@@ -15,15 +15,18 @@ using MealyAtomic = adevs::MealyAtomic<int>;
 
 class Listener : public EventListener {
   public:
-    Listener() : EventListener(), output_count(0), state_changes(0), value(-1) {}
+    Listener() : EventListener(), output_count(0),
+        input_count(0), state_changes(0), value(-1) {}
     void outputEvent(Atomic &, PinValue &x, double) {
         output_count++;
         assert(value == -1 || x.value == value);
         value = x.value;
     }
-    void inputEvent(Atomic &, PinValue &, double) {}
+    void inputEvent(Atomic &, PinValue &, double) {
+        input_count++;
+    }
     void stateChange(Atomic &, double) { state_changes++; }
-    int output_count, state_changes, value;
+    int output_count, input_count, state_changes, value;
 };
 
 class Periodic : public Atomic {
@@ -67,22 +70,28 @@ class Trigger : public MealyAtomic {
     int external_event_count() const { return external_events; }
     double ta() { return time_left; }
     void delta_int() { time_left = adevs_inf<double>(); }
-    void delta_ext(double e, std::list<PinValue> const &) {
+    void delta_ext(double e, std::list<PinValue> const &xb) {
         assert(time_elapsed == e);
-        external_events++;
+        external_events += xb.size();
         time_left = 1.0;
     }
-    void delta_conf(std::list<PinValue> const &) { time_left = 1.0; }
+    void delta_conf(std::list<PinValue> const &xb) {
+        time_left = 1.0;
+        external_events += xb.size();
+    }
     void output_func(std::list<PinValue> &yb) {
         // Turn off
+        assert(yb.empty());
         yb.push_back(PinValue(output, 0));
     }
     void confluent_output_func(std::list<PinValue> const &xb, std::list<PinValue> &yb) {
         // Turn on
+        assert(yb.empty());
         yb.push_back(PinValue(output, (*(xb.begin())).value));
     }
     void external_output_func(double e, std::list<PinValue> const &xb, std::list<PinValue> &yb) {
         time_elapsed = e;
+        assert(yb.empty());
         confluent_output_func(xb, yb);
     }
 
@@ -237,6 +246,34 @@ void test6() {
     std::cout << "TEST 6 PASSED" << std::endl;
 }
 
+void test7() {
+    std::cout << "TEST 7" << std::endl;
+    std::shared_ptr<Graph> model = std::make_shared<Graph>();
+    std::shared_ptr<Periodic> periodic = std::make_shared<Periodic>(10.0);
+    std::shared_ptr<Receiver> rx = std::make_shared<Receiver>();
+    std::shared_ptr<Trigger> trigger1 = std::make_shared<Trigger>();
+    std::shared_ptr<Trigger> trigger2 = std::make_shared<Trigger>();
+    std::shared_ptr<Listener> listener = std::make_shared<Listener>();
+    model->add_atomic(periodic);
+    model->add_atomic(rx);
+    model->add_atomic(trigger2);
+    model->add_atomic(trigger1);
+    model->connect(periodic->output, trigger1);
+    model->connect(periodic->output, trigger2);
+    model->connect(trigger1->output, trigger2);
+    model->connect(trigger2->output, rx);
+    std::shared_ptr<Simulator> sim = std::make_shared<Simulator>(model);
+    sim->addEventListener(listener);
+    assert(sim->nextEventTime() == 10.0);
+    sim->execNextEvent();
+    assert(trigger1->external_event_count() == 1);
+    assert(trigger2->external_event_count() == 2);
+    assert(listener->output_count == 3);
+    assert(listener->input_count == 4);
+    assert(rx->get_event_count() == 1);
+    std::cout << "TEST 7 PASSED" << std::endl;
+}
+
 int main() {
     test1();
     test2();
@@ -244,5 +281,6 @@ int main() {
     test4();
     test5();
     test6();
+    test7();
     return 0;
 }
