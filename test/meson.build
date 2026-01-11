@@ -39,5 +39,8 @@ test('sd_time_2',run_and_compare,args: [test_sd_time_2, test_sd_time_2_ok])
 test_mealy = executable('mealy', 'test_mealy.cpp', include_directories: adevs, link_with: adevs_lib)
 test('mealy', test_mealy)
 
+test_mealy_ca = executable('mealy_ca', 'test_mealy_ca.cpp', include_directories: adevs, link_with: adevs_lib)
+test('mealy_ca', test_mealy_ca)
+
 test_graph = executable('graph', 'graph_test.cpp', include_directories: adevs, link_with: adevs_lib)
 test('graph', test_graph)

@@ -2,7 +2,6 @@
 #include <cmath>
 #include <iostream>
 #include <memory>
-#include <cassert>
 #include "adevs/adevs.h"
 
 /**
@@ -147,7 +146,7 @@ struct step_t {
     }
 };
 
-std::list<step_t> discrete_time(const Rule& rule, const int* q0, const int num_steps) {
+std::list<step_t> discrete_time(const Rule& rule, const int q0[NUM_CELLS], const int num_steps) {
     std::list<step_t> traj;
     step_t s;
     memcpy(s.q,q0,NUM_CELLS*sizeof(int));
@@ -173,7 +172,7 @@ std::list<step_t> discrete_time(const Rule& rule, const int* q0, const int num_s
     return traj;
 }
 
-std::list<step_t> discrete_event(const Rule& rule, const int* q0, const int num_steps) {
+std::list<step_t> discrete_event(const Rule& rule, const int q0[NUM_CELLS], const int num_steps) {
     std::list<step_t> traj;
     step_t s;
     std::shared_ptr<Cell> cells[NUM_CELLS];
@@ -234,32 +233,34 @@ void print(const std::list<step_t>& traj) {
         for (int i = 0; i < NUM_CELLS; i++) {
             std::cout << step.q[i];
         }
-        std::cout << std::endl;
+        std::cout << '\n';
         std::cout << "x: ";
         for (int i = 0; i < NUM_CELLS; i++) {
             std::cout << step.x[i];
         }
-        std::cout << std::endl;
+        std::cout << '\n';
         std::cout << "y: ";
         for (int i = 0; i < NUM_CELLS; i++) {
             std::cout << step.y[i];
         }
-        std::cout << std::endl;
+        std::cout << '\n';
     }
 }
 
 int main() {
-    for (int trial = 0; trial < 1000; trial++) {
-        Rule rule;
+    const int num_steps = 20;
+    const int num_trials = 200;
+    for (int trial = 0; trial < num_trials; trial++) {
+        const Rule rule;
         int q0[NUM_CELLS];
         for (int i = 0; i < NUM_CELLS; i++) {
             q0[i] = rand()%NUM_SYMBOLS;
         }
-        std::list<step_t> traj_dt(discrete_time(rule,q0,20));
-        std::list<step_t> traj_de(discrete_event(rule,q0,20));
-        std::cout << "DT trial #" << trial << std::endl;
+        std::list<step_t> traj_dt(discrete_time(rule,q0,num_steps));
+        std::list<step_t> traj_de(discrete_event(rule,q0,num_steps));
+        std::cout << "DT trial #" << trial << '\n';
         print(traj_dt);
-        std::cout << "DE trial #" << trial << std::endl;
+        std::cout << "DE trial #" << trial << '\n';
         print(traj_de);
         assert(traj_dt.size() == traj_de.size());
         auto iter_dt = traj_dt.begin();
@@ -271,9 +272,9 @@ int main() {
         }
     }
     // Some statistics
-    std::cout << "external output calls = " << external_cell << std::endl;
-    std::cout << "confluent output calls = " << confluent_cell << std::endl;
-    std::cout << "imm output calls = " << imm_cell << std::endl;
-    std::cout << "max # revisions = " << max_revisions << std::endl;
+    std::cout << "external output calls = " << external_cell << '\n';
+    std::cout << "confluent output calls = " << confluent_cell << '\n';
+    std::cout << "imm output calls = " << imm_cell << '\n';
+    std::cout << "max # revisions = " << max_revisions << '\n';
     return 0;
 }

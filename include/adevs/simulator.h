@@ -471,9 +471,8 @@ void Simulator<ValueType, TimeType>::computeNextOutput() {
                 // output from all of the Moore models
                 orphaned.insert(model->isMealyAtomic());
                 continue;
-            } else {
-                active.insert(model);
             }
+            active.insert(model);
             model->output_func(model->outputs);
             for (auto y : model->outputs) {
                 for (auto listener : listeners) {
