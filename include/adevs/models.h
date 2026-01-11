@@ -300,6 +300,9 @@ class Atomic {
 
     std::list<PinValue<ValueType>> inputs;
     std::list<PinValue<ValueType>> outputs;
+    // Revisable input. This is used to calculate input originating
+    // from Mealy models.
+    std::list<std::pair<Atomic<ValueType, TimeType>*,PinValue<ValueType>>> revisable_inputs;
 
     virtual MealyAtomic<ValueType, TimeType>* isMealyAtomic() { return nullptr; }
 };
@@ -320,6 +323,13 @@ class Atomic {
  * Mealy models cannot appear in loops that contain
  * other Mealy models. The simulator will throw an
  * adevs::exception and abort if you attempt to do so.
+ * 
+ * A Mealy model cannot change any aspect of its state
+ * in its output function. Each output function of the
+ * Mealy model may be called several times by the algorithm
+ * that calculates output values for coupled Mealy models.
+ * If you change the model state in the output function
+ * then you may not receive the expected result!
  */
 template <typename ValueType = std::any, typename TimeType = double>
 class MealyAtomic : public Atomic<ValueType, TimeType> {
@@ -357,6 +367,9 @@ class MealyAtomic : public Atomic<ValueType, TimeType> {
 
   private:
     friend class Simulator<ValueType, TimeType>;
+
+    // Set of models that have received revisable input from this model
+    std::set<Atomic<ValueType, TimeType>*> receivers;
 
     MealyAtomic<ValueType, TimeType>* isMealyAtomic() { return this; }
 };
