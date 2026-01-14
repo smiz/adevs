@@ -359,7 +359,6 @@ void Simulator<ValueType, TimeType>::calculate_mealy_output(
     std::set<Atomic<ValueType, TimeType>*> retracted;
     std::set<MealyAtomic<ValueType, TimeType>*> activated;
     std::list<std::pair<pin_t, std::shared_ptr<Atomic<ValueType, TimeType>>>> input;
-    path.insert(root);
     active.insert(root);
     orphaned.erase(root);
     // Retract our previous output
@@ -385,6 +384,8 @@ void Simulator<ValueType, TimeType>::calculate_mealy_output(
         // External event
         root->external_output_func(tNext - root->tL, root->inputs, root->outputs);
     }
+    // Add us to the path for cycle detection
+    path.insert(root);
     // Find all of the Mealy components that we touch
     // and assign revisable output to receivers.
     for (auto y : root->outputs) {
