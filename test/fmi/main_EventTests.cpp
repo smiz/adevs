@@ -6,7 +6,7 @@ using ModelExchange = adevs::ModelExchange<>;
 using Simulator = adevs::Simulator<>;
 using corrected_euler = adevs::corrected_euler<>;
 using discontinuous_event_locator = adevs::discontinuous_event_locator<>;
-using Hybrid = adevs::Hybrid;
+using Hybrid = adevs::Hybrid<>;
 
 #define epsilon 1E-6
 
