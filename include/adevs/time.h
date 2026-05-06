@@ -88,7 +88,7 @@ class sd_time {
     /// @brief Get the real part of time
     TimeType real() const { return t; }
     /// @brief Get the logical (integer) part of time
-    double integer() const { return k; }
+    int integer() const { return k; }
     /// @brief Assignment operator
     sd_time const &operator=(sd_time const &other) {
         t = other.t;
