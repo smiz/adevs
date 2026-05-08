@@ -174,7 +174,7 @@ class Graph {
         return models;
     }
     /**
-         * @brief Enable or disable the provisional model.
+         * @brief Enable or disable the provisional mode.
          * 
          * This is used by the Simulator to indicate that the graph is in a provisional state.
          * The Simulator will always put the Graph into a provisional state when it is calculating
